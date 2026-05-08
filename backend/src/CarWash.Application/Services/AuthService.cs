@@ -14,19 +14,33 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace CarWash.Application.Services;
 
+/// <summary>
+/// Serviço responsável por gerenciar a autenticação de utilizadores.
+/// </summary>
 public class AuthService : IAuthService
 {
     private readonly ICarWashDbContext _context;
     private readonly IConfiguration _configuration;
     private readonly ILogger<AuthService> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AuthService"/> class.
+    /// </summary>
+    /// <param name="context">O contexto do banco de dados.</param>
+    /// <param name="configuration">As configurações do sistema.</param>
+    /// <param name="logger">O serviço de log.</param>
     public AuthService(ICarWashDbContext context, IConfiguration configuration, ILogger<AuthService> logger)
     {
-        _context = context;
-        _configuration = configuration;
-        _logger = logger;
+        this._context = context;
+        this._configuration = configuration;
+        this._logger = logger;
     }
 
+    /// <summary>
+    /// Efetua o login do utilizador validando suas credenciais.
+    /// </summary>
+    /// <param name="request">As credenciais de acesso.</param>
+    /// <returns>A resposta de login contendo os tokens.</returns>
     public async Task<LoginResponse> LoginAsync(LoginRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Senha))
@@ -36,17 +50,21 @@ public class AuthService : IAuthService
 
         string emailNormalizado = request.Email.Trim().ToLowerInvariant();
 
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == emailNormalizado);
+        var user = await this._context.Users.FirstOrDefaultAsync(u => u.Email == emailNormalizado);
 
         if (user == null || !user.Active)
         {
-            _logger.LogWarning("LOGIN_FALHA: Tentativa de acesso para utilizador inexistente ou inativo. Email: {Email}", MascararEmail(emailNormalizado));
+#pragma warning disable CA1848
+            this._logger.LogWarning("LOGIN_FALHA: Tentativa de acesso para utilizador inexistente ou inativo. Email: {Email}", MascararEmail(emailNormalizado));
+#pragma warning restore CA1848
             throw new AuthException(401, "AUTH_INVALID_CREDENTIALS", "Usuário ou senha inválidos.");
         }
 
         if (user.BlockedUntil.HasValue && user.BlockedUntil.Value > DateTime.UtcNow)
         {
-            _logger.LogWarning("LOGIN_BLOQUEIO: Utilizador bloqueado tentou aceder. Email: {Email}", MascararEmail(emailNormalizado));
+#pragma warning disable CA1848
+            this._logger.LogWarning("LOGIN_BLOQUEIO: Utilizador bloqueado tentou aceder. Email: {Email}", MascararEmail(emailNormalizado));
+#pragma warning restore CA1848
             throw new AuthException(403, "AUTH_TEMPORARILY_BLOCKED", "Acesso temporariamente bloqueado por tentativas inválidas. Tente novamente em alguns minutos.");
         }
 
@@ -59,22 +77,26 @@ public class AuthService : IAuthService
             if (user.FailedLoginAttempts >= 3)
             {
                 user.BlockedUntil = DateTime.UtcNow.AddMinutes(15);
-                await _context.SaveChangesAsync();
+                await this._context.SaveChangesAsync();
 
-                _logger.LogWarning("LOGIN_BLOQUEIO: Utilizador bloqueado por exceder 3 falhas. Email: {Email}", MascararEmail(emailNormalizado));
+#pragma warning disable CA1848
+                this._logger.LogWarning("LOGIN_BLOQUEIO: Utilizador bloqueado por exceder 3 falhas. Email: {Email}", MascararEmail(emailNormalizado));
+#pragma warning restore CA1848
                 throw new AuthException(403, "AUTH_TEMPORARILY_BLOCKED", "Acesso temporariamente bloqueado por tentativas inválidas. Tente novamente em alguns minutos.");
             }
 
-            await _context.SaveChangesAsync();
-            _logger.LogWarning("LOGIN_FALHA: Credencial inválida. Email: {Email}", MascararEmail(emailNormalizado));
+            await this._context.SaveChangesAsync();
+#pragma warning disable CA1848
+            this._logger.LogWarning("LOGIN_FALHA: Credencial inválida. Email: {Email}", MascararEmail(emailNormalizado));
+#pragma warning restore CA1848
             throw new AuthException(401, "AUTH_INVALID_CREDENTIALS", "Usuário ou senha inválidos.");
         }
 
         user.FailedLoginAttempts = 0;
         user.BlockedUntil = null;
 
-        string accessToken = GerarAccessToken(user);
-        string refreshToken = GerarRefreshToken();
+        var accessToken = this.GerarAccessToken(user);
+        var refreshToken = GerarRefreshToken();
 
         var session = new Session
         {
@@ -84,10 +106,12 @@ public class AuthService : IAuthService
             IsRevoked = false
         };
 
-        _context.Sessions.Add(session);
-        await _context.SaveChangesAsync();
+        this._context.Sessions.Add(session);
+        await this._context.SaveChangesAsync();
 
-        _logger.LogInformation("LOGIN_SUCESSO: Utilizador autenticado. Email: {Email}", MascararEmail(emailNormalizado));
+#pragma warning disable CA1848
+        this._logger.LogInformation("LOGIN_SUCESSO: Utilizador autenticado. Email: {Email}", MascararEmail(emailNormalizado));
+#pragma warning restore CA1848
 
         return new LoginResponse
         {
@@ -98,19 +122,48 @@ public class AuthService : IAuthService
         };
     }
 
+    /// <summary>
+    /// Atualiza os tokens da sessão.
+    /// </summary>
+    /// <param name="request">O token antigo.</param>
+    /// <returns>Os novos tokens.</returns>
     public Task<LoginResponse> RefreshAsync(TokenRequest request)
     {
         throw new NotImplementedException();
     }
 
+    /// <summary>
+    /// Finaliza a sessão.
+    /// </summary>
+    /// <param name="refreshToken">O token a ser revogado.</param>
+    /// <returns>Uma tarefa assíncrona.</returns>
     public Task LogoutAsync(string refreshToken)
     {
         throw new NotImplementedException();
     }
 
+    private static string GerarRefreshToken()
+    {
+        var randomNumber = new byte[32];
+        using var rng = RandomNumberGenerator.Create();
+        rng.GetBytes(randomNumber);
+        return Convert.ToBase64String(randomNumber);
+    }
+
+    private static string MascararEmail(string email)
+    {
+        string[] partes = email.Split('@');
+        if (partes.Length != 2 || partes[0].Length <= 2)
+        {
+            return "***@***";
+        }
+
+        return $"{partes[0].Substring(0, 2)}***@{partes[1]}";
+    }
+
     private string GerarAccessToken(User user)
     {
-        var jwtSettings = _configuration.GetSection("JwtSettings");
+        var jwtSettings = this._configuration.GetSection("JwtSettings");
         string secretKey = jwtSettings["Secret"] ?? throw new InvalidOperationException("JWT Secret não configurado.");
 
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
@@ -131,24 +184,5 @@ public class AuthService : IAuthService
             signingCredentials: credentials);
 
         return new JwtSecurityTokenHandler().WriteToken(token);
-    }
-
-    private static string GerarRefreshToken()
-    {
-        byte[] randomNumber = new byte[32];
-        using var rng = RandomNumberGenerator.Create();
-        rng.GetBytes(randomNumber);
-        return Convert.ToBase64String(randomNumber);
-    }
-
-    private static string MascararEmail(string email)
-    {
-        string[] partes = email.Split('@');
-        if (partes.Length != 2 || partes[0].Length <= 2)
-        {
-            return "***@***";
-        }
-
-        return $"{partes[0].Substring(0, 2)}***@{partes[1]}";
     }
 }

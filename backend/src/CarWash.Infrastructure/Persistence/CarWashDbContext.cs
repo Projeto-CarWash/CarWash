@@ -12,10 +12,13 @@ public class CarWashDbContext : DbContext, ICarWashDbContext
     {
     }
 
+    /// <inheritdoc/>
     public DbSet<User> Users { get; set; }
 
+    /// <inheritdoc/>
     public DbSet<Session> Sessions { get; set; }
 
+    /// <inheritdoc/>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema("public");

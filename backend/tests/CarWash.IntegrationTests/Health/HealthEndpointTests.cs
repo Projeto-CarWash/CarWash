@@ -39,6 +39,7 @@ public class HealthEndpointTests : IAsyncDisposable
         response.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
     }
 
+    /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
         await _factory.DisposeAsync();
