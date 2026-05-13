@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, development, homolog]
   pull_request:
-    branches: [main]
+    branches: [main, development, homolog]
 
 # Cancela jobs antigos do mesmo PR para não desperdiçar minuto
 concurrency:
@@ -108,25 +108,40 @@ jobs:
     defaults:
       run:
         working-directory: backend
-    # Só roda quando existir uma .sln — evita falhar enquanto o backend não foi bootstrapado
-    if: ${{ hashFiles('backend/**/*.sln') != '' }}
     steps:
       - uses: actions/checkout@v4
 
+      # Só roda quando existir uma .sln — evita falhar enquanto o backend não foi bootstrapado
+      - name: Check if backend exists
+        id: backend_exists
+        shell: bash
+        run: |
+          if compgen -G "backend/**/*.sln" > /dev/null; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            echo "⚠️  Nenhuma .sln encontrada em backend/ — pulando jobs do backend."
+          fi
+
       - uses: actions/setup-dotnet@v4
+        if: steps.backend_exists.outputs.found == 'true'
         with:
           global-json-file: backend/global.json
 
       - name: Restore
+        if: steps.backend_exists.outputs.found == 'true'
         run: dotnet restore
 
       - name: Format check
+        if: steps.backend_exists.outputs.found == 'true'
         run: dotnet format --verify-no-changes --severity error
 
       - name: Build (Release, warnings as errors)
+        if: steps.backend_exists.outputs.found == 'true'
         run: dotnet build --configuration Release --no-restore
 
       - name: Test
+        if: steps.backend_exists.outputs.found == 'true'
         run: dotnet test --configuration Release --no-build
 
   # ─────────────── DOCKER ───────────────
