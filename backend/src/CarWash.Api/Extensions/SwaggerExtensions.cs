@@ -49,8 +49,9 @@ internal static class SwaggerExtensions
         app.UseSwaggerUI(ui =>
         {
             // JSON continua servido por UseSwagger no caminho padrão /swagger/{doc}/swagger.json.
-            // Apenas a UI é movida para /docs via RoutePrefix.
-            ui.SwaggerEndpoint($"/swagger/{DocumentName}/swagger.json", $"CarWash API {DocumentName}");
+            // Como a UI está em /docs, usar caminho relativo preserva prefixes de proxy
+            // reverso (ex.: /api/docs -> /api/swagger/{doc}/swagger.json).
+            ui.SwaggerEndpoint($"../swagger/{DocumentName}/swagger.json", $"CarWash API {DocumentName}");
             ui.RoutePrefix = "docs";
             ui.DocumentTitle = "CarWash API";
             ui.DefaultModelsExpandDepth(-1);
