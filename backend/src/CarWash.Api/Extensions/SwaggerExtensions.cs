@@ -30,7 +30,7 @@ internal static class SwaggerExtensions
     }
 
     /// <summary>
-    /// Habilita Swagger e Swagger UI em Development e Homologation.
+    /// Habilita Swagger e Swagger UI em Development, Staging e Homologation (legado).
     /// Bloqueado em Production por padrão.
     /// </summary>
     /// <param name="app">Aplicação web já construída.</param>
@@ -40,6 +40,7 @@ internal static class SwaggerExtensions
         ArgumentNullException.ThrowIfNull(app);
 
         if (!app.Environment.IsDevelopment()
+            && !app.Environment.IsStaging()
             && !app.Environment.IsEnvironment(HomologationEnvironment))
         {
             return app;
