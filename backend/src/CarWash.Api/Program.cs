@@ -1,5 +1,8 @@
 using CarWash.Api.Extensions;
+using CarWash.Api.Infrastructure;
+using CarWash.Api.Middleware;
 using CarWash.Application;
+using CarWash.Application.Abstractions;
 using CarWash.Infrastructure;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 
@@ -11,6 +14,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
+// Em ambiente HTTP, sobrescreve o ICurrentRequestContext default por uma
+// implementação que lê o HttpContext (claims + correlation id).
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentRequestContext, HttpCurrentRequestContext>();
+
 var conn = builder.Configuration.GetConnectionString("Default")
     ?? throw new InvalidOperationException("ConnectionStrings:Default não configurada");
 
@@ -20,6 +28,8 @@ builder.Services.AddHealthChecks()
 builder.Services.AddCarWashSwagger();
 
 var app = builder.Build();
+
+app.UseMiddleware<CorrelationIdMiddleware>();
 
 app.UseCarWashSwagger();
 

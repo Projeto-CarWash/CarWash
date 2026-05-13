@@ -31,7 +31,6 @@ public class HealthEndpointTests : IAsyncDisposable
     [Fact]
     public async Task GET_health_ready_returns_200_when_postgres_is_up()
     {
-        await _factory.EnsureDatabaseCreatedAsync();
         var client = _factory.CreateClient();
 
         var response = await client.GetAsync(new Uri("/health/ready", UriKind.Relative));

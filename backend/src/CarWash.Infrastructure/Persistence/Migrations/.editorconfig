@@ -1,0 +1,23 @@
+# Migrations são código gerado pelo EF Core. Suprimir analisadores que se aplicam
+# a código artesanal.
+[*.cs]
+dotnet_diagnostic.CA1825.severity = none
+dotnet_diagnostic.CA1861.severity = none
+dotnet_diagnostic.S125.severity = none
+dotnet_diagnostic.SA1101.severity = none
+dotnet_diagnostic.SA1413.severity = none
+dotnet_diagnostic.SA1503.severity = none
+dotnet_diagnostic.SA1502.severity = none
+dotnet_diagnostic.SA1117.severity = none
+dotnet_diagnostic.SA1118.severity = none
+dotnet_diagnostic.SA1201.severity = none
+dotnet_diagnostic.SA1202.severity = none
+dotnet_diagnostic.SA1311.severity = none
+dotnet_diagnostic.SA1314.severity = none
+dotnet_diagnostic.SA1516.severity = none
+dotnet_diagnostic.SA1649.severity = none
+dotnet_diagnostic.S1192.severity = none
+dotnet_diagnostic.S1200.severity = none
+dotnet_diagnostic.S107.severity = none
+dotnet_diagnostic.S109.severity = none
+dotnet_diagnostic.IDE0011.severity = none
