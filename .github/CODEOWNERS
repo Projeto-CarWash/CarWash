@@ -25,10 +25,8 @@
 /.github/                           @gbrogio
 /.husky/                            @gbrogio
 /frontend/.husky/                   @gbrogio
-/commitlint.config.cjs              @gbrogio
 /.editorconfig                      @gbrogio
 /.gitattributes                     @gbrogio
-/cspell.json                        @gbrogio
 
 # Documentação de produto
 /docs/                              @Ranchoneetoo26 @gbrogio
