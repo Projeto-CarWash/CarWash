@@ -58,6 +58,14 @@ public static class DependencyInjection
                     sp.GetRequiredService<AuditLogInterceptor>());
         });
 
+        services.AddDbContextFactory<CarWashDbContext>(opt =>
+        {
+            opt.UseNpgsql(conn, npg => npg
+                    .MigrationsAssembly(typeof(CarWashDbContext).Assembly.FullName)
+                    .MigrationsHistoryTable("__ef_migrations_history", "public"))
+               .UseSnakeCaseNamingConvention();
+        });
+
         return services;
     }
 }

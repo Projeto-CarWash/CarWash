@@ -15,7 +15,6 @@ namespace CarWash.UnitTests.Application.Usuarios;
 public class AlterarStatusUsuarioHandlerTests
 {
     private readonly IUsuarioRepository _repo = Substitute.For<IUsuarioRepository>();
-    private readonly IAuditLogger _auditoria = Substitute.For<IAuditLogger>();
     private readonly ICurrentRequestContext _contexto = Substitute.For<ICurrentRequestContext>();
 
     [Fact]
@@ -33,12 +32,6 @@ public class AlterarStatusUsuarioHandlerTests
 
         await _repo.Received(1).SalvarAsync(Arg.Any<CancellationToken>());
         _contexto.Received(1).DefinirEvento(AlterarStatusUsuarioHandler.EventoAuditoria);
-        await _auditoria.Received(1).LogAsync(
-            AlterarStatusUsuarioHandler.EventoAuditoria,
-            AlterarStatusUsuarioHandler.EntidadeAuditoria,
-            usuario.Id,
-            Arg.Is<object>(o => DadosTem(o, "De", false) && DadosTem(o, "Para", true)),
-            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -54,12 +47,6 @@ public class AlterarStatusUsuarioHandlerTests
         usuario.Ativo.Should().BeFalse();
 
         await _repo.Received(1).SalvarAsync(Arg.Any<CancellationToken>());
-        await _auditoria.Received(1).LogAsync(
-            AlterarStatusUsuarioHandler.EventoAuditoria,
-            AlterarStatusUsuarioHandler.EntidadeAuditoria,
-            usuario.Id,
-            Arg.Is<object>(o => DadosTem(o, "De", true) && DadosTem(o, "Para", false)),
-            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -75,12 +62,6 @@ public class AlterarStatusUsuarioHandlerTests
         usuario.Ativo.Should().BeTrue();
 
         await _repo.DidNotReceive().SalvarAsync(Arg.Any<CancellationToken>());
-        await _auditoria.DidNotReceive().LogAsync(
-            Arg.Any<string>(),
-            Arg.Any<string>(),
-            Arg.Any<Guid?>(),
-            Arg.Any<object?>(),
-            Arg.Any<CancellationToken>());
         _contexto.DidNotReceive().DefinirEvento(Arg.Any<string>());
     }
 
@@ -95,12 +76,6 @@ public class AlterarStatusUsuarioHandlerTests
 
         resp.Ativo.Should().BeFalse();
         await _repo.DidNotReceive().SalvarAsync(Arg.Any<CancellationToken>());
-        await _auditoria.DidNotReceive().LogAsync(
-            Arg.Any<string>(),
-            Arg.Any<string>(),
-            Arg.Any<Guid?>(),
-            Arg.Any<object?>(),
-            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -115,16 +90,10 @@ public class AlterarStatusUsuarioHandlerTests
         ex.Which.Message.Should().Be(AlterarStatusUsuarioHandler.MensagemNaoEncontrado);
 
         await _repo.DidNotReceive().SalvarAsync(Arg.Any<CancellationToken>());
-        await _auditoria.DidNotReceive().LogAsync(
-            Arg.Any<string>(),
-            Arg.Any<string>(),
-            Arg.Any<Guid?>(),
-            Arg.Any<object?>(),
-            Arg.Any<CancellationToken>());
     }
 
     private AlterarStatusUsuarioHandler NovoHandler() =>
-        new(_repo, _auditoria, _contexto, NullLogger<AlterarStatusUsuarioHandler>.Instance);
+        new(_repo, _contexto, NullLogger<AlterarStatusUsuarioHandler>.Instance);
 
     private static Usuario NovoUsuario(bool ativo)
     {
@@ -143,15 +112,4 @@ public class AlterarStatusUsuarioHandlerTests
         return u;
     }
 
-    private static bool DadosTem(object dados, string nome, object esperado)
-    {
-        var prop = dados.GetType().GetProperty(nome);
-        if (prop is null)
-        {
-            return false;
-        }
-
-        var valor = prop.GetValue(dados);
-        return Equals(valor, esperado);
-    }
 }

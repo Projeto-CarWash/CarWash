@@ -40,7 +40,7 @@ public static class UsuariosEndpoints
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
-        grupo.MapPatch("/{id:guid}/status", AlterarStatusAsync)
+        grupo.MapPatch("/{id}/status", AlterarStatusAsync)
             .WithName("AlterarStatusUsuario")
             .Produces<AlterarStatusUsuarioResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)

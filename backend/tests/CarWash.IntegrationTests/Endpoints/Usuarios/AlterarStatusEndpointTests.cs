@@ -81,6 +81,19 @@ public class AlterarStatusEndpointTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task PATCH_id_malformado_retorna_400()
+    {
+        var client = _factory.CreateClient();
+
+        var resp = await client.PatchAsJsonAsync(
+            new Uri("/api/v1/usuarios/abc/status", UriKind.Relative),
+            new { ativo = false },
+            _json);
+
+        resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
     public async Task PATCH_body_vazio_retorna_400()
     {
         var client = _factory.CreateClient();

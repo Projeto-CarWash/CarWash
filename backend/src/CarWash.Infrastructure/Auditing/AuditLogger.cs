@@ -2,6 +2,7 @@ using CarWash.Application.Abstractions;
 using CarWash.Domain.Entities;
 using CarWash.Infrastructure.Persistence;
 using CarWash.Infrastructure.Security;
+using Microsoft.EntityFrameworkCore;
 
 namespace CarWash.Infrastructure.Auditing;
 
@@ -12,12 +13,12 @@ namespace CarWash.Infrastructure.Auditing;
 /// </summary>
 public sealed class AuditLogger : IAuditLogger
 {
-    private readonly CarWashDbContext _db;
+    private readonly IDbContextFactory<CarWashDbContext> _dbFactory;
     private readonly ICurrentRequestContext _contexto;
 
-    public AuditLogger(CarWashDbContext db, ICurrentRequestContext contexto)
+    public AuditLogger(IDbContextFactory<CarWashDbContext> dbFactory, ICurrentRequestContext contexto)
     {
-        _db = db;
+        _dbFactory = dbFactory;
         _contexto = contexto;
     }
 
@@ -39,7 +40,8 @@ public sealed class AuditLogger : IAuditLogger
             usuarioId: _contexto.UsuarioId,
             dados: json);
 
-        _db.Set<AuditLog>().Add(log);
-        await _db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        db.Set<AuditLog>().Add(log);
+        await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 }

@@ -37,8 +37,12 @@ public class AuditoriaTests
         AmbientRequestContext.DefinirCorrelationId("test-corr-login-falha");
         ICurrentRequestContext contexto = new AmbientRequestContext();
 
-        await using var db = CarWashDbContextFactoryForTests.Create(_fixture);
-        var logger = new AuditLogger(db, contexto);
+        var options = new DbContextOptionsBuilder<CarWashDbContext>()
+            .UseNpgsql(_fixture.ConnectionString)
+            .UseSnakeCaseNamingConvention()
+            .Options;
+        IDbContextFactory<CarWashDbContext> dbFactory = new PooledDbContextFactory<CarWashDbContext>(options);
+        var logger = new AuditLogger(dbFactory, contexto);
 
         await logger.LogAsync(
             evento: "UsuarioLoginFalha",

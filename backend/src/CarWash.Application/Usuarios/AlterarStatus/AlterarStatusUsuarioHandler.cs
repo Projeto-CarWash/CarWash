@@ -1,4 +1,3 @@
-using CarWash.Application.Abstractions;
 using CarWash.Application.Abstractions.Messaging;
 using CarWash.Application.Common.Exceptions;
 using CarWash.Application.Usuarios.Persistence;
@@ -16,22 +15,18 @@ public sealed class AlterarStatusUsuarioHandler
     : ICommandHandler<AlterarStatusUsuarioCommand, AlterarStatusUsuarioResponse>
 {
     public const string EventoAuditoria = "UsuarioStatusAlterado";
-    public const string EntidadeAuditoria = "Usuario";
     public const string MensagemNaoEncontrado = "Usuário não encontrado.";
 
     private readonly IUsuarioRepository _repositorio;
-    private readonly IAuditLogger _auditoria;
     private readonly ICurrentRequestContext _contexto;
     private readonly ILogger<AlterarStatusUsuarioHandler> _log;
 
     public AlterarStatusUsuarioHandler(
         IUsuarioRepository repositorio,
-        IAuditLogger auditoria,
         ICurrentRequestContext contexto,
         ILogger<AlterarStatusUsuarioHandler> log)
     {
         _repositorio = repositorio;
-        _auditoria = auditoria;
         _contexto = contexto;
         _log = log;
     }
@@ -74,13 +69,6 @@ public sealed class AlterarStatusUsuarioHandler
         _contexto.DefinirEvento(EventoAuditoria);
 
         await _repositorio.SalvarAsync(cancellationToken).ConfigureAwait(false);
-
-        await _auditoria.LogAsync(
-            evento: EventoAuditoria,
-            entidade: EntidadeAuditoria,
-            entidadeId: usuario.Id,
-            dados: new { De = estadoAnterior, Para = usuario.Ativo },
-            cancellationToken: cancellationToken).ConfigureAwait(false);
 
         _log.LogInformation(
             "Status de usuário alterado. UsuarioId={UsuarioId}, De={De}, Para={Para}",
