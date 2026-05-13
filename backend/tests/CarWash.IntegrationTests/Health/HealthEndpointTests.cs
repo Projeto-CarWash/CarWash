@@ -51,19 +51,40 @@ public class HealthEndpointTests : IAsyncDisposable
         values.Should().ContainSingle().Which.Should().Be("req-123_ABC.xyz");
     }
 
-    [Fact]
-    public async Task GET_health_with_invalid_correlation_id_generates_new_value()
+    [Theory]
+    [InlineData("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")]
+    [InlineData("@@@@")]
+    [InlineData("invalid value with spaces")]
+    public async Task GET_health_with_invalid_correlation_id_generates_new_value(string invalidCorrelationId)
     {
         var client = _factory.CreateClient();
         using var request = new HttpRequestMessage(HttpMethod.Get, new Uri("/health", UriKind.Relative));
-        request.Headers.Add("X-Correlation-Id", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@");
+        request.Headers.Add("X-Correlation-Id", invalidCorrelationId);
 
         var response = await client.SendAsync(request);
 
         response.Headers.TryGetValues("X-Correlation-Id", out var values).Should().BeTrue();
         var correlationId = values.Should().ContainSingle().Which;
-        correlationId.Should().NotBe("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@");
-        Guid.TryParseExact(correlationId, "N", out _).Should().BeTrue();
+        correlationId.Should().NotBe(invalidCorrelationId);
+        IsValidCorrelationId(correlationId).Should().BeTrue();
+    }
+
+    private static bool IsValidCorrelationId(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value) || value.Length > 64)
+        {
+            return false;
+        }
+
+        foreach (var c in value)
+        {
+            if (!char.IsAsciiLetterOrDigit(c) && c is not '-' and not '_' and not '.')
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public async ValueTask DisposeAsync()
