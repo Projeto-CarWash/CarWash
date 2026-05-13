@@ -39,10 +39,13 @@ public sealed class CorrelationIdMiddleware
 
     private static string ResolveCorrelationId(HttpContext context)
     {
-        if (context.Request.Headers.TryGetValue(HeaderName, out var valor)
-            && IsValidCorrelationId(valor.ToString()))
+        if (context.Request.Headers.TryGetValue(HeaderName, out var valor))
         {
-            return valor.ToString();
+            var candidate = valor.ToString().Trim();
+            if (IsValidCorrelationId(candidate))
+            {
+                return candidate;
+            }
         }
 
         return Guid.NewGuid().ToString("N");

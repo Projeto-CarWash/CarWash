@@ -21,7 +21,7 @@ public sealed class AuditLogger : IAuditLogger
         _contexto = contexto;
     }
 
-    public async Task LogAsync(
+    public Task LogAsync(
         string evento,
         string entidade,
         Guid? entidadeId = null,
@@ -40,6 +40,6 @@ public sealed class AuditLogger : IAuditLogger
             dados: json);
 
         _db.Set<AuditLog>().Add(log);
-        await _db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        return Task.CompletedTask;
     }
 }
