@@ -38,6 +38,34 @@ public class HealthEndpointTests : IAsyncDisposable
         response.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
     }
 
+    [Fact]
+    public async Task GET_health_with_valid_correlation_id_echoes_header()
+    {
+        var client = _factory.CreateClient();
+        using var request = new HttpRequestMessage(HttpMethod.Get, new Uri("/health", UriKind.Relative));
+        request.Headers.Add("X-Correlation-Id", "req-123_ABC.xyz");
+
+        var response = await client.SendAsync(request);
+
+        response.Headers.TryGetValues("X-Correlation-Id", out var values).Should().BeTrue();
+        values.Should().ContainSingle().Which.Should().Be("req-123_ABC.xyz");
+    }
+
+    [Fact]
+    public async Task GET_health_with_invalid_correlation_id_generates_new_value()
+    {
+        var client = _factory.CreateClient();
+        using var request = new HttpRequestMessage(HttpMethod.Get, new Uri("/health", UriKind.Relative));
+        request.Headers.Add("X-Correlation-Id", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@");
+
+        var response = await client.SendAsync(request);
+
+        response.Headers.TryGetValues("X-Correlation-Id", out var values).Should().BeTrue();
+        var correlationId = values.Should().ContainSingle().Which;
+        correlationId.Should().NotBe("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@");
+        Guid.TryParseExact(correlationId, "N", out _).Should().BeTrue();
+    }
+
     public async ValueTask DisposeAsync()
     {
         await _factory.DisposeAsync();
