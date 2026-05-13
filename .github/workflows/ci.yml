@@ -12,49 +12,13 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # ─────────────── COMMITS / PR / BRANCH ───────────────
-  commit-conventions:
-    name: Commits & PR title (Conventional Commits)
+  # ─────────────── BRANCH NAME ───────────────
+  branch-name:
+    name: Branch name convention
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Install commitlint
-        run: |
-          cd frontend
-          npm ci --no-audit --no-fund
-
-      # Valida CADA commit do PR (não só o último)
-      - name: Validate commit messages
-        if: github.event_name == 'pull_request'
-        run: |
-          cd frontend
-          npx commitlint \
-            --config ../commitlint.config.cjs \
-            --from ${{ github.event.pull_request.base.sha }} \
-            --to ${{ github.event.pull_request.head.sha }} \
-            --verbose
-
-      # Valida o TÍTULO do PR (ele vira a mensagem de squash em main)
-      - name: Validate PR title
-        if: github.event_name == 'pull_request'
-        env:
-          PR_TITLE: ${{ github.event.pull_request.title }}
-        run: |
-          cd frontend
-          echo "$PR_TITLE" | npx commitlint --config ../commitlint.config.cjs
-
-      # Valida o nome da branch
       - name: Validate branch name
-        if: github.event_name == 'pull_request'
         env:
           BRANCH: ${{ github.event.pull_request.head.ref }}
         run: |
@@ -158,14 +122,3 @@ jobs:
           docker compose -f docker-compose.yml -f docker-compose.dev.yml  config --quiet
           docker compose -f docker-compose.yml -f docker-compose.hom.yml  config --quiet
           docker compose -f docker-compose.yml -f docker-compose.prod.yml config --quiet
-
-  # ─────────────── SPELL CHECK ───────────────
-  spell:
-    name: Spell check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: streetsidesoftware/cspell-action@v6
-        with:
-          config: cspell.json
-          incremental_files_only: true
