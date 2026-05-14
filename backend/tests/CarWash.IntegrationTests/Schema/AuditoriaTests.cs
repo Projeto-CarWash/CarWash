@@ -148,6 +148,20 @@ public class AuditoriaTests
         json.Should().Contain("\"cnpj\":\"**.***.***/****-81\"");
     }
 
+    [Fact]
+    public void Auditoria_aplica_mascara_generica_para_cpf_cnpj_nao_validos()
+    {
+        var payload = new
+        {
+            cpf = 123L,
+            cnpj = new { valor = "123" },
+        };
+
+        var json = AuditDataMasker.Mask(payload);
+        json.Should().Contain("\"cpf\":\"***\"");
+        json.Should().Contain("\"cnpj\":\"***\"");
+    }
+
     private static async Task<(Guid, Guid, Guid, Guid)> SemearAsync(CarWashDbContext db)
     {
         var filial = Filial.Criar(Guid.NewGuid(), $"FAud{Guid.NewGuid():N}".Substring(0, 30), 4);
