@@ -65,6 +65,30 @@ public class AuditoriaTests
     }
 
     [Fact]
+    public async Task IAuditLogger_nao_persiste_sem_SaveChanges_do_caller()
+    {
+        AmbientRequestContext.Reset();
+        AmbientRequestContext.DefinirCorrelationId("test-corr-sem-save");
+        ICurrentRequestContext contexto = new AmbientRequestContext();
+
+        await using var db = CarWashDbContextFactoryForTests.Create(_fixture);
+        var logger = new AuditLogger(db, contexto);
+
+        await logger.LogAsync(
+            evento: "EventoSemPersistencia",
+            entidade: "Usuario",
+            entidadeId: null,
+            dados: new { motivo = "teste" }).ConfigureAwait(false);
+
+        await using var verify = CarWashDbContextFactoryForTests.Create(_fixture);
+        var existe = await verify.AuditLogs
+            .AnyAsync(x => x.CorrelationId == "test-corr-sem-save")
+            .ConfigureAwait(false);
+
+        existe.Should().BeFalse();
+    }
+
+    [Fact]
     public async Task Criacao_de_agendamento_grava_audit_log_pelo_interceptor()
     {
         AmbientRequestContext.Reset();
@@ -111,6 +135,34 @@ public class AuditoriaTests
         json.Should().Contain("\"cpf\":\"***.***.447-**\"");
         json.Should().Contain("\"cnpj\":\"**.***.***/****-81\"");
         json.Should().Contain("\"outro\":\"manter\"");
+    }
+
+    [Fact]
+    public void Auditoria_nao_lanca_para_cpf_cnpj_nao_string()
+    {
+        var payload = new
+        {
+            cpf = 39053344705L,
+            cnpj = new { valor = "11222333000181" },
+        };
+
+        var json = AuditDataMasker.Mask(payload);
+        json.Should().Contain("\"cpf\":\"***.***.447-**\"");
+        json.Should().Contain("\"cnpj\":\"**.***.***/****-81\"");
+    }
+
+    [Fact]
+    public void Auditoria_aplica_mascara_generica_para_cpf_cnpj_nao_validos()
+    {
+        var payload = new
+        {
+            cpf = 123L,
+            cnpj = new { valor = "123" },
+        };
+
+        var json = AuditDataMasker.Mask(payload);
+        json.Should().Contain("\"cpf\":\"***\"");
+        json.Should().Contain("\"cnpj\":\"***\"");
     }
 
     private static async Task<(Guid, Guid, Guid, Guid)> SemearAsync(CarWashDbContext db)

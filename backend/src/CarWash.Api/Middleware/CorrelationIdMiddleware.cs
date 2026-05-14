@@ -12,6 +12,7 @@ public sealed class CorrelationIdMiddleware
 {
     public const string HeaderName = "X-Correlation-Id";
     public const string ItemKey = "CorrelationId";
+    private const int MaxCorrelationIdLength = 64;
 
     private readonly RequestDelegate _next;
 
@@ -38,12 +39,33 @@ public sealed class CorrelationIdMiddleware
 
     private static string ResolveCorrelationId(HttpContext context)
     {
-        if (context.Request.Headers.TryGetValue(HeaderName, out var valor)
-            && !string.IsNullOrWhiteSpace(valor.ToString()))
+        if (context.Request.Headers.TryGetValue(HeaderName, out var valor))
         {
-            return valor.ToString();
+            var candidate = valor.ToString().Trim();
+            if (IsValidCorrelationId(candidate))
+            {
+                return candidate;
+            }
         }
 
         return Guid.NewGuid().ToString("N");
+    }
+
+    private static bool IsValidCorrelationId(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value) || value.Length > MaxCorrelationIdLength)
+        {
+            return false;
+        }
+
+        foreach (var c in value)
+        {
+            if (!char.IsAsciiLetterOrDigit(c) && c is not '-' and not '_' and not '.')
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

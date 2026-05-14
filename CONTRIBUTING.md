@@ -184,7 +184,7 @@ Use o template em `.github/PULL_REQUEST_TEMPLATE.md`. Os campos não-opcionais s
 
 ### Gates de merge (bloqueantes)
 
-1. ✅ CI verde (lint, typecheck, build, test, docker validate, spell).
+1. ✅ CI verde (lint, typecheck, build, test, docker validate).
 2. ✅ Pelo menos 1 aprovação.
 3. ✅ Sem conflitos com `main`.
 4. ✅ Conversas resolvidas.

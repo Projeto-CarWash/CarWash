@@ -86,14 +86,14 @@ public static class AuditDataMasker
 
             if (string.Equals(kvp.Key, "cpf", StringComparison.OrdinalIgnoreCase))
             {
-                var valor = kvp.Value?.GetValue<string?>();
+                var valor = ReadTextValue(kvp.Value);
                 alteracoes.Add(new KeyValuePair<string, JsonNode?>(kvp.Key, MaskCpf(valor)));
                 continue;
             }
 
             if (string.Equals(kvp.Key, "cnpj", StringComparison.OrdinalIgnoreCase))
             {
-                var valor = kvp.Value?.GetValue<string?>();
+                var valor = ReadTextValue(kvp.Value);
                 alteracoes.Add(new KeyValuePair<string, JsonNode?>(kvp.Key, MaskCnpj(valor)));
                 continue;
             }
@@ -108,6 +108,26 @@ public static class AuditDataMasker
         {
             obj[alt.Key] = alt.Value;
         }
+    }
+
+    private static string? ReadTextValue(JsonNode? value)
+    {
+        if (value is null)
+        {
+            return null;
+        }
+
+        if (value is JsonValue jsonValue)
+        {
+            if (jsonValue.TryGetValue<string>(out var texto))
+            {
+                return texto;
+            }
+
+            return jsonValue.ToString();
+        }
+
+        return value.ToString();
     }
 
     private static string MaskCpf(string? cpf)
