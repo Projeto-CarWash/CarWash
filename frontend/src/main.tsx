@@ -12,6 +12,3 @@ createRoot(document.getElementById('root')!).render(
     </ThemeProvider>
   </StrictMode>,
 );
-import './index.css';
-
-createRoot(document.getElementById('root')!).render(<StrictMode />);
