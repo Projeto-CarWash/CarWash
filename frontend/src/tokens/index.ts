@@ -1,5 +1,4 @@
 import './borders/borders.css';
-import './spacings/spacins.css';
 import './colors/colors.css';
 import './fontSizes/fontSizes.css';
 import './fontWeights/fontWeights.css';
