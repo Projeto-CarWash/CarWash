@@ -80,7 +80,7 @@ jobs:
         id: backend_exists
         shell: bash
         run: |
-          if compgen -G "backend/**/*.sln" > /dev/null; then
+          if find . -name "*.sln" -print -quit | grep -q .; then
             echo "found=true" >> "$GITHUB_OUTPUT"
           else
             echo "found=false" >> "$GITHUB_OUTPUT"

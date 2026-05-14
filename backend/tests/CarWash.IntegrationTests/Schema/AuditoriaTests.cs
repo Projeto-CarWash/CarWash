@@ -134,6 +134,20 @@ public class AuditoriaTests
         json.Should().Contain("\"outro\":\"manter\"");
     }
 
+    [Fact]
+    public void Auditoria_nao_lanca_para_cpf_cnpj_nao_string()
+    {
+        var payload = new
+        {
+            cpf = 39053344705L,
+            cnpj = new { valor = "11222333000181" },
+        };
+
+        var json = AuditDataMasker.Mask(payload);
+        json.Should().Contain("\"cpf\":\"***.***.447-**\"");
+        json.Should().Contain("\"cnpj\":\"**.***.***/****-81\"");
+    }
+
     private static async Task<(Guid, Guid, Guid, Guid)> SemearAsync(CarWashDbContext db)
     {
         var filial = Filial.Criar(Guid.NewGuid(), $"FAud{Guid.NewGuid():N}".Substring(0, 30), 4);
