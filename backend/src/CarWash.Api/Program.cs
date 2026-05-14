@@ -1,7 +1,7 @@
+using CarWash.Api.Extensions;
 using CarWash.Application;
 using CarWash.Infrastructure;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using Microsoft.OpenApi.Models;
 
 #pragma warning disable CA1861 // Constant array passed as argument — only built once at startup.
 var readyTags = new[] { "ready" };
@@ -17,17 +17,11 @@ var conn = builder.Configuration.GetConnectionString("Default")
 builder.Services.AddHealthChecks()
     .AddNpgSql(conn, name: "postgres", tags: readyTags);
 
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "CarWash API", Version = "v1" }));
+builder.Services.AddCarWashSwagger();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseCarWashSwagger();
 
 app.MapHealthChecks("/health", new HealthCheckOptions { Predicate = _ => false });
 app.MapHealthChecks("/health/ready", new HealthCheckOptions { Predicate = check => check.Tags.Contains("ready") });
