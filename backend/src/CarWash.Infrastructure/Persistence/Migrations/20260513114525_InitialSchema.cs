@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using CarWash.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore.Migrations;
 
