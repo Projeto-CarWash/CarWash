@@ -22,6 +22,7 @@ public class CarWashWebApplicationFactory : WebApplicationFactory<Program>
         await db.Database.EnsureCreatedAsync();
     }
 
+    /// <inheritdoc/>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
