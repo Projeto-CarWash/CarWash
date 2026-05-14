@@ -27,7 +27,7 @@ Ex: feat(back): adiciona constraint UNIQUE global em Agendamento (RF020)
 ## Checklist de DoD
 - [ ] Conventional Commits respeitado em todos os commits e no título do PR
 - [ ] Branch atualizada com `main` via rebase (sem merge commits)
-- [ ] CI verde (lint, typecheck, build, test, docker validate, spell)
+- [ ] CI verde (lint, typecheck, build, test, docker validate)
 - [ ] Cobertura de testes para regra crítica (CA011) quando aplicável
 - [ ] Migration EF Core revisada (se houver) — script SQL gerado e lido
 - [ ] Logs estruturados em pontos críticos (RNF009)

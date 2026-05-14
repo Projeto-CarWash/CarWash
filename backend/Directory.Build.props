@@ -41,6 +41,16 @@
       - SA1503/SA1519: braces around statements quando o estilo permite single-line.
     -->
     <NoWarn>$(NoWarn);SA0001;SA1200;SA1633;SA1101;SA1413;SA1309;SA1503;SA1519</NoWarn>
+    <!--
+      Acomodações para o padrão de Domínio (records com value objects, entidades sealed
+      com construtor privado, enums + extension methods no mesmo arquivo):
+      - SA1201/SA1202/SA1204: ordenação rígida de membros (não condiz com Records).
+      - SA1649: arquivo com vários tipos relacionados (ex.: enum + extensions).
+      - S3877: throw em operador de conversão é proposital para detecção precoce de null.
+      - S1135: TODO em string descritiva (não é literal "TODO" do código).
+      - S1144: setter private "não usado" pelo compilador, usado por EF Core reflexivamente.
+    -->
+    <NoWarn>$(NoWarn);SA1201;SA1202;SA1204;SA1649;S3877;S1135;S1144</NoWarn>
   </PropertyGroup>
 
   <!-- Pacotes comuns a todos os projetos: analisadores (versões em Directory.Packages.props) -->

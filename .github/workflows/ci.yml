@@ -80,7 +80,7 @@ jobs:
         id: backend_exists
         shell: bash
         run: |
-          if compgen -G "backend/**/*.sln" > /dev/null; then
+          if find . -name "*.sln" -print -quit | grep -q .; then
             echo "found=true" >> "$GITHUB_OUTPUT"
           else
             echo "found=false" >> "$GITHUB_OUTPUT"
@@ -118,6 +118,7 @@ jobs:
         env:
           POSTGRES_PASSWORD: ci-only
           JWT_SECRET: ci-only-do-not-use-this-in-real-environments
+          CARWASH_SEED_ADMIN_PASSWORD: ci-only
         run: |
           docker compose -f docker-compose.yml -f docker-compose.dev.yml  config --quiet
           docker compose -f docker-compose.yml -f docker-compose.hom.yml  config --quiet
