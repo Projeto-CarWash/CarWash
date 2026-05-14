@@ -1,0 +1,20 @@
+:root {
+  /* radius */
+  --borderRadius--none: 0px;
+  --borderRadius--sXXS: 4px;
+  --borderRadius--sXS: 6px;
+  --borderRadius--small: 8px;
+  --borderRadius--medium: 15px;
+  --borderRadius--large: 20px;
+  --borderRadius--xl: 24px;
+  --borderRadius--xxl: 27px;
+  --borderRadius--huge: 30px;
+  --borderRadius--giant: 40px;
+
+  /* width */
+  --borderWidths--none: 0px;
+  --borderWidths--sXXS: 0.5px;
+  --borderWidths--sXS: 1px;
+  --borderWidths--small: 2px;
+  --borderWidths--medium: 3px;
+}
