@@ -1,0 +1,330 @@
+.sidebar {
+  border-right-color: color-mix(in srgb, var(--colors--sidebarBorder) 80%, transparent);
+  background:
+    radial-gradient(
+      82% 44% at 8% 0%,
+      color-mix(in srgb, var(--colors--primaryGlow) 40%, transparent),
+      transparent
+    ),
+    linear-gradient(
+      162deg,
+      color-mix(in srgb, var(--colors--sidebar) 88%, var(--colors--surface)) 0%,
+      color-mix(in srgb, var(--colors--sidebar) 94%, transparent) 58%,
+      color-mix(in srgb, var(--colors--background) 82%, var(--colors--sidebar)) 100%
+    );
+  box-shadow:
+    inset -1px 0 0 color-mix(in srgb, var(--colors--borderSoft) 50%, transparent),
+    var(--shadows--md);
+}
+
+.sidebar::before,
+.sidebar::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+}
+
+.sidebar::before {
+  inset: 0;
+  opacity: 0.3;
+  background: repeating-linear-gradient(
+    -24deg,
+    transparent 0 4px,
+    color-mix(in srgb, var(--colors--foregroundSubtle) 6%, transparent) 4px 5px
+  );
+}
+
+.sidebar::after {
+  inset: 0 0 auto 0;
+  height: 8.5rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--colors--borderSoft) 42%, transparent);
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--colors--surfaceOverlay) 35%, transparent),
+    transparent
+  );
+}
+
+.header,
+.content,
+.footer {
+  position: relative;
+  z-index: var(--zIndex--raised);
+}
+
+.header {
+  padding: var(--spacings--sSM);
+  border-bottom: 1px solid color-mix(in srgb, var(--colors--sidebarBorder) 70%, transparent);
+}
+
+.headerTopRow {
+  margin-bottom: var(--spacings--sXS);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mobileTrigger {
+  height: 2rem;
+  width: 2rem;
+  border-radius: var(--borderRadius--full);
+}
+
+.mobileTrigger {
+  display: none;
+}
+
+.brandLink {
+  display: flex;
+  align-items: center;
+  gap: var(--spacings--sXS);
+  text-decoration: none;
+  color: inherit;
+}
+
+.logoFrame {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: var(--borderRadius--xl);
+  background: radial-gradient(
+    100% 100% at 50% 0%,
+    color-mix(in srgb, var(--colors--primaryGlowStrong) 34%, transparent),
+    color-mix(in srgb, var(--colors--primaryStrong) 28%, var(--colors--surface))
+  );
+  border: 1px solid color-mix(in srgb, var(--colors--primary) 48%, var(--colors--borderStrong));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--colors--borderSoft) 25%, transparent),
+    var(--shadows--glow);
+}
+
+.logoIcon {
+  color: var(--colors--primaryForeground);
+}
+
+.brandTextWrapper {
+  display: grid;
+  line-height: var(--lineHeights--tight);
+}
+
+.brandTitle {
+  font-size: var(--fontSizes--xl);
+  font-weight: var(--fontWeights--extrabold);
+  letter-spacing: 0.08em;
+}
+
+.brandTitleHighlight {
+  color: var(--colors--primary);
+}
+
+.version {
+  margin-top: 0.1rem;
+  font-size: var(--fontSizes--xs);
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--colors--foregroundMuted);
+}
+
+.content {
+  padding: var(--spacings--sSM) var(--spacings--sNano) var(--spacings--sXS) var(--spacings--sNano);
+}
+
+.group {
+  margin-bottom: var(--spacings--sSM);
+}
+
+.group:last-child {
+  margin-bottom: 0;
+}
+
+.groupTitle {
+  margin: 0 0 var(--spacings--sXXS) var(--spacings--sXXS);
+  font-size: var(--fontSizes--xs);
+  font-weight: var(--fontWeights--medium);
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--colors--foregroundMuted);
+}
+
+.menuList {
+  display: grid;
+  gap: var(--spacings--sQuark);
+}
+
+.menuItem {
+  border-radius: var(--borderRadius--lg);
+}
+
+.menuButton {
+  border-radius: var(--borderRadius--lg);
+}
+
+.menuButton[data-active='true'] .menuLink {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--colors--primary) 14%, transparent),
+    color-mix(in srgb, var(--colors--surfaceStrong) 72%, transparent)
+  );
+  border-color: color-mix(in srgb, var(--colors--primary) 44%, var(--colors--borderStrong));
+  color: var(--colors--foreground);
+  box-shadow:
+    inset 3px 0 0 var(--colors--primary),
+    0 0 18px color-mix(in srgb, var(--colors--primaryGlow) 52%, transparent);
+}
+
+.menuLink {
+  position: relative;
+  min-height: 2.75rem;
+  padding: var(--spacings--sXXS) var(--spacings--sXXS) var(--spacings--sXXS) var(--spacings--sXS);
+  border-radius: var(--borderRadius--lg);
+  border: 1px solid transparent;
+  display: flex;
+  align-items: center;
+  gap: var(--spacings--sXS);
+  color: var(--colors--foregroundSubtle);
+  text-decoration: none;
+  transition:
+    color var(--transitions--base),
+    border-color var(--transitions--base),
+    transform var(--transitions--fast),
+    background var(--transitions--base),
+    box-shadow var(--transitions--base);
+}
+
+.menuLink:hover {
+  color: var(--colors--foreground);
+  border-color: color-mix(in srgb, var(--colors--borderSoft) 80%, transparent);
+  background: color-mix(in srgb, var(--colors--surfaceMuted) 74%, transparent);
+  transform: translateX(1px);
+}
+
+.menuButton:focus-visible .menuLink,
+.menuLink:focus-visible {
+  outline: 2px solid var(--colors--sidebarRing);
+  outline-offset: 2px;
+}
+
+.menuIcon {
+  flex-shrink: 0;
+}
+
+.menuText {
+  flex: 1;
+  font-size: var(--fontSizes--lg);
+  font-weight: var(--fontWeights--normal);
+  line-height: var(--lineHeights--snug);
+}
+
+.badge {
+  height: 1.35rem;
+  padding: 0 var(--spacings--sQuarkL);
+  border-radius: var(--borderRadius--full);
+  border: 1px solid color-mix(in srgb, var(--colors--borderSoft) 95%, transparent);
+  background: color-mix(in srgb, var(--colors--surfaceStrong) 75%, transparent);
+  color: var(--colors--foregroundMuted);
+  font-size: var(--fontSizes--xs);
+  font-weight: var(--fontWeights--medium);
+}
+
+.menuButton[data-active='true'] .badge {
+  border-color: color-mix(in srgb, var(--colors--primary) 52%, var(--colors--borderStrong));
+  color: var(--colors--primaryForeground);
+  background: color-mix(in srgb, var(--colors--primary) 50%, transparent);
+}
+
+.footer {
+  padding: var(--spacings--sSM);
+  border-top: 1px solid color-mix(in srgb, var(--colors--sidebarBorder) 72%, transparent);
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--colors--surfaceOverlay) 22%, transparent),
+    color-mix(in srgb, var(--colors--surface) 60%, transparent)
+  );
+}
+
+.profileButton {
+  width: 100%;
+  border: 1px solid color-mix(in srgb, var(--colors--borderSoft) 62%, transparent);
+  border-radius: var(--borderRadius--xl);
+  padding: var(--spacings--sXXS);
+  background: color-mix(in srgb, var(--colors--surface) 76%, transparent);
+  display: flex;
+  align-items: center;
+  gap: var(--spacings--sXXS);
+  color: var(--colors--foreground);
+  transition:
+    border-color var(--transitions--base),
+    box-shadow var(--transitions--base),
+    transform var(--transitions--fast);
+}
+
+.profileButton:hover {
+  border-color: color-mix(in srgb, var(--colors--primary) 42%, var(--colors--borderStrong));
+  box-shadow: var(--shadows--glow);
+}
+
+.profileButton:focus-visible {
+  outline: 2px solid var(--colors--sidebarRing);
+  outline-offset: 2px;
+}
+
+.avatar {
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--borderRadius--full);
+  display: grid;
+  place-items: center;
+  font-size: var(--fontSizes--xs);
+  font-weight: var(--fontWeights--semibold);
+  color: var(--colors--foreground);
+  background: color-mix(in srgb, var(--colors--surfaceStrong) 78%, transparent);
+  border: 1px solid color-mix(in srgb, var(--colors--borderSoft) 78%, transparent);
+}
+
+.profileMeta {
+  display: grid;
+  text-align: left;
+  flex: 1;
+}
+
+.profileName {
+  font-size: var(--fontSizes--base);
+  font-weight: var(--fontWeights--semibold);
+  letter-spacing: 0.01em;
+}
+
+.profileRole {
+  font-size: var(--fontSizes--xs);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--colors--foregroundMuted);
+}
+
+.profileIcon {
+  color: var(--colors--foregroundMuted);
+}
+
+@media (max-width: 960px) {
+  .mobileTrigger {
+    display: inline-flex;
+  }
+
+  .collapseButton {
+    display: none;
+  }
+
+  .sidebar {
+    width: min(21rem, 90vw);
+  }
+}
+
+@media (max-width: 640px) {
+  .menuText {
+    font-size: var(--fontSizes--base);
+  }
+
+  .brandTitle {
+    font-size: var(--fontSizes--lg);
+  }
+}
