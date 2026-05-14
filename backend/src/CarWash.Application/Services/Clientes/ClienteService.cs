@@ -63,7 +63,7 @@ public class ClienteService : IClienteService
             endereco,
             observacoes);
 
-        await clienteRepository.AdicionarAsync(cliente, cancellationToken);
+        await clienteRepository.AdicionarAsync(cliente, traceId, usuarioId, cancellationToken);
 
         return new CreateClienteResponse
         {

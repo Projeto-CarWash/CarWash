@@ -66,7 +66,7 @@ public class ClienteConfiguration : IEntityTypeConfiguration<Cliente>
 
         builder.HasCheckConstraint(
             "ck_clientes_cpf_ou_cnpj",
-            "cpf IS NOT NULL OR cnpj IS NOT NULL");
+            "(cpf is not null and cnpj is null) or (cpf is null and cnpj is not null)");
 
         builder.HasCheckConstraint(
             "ck_clientes_telefone_somente_digitos",

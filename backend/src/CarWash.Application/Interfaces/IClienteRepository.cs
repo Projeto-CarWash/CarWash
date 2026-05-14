@@ -10,5 +10,5 @@ public interface IClienteRepository
 
     Task<Cliente?> ObterPorIdAsync(Guid id, CancellationToken cancellationToken);
 
-    Task AdicionarAsync(Cliente cliente, CancellationToken cancellationToken);
+    Task AdicionarAsync(Cliente cliente, string coreelationId, Guid? usuarioId,  CancellationToken cancellationToken);
 }

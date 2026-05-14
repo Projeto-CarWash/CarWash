@@ -32,4 +32,14 @@ public static class InputNormalizer
 
         return normalized?.ToLowerInvariant();
     }
+
+    public static bool ContainsOnlyDigits(string? value)
+    {
+        if(string.IsNullOrWhiteSpace(value))
+        {
+            return false;
+        }
+
+        return Regex.IsMatch(value.Trim(), @"^\d+$");
+    }
 }

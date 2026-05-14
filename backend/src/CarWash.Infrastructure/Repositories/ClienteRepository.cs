@@ -1,8 +1,11 @@
 using System.Text.Json;
+using CarWash.Application.Exceptions;
 using CarWash.Application.Interfaces;
 using CarWash.Domain.Entities;
 using CarWash.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
+using PostgresErrorCodes = Npgsql.PostgresErrorCodes;
 
 namespace CarWash.Infrastructure.Repositories;
 
@@ -36,7 +39,7 @@ public class ClienteRepository : IClienteRepository
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     }
 
-    public async Task AdicionarAsync(Cliente cliente, CancellationToken cancellationToken)
+    public async Task AdicionarAsync(Cliente cliente, string correlationId, Guid? usuarioId, CancellationToken cancellationToken)
     {
         await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
 
@@ -46,8 +49,8 @@ public class ClienteRepository : IClienteRepository
             evento: "CLIENTE_CRIADO",
             entidade: "clientes",
             entidadeId: cliente.Id,
-            usuarioId: null,
-            correlationId: "repository",
+            usuarioId: usuarioId,
+            correlationId: correlationId,
             dados: JsonSerializer.Serialize(new
             {
                 cliente.Id,
@@ -60,9 +63,16 @@ public class ClienteRepository : IClienteRepository
 
         await context.AuditLogs.AddAsync(audit, cancellationToken);
 
-        await context.SaveChangesAsync(cancellationToken);
-
-        await transaction.CommitAsync(cancellationToken);
+        try
+        {
+            await context.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex) when (IsUniqueViolation(ex))
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw new ClienteDocumentoDuplicadoException();
+        }
     }
 
     private static string? MascararDocumento(string? documento)
@@ -78,5 +88,11 @@ public class ClienteRepository : IClienteRepository
         }
 
         return $"***{documento[^4..]}";
+    }
+
+    private static bool IsUniqueViolation(DbUpdateException exception)
+    {
+        return exception.InnerException is PostgresException postgresException
+            && postgresException.SqlState == PostgresErrorCodes.UniqueViolation;
     }
 }

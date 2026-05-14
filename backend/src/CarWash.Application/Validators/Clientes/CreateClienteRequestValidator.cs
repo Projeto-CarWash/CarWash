@@ -9,9 +9,12 @@ public class CreateClienteRequestValidator : AbstractValidator<CreateClienteRequ
     public CreateClienteRequestValidator()
     {
         RuleFor(x => x.Nome)
-            .NotEmpty()
+            .Cascade(CascadeMode.Stop)
+            .Must(nome => !string.IsNullOrWhiteSpace(InputNormalizer.TrimOrNull(nome)))
             .WithMessage("O nome é obrigatório.")
-            .MaximumLength(100)
+            .Must(nome => InputNormalizer.TrimOrNull(nome)!.Length >= 3)
+            .WithMessage("O nome deve ter no mínimo 3 caracteres.")
+            .Must(nome => InputNormalizer.TrimOrNull(nome)!.Length <= 100)
             .WithMessage("O nome deve ter no máximo 100 caracteres.");
 
         RuleFor(x => x)
@@ -35,16 +38,24 @@ public class CreateClienteRequestValidator : AbstractValidator<CreateClienteRequ
             .WithMessage("CNPJ inválido.");
 
         RuleFor(x => x)
-            .Must(x => !string.IsNullOrWhiteSpace(x.Telefone) || !string.IsNullOrWhiteSpace(x.Celular))
+            .Must(x => InputNormalizer.OnlyDigitsOrNull(x.Telefone) is not null || InputNormalizer.OnlyDigitsOrNull(x.Celular) is not null)
             .WithName("contato")
             .WithMessage("Informe telefone ou celular.");
 
         RuleFor(x => x.Telefone)
+            .Cascade(CascadeMode.Stop)
+            .Must(InputNormalizer.ContainsOnlyDigits)
+            .When(x => !string.IsNullOrWhiteSpace(x.Telefone))
+            .WithMessage("Telefone deve conter apenas números.")
             .Must(x => InputNormalizer.OnlyDigitsOrNull(x) is null || InputNormalizer.OnlyDigitsOrNull(x)!.Length is >= 10 and <= 11)
             .WithMessage("Telefone deve conter entre 10 e 11 dígitos.");
 
         RuleFor(x => x.Celular)
-            .Must(x => InputNormalizer.OnlyDigitsOrNull(x) is null || InputNormalizer.OnlyDigitsOrNull(x)!.Length is 11)
+            .Cascade(CascadeMode.Stop)
+            .Must(InputNormalizer.ContainsOnlyDigits)
+            .When(x => !string.IsNullOrWhiteSpace(x.Celular))
+            .WithMessage("Celular deve conter apenas números.")
+            .Must(x => InputNormalizer.OnlyDigitsOrNull(x) is null || InputNormalizer.OnlyDigitsOrNull(x)!.Length == 11)
             .WithMessage("Celular deve conter 11 dígitos.");
 
         RuleFor(x => x.Email)
