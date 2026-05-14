@@ -1,4 +1,6 @@
+using CarWash.Application.Interfaces;
 using CarWash.Infrastructure.Persistence;
+using CarWash.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,6 +17,8 @@ public static class DependencyInjection
         services.AddDbContext<CarWashDbContext>(opt =>
             opt.UseNpgsql(conn, npg => npg.MigrationsHistoryTable("__ef_migrations_history", "public"))
                .UseSnakeCaseNamingConvention());
+
+        services.AddScoped<IClienteRepository, ClienteRepository>();
 
         return services;
     }
