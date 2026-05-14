@@ -53,16 +53,22 @@ export default defineConfig([
     },
     rules: {
       // TypeScript strict
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports' }],
-      '@typescript-eslint/no-misused-promises': ['error', { checksVoidReturn: { attributes: false } }],
+      '@typescript-eslint/no-misused-promises': [
+        'error',
+        { checksVoidReturn: { attributes: false } },
+      ],
       '@typescript-eslint/no-floating-promises': 'error',
 
       // React
-      'react/jsx-uses-react': 'off',          // React 17+ JSX transform
-      'react/react-in-jsx-scope': 'off',       // idem
-      'react/prop-types': 'off',               // usamos TS
+      'react/jsx-uses-react': 'off', // React 17+ JSX transform
+      'react/react-in-jsx-scope': 'off', // idem
+      'react/prop-types': 'off', // usamos TS
       'react/self-closing-comp': 'error',
       'react/jsx-curly-brace-presence': ['warn', { props: 'never', children: 'never' }],
 
