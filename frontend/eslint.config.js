@@ -8,6 +8,7 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
 import importX from 'eslint-plugin-import-x';
+import { createTypeScriptImportResolver } from 'eslint-import-resolver-typescript';
 import prettierConfig from 'eslint-config-prettier';
 import { defineConfig, globalIgnores } from 'eslint/config';
 
@@ -36,7 +37,7 @@ export default defineConfig([
       jsxA11y.flatConfigs.recommended,
       importX.flatConfigs.recommended,
       importX.flatConfigs.typescript,
-      prettierConfig, // SEMPRE por último — desliga regras que conflitam com Prettier
+      prettierConfig,
     ],
     languageOptions: {
       ecmaVersion: 2023,
@@ -49,7 +50,10 @@ export default defineConfig([
     },
     settings: {
       react: { version: 'detect' },
-      'import-x/resolver-next': [importX.createNodeResolver()],
+      'import-x/resolver-next': [
+        createTypeScriptImportResolver({ project: './tsconfig.app.json' }),
+        importX.createNodeResolver(),
+      ],
     },
     rules: {
       // TypeScript strict

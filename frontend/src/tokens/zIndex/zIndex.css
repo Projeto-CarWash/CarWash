@@ -1,0 +1,12 @@
+:root {
+  --zIndex--hide: -1;
+  --zIndex--base: 0;
+  --zIndex--raised: 10;
+  --zIndex--dropdown: 100;
+  --zIndex--sticky: 200;
+  --zIndex--overlay: 300;
+  --zIndex--modal: 400;
+  --zIndex--popover: 500;
+  --zIndex--toast: 600;
+  --zIndex--tooltip: 700;
+}
