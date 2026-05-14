@@ -1,12 +1,8 @@
-import type { CSSProperties, ReactNode } from 'react'
-import { allCssVars } from '@/tokens'
+import type { ReactNode } from 'react';
+import '../tokens/index.ts';
 
-type ThemeProviderProps = {
-  children: ReactNode
+interface ThemeProviderProps {
+  children: ReactNode;
 }
 
-export const ThemeProvider = ({ children }: ThemeProviderProps) => (
-  <div style={allCssVars() as CSSProperties}>
-    {children}
-  </div>
-)
+export const ThemeProvider = ({ children }: ThemeProviderProps) => <div>{children}</div>;

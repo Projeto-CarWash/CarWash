@@ -1,0 +1,25 @@
+:root {
+  --spacings--sZero: 0px;
+  --spacings--sQuarkSmall: 2px;
+  --spacings--sQuark: 4px;
+  --spacings--sQuarkL: 8px;
+  --spacings--sNano: 9.5px;
+  --spacings--sXXXS: 10px;
+  --spacings--sXXS: 12px;
+  --spacings--sXS: 16px;
+  --spacings--sSmall: 20px;
+  --spacings--sMedium: 24px;
+  --spacings--sLarge: 28px;
+  --spacings--sX: 32px;
+  --spacings--sXL: 36px;
+  --spacings--sXXL: 42px;
+  --spacings--lXS: 48px;
+  --spacings--lSmall: 56px;
+  --spacings--lMedium: 64px;
+  --spacings--lLarge: 80px;
+  --spacings--lXLS: 84px;
+  --spacings--lXL: 92px;
+  --spacings--lXXL: 120px;
+  --spacings--lHuge: 160px;
+  --spacings--lGiant: 216px;
+}
