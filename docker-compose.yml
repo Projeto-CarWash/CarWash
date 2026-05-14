@@ -23,7 +23,7 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-carwash}
       POSTGRES_USER: ${POSTGRES_USER:-carwash_owner}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-carwash123}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - pgdata:/var/lib/postgresql/data
