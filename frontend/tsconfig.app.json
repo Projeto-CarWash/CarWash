@@ -15,6 +15,12 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
+    /* Path mapping */
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+
     /* Strict mode — fundamento para evitar `any` implícito e null silencioso */
     "strict": true,
     "noImplicitAny": true,
