@@ -10,6 +10,6 @@
       Em testes é convenção (xUnit) usar nomes de método com '_' para legibilidade
       (ex.: GET_health_returns_200_Healthy). Suprimir CA1707 só em testes.
     -->
-    <NoWarn>$(NoWarn);CA1707;CA1711</NoWarn>
+    <NoWarn>$(NoWarn);CA1707;CA1711;xUnit1030;CA1859;CA2007;SA1316;SA1414</NoWarn>
   </PropertyGroup>
 </Project>
