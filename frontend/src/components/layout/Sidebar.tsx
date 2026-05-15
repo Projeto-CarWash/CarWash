@@ -35,12 +35,15 @@ export function Sidebar() {
   return (
     <aside className="fixed left-0 top-0 bottom-0 z-40 flex w-64 flex-col border-r border-zinc-800/60 bg-zinc-950">
       <div className="flex items-center gap-3 px-5 py-5">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-600 shadow-lg shadow-red-600/25">
-          <Car className="h-5 w-5 text-white" />
+        <div className="flex h-12 w-12 items-center justify-center">
+          <img src="/logo.png" alt="Logo" className="h-full w-full object-contain" />
         </div>
         <div>
-          <h1 className="text-sm font-bold tracking-wide text-zinc-50">CARWASH</h1>
-          <p className="text-[10px] font-medium tracking-widest text-zinc-500">ADMIN / v2.4</p>
+          <h1 className="text-lg font-black tracking-wider">
+            <span className="text-zinc-50">CAR</span>
+            <span className="text-red-600">WASH</span>
+          </h1>
+          <p className="text-[10.5px] font-bold tracking-[0.2em] text-zinc-500 mt-0.5">ADMIN <span className="text-zinc-600 px-0.5">•</span> v2.4</p>
         </div>
       </div>
 
@@ -53,14 +56,17 @@ export function Sidebar() {
             <li key={link.label}>
               <button
                 type="button"
-                className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all ${
+                className={`group relative flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all ${
                   link.active
-                    ? 'border-l-2 border-red-600 bg-zinc-800/60 text-red-500'
+                    ? 'bg-gradient-to-r from-red-600/20 to-transparent text-white'
                     : 'text-zinc-400 hover:bg-zinc-800/40 hover:text-zinc-200'
                 }`}
               >
+                {link.active && (
+                  <div className="absolute -left-3 top-1/2 h-8 w-1.5 -translate-y-1/2 rounded-r-full bg-red-600" />
+                )}
                 <link.icon
-                  className={`h-4 w-4 ${link.active ? 'text-red-500' : 'text-zinc-500'}`}
+                  className={`h-4 w-4 ${link.active ? 'text-white' : 'text-zinc-500'}`}
                 />
                 <span>{link.label}</span>
                 {link.badge && (
