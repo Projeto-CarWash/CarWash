@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AlertCircle, Check, ChevronRight, X } from 'lucide-react';
 import { useCallback, useState } from 'react';
-import { FormProvider, useForm } from 'react-hook-form';
+import { FormProvider, useForm, useWatch } from 'react-hook-form';
 
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -46,9 +46,9 @@ export function NovoClientePage() {
     },
   });
 
-  const cpfCnpj = form.watch('cpfCnpj');
-  const dataNascimento = form.watch('dataNascimento');
-  const nome = form.watch('nome');
+  const cpfCnpj = useWatch({ control: form.control, name: 'cpfCnpj' }) || '';
+  const dataNascimento = useWatch({ control: form.control, name: 'dataNascimento' }) || '';
+  const nome = useWatch({ control: form.control, name: 'nome' }) || '';
 
   const cpfDigits = cpfCnpj.replace(/\D/g, '');
   const dateDigits = dataNascimento.replace(/\D/g, '');
@@ -150,7 +150,10 @@ export function NovoClientePage() {
 
         <div className="rounded-2xl border border-zinc-800/60 bg-zinc-900/30 p-8">
           {globalError && (
-            <div role="alert" className="mb-6 flex items-start gap-3 rounded-xl border border-red-500/30 bg-red-950/30 px-4 py-3">
+            <div
+              role="alert"
+              className="mb-6 flex items-start gap-3 rounded-xl border border-red-500/30 bg-red-950/30 px-4 py-3"
+            >
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
               <div className="flex-1">
                 <p className="text-sm font-medium text-red-400">{globalError}</p>
@@ -166,7 +169,10 @@ export function NovoClientePage() {
           )}
 
           {successMsg && (
-            <div role="status" className="mb-6 flex items-start gap-3 rounded-xl border border-green-500/30 bg-green-950/30 px-4 py-3">
+            <div
+              role="status"
+              className="mb-6 flex items-start gap-3 rounded-xl border border-green-500/30 bg-green-950/30 px-4 py-3"
+            >
               <Check className="mt-0.5 h-4 w-4 shrink-0 text-green-500" />
               <p className="flex-1 text-sm font-medium text-green-400">{successMsg}</p>
               <button
