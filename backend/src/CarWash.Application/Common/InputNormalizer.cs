@@ -42,4 +42,18 @@ public static class InputNormalizer
 
         return Regex.IsMatch(value.Trim(), @"^\d+$");
     }
+
+    public static string? SanitizeTextOrNull(string? value)
+    {
+        string? normalized = TrimOrNull(value);
+
+        if (normalized is null)
+        {
+            return null;
+        }
+
+        return normalized
+            .Replace("<", string.Empty)
+            .Replace(">", string.Empty);
+    }
 }

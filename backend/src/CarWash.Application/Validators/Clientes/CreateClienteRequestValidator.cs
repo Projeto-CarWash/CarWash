@@ -28,11 +28,25 @@ public class CreateClienteRequestValidator : AbstractValidator<CreateClienteRequ
             .WithMessage("Informe apenas CPF ou CNPJ, não ambos.");
 
         RuleFor(x => x.Cpf)
+            .Cascade(CascadeMode.Stop)
+            .Must(InputNormalizer.ContainsOnlyDigits)
+            .When(x => !string.IsNullOrWhiteSpace(x.Cpf))
+            .WithMessage("CPF deve conter apenas números.")
+            .Length(11)
+            .When(x => !string.IsNullOrWhiteSpace(x.Cpf))
+            .WithMessage("CPF deve conter 11 dígitos.")
             .Must(DocumentoValidator.CpfValido)
             .When(x => !string.IsNullOrWhiteSpace(x.Cpf))
             .WithMessage("CPF inválido.");
 
         RuleFor(x => x.Cnpj)
+            .Cascade(CascadeMode.Stop)
+            .Must(InputNormalizer.ContainsOnlyDigits)
+            .When(x => !string.IsNullOrWhiteSpace(x.Cnpj))
+            .WithMessage("CNPJ deve conter apenas números.")
+            .Length(14)
+            .When(x => !string.IsNullOrWhiteSpace(x.Cnpj))
+            .WithMessage("CNPJ deve conter 14 dígitos.")
             .Must(DocumentoValidator.CnpjValido)
             .When(x => !string.IsNullOrWhiteSpace(x.Cnpj))
             .WithMessage("CNPJ inválido.");
@@ -59,18 +73,23 @@ public class CreateClienteRequestValidator : AbstractValidator<CreateClienteRequ
             .WithMessage("Celular deve conter 11 dígitos.");
 
         RuleFor(x => x.Email)
+            .Cascade(CascadeMode.Stop)
+            .MinimumLength(5)
+            .When(x => !string.IsNullOrWhiteSpace(x.Email))
+            .WithMessage("E-mail deve ter no mínimo 5 caracteres.")
+            .MaximumLength(150)
+            .When(x => !string.IsNullOrWhiteSpace(x.Email))
+            .WithMessage("E-mail deve ter no máximo 150 caracteres.")
             .EmailAddress()
             .When(x => !string.IsNullOrWhiteSpace(x.Email))
-            .WithMessage("E-mail inválido.")
-            .MaximumLength(150)
-            .WithMessage("E-mail deve ter no máximo 150 caracteres.");
+            .WithMessage("E-mail inválido.");
 
         RuleFor(x => x.Endereco)
             .MaximumLength(255)
             .WithMessage("Endereço deve ter no máximo 255 caracteres.");
 
         RuleFor(x => x.Observacoes)
-            .MaximumLength(5000)
-            .WithMessage("Observações deve ter no máximo 5000 caracteres.");
+            .Must(x => InputNormalizer.SanitizeTextOrNull(x) is null || InputNormalizer.SanitizeTextOrNull(x)!.Length <= 500)
+            .WithMessage("Observações deve ter no máximo 500 caracteres.");
     }
 }
