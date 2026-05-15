@@ -28,7 +28,9 @@ function getStatus(stepId: number, currentStep: number): StepStatus {
 export function Stepper({ currentStep = 1 }: StepperProps) {
   return (
     <aside className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-6">
-      <p className="mb-1 text-[10px] font-bold tracking-[0.2em] text-zinc-500">CADASTRO DE CLIENTE</p>
+      <p className="mb-1 text-[10px] font-bold tracking-[0.2em] text-zinc-500">
+        CADASTRO DE CLIENTE
+      </p>
       <h2 className="mb-1 text-xl font-semibold text-zinc-100">Identifique-se</h2>
       <p className="mb-6 text-sm text-zinc-500">
         Preencha todos os dados para não ter erro na hora do agendamento.
@@ -56,7 +58,9 @@ export function Stepper({ currentStep = 1 }: StepperProps) {
               <div className="min-w-0">
                 <p
                   className={`text-sm font-semibold transition-colors duration-500 ${
-                    status === 'complete' || status === 'current' ? 'text-zinc-200' : 'text-zinc-400'
+                    status === 'complete' || status === 'current'
+                      ? 'text-zinc-200'
+                      : 'text-zinc-400'
                   }`}
                 >
                   {step.title}

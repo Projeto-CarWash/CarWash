@@ -21,15 +21,12 @@ export function IdentificacaoForm() {
   const dateError = errors.dataNascimento;
   const nomeError = errors.nome;
 
-  const handleDocBlur = useCallback(
-    (value: string, rhfOnBlur: () => void) => {
-      rhfOnBlur();
-      if (value.replace(/\D/g, '').length > 0) {
-        setIsDocLocked(true);
-      }
-    },
-    [],
-  );
+  const handleDocBlur = useCallback((value: string, rhfOnBlur: () => void) => {
+    rhfOnBlur();
+    if (value.replace(/\D/g, '').length > 0) {
+      setIsDocLocked(true);
+    }
+  }, []);
 
   const handleEditClick = useCallback(() => {
     setIsDocLocked(false);
@@ -57,8 +54,7 @@ export function IdentificacaoForm() {
             control={control}
             render={({ field }) => {
               const digits = field.value.replace(/\D/g, '');
-              const isValid =
-                (digits.length === 11 || digits.length === 14) && !cpfError;
+              const isValid = (digits.length === 11 || digits.length === 14) && !cpfError;
 
               return (
                 <>
@@ -97,7 +93,11 @@ export function IdentificacaoForm() {
                     </p>
                   )}
                   {cpfError && (
-                    <p id="cpf-error" role="alert" className="flex items-center gap-1.5 text-xs text-red-500">
+                    <p
+                      id="cpf-error"
+                      role="alert"
+                      className="flex items-center gap-1.5 text-xs text-red-500"
+                    >
                       <X className="h-3.5 w-3.5" />
                       {cpfError.message}
                     </p>
@@ -133,7 +133,11 @@ export function IdentificacaoForm() {
                   }`}
                 />
                 {dateError && (
-                  <p id="birth-error" role="alert" className="flex items-center gap-1.5 text-xs text-red-500">
+                  <p
+                    id="birth-error"
+                    role="alert"
+                    className="flex items-center gap-1.5 text-xs text-red-500"
+                  >
                     <X className="h-3.5 w-3.5" />
                     {dateError.message}
                   </p>
@@ -168,7 +172,11 @@ export function IdentificacaoForm() {
                   }`}
                 />
                 {nomeError && (
-                  <p id="name-error" role="alert" className="flex items-center gap-1.5 text-xs text-red-500">
+                  <p
+                    id="name-error"
+                    role="alert"
+                    className="flex items-center gap-1.5 text-xs text-red-500"
+                  >
                     <X className="h-3.5 w-3.5" />
                     {nomeError.message}
                   </p>

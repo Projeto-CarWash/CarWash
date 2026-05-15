@@ -56,7 +56,11 @@ export function ContatoEnderecoForm() {
                   />
                 </div>
                 {errors.telefone && (
-                  <p id="phone-error" role="alert" className="flex items-center gap-1.5 text-xs text-red-500">
+                  <p
+                    id="phone-error"
+                    role="alert"
+                    className="flex items-center gap-1.5 text-xs text-red-500"
+                  >
                     <X className="h-3.5 w-3.5" />
                     {errors.telefone.message}
                   </p>
@@ -96,7 +100,11 @@ export function ContatoEnderecoForm() {
                   />
                 </div>
                 {errors.celular && (
-                  <p id="celular-error" role="alert" className="flex items-center gap-1.5 text-xs text-red-500">
+                  <p
+                    id="celular-error"
+                    role="alert"
+                    className="flex items-center gap-1.5 text-xs text-red-500"
+                  >
                     <X className="h-3.5 w-3.5" />
                     {errors.celular.message}
                   </p>
@@ -129,7 +137,11 @@ export function ContatoEnderecoForm() {
                   }`}
                 />
                 {errors.email && (
-                  <p id="email-error" role="alert" className="flex items-center gap-1.5 text-xs text-red-500">
+                  <p
+                    id="email-error"
+                    role="alert"
+                    className="flex items-center gap-1.5 text-xs text-red-500"
+                  >
                     <X className="h-3.5 w-3.5" />
                     {errors.email.message}
                   </p>
@@ -164,7 +176,11 @@ export function ContatoEnderecoForm() {
                   }`}
                 />
                 {errors.cep && (
-                  <p id="cep-error" role="alert" className="flex items-center gap-1.5 text-xs text-red-500">
+                  <p
+                    id="cep-error"
+                    role="alert"
+                    className="flex items-center gap-1.5 text-xs text-red-500"
+                  >
                     <X className="h-3.5 w-3.5" />
                     {errors.cep.message}
                   </p>
@@ -197,7 +213,11 @@ export function ContatoEnderecoForm() {
                   }`}
                 />
                 {errors.cidade && (
-                  <p id="city-error" role="alert" className="flex items-center gap-1.5 text-xs text-red-500">
+                  <p
+                    id="city-error"
+                    role="alert"
+                    className="flex items-center gap-1.5 text-xs text-red-500"
+                  >
                     <X className="h-3.5 w-3.5" />
                     {errors.cidade.message}
                   </p>
@@ -230,7 +250,11 @@ export function ContatoEnderecoForm() {
                   }`}
                 />
                 {errors.rua && (
-                  <p id="street-error" role="alert" className="flex items-center gap-1.5 text-xs text-red-500">
+                  <p
+                    id="street-error"
+                    role="alert"
+                    className="flex items-center gap-1.5 text-xs text-red-500"
+                  >
                     <X className="h-3.5 w-3.5" />
                     {errors.rua.message}
                   </p>
@@ -263,7 +287,11 @@ export function ContatoEnderecoForm() {
                   }`}
                 />
                 {errors.numero && (
-                  <p id="number-error" role="alert" className="flex items-center gap-1.5 text-xs text-red-500">
+                  <p
+                    id="number-error"
+                    role="alert"
+                    className="flex items-center gap-1.5 text-xs text-red-500"
+                  >
                     <X className="h-3.5 w-3.5" />
                     {errors.numero.message}
                   </p>
@@ -304,7 +332,11 @@ export function ContatoEnderecoForm() {
                 />
                 <div className="flex items-center justify-between">
                   {errors.observacoes ? (
-                    <p id="obs-error" role="alert" className="flex items-center gap-1.5 text-xs text-red-500">
+                    <p
+                      id="obs-error"
+                      role="alert"
+                      className="flex items-center gap-1.5 text-xs text-red-500"
+                    >
                       <X className="h-3.5 w-3.5" />
                       {errors.observacoes.message}
                     </p>

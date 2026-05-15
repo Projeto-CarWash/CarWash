@@ -22,9 +22,7 @@ export function BottomBar() {
       <div className="flex flex-1 items-center gap-0 overflow-hidden">
         {items.map((item, index) => (
           <div key={index} className="flex shrink-0 items-center">
-            {index > 0 && (
-              <span className="mx-2 text-red-600/70 select-none">/</span>
-            )}
+            {index > 0 && <span className="mx-2 text-red-600/70 select-none">/</span>}
             {item.type === 'status' && (
               <span className="flex items-center gap-1.5">
                 <span className="inline-block h-1.5 w-1.5 rounded-full bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.6)]" />
@@ -34,15 +32,9 @@ export function BottomBar() {
             {item.type === 'box' && (
               <span className="font-semibold text-zinc-400">{item.text}</span>
             )}
-            {item.type === 'car' && (
-              <span className="text-zinc-500">{item.text}</span>
-            )}
-            {item.type === 'time' && (
-              <span className="text-zinc-600">{item.text}</span>
-            )}
-            {item.type === 'telemetry' && (
-              <span className="text-zinc-500">{item.text}</span>
-            )}
+            {item.type === 'car' && <span className="text-zinc-500">{item.text}</span>}
+            {item.type === 'time' && <span className="text-zinc-600">{item.text}</span>}
+            {item.type === 'telemetry' && <span className="text-zinc-500">{item.text}</span>}
           </div>
         ))}
       </div>
