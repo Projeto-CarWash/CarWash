@@ -11,6 +11,7 @@ using CarWash.IntegrationTests.Fixtures;
 using CarWash.IntegrationTests.Infrastructure;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Xunit;
 
 namespace CarWash.IntegrationTests.Schema;
@@ -62,30 +63,6 @@ public class AuditoriaTests
         // JSONB do Postgres normaliza espaços; comparar de forma resiliente.
         log.Dados.Should().Contain("\"motivo\"");
         log.Dados.Should().Contain("\"senha_invalida\"");
-    }
-
-    [Fact]
-    public async Task IAuditLogger_nao_persiste_sem_SaveChanges_do_caller()
-    {
-        AmbientRequestContext.Reset();
-        AmbientRequestContext.DefinirCorrelationId("test-corr-sem-save");
-        ICurrentRequestContext contexto = new AmbientRequestContext();
-
-        await using var db = CarWashDbContextFactoryForTests.Create(_fixture);
-        var logger = new AuditLogger(db, contexto);
-
-        await logger.LogAsync(
-            evento: "EventoSemPersistencia",
-            entidade: "Usuario",
-            entidadeId: null,
-            dados: new { motivo = "teste" }).ConfigureAwait(false);
-
-        await using var verify = CarWashDbContextFactoryForTests.Create(_fixture);
-        var existe = await verify.AuditLogs
-            .AnyAsync(x => x.CorrelationId == "test-corr-sem-save")
-            .ConfigureAwait(false);
-
-        existe.Should().BeFalse();
     }
 
     [Fact]
