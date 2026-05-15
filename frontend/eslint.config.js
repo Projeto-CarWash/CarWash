@@ -79,6 +79,10 @@ export default defineConfig([
       // Hooks
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'error',
+      'react-refresh/only-export-components': [
+        'warn',
+        { allowConstantExport: true, allowExportNames: ['badgeVariants', 'buttonVariants'] },
+      ],
 
       // Acessibilidade — RNF008
       'jsx-a11y/anchor-is-valid': 'error',
