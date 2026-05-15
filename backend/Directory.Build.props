@@ -49,8 +49,11 @@
       - S3877: throw em operador de conversão é proposital para detecção precoce de null.
       - S1135: TODO em string descritiva (não é literal "TODO" do código).
       - S1144: setter private "não usado" pelo compilador, usado por EF Core reflexivamente.
+      - CA1848: LoggerMessage delegates é otimização de hot path; nossos handlers
+        ficam no nível HTTP (baixa frequência) — preferimos ILogger.LogXxx direto
+        para legibilidade.
     -->
-    <NoWarn>$(NoWarn);SA1201;SA1202;SA1204;SA1649;S3877;S1135;S1144</NoWarn>
+    <NoWarn>$(NoWarn);SA1201;SA1202;SA1204;SA1649;S3877;S1135;S1144;CA1848</NoWarn>
   </PropertyGroup>
 
   <!-- Pacotes comuns a todos os projetos: analisadores (versões em Directory.Packages.props) -->

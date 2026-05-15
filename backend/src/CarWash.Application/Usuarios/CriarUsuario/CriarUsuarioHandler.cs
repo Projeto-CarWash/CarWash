@@ -89,7 +89,7 @@ public sealed class CriarUsuarioHandler : ICommandHandler<CriarUsuarioCommand, U
         }
         catch (DbUpdateException ex) when (IsEmailUniqueViolation(ex))
         {
-            _log.LogWarning("Race condition de e-mail duplicado capturada pela UK uk_usuarios_email.");
+            _log.LogWarning(ex, "Race condition de e-mail duplicado capturada pela UK uk_usuarios_email.");
             throw new ConflictException(MensagemEmailDuplicado, SlugEmailDuplicado, ex);
         }
 

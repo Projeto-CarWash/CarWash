@@ -1,3 +1,4 @@
+using CarWash.Application.Abstractions;
 using CarWash.Application.Abstractions.Messaging;
 using CarWash.Application.Common.Exceptions;
 using CarWash.Application.Usuarios.Persistence;
