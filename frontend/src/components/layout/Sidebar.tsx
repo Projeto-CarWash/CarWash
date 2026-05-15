@@ -1,7 +1,6 @@
 import {
   BarChart3,
   CalendarDays,
-  Car,
   CarFront,
   DollarSign,
   LayoutDashboard,
@@ -43,7 +42,9 @@ export function Sidebar() {
             <span className="text-zinc-50">CAR</span>
             <span className="text-red-600">WASH</span>
           </h1>
-          <p className="text-[10.5px] font-bold tracking-[0.2em] text-zinc-500 mt-0.5">ADMIN <span className="text-zinc-600 px-0.5">•</span> v2.4</p>
+          <p className="text-[10.5px] font-bold tracking-[0.2em] text-zinc-500 mt-0.5">
+            ADMIN <span className="text-zinc-600 px-0.5">•</span> v2.4
+          </p>
         </div>
       </div>
 
@@ -65,9 +66,7 @@ export function Sidebar() {
                 {link.active && (
                   <div className="absolute -left-3 top-1/2 h-8 w-1.5 -translate-y-1/2 rounded-r-full bg-red-600" />
                 )}
-                <link.icon
-                  className={`h-4 w-4 ${link.active ? 'text-white' : 'text-zinc-500'}`}
-                />
+                <link.icon className={`h-4 w-4 ${link.active ? 'text-white' : 'text-zinc-500'}`} />
                 <span>{link.label}</span>
                 {link.badge && (
                   <Badge className="ml-auto h-5 min-w-5 justify-center rounded-full bg-red-600/20 px-1.5 text-[10px] text-red-400">
