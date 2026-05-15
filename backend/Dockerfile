@@ -11,6 +11,8 @@ WORKDIR /src
 
 # Copiar arquivos de projeto primeiro para melhor cache de restore
 COPY ["CarWash.sln", "./"]
+COPY ["Directory.Build.props", "./"]
+COPY ["Directory.Packages.props", "./"]
 COPY ["src/CarWash.Api/CarWash.Api.csproj", "src/CarWash.Api/"]
 COPY ["src/CarWash.Application/CarWash.Application.csproj", "src/CarWash.Application/"]
 COPY ["src/CarWash.Domain/CarWash.Domain.csproj", "src/CarWash.Domain/"]
@@ -26,19 +28,22 @@ RUN dotnet publish "CarWash.Api.csproj" \
     -o /app/publish \
     --no-restore \
     /p:UseAppHost=false
+RUN dotnet tool install --global dotnet-ef --version ${DOTNET_VERSION}.* \
+    && ln -s /root/.dotnet/tools/dotnet-ef /usr/local/bin/dotnet-ef \
+    && dotnet ef migrations bundle \
+        --configuration ${BUILD_CONFIGURATION} \
+        --project /src/src/CarWash.Infrastructure/CarWash.Infrastructure.csproj \
+        --startup-project /src/src/CarWash.Api/CarWash.Api.csproj \
+        --target-runtime linux-x64 \
+        --output /app/efbundle
 
 # ---------- Stage 2: migrator (one-shot) ----------
-# Usa SDK porque precisa do dotnet-ef. Sobe antes do API e roda migrations.
 FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_VERSION} AS migrator
 WORKDIR /src
 COPY --from=build /src .
-RUN dotnet tool install --global dotnet-ef --version ${DOTNET_VERSION}.* \
-    && ln -s /root/.dotnet/tools/dotnet-ef /usr/local/bin/dotnet-ef
-ENV PATH="/root/.dotnet/tools:${PATH}"
-WORKDIR /src
-ENTRYPOINT ["dotnet", "ef", "database", "update", \
-    "--project", "src/CarWash.Infrastructure/CarWash.Infrastructure.csproj", \
-    "--startup-project", "src/CarWash.Api/CarWash.Api.csproj"]
+COPY --from=build /app/efbundle /src/src/CarWash.Api/efbundle
+WORKDIR /src/src/CarWash.Api
+ENTRYPOINT ["./efbundle"]
 
 # ---------- Stage 3: runtime final ----------
 FROM mcr.microsoft.com/dotnet/aspnet:${DOTNET_VERSION} AS final

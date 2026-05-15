@@ -7,36 +7,24 @@ using Microsoft.Extensions.Logging;
 
 namespace CarWash.Api.Middlewares;
 
-/// <summary>
-/// Middleware global para tratamento de exceções.
-/// </summary>
-public class ExceptionMiddleware
+public partial class ExceptionMiddleware
 {
-    private static readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+
     private readonly RequestDelegate _next;
     private readonly ILogger<ExceptionMiddleware> _logger;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ExceptionMiddleware"/> class.
-    /// </summary>
-    /// <param name="next">O próximo delegate da requisição.</param>
-    /// <param name="logger">O serviço de log.</param>
     public ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger)
     {
-        this._next = next;
-        this._logger = logger;
+        _next = next;
+        _logger = logger;
     }
 
-    /// <summary>
-    /// Invoca o middleware para processar a requisição HTTP.
-    /// </summary>
-    /// <param name="context">O contexto HTTP atual.</param>
-    /// <returns>Uma tarefa representando a operação assíncrona.</returns>
     public async Task InvokeAsync(HttpContext context)
     {
         try
         {
-            await this._next(context);
+            await _next(context);
         }
         catch (AuthException ex)
         {
@@ -44,10 +32,8 @@ public class ExceptionMiddleware
         }
         catch (Exception ex)
         {
-#pragma warning disable CA1848
-            this._logger.LogError(ex, "Erro interno não tratado pelo servidor.");
-#pragma warning restore CA1848
-            await HandleGenericExceptionAsync(context, ex);
+            LogInternalError(_logger, ex);
+            await HandleInternalExceptionAsync(context);
         }
     }
 
@@ -63,11 +49,11 @@ public class ExceptionMiddleware
             TraceId = context.TraceIdentifier
         };
 
-        string json = JsonSerializer.Serialize(response, _jsonOptions);
+        string json = JsonSerializer.Serialize(response, JsonOptions);
         return context.Response.WriteAsync(json);
     }
 
-    private static Task HandleGenericExceptionAsync(HttpContext context, Exception exception)
+    private static Task HandleInternalExceptionAsync(HttpContext context)
     {
         context.Response.ContentType = "application/json";
         context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
@@ -79,7 +65,10 @@ public class ExceptionMiddleware
             TraceId = context.TraceIdentifier
         };
 
-        string json = JsonSerializer.Serialize(response, _jsonOptions);
+        string json = JsonSerializer.Serialize(response, JsonOptions);
         return context.Response.WriteAsync(json);
     }
+
+    [LoggerMessage(EventId = 1, Level = LogLevel.Error, Message = "Erro interno não tratado.")]
+    private static partial void LogInternalError(ILogger logger, Exception exception);
 }

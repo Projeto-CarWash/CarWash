@@ -1,49 +1,36 @@
 <Project>
-  <!--
-    Configuração comum a TODOS os projetos sob backend/.
-    Aplicada automaticamente pelo MSBuild — não precisa importar manualmente.
-    DAT §3, §4, §6 (segurança), §10 (riscos técnicos).
-  -->
   <PropertyGroup>
-    <!-- Linguagem e runtime -->
     <TargetFramework>net8.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 
-    <!-- Análise estática e qualidade -->
     <AnalysisLevel>latest-recommended</AnalysisLevel>
     <AnalysisMode>AllEnabledByDefault</AnalysisMode>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
 
-    <!-- Warnings viram erros em CI/Release; em Debug ficam warnings para não atrapalhar dev -->
     <TreatWarningsAsErrors Condition="'$(Configuration)'=='Release'">true</TreatWarningsAsErrors>
-    <WarningsAsErrors />
-    <NoWarn>$(NoWarn);CA1014</NoWarn>
 
-    <!-- Reprodutibilidade -->
     <Deterministic>true</Deterministic>
-    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)'=='true'">true</ContinuousIntegrationBuild>
 
-    <!-- Segurança/diagnóstico -->
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
-    <NoWarn>$(NoWarn);CS1591</NoWarn>
 
-    <!--
-      Desvios de StyleCop incompatíveis com convenções modernas adotadas no projeto:
-      - SA0001: análise de XML doc desabilitada por GenerateDocumentationFile=false (intencional).
-      - SA1200: usings fora do namespace (padrão moderno, file-scoped namespaces).
-      - SA1633: cabeçalho de arquivo não obrigatório.
-      - SA1101: prefixar 'this.' não é o estilo do projeto (vide .editorconfig).
-      - SA1413: vírgula após último item em inicializadores não é obrigatória.
-      - SA1309: prefixo '_' permitido em campos privados (estilo do projeto).
-      - SA1503/SA1519: braces around statements quando o estilo permite single-line.
-    -->
-    <NoWarn>$(NoWarn);SA0001;SA1200;SA1633;SA1101;SA1413;SA1309;SA1503;SA1519</NoWarn>
+    <NoWarn>
+      $(NoWarn);
+      CS1591;
+      CA1014;
+      SA0001;
+      SA1200;
+      SA1633;
+      SA1101;
+      SA1413;
+      SA1309;
+      SA1503;
+      SA1519
+    </NoWarn>
   </PropertyGroup>
 
-  <!-- Pacotes comuns a todos os projetos: analisadores (versões em Directory.Packages.props) -->
   <ItemGroup>
     <PackageReference Include="StyleCop.Analyzers" PrivateAssets="all" />
     <PackageReference Include="Roslynator.Analyzers" PrivateAssets="all" />

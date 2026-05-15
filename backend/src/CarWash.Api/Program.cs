@@ -1,9 +1,11 @@
 using System.Text;
 using CarWash.Api.Middlewares;
 using CarWash.Application;
+using CarWash.Application.DTOs;
 using CarWash.Infrastructure; // <-- ADICIONADO PARA CORRIGIR O ERRO 1
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
@@ -13,6 +15,31 @@ string[] readyTags = new[] { "ready" };
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var errors = context.ModelState
+            .Where(entry => entry.Value?.Errors.Count > 0)
+            .ToDictionary(
+                entry => System.Text.Json.JsonNamingPolicy.CamelCase.ConvertName(entry.Key),
+                entry => entry.Value!.Errors
+                    .Select(error => string.IsNullOrWhiteSpace(error.ErrorMessage)
+                        ? "Campo inválido."
+                        : error.ErrorMessage)
+                    .ToArray());
+
+        var response = new BaseResponse
+        {
+            Message = "Dados de acesso inválidos. Verifique os campos e tente novamente.",
+            Code = "AUTH_VALIDATION_ERROR",
+            TraceId = context.HttpContext.TraceIdentifier,
+            Errors = errors
+        };
+
+        return new BadRequestObjectResult(response);
+    };
+});
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration); // <-- AGORA ELE ACHA ISSO!
 
@@ -80,7 +107,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsEnvironment("Testing"))
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseAuthentication();
 app.UseAuthorization();

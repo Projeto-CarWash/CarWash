@@ -8,6 +8,32 @@ public class AuthException : Exception
     /// <summary>
     /// Initializes a new instance of the <see cref="AuthException"/> class.
     /// </summary>
+    public AuthException()
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AuthException"/> class.
+    /// </summary>
+    /// <param name="message">Mensagem da exceção.</param>
+    public AuthException(string message)
+        : base(message)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AuthException"/> class.
+    /// </summary>
+    /// <param name="message">Mensagem da exceção.</param>
+    /// <param name="innerException">Exceção interna.</param>
+    public AuthException(string message, Exception innerException)
+        : base(message, innerException)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AuthException"/> class.
+    /// </summary>
     /// <param name="statusCode">O código de status HTTP.</param>
     /// <param name="errorCode">O código interno do erro.</param>
     /// <param name="message">A mensagem descritiva.</param>
@@ -26,5 +52,5 @@ public class AuthException : Exception
     /// <summary>
     /// Gets o código de erro interno do sistema.
     /// </summary>
-    public string ErrorCode { get; }
+    public string ErrorCode { get; } = string.Empty;
 }

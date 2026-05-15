@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace CarWash.Application.DTOs;
 
 /// <summary>
@@ -19,4 +21,9 @@ public class BaseResponse
     /// Gets or sets o identificador de rastreio da requisição.
     /// </summary>
     public string? TraceId { get; set; }
+
+    /// <summary>
+    /// Gets or sets os erros por campo quando a validação do request falha.
+    /// </summary>
+    public Dictionary<string, string[]>? Errors { get; set; }
 }
