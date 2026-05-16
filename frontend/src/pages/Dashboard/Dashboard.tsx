@@ -1,5 +1,5 @@
+import { LogOut, LayoutDashboard, UserPlus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, LayoutDashboard } from 'lucide-react';
 
 import Button from '../../components/Button/Button';
 import { useAuth } from '../../hooks/useAuth';
@@ -139,6 +139,17 @@ export default function Dashboard() {
             Login realizado com sucesso! Este é o painel principal do sistema.
             Os módulos de gestão serão implementados em breve.
           </p>
+
+          <div style={{ marginTop: '32px' }}>
+            <Button 
+              variant="primary" 
+              // cspell:disable-next-line
+              onClick={() => navigate('/usuarios/novo')}
+            >
+              <UserPlus size={20} />
+              Cadastrar Novo Usuário
+            </Button>
+          </div>
         </div>
       </main>
     </div>

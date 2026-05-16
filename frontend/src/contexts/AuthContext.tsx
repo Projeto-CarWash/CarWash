@@ -1,9 +1,9 @@
-import { createContext, useCallback, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useMemo, useState } from 'react';
 
 import { authService } from '../services/authService';
 
-import type { ReactNode } from 'react';
 import type { User } from '../types/auth';
+import type { ReactNode } from 'react';
 
 interface AuthContextData {
   user: User | null;
@@ -14,6 +14,7 @@ interface AuthContextData {
   logout: () => void;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const AuthContext = createContext<AuthContextData | undefined>(undefined);
 
 interface AuthProviderProps {
@@ -21,27 +22,20 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Restaura sessão do localStorage na montagem
-  useEffect(() => {
-    const storedToken = localStorage.getItem('carwash_token');
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem('carwash_token'));
+  const [user, setUser] = useState<User | null>(() => {
     const storedUser = localStorage.getItem('carwash_user');
-
-    if (storedToken && storedUser) {
+    if (storedUser) {
       try {
-        setToken(storedToken);
-        setUser(JSON.parse(storedUser) as User);
+        return JSON.parse(storedUser) as User;
       } catch {
         localStorage.removeItem('carwash_token');
         localStorage.removeItem('carwash_user');
       }
     }
-
-    setIsLoading(false);
-  }, []);
+    return null;
+  });
+  const isLoading = false;
 
   const login = useCallback(async (email: string, password: string) => {
     const response = await authService.login({ email, password });

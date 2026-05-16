@@ -1,5 +1,3 @@
-import { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   AlertCircle,
   Calendar,
@@ -8,12 +6,15 @@ import {
   EyeOff,
   BarChart3,
 } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
+import logo from '../../assets/logo.png';
 import Button from '../../components/Button/Button';
 import Input from '../../components/Input/Input';
 import { useAuth } from '../../hooks/useAuth';
 import { validateEmail, validatePassword } from '../../utils/validators';
-import logo from '../../assets/logo.png';
+
 import styles from './Login.module.css';
 
 interface FormErrors {
@@ -25,9 +26,9 @@ export default function Login() {
   const navigate = useNavigate();
   const { login, isAuthenticated } = useAuth();
 
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(() => localStorage.getItem('carwash_remember_email') ?? '');
   const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
+  const [rememberMe, setRememberMe] = useState(() => !!localStorage.getItem('carwash_remember_email'));
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({ email: '', password: '' });
@@ -39,15 +40,6 @@ export default function Login() {
       void navigate('/dashboard', { replace: true });
     }
   }, [isAuthenticated, navigate]);
-
-  // Restaura e-mail se "Lembrar-me" foi marcado anteriormente
-  useEffect(() => {
-    const savedEmail = localStorage.getItem('carwash_remember_email');
-    if (savedEmail) {
-      setEmail(savedEmail);
-      setRememberMe(true);
-    }
-  }, []);
 
   const validateForm = useCallback((): boolean => {
     const emailError = validateEmail(email);

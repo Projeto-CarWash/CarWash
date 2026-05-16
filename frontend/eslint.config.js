@@ -76,6 +76,7 @@ export default defineConfig([
       'jsx-a11y/no-static-element-interactions': 'warn',
 
       // Imports — organização e detecção de circulares
+      'import-x/no-unresolved': 'off', // O TypeScript (tsc) já cuida dessa validação perfeitamente
       'import-x/order': [
         'error',
         {

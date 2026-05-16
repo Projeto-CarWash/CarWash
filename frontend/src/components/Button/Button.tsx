@@ -5,12 +5,14 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react';
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary';
   isLoading?: boolean;
+  loadingText?: string;
   children: ReactNode;
 }
 
 export default function Button({
   variant = 'primary',
   isLoading = false,
+  loadingText = 'Acessando...',
   children,
   disabled,
   className,
@@ -30,7 +32,7 @@ export default function Button({
             className={`${styles.spinner} ${variant === 'secondary' ? styles.secondarySpinner : ''}`}
             aria-hidden="true"
           />
-          <span>Acessando...</span>
+          <span>{loadingText}</span>
         </>
       ) : (
         children

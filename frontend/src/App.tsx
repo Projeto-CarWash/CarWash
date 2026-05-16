@@ -4,6 +4,7 @@ import PrivateRoute from './components/PrivateRoute';
 import { AuthProvider } from './contexts/AuthContext';
 import Dashboard from './pages/Dashboard/Dashboard';
 import Login from './pages/Login/Login';
+import UserForm from './pages/Users/UserForm';
 
 export default function App() {
   return (
@@ -16,6 +17,14 @@ export default function App() {
             element={
               <PrivateRoute>
                 <Dashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/usuarios/novo"
+            element={
+              <PrivateRoute>
+                <UserForm />
               </PrivateRoute>
             }
           />
