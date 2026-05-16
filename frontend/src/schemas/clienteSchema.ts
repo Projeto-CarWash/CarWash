@@ -35,27 +35,22 @@ export const clienteSchema = z.object({
     .refine((val) => val.replace(/\D/g, '').length === 8, {
       message: 'Informe a data completa (DD/MM/AAAA).',
     })
-    // 1) Validação de calendário real (dias corretos por mês + anos bissextos)
     .refine(
       (val) => {
         const d = val.replace(/\D/g, '');
-        if (d.length !== 8) return true; // deixa o refine anterior tratar
+        if (d.length !== 8) return true;
         const day = parseInt(d.slice(0, 2), 10);
         const month = parseInt(d.slice(2, 4), 10);
         const year = parseInt(d.slice(4, 8), 10);
         if (month < 1 || month > 12) return false;
         if (day < 1) return false;
-        // Constrói a data e verifica se o JS a manteve intacta (round-trip)
         const date = new Date(year, month - 1, day);
         return (
-          date.getFullYear() === year &&
-          date.getMonth() === month - 1 &&
-          date.getDate() === day
+          date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day
         );
       },
       { message: 'Data inválida. Verifique dia, mês e ano informados.' },
     )
-    // 2) Bloqueio de datas futuras
     .refine(
       (val) => {
         const d = val.replace(/\D/g, '');
@@ -70,7 +65,6 @@ export const clienteSchema = z.object({
       },
       { message: 'Data de nascimento não pode ser uma data futura.' },
     )
-    // 3) Limite de idade máxima (110 anos)
     .refine(
       (val) => {
         const d = val.replace(/\D/g, '');
@@ -87,7 +81,6 @@ export const clienteSchema = z.object({
       },
       { message: 'Idade máxima permitida é de 110 anos.' },
     )
-    // 4) Idade mínima (18 anos)
     .refine(
       (val) => {
         const d = val.replace(/\D/g, '');
