@@ -25,8 +25,7 @@ export function ContatoEnderecoForm() {
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label htmlFor="phone" className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">
-            TELEFONE{' '}
-            <span className="font-normal tracking-normal text-zinc-600">(opcional)</span>
+            TELEFONE <span className="font-normal tracking-normal text-zinc-600">(opcional)</span>
           </Label>
           <Controller
             name="telefone"
