@@ -1,7 +1,15 @@
+using System.Text.Json.Serialization;
+using CarWash.Api.Endpoints;
+using CarWash.Api.Extensions;
+using CarWash.Api.Filters;
+using CarWash.Api.Infrastructure;
+using CarWash.Api.Middleware;
 using CarWash.Application;
+using CarWash.Application.Abstractions;
+using CarWash.Application.Auth.Login;
+using CarWash.Application.Usuarios.CriarUsuario;
 using CarWash.Infrastructure;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using Microsoft.OpenApi.Models;
 
 #pragma warning disable CA1861
 
@@ -12,6 +20,20 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
+// Em ambiente HTTP, sobrescreve o ICurrentRequestContext default por uma
+// implementação que lê o HttpContext (claims + correlation id).
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentRequestContext, HttpCurrentRequestContext>();
+
+// Serialização: enums como string (PerfilUsuario: "Admin"/"Funcionario").
+builder.Services.ConfigureHttpJsonOptions(opt =>
+    opt.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+
+// Filtros de validação genéricos (um por command/query que precisar de IValidator<T>).
+builder.Services.AddScoped<ValidationFilter<CriarUsuarioCommand>>();
+builder.Services.AddScoped<ValidationFilter<LoginCommand>>();
+
+// MVC controllers (ClientesController). Coexistem com os minimal API endpoints abaixo.
 builder.Services.AddControllers();
 
 var conn = builder.Configuration.GetConnectionString("Default")
@@ -20,18 +42,14 @@ var conn = builder.Configuration.GetConnectionString("Default")
 builder.Services.AddHealthChecks()
     .AddNpgSql(conn, name: "postgres", tags: readyTags);
 
-builder.Services.AddEndpointsApiExplorer();
-
-builder.Services.AddSwaggerGen(c =>
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "CarWash API", Version = "v1" }));
+builder.Services.AddCarWashSwagger();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseMiddleware<CorrelationIdMiddleware>();
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+app.UseCarWashSwagger();
 
 app.UseHttpsRedirection();
 
@@ -41,7 +59,9 @@ app.MapHealthChecks("/health", new HealthCheckOptions { Predicate = _ => false }
 app.MapHealthChecks("/health/ready", new HealthCheckOptions { Predicate = check => check.Tags.Contains("ready") });
 app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false });
 
-#pragma warning disable S6966
+app.MapCarWashEndpoints();
+
+#pragma warning disable S6966 // Top-level statements: app.Run blocks intentionally; required by blueprint.
 app.Run();
 #pragma warning restore S6966
 #pragma warning restore CA1861

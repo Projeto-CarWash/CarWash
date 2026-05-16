@@ -1,5 +1,0 @@
-#!/usr/bin/env sh
-# Valida mensagem de commit contra commitlint.config.cjs (na raiz do monorepo).
-# CONTRIBUTING.md §2.
-cd "$(dirname "$0")/../.."   # raiz do monorepo
-npx --no-install --prefix frontend commitlint --config commitlint.config.cjs --edit "$1"

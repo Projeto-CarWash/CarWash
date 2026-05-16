@@ -4,57 +4,43 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace CarWash.Infrastructure.Persistence.Configurations;
 
-public class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
+public sealed class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
 {
     public void Configure(EntityTypeBuilder<AuditLog> builder)
     {
+        ArgumentNullException.ThrowIfNull(builder);
+
         builder.ToTable("audit_logs");
 
-        builder.HasKey(x => x.Id);
+        builder.HasKey(x => x.Id).HasName("pk_audit_logs");
+        builder.Property(x => x.Id).ValueGeneratedNever();
 
-        builder.Property(x => x.Id)
-            .HasColumnName("id")
-            .HasDefaultValueSql("gen_random_uuid()");
-
-        builder.Property(x => x.Evento)
-            .HasColumnName("evento")
-            .HasMaxLength(80)
-            .IsRequired();
-
-        builder.Property(x => x.Entidade)
-            .HasColumnName("entidade")
-            .HasMaxLength(80)
-            .IsRequired();
-
-        builder.Property(x => x.EntidadeId)
-            .HasColumnName("entidade_id");
-
-        builder.Property(x => x.UsuarioId)
-            .HasColumnName("usuario_id");
-
-        builder.Property(x => x.CorrelationId)
-            .HasColumnName("correlation_id")
-            .HasMaxLength(64)
-            .IsRequired();
-
-        builder.Property(x => x.Dados)
-            .HasColumnName("dados")
-            .HasColumnType("jsonb");
-
+        builder.Property(x => x.Evento).IsRequired().HasMaxLength(80);
+        builder.Property(x => x.Entidade).IsRequired().HasMaxLength(80);
+        builder.Property(x => x.EntidadeId);
+        builder.Property(x => x.UsuarioId);
+        builder.Property(x => x.CorrelationId).IsRequired().HasMaxLength(64);
+        builder.Property(x => x.Dados).HasColumnType("jsonb");
         builder.Property(x => x.CriadoEm)
-            .HasColumnName("criado_em")
-            .HasColumnType("timestamp with time zone")
-            .IsRequired();
+            .IsRequired()
+            .HasColumnType("timestamptz")
+            .HasDefaultValueSql("now()");
 
-        builder.HasIndex(x => x.Evento)
-            .HasDatabaseName("idx_audit_evento");
+        builder.HasOne<Usuario>()
+            .WithMany()
+            .HasForeignKey(x => x.UsuarioId)
+            .HasConstraintName("fk_audit_usuario")
+            .OnDelete(DeleteBehavior.SetNull)
+            .IsRequired(false);
 
-        builder.HasIndex(x => x.Entidade)
+        builder.HasIndex(x => new { x.Evento, x.CriadoEm })
+            .HasDatabaseName("idx_audit_evento")
+            .IsDescending(false, true);
+        builder.HasIndex(x => new { x.Entidade, x.EntidadeId })
             .HasDatabaseName("idx_audit_entidade");
-
         builder.HasIndex(x => x.CriadoEm)
-            .HasDatabaseName("idx_audit_criado_em");
-
+            .HasDatabaseName("idx_audit_criado_em")
+            .IsDescending();
         builder.HasIndex(x => x.CorrelationId)
             .HasDatabaseName("idx_audit_correlation");
     }
