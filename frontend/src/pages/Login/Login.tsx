@@ -13,7 +13,7 @@ import Button from '../../components/Button/Button';
 import Input from '../../components/Input/Input';
 import { useAuth } from '../../hooks/useAuth';
 import { validateEmail, validatePassword } from '../../utils/validators';
-import logo from '../../assets/logo.svg';
+import logo from '../../assets/logo.png';
 import styles from './Login.module.css';
 
 interface FormErrors {
@@ -125,7 +125,7 @@ export default function Login() {
           <img
             src={logo}
             alt="CarWash"
-            className={styles.brandLogo}
+            style={{ width: '100%', maxWidth: '320px', height: 'auto', marginBottom: '24px' }}
           />
           <h1 className={styles.brandTitle}>
             Sistema de Gestão

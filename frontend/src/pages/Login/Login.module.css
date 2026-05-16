@@ -46,7 +46,8 @@
 }
 
 .brandLogo {
-  width: 180px;
+  width: 100%;
+  max-width: 320px;
   height: auto;
   margin: 0 auto var(--spacing-xl);
   filter: drop-shadow(0 0 30px rgba(230, 31, 45, 0.2));
@@ -139,9 +140,10 @@
 }
 
 .logoSmall {
-  height: 32px;
-  width: auto;
-  margin-bottom: var(--spacing-2xl);
+  height: auto;
+  width: 100%;
+  max-width: 160px;
+  margin-bottom: var(--spacing-xl);
   opacity: 0.9;
 }
 
