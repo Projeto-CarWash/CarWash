@@ -1,12 +1,14 @@
 using CarWash.Application.Abstractions;
 using CarWash.Application.Auth.Abstractions;
 using CarWash.Application.Common.Security;
+using CarWash.Application.Interfaces;
 using CarWash.Application.Usuarios.Persistence;
 using CarWash.Infrastructure.Auditing;
 using CarWash.Infrastructure.Auth;
 using CarWash.Infrastructure.Persistence;
 using CarWash.Infrastructure.Persistence.Interceptors;
 using CarWash.Infrastructure.Persistence.Repositories;
+using CarWash.Infrastructure.Repositories;
 using CarWash.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -46,6 +48,7 @@ public static class DependencyInjection
         services.AddScoped<IAuditLogger, AuditLogger>();
 
         services.AddScoped<IUsuarioRepository, UsuarioRepository>();
+        services.AddScoped<IClienteRepository, ClienteRepository>();
 
         services.AddDbContext<CarWashDbContext>((sp, opt) =>
         {

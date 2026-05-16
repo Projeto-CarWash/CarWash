@@ -11,7 +11,8 @@ using CarWash.Application.Usuarios.CriarUsuario;
 using CarWash.Infrastructure;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 
-#pragma warning disable CA1861 // Constant array passed as argument — only built once at startup.
+#pragma warning disable CA1861
+
 var readyTags = new[] { "ready" };
 
 var builder = WebApplication.CreateBuilder(args);
@@ -32,6 +33,9 @@ builder.Services.ConfigureHttpJsonOptions(opt =>
 builder.Services.AddScoped<ValidationFilter<CriarUsuarioCommand>>();
 builder.Services.AddScoped<ValidationFilter<LoginCommand>>();
 
+// MVC controllers (ClientesController). Coexistem com os minimal API endpoints abaixo.
+builder.Services.AddControllers();
+
 var conn = builder.Configuration.GetConnectionString("Default")
     ?? throw new InvalidOperationException("ConnectionStrings:Default não configurada");
 
@@ -47,6 +51,10 @@ app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseCarWashSwagger();
 
+app.UseHttpsRedirection();
+
+app.MapControllers();
+
 app.MapHealthChecks("/health", new HealthCheckOptions { Predicate = _ => false });
 app.MapHealthChecks("/health/ready", new HealthCheckOptions { Predicate = check => check.Tags.Contains("ready") });
 app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false });
@@ -58,6 +66,6 @@ app.Run();
 #pragma warning restore S6966
 #pragma warning restore CA1861
 
-#pragma warning disable S1118, SA1502 // Marker partial required by WebApplicationFactory<Program>.
+#pragma warning disable S1118, SA1502
 public partial class Program { }
 #pragma warning restore S1118, SA1502

@@ -8,8 +8,11 @@
 
 services:
   postgres:
+    networks:
+      - internal
+      - public
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - '${POSTGRES_PORT:-5432}:5432'
 
   # Em dev, o migrator não roda automaticamente — o dev controla
   # quando aplicar via `make migrate` ou dotnet ef diretamente
@@ -35,7 +38,7 @@ services:
       - ./backend:/src
       - backend_nuget:/root/.nuget/packages
     ports:
-      - "${BACKEND_PORT:-8080}:8080"
+      - '${BACKEND_PORT:-8080}:8080'
 
   frontend:
     build:
@@ -47,11 +50,11 @@ services:
     environment:
       VITE_API_URL: ${VITE_API_URL:-http://localhost:8080}
     ports:
-      - "${FRONTEND_PORT:-5173}:5173"
+      - '${FRONTEND_PORT:-5173}:5173'
 
   # Sem proxy em dev — acesso direto
   proxy:
-    profiles: ["never"]
+    profiles: ['never']
 
 volumes:
   backend_nuget:
