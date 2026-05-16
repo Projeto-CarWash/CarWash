@@ -42,7 +42,11 @@ export function Stepper({ currentStep = 1 }: StepperProps) {
           return (
             <li key={step.id} className="relative flex items-start gap-3 py-2 pl-1">
               {index < steps.length - 1 && (
-                <span className="absolute left-[0.85rem] top-[2.25rem] bottom-[-0.25rem] w-px bg-zinc-800" />
+                <span
+                  className={`absolute left-[0.85rem] top-[2.25rem] bottom-[-0.25rem] w-px transition-colors duration-500 ${
+                    status === 'complete' ? 'bg-red-600' : 'bg-zinc-800'
+                  }`}
+                />
               )}
               <div
                 className={`relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-semibold transition-all duration-500 ${
