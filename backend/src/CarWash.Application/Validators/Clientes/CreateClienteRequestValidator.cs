@@ -1,5 +1,5 @@
-using CarWash.Application.DTOs.Clientes;
 using CarWash.Application.Common;
+using CarWash.Application.DTOs.Clientes;
 using FluentValidation;
 
 namespace CarWash.Application.Validators.Clientes;

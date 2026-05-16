@@ -35,7 +35,7 @@ public static class InputNormalizer
 
     public static bool ContainsOnlyDigits(string? value)
     {
-        if(string.IsNullOrWhiteSpace(value))
+        if (string.IsNullOrWhiteSpace(value))
         {
             return false;
         }
@@ -53,7 +53,7 @@ public static class InputNormalizer
         }
 
         return normalized
-            .Replace("<", string.Empty)
-            .Replace(">", string.Empty);
+            .Replace("<", string.Empty, StringComparison.Ordinal)
+            .Replace(">", string.Empty, StringComparison.Ordinal);
     }
 }

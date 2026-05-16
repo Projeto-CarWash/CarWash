@@ -50,6 +50,9 @@ services:
         condition: service_healthy
     environment:
       ConnectionStrings__Default: 'Host=postgres;Port=5432;Database=${POSTGRES_DB:-carwash};Username=${POSTGRES_USER:-carwash_owner};Password=${POSTGRES_PASSWORD}'
+      # Necessária para a migration InitialSchema (decisão P12 / SeedPasswordResolver).
+      # Sem fallback: migration falha se ausente/vazia.
+      CARWASH_SEED_ADMIN_PASSWORD: ${CARWASH_SEED_ADMIN_PASSWORD:?precisa estar em .env}
     networks:
       - internal
 

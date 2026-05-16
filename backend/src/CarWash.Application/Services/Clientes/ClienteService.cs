@@ -1,10 +1,11 @@
-using System.Text.Json;
 using CarWash.Application.Common;
+using CarWash.Application.Common.Exceptions;
 using CarWash.Application.DTOs.Clientes;
-using CarWash.Application.Exceptions;
 using CarWash.Application.Interfaces;
 using CarWash.Domain.Entities;
+using CarWash.Domain.ValueObjects;
 using FluentValidation;
+using ValidationException = CarWash.Application.Common.Exceptions.ValidationException;
 
 namespace CarWash.Application.Services.Clientes;
 
@@ -31,37 +32,51 @@ public class ClienteService : IClienteService
 
         if (!validation.IsValid)
         {
-            throw new ValidationException(validation.Errors);
+            var erros = validation.Errors
+                .GroupBy(e => string.IsNullOrWhiteSpace(e.PropertyName) ? "body" : e.PropertyName, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(e => e.ErrorMessage).ToArray(),
+                    StringComparer.OrdinalIgnoreCase);
+
+            throw new ValidationException(
+                "Dados do cliente inválidos. Verifique os campos e tente novamente.",
+                erros);
         }
 
         var nome = InputNormalizer.TrimOrNull(request.Nome)!;
-        var cpf = InputNormalizer.OnlyDigitsOrNull(request.Cpf);
-        var cnpj = InputNormalizer.OnlyDigitsOrNull(request.Cnpj);
-        var telefone = InputNormalizer.OnlyDigitsOrNull(request.Telefone);
-        var celular = InputNormalizer.OnlyDigitsOrNull(request.Celular);
-        var email = InputNormalizer.EmailOrNull(request.Email);
+        var cpfDigits = InputNormalizer.OnlyDigitsOrNull(request.Cpf);
+        var cnpjDigits = InputNormalizer.OnlyDigitsOrNull(request.Cnpj);
+        var telefoneDigits = InputNormalizer.OnlyDigitsOrNull(request.Telefone);
+        var celularDigits = InputNormalizer.OnlyDigitsOrNull(request.Celular);
+        var emailNormalizado = InputNormalizer.EmailOrNull(request.Email);
         var endereco = InputNormalizer.TrimOrNull(request.Endereco);
         var observacoes = InputNormalizer.TrimOrNull(request.Observacoes);
 
-        if (cpf is not null && await clienteRepository.ExisteCpfAsync(cpf, cancellationToken))
+        if (cpfDigits is not null && await clienteRepository.ExisteCpfAsync(cpfDigits, cancellationToken))
         {
-            throw new ClienteDocumentoDuplicadoException();
+            throw new ConflictException(
+                "Já existe cliente cadastrado com este documento.",
+                "cliente-documento-duplicado");
         }
 
-        if (cnpj is not null && await clienteRepository.ExisteCnpjAsync(cnpj, cancellationToken))
+        if (cnpjDigits is not null && await clienteRepository.ExisteCnpjAsync(cnpjDigits, cancellationToken))
         {
-            throw new ClienteDocumentoDuplicadoException();
+            throw new ConflictException(
+                "Já existe cliente cadastrado com este documento.",
+                "cliente-documento-duplicado");
         }
 
-        var cliente = new Cliente(
-            nome,
-            cpf,
-            cnpj,
-            telefone,
-            celular,
-            email,
-            endereco,
-            observacoes);
+        var cliente = Cliente.Criar(
+            id: Guid.NewGuid(),
+            nome: nome,
+            cpf: cpfDigits is null ? null : new Cpf(cpfDigits),
+            cnpj: cnpjDigits is null ? null : new Cnpj(cnpjDigits),
+            telefone: telefoneDigits is null ? null : new Telefone(telefoneDigits),
+            celular: celularDigits is null ? null : new Telefone(celularDigits),
+            email: emailNormalizado is null ? null : new Email(emailNormalizado),
+            endereco: endereco,
+            observacoes: observacoes);
 
         await clienteRepository.AdicionarAsync(cliente, traceId, usuarioId, cancellationToken);
 

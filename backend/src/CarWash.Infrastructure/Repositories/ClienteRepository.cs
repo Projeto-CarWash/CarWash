@@ -1,5 +1,5 @@
 using System.Text.Json;
-using CarWash.Application.Exceptions;
+using CarWash.Application.Common.Exceptions;
 using CarWash.Application.Interfaces;
 using CarWash.Domain.Entities;
 using CarWash.Infrastructure.Persistence;
@@ -41,16 +41,19 @@ public class ClienteRepository : IClienteRepository
 
     public async Task AdicionarAsync(Cliente cliente, string correlationId, Guid? usuarioId, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(cliente);
+
         await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
 
         await context.Clientes.AddAsync(cliente, cancellationToken);
 
-        var audit = new AuditLog(
+        var audit = AuditLog.Registrar(
+            id: Guid.NewGuid(),
             evento: "CLIENTE_CRIADO",
             entidade: "clientes",
+            correlationId: correlationId,
             entidadeId: cliente.Id,
             usuarioId: usuarioId,
-            correlationId: correlationId,
             dados: JsonSerializer.Serialize(new
             {
                 cliente.Id,
@@ -71,7 +74,10 @@ public class ClienteRepository : IClienteRepository
         catch (DbUpdateException ex) when (IsUniqueViolation(ex))
         {
             await transaction.RollbackAsync(cancellationToken);
-            throw new ClienteDocumentoDuplicadoException();
+            throw new ConflictException(
+                "Já existe cliente cadastrado com este documento.",
+                "cliente-documento-duplicado",
+                ex);
         }
     }
 
