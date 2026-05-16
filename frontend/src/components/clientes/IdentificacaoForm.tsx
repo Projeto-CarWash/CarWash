@@ -5,6 +5,7 @@ import { Controller, useFormContext } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { maskCpfCnpj, maskDate } from '@/lib/masks';
+import { isValidCpf, isValidCnpj } from '@/lib/validators';
 
 import type { ClienteFormData } from '@/schemas/clienteSchema';
 
@@ -54,7 +55,19 @@ export function IdentificacaoForm() {
             control={control}
             render={({ field }) => {
               const digits = field.value.replace(/\D/g, '');
-              const isValid = (digits.length === 11 || digits.length === 14) && !cpfError;
+              const isComplete = digits.length === 11 || digits.length === 14;
+              const isDocValid =
+                isComplete &&
+                ((digits.length === 11 && isValidCpf(digits)) ||
+                  (digits.length === 14 && isValidCnpj(digits)));
+              const isDocInvalid = isComplete && !isDocValid;
+
+              const borderClass =
+                cpfError || isDocInvalid
+                  ? 'border-red-500/60 bg-red-950/20 focus-visible:border-red-500'
+                  : isDocValid
+                    ? 'border-green-500/60 bg-green-950/10 focus-visible:border-green-500'
+                    : 'border-zinc-700/60 bg-zinc-900/50 focus-visible:border-zinc-600';
 
               return (
                 <>
@@ -68,13 +81,9 @@ export function IdentificacaoForm() {
                       onBlur={() => handleDocBlur(field.value, field.onBlur)}
                       disabled={isDocLocked}
                       placeholder="000.000.000-00"
-                      aria-invalid={!!cpfError}
+                      aria-invalid={!!cpfError || isDocInvalid}
                       aria-describedby={cpfError ? 'cpf-error' : undefined}
-                      className={`h-10 rounded-xl text-sm text-zinc-200 placeholder:text-zinc-600 focus-visible:ring-0 ${
-                        cpfError
-                          ? 'border-red-500/60 bg-red-950/20 focus-visible:border-red-500'
-                          : 'border-zinc-700/60 bg-zinc-900/50 focus-visible:border-zinc-600'
-                      } ${isDocLocked ? 'opacity-70' : ''}`}
+                      className={`h-10 rounded-xl text-sm text-zinc-200 placeholder:text-zinc-600 focus-visible:ring-0 transition-colors ${borderClass} ${isDocLocked ? 'opacity-70' : ''}`}
                     />
                     {isDocLocked && (
                       <button
@@ -86,7 +95,7 @@ export function IdentificacaoForm() {
                       </button>
                     )}
                   </div>
-                  {isValid && isDocLocked && (
+                  {isDocValid && isDocLocked && (
                     <p className="flex items-center gap-1.5 text-xs text-green-500">
                       <Check className="h-3.5 w-3.5" />
                       Documento válido e único na base
