@@ -61,13 +61,21 @@ public static class DependencyInjection
                     sp.GetRequiredService<AuditLogInterceptor>());
         });
 
-        services.AddDbContextFactory<CarWashDbContext>(opt =>
-        {
-            opt.UseNpgsql(conn, npg => npg
-                    .MigrationsAssembly(typeof(CarWashDbContext).Assembly.FullName)
-                    .MigrationsHistoryTable("__ef_migrations_history", "public"))
-               .UseSnakeCaseNamingConvention();
-        });
+        // IDbContextFactory para casos que precisam de um DbContext fora do escopo
+        // da request (ex.: AuditLogger). Construímos as options manualmente — sem
+        // interceptors — para não conflitar com a registração Scoped de
+        // DbContextOptions<CarWashDbContext> feita acima por AddDbContext.
+        // Audits não devem auditar a si próprios, então a ausência dos
+        // interceptors aqui é intencional.
+        var factoryOptions = new DbContextOptionsBuilder<CarWashDbContext>()
+            .UseNpgsql(conn, npg => npg
+                .MigrationsAssembly(typeof(CarWashDbContext).Assembly.FullName)
+                .MigrationsHistoryTable("__ef_migrations_history", "public"))
+            .UseSnakeCaseNamingConvention()
+            .Options;
+
+        services.AddSingleton<IDbContextFactory<CarWashDbContext>>(
+            new CarWashRuntimeDbContextFactory(factoryOptions));
 
         return services;
     }
