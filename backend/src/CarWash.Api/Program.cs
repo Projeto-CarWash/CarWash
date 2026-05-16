@@ -51,8 +51,10 @@ app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseCarWashSwagger();
 
-app.UseHttpsRedirection();
-
+// Sem UseHttpsRedirection: o backend roda só em HTTP (dev direto; hom/prod atrás do
+// nginx que termina TLS e redireciona 80→443). Habilitar o middleware aqui emite
+// warning "Failed to determine the https port" em toda request (dev) e no startup
+// (hom/prod), sem efeito útil — a redireção pública é responsabilidade do proxy.
 app.MapControllers();
 
 app.MapHealthChecks("/health", new HealthCheckOptions { Predicate = _ => false });
