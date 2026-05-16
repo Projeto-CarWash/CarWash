@@ -15,8 +15,11 @@
     "check": "npm run typecheck && npm run lint && npm run format:check"
   },
   "dependencies": {
+    "axios": "^1.7.0",
+    "lucide-react": "^0.400.0",
     "react": "^19.2.5",
-    "react-dom": "^19.2.5"
+    "react-dom": "^19.2.5",
+    "react-router-dom": "^6.26.0"
   },
   "devDependencies": {
     "@babel/core": "^7.29.0",
