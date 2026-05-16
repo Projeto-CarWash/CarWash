@@ -1,6 +1,6 @@
 import { Check, X } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
-import { Controller, useFormContext } from 'react-hook-form';
+import { Controller, useFormContext, useWatch } from 'react-hook-form';
 
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,8 +15,12 @@ export function IdentificacaoForm() {
     formState: { errors },
   } = useFormContext<ClienteFormData>();
 
-  const [isDocLocked, setIsDocLocked] = useState(false);
+  const [docLockedByBlur, setDocLockedByBlur] = useState(false);
   const cpfInputRef = useRef<HTMLInputElement>(null);
+
+  const cpfValue = useWatch({ control, name: 'cpfCnpj' });
+  const hasDigits = !!cpfValue && cpfValue.replace(/\D/g, '').length > 0;
+  const isDocLocked = docLockedByBlur && hasDigits;
 
   const cpfError = errors.cpfCnpj;
   const dateError = errors.dataNascimento;
@@ -25,12 +29,12 @@ export function IdentificacaoForm() {
   const handleDocBlur = useCallback((value: string, rhfOnBlur: () => void) => {
     rhfOnBlur();
     if (value.replace(/\D/g, '').length > 0) {
-      setIsDocLocked(true);
+      setDocLockedByBlur(true);
     }
   }, []);
 
   const handleEditClick = useCallback(() => {
-    setIsDocLocked(false);
+    setDocLockedByBlur(false);
     requestAnimationFrame(() => {
       cpfInputRef.current?.focus();
     });

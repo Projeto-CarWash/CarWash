@@ -11,10 +11,7 @@ export function ContatoEnderecoForm() {
   const {
     control,
     formState: { errors },
-    watch,
   } = useFormContext<ClienteFormData>();
-
-  const obsValue = watch('observacoes') ?? '';
 
   return (
     <div>
@@ -28,7 +25,8 @@ export function ContatoEnderecoForm() {
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label htmlFor="phone" className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">
-            TELEFONE
+            TELEFONE{' '}
+            <span className="font-normal tracking-normal text-zinc-600">(opcional)</span>
           </Label>
           <Controller
             name="telefone"
@@ -296,61 +294,6 @@ export function ContatoEnderecoForm() {
                     {errors.numero.message}
                   </p>
                 )}
-              </>
-            )}
-          />
-        </div>
-
-        <div className="col-span-2 space-y-1.5">
-          <Label
-            htmlFor="observacoes"
-            className="text-[10px] font-bold tracking-[0.2em] text-zinc-500"
-          >
-            OBSERVAÇÕES{' '}
-            <span className="font-normal tracking-normal text-zinc-600">(opcional)</span>
-          </Label>
-          <Controller
-            name="observacoes"
-            control={control}
-            render={({ field }) => (
-              <>
-                <textarea
-                  id="observacoes"
-                  value={field.value ?? ''}
-                  onChange={field.onChange}
-                  onBlur={field.onBlur}
-                  placeholder="Informações adicionais sobre o cliente..."
-                  rows={3}
-                  maxLength={500}
-                  aria-invalid={!!errors.observacoes}
-                  aria-describedby={errors.observacoes ? 'obs-error' : undefined}
-                  className={`w-full resize-none rounded-xl px-3 py-2.5 text-sm text-zinc-200 outline-none transition-colors placeholder:text-zinc-600 focus-visible:ring-0 ${
-                    errors.observacoes
-                      ? 'border border-red-500/60 bg-red-950/20'
-                      : 'border border-zinc-700/60 bg-zinc-900/50 focus:border-zinc-600'
-                  }`}
-                />
-                <div className="flex items-center justify-between">
-                  {errors.observacoes ? (
-                    <p
-                      id="obs-error"
-                      role="alert"
-                      className="flex items-center gap-1.5 text-xs text-red-500"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                      {errors.observacoes.message}
-                    </p>
-                  ) : (
-                    <span />
-                  )}
-                  <span
-                    className={`text-[10px] tabular-nums ${
-                      obsValue.length > 450 ? 'text-amber-500' : 'text-zinc-600'
-                    } ${obsValue.length >= 500 ? 'text-red-500' : ''}`}
-                  >
-                    {obsValue.length}/500
-                  </span>
-                </div>
               </>
             )}
           />

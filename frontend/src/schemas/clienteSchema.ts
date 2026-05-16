@@ -109,9 +109,10 @@ export const clienteSchema = z.object({
 
   telefone: z
     .string()
-    .min(1, 'Telefone é obrigatório.')
+    .optional()
     .refine(
       (val) => {
+        if (!val || val.replace(/\D/g, '').length === 0) return true;
         const d = val.replace(/\D/g, '');
         return d.length === 10;
       },
@@ -120,11 +121,11 @@ export const clienteSchema = z.object({
 
   celular: z
     .string()
-    .optional()
+    .min(1, 'Celular é obrigatório.')
     .refine(
       (val) => {
-        if (!val || val.replace(/\D/g, '').length === 0) return true;
-        return val.replace(/\D/g, '').length === 11;
+        const d = val.replace(/\D/g, '');
+        return d.length === 11;
       },
       { message: 'Celular deve conter 11 dígitos válidos.' },
     ),
@@ -148,8 +149,6 @@ export const clienteSchema = z.object({
   rua: z.string().min(1, 'Rua é obrigatória.'),
 
   numero: z.string().min(1, 'Número é obrigatório.'),
-
-  observacoes: z.string().max(500, 'Observações não podem ultrapassar 500 caracteres.').optional(),
 });
 
 export type ClienteFormData = z.infer<typeof clienteSchema>;
