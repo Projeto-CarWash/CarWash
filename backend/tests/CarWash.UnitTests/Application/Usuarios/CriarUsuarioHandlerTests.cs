@@ -48,10 +48,12 @@ public class CriarUsuarioHandlerTests
         _contexto.Received(1).DefinirEvento(CriarUsuarioHandler.EventoAuditoria);
         _hasher.Received(1).Hash("Senha1234");
         await _repo.Received(1).ExisteComEmailAsync("alice@carwash.local", Arg.Any<CancellationToken>());
-        await _repo.Received(1).AdicionarAsync(Arg.Is<Usuario>(u =>
-            u.EmailValor == "alice@carwash.local"
-            && u.SenhaHash.StartsWith("$argon2id$", StringComparison.Ordinal)
-            && u.Ativo), Arg.Any<CancellationToken>());
+        await _repo.Received(1).AdicionarAsync(
+            Arg.Is<Usuario>(u =>
+                u.EmailValor == "alice@carwash.local"
+                && u.SenhaHash.StartsWith("$argon2id$", StringComparison.Ordinal)
+                && u.Ativo),
+            Arg.Any<CancellationToken>());
         await _repo.Received(1).SalvarAsync(Arg.Any<CancellationToken>());
     }
 
