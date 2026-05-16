@@ -7,7 +7,7 @@ const values = {
   xxLarge: '16px',
   xxxLarge: '24px',
   full: '9999px',
-} as const
+} as const;
 
 const vars = {
   none: 'var(--borderRadius--none)',
@@ -18,7 +18,7 @@ const vars = {
   xxLarge: 'var(--borderRadius--xxLarge)',
   xxxLarge: 'var(--borderRadius--xxxLarge)',
   full: 'var(--borderRadius--full)',
-} as const
+} as const;
 
 const toCssVars = () => ({
   '--borderRadius--none': values.none,
@@ -29,8 +29,8 @@ const toCssVars = () => ({
   '--borderRadius--xxLarge': values.xxLarge,
   '--borderRadius--xxxLarge': values.xxxLarge,
   '--borderRadius--full': values.full,
-})
+});
 
-export type BorderRadius = typeof vars
-export { values, toCssVars }
-export default vars
+export type BorderRadius = typeof vars;
+export { values, toCssVars };
+export default vars;
