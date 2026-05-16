@@ -10,6 +10,7 @@ import { clienteSchema } from '@/schemas/clienteSchema';
 
 import { ContatoEnderecoForm } from './ContatoEnderecoForm';
 import { IdentificacaoForm } from './IdentificacaoForm';
+import { PageHeader } from './PageHeader';
 import { Stepper } from './Stepper';
 
 import type { ClienteFormData } from '@/schemas/clienteSchema';
@@ -42,7 +43,6 @@ export function NovoClientePage() {
       cidade: '',
       rua: '',
       numero: '',
-      observacoes: '',
     },
   });
 
@@ -66,15 +66,14 @@ export function NovoClientePage() {
       const payload = {
         nome: data.nome.trim(),
         documento: onlyDigits(data.cpfCnpj),
-        telefone: onlyDigits(data.telefone),
-        celular: data.celular ? onlyDigits(data.celular) : undefined,
+        telefone: data.telefone ? onlyDigits(data.telefone) : undefined,
+        celular: onlyDigits(data.celular),
         email: data.email.toLowerCase(),
         cep: onlyDigits(data.cep),
         cidade: data.cidade.trim(),
         rua: data.rua.trim(),
         numero: data.numero.trim(),
         dataNascimento: data.dataNascimento,
-        observacoes: data.observacoes?.trim() ?? undefined,
       };
 
       try {
@@ -134,19 +133,34 @@ export function NovoClientePage() {
   );
 
   const handleCancel = useCallback(() => {
-    form.reset();
+    form.reset({
+      cpfCnpj: '',
+      dataNascimento: '',
+      nome: '',
+      telefone: '',
+      celular: '',
+      email: '',
+      cep: '',
+      cidade: '',
+      rua: '',
+      numero: '',
+    });
+    form.clearErrors();
     setGlobalError(null);
     setSuccessMsg(null);
   }, [form]);
 
+  const currentStep = isIdentificacaoComplete ? 2 : 1;
+
   return (
     <FormProvider {...form}>
+      <PageHeader onCancel={handleCancel} currentStep={currentStep} />
       <form
         onSubmit={form.handleSubmit(handleSubmit)}
         noValidate
         className="grid grid-cols-[minmax(240px,300px)_minmax(0,1fr)] gap-6 px-8"
       >
-        <Stepper currentStep={isIdentificacaoComplete ? 2 : 1} />
+        <Stepper currentStep={currentStep} />
 
         <div className="rounded-2xl border border-zinc-800/60 bg-zinc-900/30 p-8">
           {globalError && (
