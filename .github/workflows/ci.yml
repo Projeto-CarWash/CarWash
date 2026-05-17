@@ -29,6 +29,52 @@ jobs:
           fi
           echo "✅ branch: $BRANCH"
 
+  # ─────────────── COMMIT CONVENTIONS ───────────────
+  # Valida todas as mensagens de commit do PR contra Conventional Commits
+  # (CONTRIBUTING.md §2). Config em .commitlintrc.cjs.
+  commit-conventions:
+    name: commit-conventions
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Precisa do histórico completo do PR pra validar todos os commits, não só HEAD.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install commitlint
+        run: npm install -g --no-audit --no-fund @commitlint/cli@19 @commitlint/config-conventional@19
+
+      - name: Validate PR commits
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          commitlint --from "$BASE_SHA" --to "$HEAD_SHA" --verbose --config .commitlintrc.cjs
+
+  # ─────────────── SPELL ───────────────
+  # Verifica ortografia em arquivos Markdown (docs, README, CONTRIBUTING).
+  # Config em cspell.json + cspell-words.txt. Usa dicionário pt-BR (@cspell/dict-pt-br).
+  spell:
+    name: spell
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install cspell + pt-BR dict
+        run: npm install -g --no-audit --no-fund cspell@8 @cspell/dict-pt-br
+
+      - name: Run cspell on Markdown
+        run: cspell '**/*.md' --no-progress
+
   # ─────────────── FRONTEND ───────────────
   frontend:
     name: Frontend (lint • typecheck • test • build)

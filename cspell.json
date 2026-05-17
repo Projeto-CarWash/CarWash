@@ -1,0 +1,39 @@
+{
+  "$schema": "https://raw.githubusercontent.com/streetsidesoftware/cspell/main/cspell.schema.json",
+  "version": "0.2",
+  "language": "en,pt,pt_BR",
+  "import": ["@cspell/dict-pt-br/cspell-ext.json"],
+  "dictionaryDefinitions": [
+    {
+      "name": "project-words",
+      "path": "./cspell-words.txt",
+      "addWords": true
+    }
+  ],
+  "dictionaries": ["project-words", "pt_BR"],
+  "files": ["**/*.md"],
+  "ignorePaths": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/bin/**",
+    "**/obj/**",
+    "**/.git/**",
+    "**/Migrations/**",
+    "**/*.Designer.cs",
+    "**/package-lock.json",
+    "**/*.lock",
+    "**/*.min.*",
+    "**/*.svg",
+    "frontend/src/tokens/**",
+    "docker/proxy/certs/**",
+    "docs/**/*.pdf"
+  ],
+  "allowCompoundWords": true,
+  "ignoreRegExpList": [
+    "Email",
+    "/`[^`]+`/g",
+    "/```[\\s\\S]*?```/g",
+    "/\\[[^\\]]+\\]\\([^)]+\\)/g",
+    "/https?:\\/\\/[^\\s)]+/g"
+  ]
+}
