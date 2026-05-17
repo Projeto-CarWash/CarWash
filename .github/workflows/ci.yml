@@ -104,9 +104,22 @@ jobs:
         if: steps.backend_exists.outputs.found == 'true'
         run: dotnet build --configuration Release --no-restore
 
-      - name: Test
+      - name: Test (with coverage)
         if: steps.backend_exists.outputs.found == 'true'
-        run: dotnet test --configuration Release --no-build
+        run: |
+          dotnet test --configuration Release --no-build \
+            --collect:"XPlat Code Coverage" \
+            --results-directory ./TestResults \
+            --logger "trx;LogFileName=test-results.trx"
+
+      - name: Upload test results
+        if: steps.backend_exists.outputs.found == 'true' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-results
+          path: backend/TestResults/**/*
+          if-no-files-found: warn
+          retention-days: 14
 
   # ─────────────── DOCKER ───────────────
   docker:

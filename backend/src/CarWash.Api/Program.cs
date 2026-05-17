@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
+using Serilog;
 
 #pragma warning disable CA1861
 
@@ -23,6 +24,18 @@ const string CorsPolicyName = "CarWashClients";
 var readyTags = new[] { "ready" };
 
 var builder = WebApplication.CreateBuilder(args);
+
+// ---------- Logging (Serilog) ----------
+// Lê configuração de "Serilog" do appsettings; em prod/hom o docker-compose
+// pode montar volume em /app/logs para sink File (não habilitado por padrão).
+builder.Host.UseSerilog((ctx, services, configuration) =>
+{
+    configuration
+        .ReadFrom.Configuration(ctx.Configuration)
+        .ReadFrom.Services(services)
+        .Enrich.FromLogContext()
+        .WriteTo.Console(formatProvider: System.Globalization.CultureInfo.InvariantCulture);
+});
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
