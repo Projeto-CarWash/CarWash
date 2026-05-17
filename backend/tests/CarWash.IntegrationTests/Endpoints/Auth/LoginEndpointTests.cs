@@ -14,6 +14,9 @@ public class LoginEndpointTests : IAsyncDisposable
 {
     private const string MensagemCredencialInvalida = "Usuário ou senha inválidos.";
     private const string MensagemUsuarioInativo = "Acesso bloqueado. Usuário inativo.";
+    private const string MensagemUsuarioBloqueado =
+        "Acesso temporariamente bloqueado por tentativas inválidas. Tente novamente em alguns minutos.";
+
     private static readonly Uri RotaLogin = new("/api/v1/auth/login", UriKind.Relative);
     private static readonly Uri RotaCriar = new("/api/v1/usuarios", UriKind.Relative);
 
@@ -104,6 +107,50 @@ public class LoginEndpointTests : IAsyncDisposable
         resp.StatusCode.Should().Be(HttpStatusCode.OK);
         var corpo = await resp.Content.ReadFromJsonAsync<JsonElement>(_json);
         corpo.GetProperty("usuario").GetProperty("email").GetString().Should().Be(email);
+    }
+
+    [Fact]
+    public async Task POST_login_tres_falhas_consecutivas_bloqueiam_e_retornam_401_401_403()
+    {
+        var client = _factory.CreateClient();
+        var (email, _) = await CadastrarUsuarioAsync(client);
+
+        // 1ª e 2ª falha — 401, mensagem unificada.
+        for (var i = 0; i < 2; i++)
+        {
+            var falha = await client.PostAsJsonAsync(RotaLogin, new { email, senha = "Errada9999" }, _json);
+            falha.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+            var corpoFalha = await falha.Content.ReadFromJsonAsync<JsonElement>(_json);
+            corpoFalha.GetProperty("title").GetString().Should().Be(MensagemCredencialInvalida);
+        }
+
+        // 3ª falha — vira lockout, 403 com mensagem e bloqueadoAte preenchido.
+        var bloqueio = await client.PostAsJsonAsync(RotaLogin, new { email, senha = "Errada9999" }, _json);
+        bloqueio.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        var corpoBloqueio = await bloqueio.Content.ReadFromJsonAsync<JsonElement>(_json);
+        corpoBloqueio.GetProperty("title").GetString().Should().Be(MensagemUsuarioBloqueado);
+        corpoBloqueio.GetProperty("type").GetString().Should().Contain("usuario-bloqueado");
+        corpoBloqueio.GetProperty("bloqueadoAte").GetDateTime().Should().BeAfter(DateTime.UtcNow);
+    }
+
+    [Fact]
+    public async Task POST_login_com_usuario_bloqueado_retorna_403_imediato_mesmo_com_senha_correta()
+    {
+        var client = _factory.CreateClient();
+        var (email, senha) = await CadastrarUsuarioAsync(client);
+
+        // Provoca o bloqueio (3 falhas).
+        for (var i = 0; i < 3; i++)
+        {
+            await client.PostAsJsonAsync(RotaLogin, new { email, senha = "Errada9999" }, _json);
+        }
+
+        // Mesmo com senha correta, bloqueio ativo prevalece.
+        var resp = await client.PostAsJsonAsync(RotaLogin, new { email, senha }, _json);
+        resp.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        var corpo = await resp.Content.ReadFromJsonAsync<JsonElement>(_json);
+        corpo.GetProperty("title").GetString().Should().Be(MensagemUsuarioBloqueado);
+        corpo.GetProperty("type").GetString().Should().Contain("usuario-bloqueado");
     }
 
     [Fact]

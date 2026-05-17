@@ -48,7 +48,7 @@ public class LoginHandlerTests
     }
 
     [Fact]
-    public async Task Senha_errada_para_usuario_existente_lanca_InvalidCredentials()
+    public async Task Senha_errada_para_usuario_existente_lanca_InvalidCredentials_incrementa_contador()
     {
         var usuario = NovoUsuario(ativo: true);
         _repo.ObterPorEmailAsync(usuario.EmailValor, Arg.Any<CancellationToken>()).Returns(usuario);
@@ -59,10 +59,16 @@ public class LoginHandlerTests
 
         await act.Should().ThrowAsync<InvalidCredentialsException>();
 
+        usuario.TentativasInvalidas.Should().Be(1);
+        usuario.BloqueadoAte.Should().BeNull();
+        await _repo.Received(1).SalvarAsync(Arg.Any<CancellationToken>());
+
+        // entidadeId carregado para rastreabilidade no audit log (mensagem HTTP segue unificada
+        // — quem garante anti-enumeration é o handler, não o audit log interno).
         await _auditoria.Received(1).LogAsync(
             LoginHandler.EventoFalha,
             LoginHandler.EntidadeAuditoria,
-            null,
+            usuario.Id,
             Arg.Is<object>(o => DadosTem(o, "Motivo", LoginHandler.MotivoCredencialInvalida)),
             Arg.Any<CancellationToken>());
     }
@@ -188,6 +194,123 @@ public class LoginHandlerTests
         await _repo.Received(1).ObterPorEmailAsync("alice@carwash.local", Arg.Any<CancellationToken>());
     }
 
+    [Fact]
+    public async Task Login_com_usuario_bloqueado_lanca_UsuarioBloqueado_sem_incrementar_contador()
+    {
+        var usuario = NovoUsuario(ativo: true);
+        BloquearUsuario(usuario, minutosNoFuturo: 5, tentativasIniciais: 3);
+        _repo.ObterPorEmailAsync(usuario.EmailValor, Arg.Any<CancellationToken>()).Returns(usuario);
+        _hasher.Verify("Senha1234", usuario.SenhaHash).Returns(true);
+
+        var handler = NovoHandler();
+        var act = () => handler.HandleAsync(new LoginCommand(usuario.EmailValor, "Senha1234"), CancellationToken.None);
+
+        var ex = await act.Should().ThrowAsync<UsuarioBloqueadoException>();
+        ex.Which.BloqueadoAte.Should().BeAfter(DateTime.UtcNow);
+
+        // Bloqueio ativo NÃO incrementa nem persiste.
+        usuario.TentativasInvalidas.Should().Be(3);
+        await _repo.DidNotReceive().SalvarAsync(Arg.Any<CancellationToken>());
+
+        await _auditoria.Received(1).LogAsync(
+            LoginHandler.EventoFalha,
+            LoginHandler.EntidadeAuditoria,
+            usuario.Id,
+            Arg.Is<object>(o => DadosTem(o, "Motivo", LoginHandler.MotivoUsuarioBloqueado)),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Tres_falhas_consecutivas_bloqueiam_usuario_e_lancam_403_na_terceira()
+    {
+        var usuario = NovoUsuario(ativo: true);
+        _repo.ObterPorEmailAsync(usuario.EmailValor, Arg.Any<CancellationToken>()).Returns(usuario);
+        _hasher.Verify("ErradaXYZ", usuario.SenhaHash).Returns(false);
+
+        var handler = NovoHandler();
+
+        // 1ª falha — 401
+        await handler.Invoking(h => h.HandleAsync(new LoginCommand(usuario.EmailValor, "ErradaXYZ"), CancellationToken.None))
+            .Should().ThrowAsync<InvalidCredentialsException>();
+        usuario.TentativasInvalidas.Should().Be(1);
+        usuario.BloqueadoAte.Should().BeNull();
+
+        // 2ª falha — 401
+        await handler.Invoking(h => h.HandleAsync(new LoginCommand(usuario.EmailValor, "ErradaXYZ"), CancellationToken.None))
+            .Should().ThrowAsync<InvalidCredentialsException>();
+        usuario.TentativasInvalidas.Should().Be(2);
+        usuario.BloqueadoAte.Should().BeNull();
+
+        // 3ª falha — vira bloqueio (403)
+        var act = () => handler.HandleAsync(new LoginCommand(usuario.EmailValor, "ErradaXYZ"), CancellationToken.None);
+        var ex = await act.Should().ThrowAsync<UsuarioBloqueadoException>();
+        ex.Which.BloqueadoAte.Should().BeCloseTo(DateTime.UtcNow.Add(LoginHandler.DuracaoBloqueio), TimeSpan.FromSeconds(5));
+
+        usuario.TentativasInvalidas.Should().Be(LoginHandler.LimiteTentativasInvalidas);
+        usuario.BloqueadoAte.Should().NotBeNull();
+
+        // 3 SalvarAsync (uma por falha).
+        await _repo.Received(3).SalvarAsync(Arg.Any<CancellationToken>());
+
+        // O evento UsuarioContaBloqueada é auditado exatamente uma vez (na 3ª falha).
+        await _auditoria.Received(1).LogAsync(
+            LoginHandler.EventoUsuarioBloqueado,
+            LoginHandler.EntidadeAuditoria,
+            usuario.Id,
+            Arg.Any<object?>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Sucesso_apos_falhas_zera_contador_e_libera_bloqueio()
+    {
+        var usuario = NovoUsuario(ativo: true);
+
+        // Simula histórico: 2 falhas anteriores acumuladas (ainda não bloqueado).
+        usuario.RegistrarFalhaDeLogin(DateTime.UtcNow, LoginHandler.LimiteTentativasInvalidas, LoginHandler.DuracaoBloqueio);
+        usuario.RegistrarFalhaDeLogin(DateTime.UtcNow, LoginHandler.LimiteTentativasInvalidas, LoginHandler.DuracaoBloqueio);
+        usuario.TentativasInvalidas.Should().Be(2);
+
+        _repo.ObterPorEmailAsync(usuario.EmailValor, Arg.Any<CancellationToken>()).Returns(usuario);
+        _hasher.Verify("Senha1234", usuario.SenhaHash).Returns(true);
+        _hasher.NeedsRehash(usuario.SenhaHash).Returns(false);
+        _tokens.EmitirAsync(usuario, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(("tok", DateTime.UtcNow.AddHours(8))));
+
+        var handler = NovoHandler();
+        var resp = await handler.HandleAsync(new LoginCommand(usuario.EmailValor, "Senha1234"), CancellationToken.None);
+
+        resp.AccessToken.Should().Be("tok");
+        usuario.TentativasInvalidas.Should().Be(0);
+        usuario.BloqueadoAte.Should().BeNull();
+
+        // O sucesso deve persistir o reset (mesmo sem rehash).
+        await _repo.Received(1).SalvarAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Bloqueio_expirado_permite_nova_tentativa_e_zera_contador_no_sucesso()
+    {
+        var usuario = NovoUsuario(ativo: true);
+
+        // Bloqueio que já expirou.
+        BloquearUsuario(usuario, minutosNoFuturo: -1, tentativasIniciais: 3);
+        usuario.EstaBloqueado(DateTime.UtcNow).Should().BeFalse();
+
+        _repo.ObterPorEmailAsync(usuario.EmailValor, Arg.Any<CancellationToken>()).Returns(usuario);
+        _hasher.Verify("Senha1234", usuario.SenhaHash).Returns(true);
+        _hasher.NeedsRehash(usuario.SenhaHash).Returns(false);
+        _tokens.EmitirAsync(usuario, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(("tok", DateTime.UtcNow.AddHours(8))));
+
+        var handler = NovoHandler();
+        var resp = await handler.HandleAsync(new LoginCommand(usuario.EmailValor, "Senha1234"), CancellationToken.None);
+
+        resp.AccessToken.Should().Be("tok");
+        usuario.TentativasInvalidas.Should().Be(0);
+        usuario.BloqueadoAte.Should().BeNull();
+    }
+
     private LoginHandler NovoHandler() =>
         new(_repo, _hasher, _tokens, _auditoria, _contexto, _dummy, NullLogger<LoginHandler>.Instance);
 
@@ -218,5 +341,18 @@ public class LoginHandlerTests
 
         var valor = prop.GetValue(dados);
         return Equals(valor, esperado);
+    }
+
+    /// <summary>
+    /// Helper de teste: força o estado de bloqueio do usuário sem depender de N chamadas
+    /// a <c>RegistrarFalhaDeLogin</c>. Usa reflection para escrever nos setters privados.
+    /// </summary>
+    private static void BloquearUsuario(Usuario usuario, double minutosNoFuturo, int tentativasIniciais)
+    {
+        var tipo = typeof(Usuario);
+        tipo.GetProperty(nameof(Usuario.TentativasInvalidas))!
+            .SetValue(usuario, tentativasIniciais);
+        tipo.GetProperty(nameof(Usuario.BloqueadoAte))!
+            .SetValue(usuario, DateTime.UtcNow.AddMinutes(minutosNoFuturo));
     }
 }
