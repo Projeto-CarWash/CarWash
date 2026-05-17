@@ -1,3 +1,6 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
 namespace CarWash.Application.DTOs.Clientes;
 
 public class CreateClienteRequest
@@ -49,9 +52,23 @@ public class UpdateClienteRequest
     public string? Email { get; set; }
 
     public EnderecoRequest? Endereco { get; set; }
+
+    /// <summary>
+    /// Campos não mapeados do JSON (Opção B do GAP-CW-CLI-PUT-CPF em .NET 8).
+    /// O System.Text.Json popula este dicionário com qualquer propriedade extra
+    /// presente no body (ex.: <c>cpf</c>, <c>cnpj</c>) — o Service usa para emitir
+    /// warning, sinalizando ao cliente que CPF/CNPJ não são editáveis via PUT.
+    /// </summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? CamposExtras { get; set; }
 }
 
 public class AlterarStatusClienteRequest
 {
-    public bool Ativo { get; set; }
+    /// <summary>
+    /// Estado-alvo do cliente. Nullable porque o endpoint exige o campo presente
+    /// no body — body <c>{}</c> deve falhar com 400 (GAP-CW-CLI-STA-EMP),
+    /// não cair em <c>default(bool) = false</c> silenciosamente.
+    /// </summary>
+    public bool? Ativo { get; set; }
 }

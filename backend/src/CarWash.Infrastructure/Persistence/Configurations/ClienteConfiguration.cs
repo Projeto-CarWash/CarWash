@@ -40,10 +40,17 @@ public sealed class ClienteConfiguration : IEntityTypeConfiguration<Cliente>
         builder.Property(x => x.CriadoEm).IsRequired().HasColumnType("timestamptz").HasDefaultValueSql("now()");
         builder.Property(x => x.AtualizadoEm).IsRequired().HasColumnType("timestamptz").HasDefaultValueSql("now()");
 
+        // Auditoria de quem criou/alterou (GAP-CW-CLI-AUDIT-CREATE / GAP-CW-CLI-AUDIT).
+        // Nullable por enquanto: registros legados não têm o vínculo. Release futura
+        // promoverá para NOT NULL após backfill de auditoria histórica.
+        builder.Property(x => x.CriadoPorUsuarioId).HasColumnName("criado_por_usuario_id");
+        builder.Property(x => x.AtualizadoPorUsuarioId).HasColumnName("atualizado_por_usuario_id");
+
         builder.HasIndex(x => x.Nome).HasDatabaseName("idx_clientes_nome");
 
         builder.HasIndex(x => x.Email)
-            .HasDatabaseName("idx_clientes_email")
+            .IsUnique()
+            .HasDatabaseName("ux_clientes_email")
             .HasFilter("email IS NOT NULL");
 
         builder.HasIndex(x => x.Cpf)

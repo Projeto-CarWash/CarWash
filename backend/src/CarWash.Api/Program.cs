@@ -156,6 +156,39 @@ var app = builder.Build();
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
+// BUG-CONTRATO-404-ROUTE: padroniza 404 que escapa do roteador (route constraint
+// não bate, ex.: `{id:guid}` com "abc") em ProblemDetails canônico. NÃO sobrescreve
+// 404 que já produziu corpo (NotFoundException via ExceptionHandlingMiddleware) —
+// a condição `Response.HasStarted || ContentLength > 0` cobre isso.
+app.UseStatusCodePages(async ctx =>
+{
+    var response = ctx.HttpContext.Response;
+    if (response.StatusCode != StatusCodes.Status404NotFound
+        || response.HasStarted
+        || (response.ContentLength is > 0))
+    {
+        return;
+    }
+
+    var correlationId = ctx.HttpContext.Items[CorrelationIdMiddleware.ItemKey] as string
+        ?? Guid.NewGuid().ToString("N");
+
+    response.ContentType = "application/problem+json";
+    response.Headers.CacheControl = "no-store";
+
+    var problem = new Microsoft.AspNetCore.Mvc.ProblemDetails
+    {
+        Type = "https://carwash/errors/not-found",
+        Title = "Recurso não encontrado.",
+        Status = StatusCodes.Status404NotFound,
+    };
+    problem.Extensions["correlationId"] = correlationId;
+
+    await response.WriteAsync(
+        System.Text.Json.JsonSerializer.Serialize(problem, CarWash.Api.NotFoundProblemJsonOptions.Default))
+        .ConfigureAwait(false);
+});
+
 app.UseCarWashSwagger();
 
 // CORS antes de Authentication (preflight não-autenticado precisa passar pelo CORS).
@@ -185,3 +218,14 @@ app.Run();
 #pragma warning disable S1118, SA1502
 public partial class Program { }
 #pragma warning restore S1118, SA1502
+
+#pragma warning disable SA1402, SA1403 // Tipo auxiliar para o handler do UseStatusCodePages (cache de JsonSerializerOptions, CA1869).
+namespace CarWash.Api
+{
+    internal static class NotFoundProblemJsonOptions
+    {
+        public static readonly System.Text.Json.JsonSerializerOptions Default =
+            new(System.Text.Json.JsonSerializerDefaults.Web);
+    }
+}
+#pragma warning restore SA1402, SA1403

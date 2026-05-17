@@ -5,6 +5,7 @@ using CarWash.Application.Interfaces;
 using CarWash.Domain.Entities;
 using CarWash.Domain.ValueObjects;
 using FluentValidation;
+using Microsoft.Extensions.Logging;
 using ValidationException = CarWash.Application.Common.Exceptions.ValidationException;
 
 namespace CarWash.Application.Services.Clientes;
@@ -14,15 +15,18 @@ public class ClienteService : IClienteService
     private readonly IClienteRepository clienteRepository;
     private readonly IValidator<CreateClienteRequest> createValidator;
     private readonly IValidator<UpdateClienteRequest> updateValidator;
+    private readonly ILogger<ClienteService> logger;
 
     public ClienteService(
         IClienteRepository clienteRepository,
         IValidator<CreateClienteRequest> createValidator,
-        IValidator<UpdateClienteRequest> updateValidator)
+        IValidator<UpdateClienteRequest> updateValidator,
+        ILogger<ClienteService> logger)
     {
         this.clienteRepository = clienteRepository;
         this.createValidator = createValidator;
         this.updateValidator = updateValidator;
+        this.logger = logger;
     }
 
     public async Task<CreateClienteResponse> CriarAsync(
@@ -40,6 +44,19 @@ public class ClienteService : IClienteService
             throw new ValidationException(
                 "Dados do cliente inválidos. Verifique os campos e tente novamente.",
                 AgruparErros(validation.Errors));
+        }
+
+        // Defesa em profundidade: o validator já exige NotNull em DataNascimento,
+        // mas se algum chamador interno bypassar a pipeline, falhamos com 400
+        // estruturado em vez de 500 (NullReferenceException no Cliente.Criar).
+        if (!request.DataNascimento.HasValue)
+        {
+            throw new ValidationException(
+                "Dados do cliente inválidos. Verifique os campos e tente novamente.",
+                new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["dataNascimento"] = ["Data de nascimento é obrigatória."],
+                });
         }
 
         var nome = InputNormalizer.SanitizeTextOrNull(request.Nome)!;
@@ -64,16 +81,29 @@ public class ClienteService : IClienteService
                 "cliente-documento-duplicado");
         }
 
+        // GAP-CW-CLI-EMAIL-1: e-mail deve ser único entre os clientes ativos
+        // (índice parcial ux_clientes_email no banco como defesa final).
+        if (emailNormalizado is not null
+            && await clienteRepository.ExisteEmailAsync(emailNormalizado, ignoreClienteId: null, cancellationToken))
+        {
+            throw new ConflictException(
+                "Já existe cliente cadastrado com este e-mail.",
+                "cliente-email-duplicado");
+        }
+
         var cliente = Cliente.Criar(
             id: Guid.NewGuid(),
             nome: nome,
-            dataNascimento: request.DataNascimento!.Value,
+            dataNascimento: request.DataNascimento.Value,
             celular: new Telefone(celularDigits),
             endereco: endereco,
             cpf: cpfDigits is null ? null : new Cpf(cpfDigits),
             cnpj: cnpjDigits is null ? null : new Cnpj(cnpjDigits),
             telefone: telefoneDigits is null ? null : new Telefone(telefoneDigits),
             email: emailNormalizado is null ? null : new Email(emailNormalizado));
+
+        // GAP-CW-CLI-AUDIT-CREATE: registra o ator do cadastro.
+        cliente.RegistrarCriadoPor(usuarioId);
 
         await clienteRepository.AdicionarAsync(cliente, traceId, usuarioId, cancellationToken);
 
@@ -98,7 +128,27 @@ public class ClienteService : IClienteService
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
-        _ = usuarioId;
+
+        // GAP-CW-CLI-PUT-CPF (Opção B em .NET 8): se o body trouxer cpf/cnpj/ativo,
+        // não falhamos a requisição — apenas logamos warning. Esses campos não são
+        // editáveis via PUT (cpf/cnpj: decisão de produto; ativo: mudança via
+        // PATCH /clientes/{id}/status). Campos extras são descartados pelo binder.
+        if (request.CamposExtras is { Count: > 0 })
+        {
+            var camposNaoEditaveis = request.CamposExtras.Keys
+                .Where(k => string.Equals(k, "cpf", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(k, "cnpj", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(k, "ativo", StringComparison.OrdinalIgnoreCase));
+
+            foreach (var campo in camposNaoEditaveis)
+            {
+                logger.LogWarning(
+                    "PUT /clientes/{ClienteId} recebeu campo não editável '{Campo}' — ignorado. UsuarioId={UsuarioId}",
+                    id,
+                    campo,
+                    usuarioId);
+            }
+        }
 
         var validation = await updateValidator.ValidateAsync(request, cancellationToken);
         if (!validation.IsValid)
@@ -106,6 +156,18 @@ public class ClienteService : IClienteService
             throw new ValidationException(
                 "Dados do cliente inválidos. Verifique os campos e tente novamente.",
                 AgruparErros(validation.Errors));
+        }
+
+        // Defesa em profundidade: validator já exige NotNull em DataNascimento.
+        // Bloqueio de fallback para nunca cair em InvalidOperationException no AtualizarDados.
+        if (!request.DataNascimento.HasValue)
+        {
+            throw new ValidationException(
+                "Dados do cliente inválidos. Verifique os campos e tente novamente.",
+                new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["dataNascimento"] = ["Data de nascimento é obrigatória."],
+                });
         }
 
         var cliente = await clienteRepository.ObterPorIdAsync(id, cancellationToken)
@@ -117,13 +179,26 @@ public class ClienteService : IClienteService
         var emailNormalizado = InputNormalizer.EmailOrNull(request.Email);
         var endereco = MontarEndereco(request.Endereco!);
 
+        // GAP-CW-CLI-PUT-EML: e-mail deve continuar único entre clientes,
+        // ignorando o próprio cliente (permite manter o mesmo valor).
+        if (emailNormalizado is not null
+            && await clienteRepository.ExisteEmailAsync(emailNormalizado, ignoreClienteId: id, cancellationToken))
+        {
+            throw new ConflictException(
+                "Já existe cliente cadastrado com este e-mail.",
+                "cliente-email-duplicado");
+        }
+
         cliente.AtualizarDados(
             nome: nome,
-            dataNascimento: request.DataNascimento!.Value,
+            dataNascimento: request.DataNascimento.Value,
             celular: new Telefone(celularDigits),
             endereco: endereco,
             telefone: telefoneDigits is null ? null : new Telefone(telefoneDigits),
             email: emailNormalizado is null ? null : new Email(emailNormalizado));
+
+        // GAP-CW-CLI-AUDIT: ator da última alteração.
+        cliente.RegistrarAtualizadoPor(usuarioId);
 
         await clienteRepository.SalvarAsync(cancellationToken);
 
@@ -136,8 +211,6 @@ public class ClienteService : IClienteService
         Guid? usuarioId,
         CancellationToken cancellationToken)
     {
-        _ = usuarioId;
-
         var cliente = await clienteRepository.ObterPorIdAsync(id, cancellationToken)
             ?? throw new NotFoundException("Cliente não encontrado.");
 
@@ -149,6 +222,9 @@ public class ClienteService : IClienteService
         {
             cliente.Inativar();
         }
+
+        // GAP-CW-CLI-AUDIT: status também conta como alteração — registra o ator.
+        cliente.RegistrarAtualizadoPor(usuarioId);
 
         await clienteRepository.SalvarAsync(cancellationToken);
         return ToResponse(cliente);
@@ -168,11 +244,29 @@ public class ClienteService : IClienteService
             tamanhoPagina,
             cancellationToken);
 
+        // GAP-CLAMP: reflete o tamanho efetivo (clamp aplicado no repositório),
+        // não o valor pedido pelo cliente. O controller já rejeita fora da faixa,
+        // mas se algum chamador interno bypassar a validação, o JSON ainda é honesto.
+        var paginaEfetiva = pagina < 1 ? 1 : pagina;
+        int tamanhoEfetivo;
+        if (tamanhoPagina < 1)
+        {
+            tamanhoEfetivo = 20;
+        }
+        else if (tamanhoPagina > 100)
+        {
+            tamanhoEfetivo = 100;
+        }
+        else
+        {
+            tamanhoEfetivo = tamanhoPagina;
+        }
+
         return new ListaClientesResponse
         {
             Total = total,
-            Pagina = pagina < 1 ? 1 : pagina,
-            TamanhoPagina = tamanhoPagina < 1 ? 20 : tamanhoPagina,
+            Pagina = paginaEfetiva,
+            TamanhoPagina = tamanhoEfetivo,
             Itens = itens.Select(c => new ClienteResumoResponse
             {
                 Id = c.Id,

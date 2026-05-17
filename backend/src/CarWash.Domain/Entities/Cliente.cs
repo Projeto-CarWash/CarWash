@@ -61,6 +61,19 @@ public sealed class Cliente : IAuditable, IAuditableSetter
 
     public DateTime AtualizadoEm { get; private set; }
 
+    /// <summary>
+    /// Id do usuário autenticado que criou o cliente.
+    /// Pode ser <c>null</c> em registros legados (anteriores à migration
+    /// <c>AdicionaAuditoriaUsuarioCliente</c>); para releases futuras deve virar NOT NULL.
+    /// </summary>
+    public Guid? CriadoPorUsuarioId { get; private set; }
+
+    /// <summary>
+    /// Id do usuário autenticado que efetuou a última alteração do cliente
+    /// (atualização de dados ou mudança de status).
+    /// </summary>
+    public Guid? AtualizadoPorUsuarioId { get; private set; }
+
     public Endereco Endereco => new(
         EnderecoCep,
         EnderecoLogradouro,
@@ -165,6 +178,25 @@ public sealed class Cliente : IAuditable, IAuditableSetter
     public void Inativar() => Ativo = false;
 
     public void Ativar() => Ativo = true;
+
+    /// <summary>
+    /// Registra o usuário responsável pela criação (auditoria).
+    /// Chamado pelo Service ao persistir um cliente novo.
+    /// </summary>
+    public void RegistrarCriadoPor(Guid? usuarioId)
+    {
+        CriadoPorUsuarioId = usuarioId;
+        AtualizadoPorUsuarioId = usuarioId;
+    }
+
+    /// <summary>
+    /// Registra o usuário responsável pela última alteração (auditoria).
+    /// Chamado pelo Service em atualizações de dados ou de status.
+    /// </summary>
+    public void RegistrarAtualizadoPor(Guid? usuarioId)
+    {
+        AtualizadoPorUsuarioId = usuarioId;
+    }
 
     void IAuditableSetter.SetCriadoEm(DateTime valor) => CriadoEm = valor;
 

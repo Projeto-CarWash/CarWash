@@ -45,12 +45,31 @@ public class CarWashDbContext : DbContext
 
     public DbSet<Notificacao> Notificacoes => Set<Notificacao>();
 
+    /// <summary>
+    /// Stub C# mapeado para a função PostgreSQL <c>public.unaccent(text)</c>
+    /// (extensão <c>unaccent</c>, instalada via migration <c>AdicionaAuditoriaUsuarioCliente</c>).
+    /// Permite que LINQ traduza <c>CarWashDbContext.Unaccent(x.Nome)</c> diretamente
+    /// para SQL — usado na busca de clientes (GAP-UNACCENT-ASSIM) para fechar a
+    /// assimetria de busca por termos com/sem acento. Não deve ser chamado em C# puro.
+    /// </summary>
+    public static string Unaccent(string input)
+        => throw new InvalidOperationException(
+            "CarWashDbContext.Unaccent só pode ser usado dentro de expressões LINQ traduzidas para SQL.");
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         ArgumentNullException.ThrowIfNull(modelBuilder);
 
         modelBuilder.HasDefaultSchema("public");
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(CarWashDbContext).Assembly);
+
+        // Mapeia o stub Unaccent(string) para a função SQL public.unaccent(text).
+        // A extensão é instalada pela migration AdicionaAuditoriaUsuarioCliente.
+        modelBuilder
+            .HasDbFunction(typeof(CarWashDbContext).GetMethod(nameof(Unaccent), new[] { typeof(string) })!)
+            .HasName("unaccent")
+            .HasSchema("public");
+
         base.OnModelCreating(modelBuilder);
     }
 }
