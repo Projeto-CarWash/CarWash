@@ -2,7 +2,7 @@ using System.Text;
 using CarWash.Api.Middlewares;
 using CarWash.Application;
 using CarWash.Application.DTOs;
-using CarWash.Infrastructure; // <-- ADICIONADO PARA CORRIGIR O ERRO 1
+using CarWash.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc;
@@ -40,8 +40,9 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
         return new BadRequestObjectResult(response);
     };
 });
+
 builder.Services.AddApplication();
-builder.Services.AddInfrastructure(builder.Configuration); // <-- AGORA ELE ACHA ISSO!
+builder.Services.AddInfrastructure(builder.Configuration);
 
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 string secretKey = jwtSettings["Secret"] ?? throw new InvalidOperationException("JWT Secret não configurado.");
@@ -61,7 +62,7 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         ValidIssuer = jwtSettings["Issuer"],
         ValidAudience = jwtSettings["Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
     };
 });
 
@@ -83,17 +84,17 @@ builder.Services.AddSwaggerGen(c =>
         Scheme = "Bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "Insira o token JWT desta maneira: Bearer {seu_token}"
+        Description = "Insira o token JWT desta maneira: Bearer {seu_token}",
     });
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
             new OpenApiSecurityScheme
             {
-                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" },
             },
             Array.Empty<string>()
-        }
+        },
     });
 });
 
@@ -101,11 +102,8 @@ var app = builder.Build();
 
 app.UseMiddleware<ExceptionMiddleware>();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
 if (!app.Environment.IsEnvironment("Testing"))
 {
@@ -121,12 +119,11 @@ app.MapHealthChecks("/health", new HealthCheckOptions { Predicate = _ => false }
 app.MapHealthChecks("/health/ready", new HealthCheckOptions { Predicate = check => check.Tags.Contains("ready") });
 app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false });
 
-#pragma warning disable S6966 // Top-level statements: app.Run blocks intentionally; required by blueprint.
+#pragma warning disable S6966
 app.Run();
 #pragma warning restore S6966
 #pragma warning restore CA1861
 
-#pragma warning disable S1118, SA1502 // Marker partial required by WebApplicationFactory<Program>.
+#pragma warning disable S1118, SA1502
 public partial class Program { }
 #pragma warning restore S1118, SA1502
-
