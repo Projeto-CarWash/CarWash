@@ -93,8 +93,39 @@ internal static class SwaggerExtensions
             Description = "Servidor atual",
         });
 
+        // SchemaIds prefixados pelo tipo "owner" — evita colisão quando dois
+        // records aninhados têm o mesmo nome curto (ex.: LoginResponse.UsuarioLogado
+        // vs RefreshResponse.UsuarioLogado).
+        options.CustomSchemaIds(BuildSchemaId);
+
         AddJwtBearerSecurity(options);
         IncludeXmlCommentsIfPresent(options);
+    }
+
+    /// <summary>
+    /// Gera schemaIds estáveis e únicos:
+    /// <list type="bullet">
+    ///   <item>Tipo top-level: usa apenas <c>Name</c> (ex.: <c>LoginResponse</c>).</item>
+    ///   <item>Tipo aninhado: prefixa com o(s) declarante(s) separados por <c>.</c>
+    ///   (ex.: <c>LoginResponse.UsuarioLogado</c>).</item>
+    ///   <item>Genérico: substitui os colchetes por nomes encadeados
+    ///   (ex.: <c>List&lt;Foo&gt;</c> → <c>ListOfFoo</c>).</item>
+    /// </list>
+    /// </summary>
+    private static string BuildSchemaId(Type type)
+    {
+        ArgumentNullException.ThrowIfNull(type);
+
+        string Naked(Type t) => t.IsGenericType
+            ? $"{t.Name.AsSpan(0, t.Name.IndexOf('`')).ToString()}Of{string.Join(string.Empty, t.GetGenericArguments().Select(BuildSchemaId))}"
+            : t.Name;
+
+        if (type.IsNested && type.DeclaringType is not null)
+        {
+            return $"{BuildSchemaId(type.DeclaringType)}.{Naked(type)}";
+        }
+
+        return Naked(type);
     }
 
     private static void AddJwtBearerSecurity(SwaggerGenOptions options)
