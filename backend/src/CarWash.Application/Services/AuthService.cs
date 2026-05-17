@@ -33,28 +33,6 @@ public class AuthService : IAuthService
         _logger = logger;
     }
 
-    private static string GerarRefreshToken()
-    {
-        byte[] randomNumber = new byte[32];
-
-        using var rng = RandomNumberGenerator.Create();
-        rng.GetBytes(randomNumber);
-
-        return Convert.ToBase64String(randomNumber);
-    }
-
-    private static string MascararEmail(string email)
-    {
-        string[] partes = email.Split('@');
-
-        if (partes.Length != 2 || partes[0].Length <= 2)
-        {
-            return "***@***";
-        }
-
-        return $"{partes[0].Substring(0, 2)}***@{partes[1]}";
-    }
-
     public async Task<LoginResponse> LoginAsync(LoginRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Email) ||
@@ -186,7 +164,6 @@ public class AuthService : IAuthService
                 "Refresh token é obrigatório.");
         }
 
-        // Buscar sessões válidas
         var sessions = await _context.Sessions
             .Include(s => s.User)
             .Where(s => !s.IsRevoked && s.ExpiresAt > DateTime.UtcNow)
@@ -196,7 +173,6 @@ public class AuthService : IAuthService
             "REFRESH: Encontradas {SessionCount} sessões válidas",
             sessions.Count);
 
-        // Verificar hash em memória (LINQ to Objects, não Expression Tree)
         var session = sessions.FirstOrDefault(s =>
             BCrypt.Net.BCrypt.Verify(request.RefreshToken, s.RefreshTokenHash));
 
@@ -259,12 +235,10 @@ public class AuthService : IAuthService
                 "Refresh token é obrigatório.");
         }
 
-        // Buscar sessões válidas
         var sessions = await _context.Sessions
             .Where(s => !s.IsRevoked)
             .ToListAsync();
 
-        // Verificar hash em memória (LINQ to Objects, não Expression Tree)
         var session = sessions.FirstOrDefault(s =>
             BCrypt.Net.BCrypt.Verify(refreshToken, s.RefreshTokenHash));
 
@@ -278,6 +252,28 @@ public class AuthService : IAuthService
                 "LOGOUT: Sessão revogada para usuário ID: {UserId}",
                 session.UserId);
         }
+    }
+
+    private static string GerarRefreshToken()
+    {
+        byte[] randomNumber = new byte[32];
+
+        using var rng = RandomNumberGenerator.Create();
+        rng.GetBytes(randomNumber);
+
+        return Convert.ToBase64String(randomNumber);
+    }
+
+    private static string MascararEmail(string email)
+    {
+        string[] partes = email.Split('@');
+
+        if (partes.Length != 2 || partes[0].Length <= 2)
+        {
+            return "***@***";
+        }
+
+        return $"{partes[0].Substring(0, 2)}***@{partes[1]}";
     }
 
     private string GerarAccessToken(User user)
