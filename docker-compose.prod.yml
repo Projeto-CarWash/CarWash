@@ -49,7 +49,8 @@ services:
     restart: always
     build:
       args:
-        VITE_API_URL: ${VITE_API_URL:-/api}
+        # Mantém o default da base (vazio) — caminhos absolutos /api/v1/... + nginx.
+        VITE_API_URL: ${VITE_API_URL:-}
     deploy:
       resources:
         limits:

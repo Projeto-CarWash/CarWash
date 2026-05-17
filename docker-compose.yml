@@ -80,7 +80,9 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: ${VITE_API_URL:-/api}
+        # baseURL do axios fica vazio: o código usa caminhos absolutos `/api/v1/...`.
+        # nginx em hom/prod já roteia `/api/*` para o backend; Vite proxy faz o mesmo em dev.
+        VITE_API_URL: ${VITE_API_URL:-}
     container_name: carwash-frontend
     restart: unless-stopped
     networks:
