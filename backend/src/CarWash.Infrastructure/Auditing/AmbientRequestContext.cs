@@ -31,6 +31,10 @@ public sealed class AmbientRequestContext : ICurrentRequestContext
 
     public string? EventoAtual => Estado.Value?.EventoAtual;
 
+    public string? IpOrigem => Estado.Value?.IpOrigem;
+
+    public string? UserAgent => Estado.Value?.UserAgent;
+
     public void DefinirEvento(string evento)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(evento);
@@ -54,6 +58,20 @@ public sealed class AmbientRequestContext : ICurrentRequestContext
         Estado.Value = atual;
     }
 
+    public static void DefinirIpOrigem(string? ipOrigem)
+    {
+        var atual = Estado.Value ?? new RequestState { CorrelationId = Guid.NewGuid().ToString("N") };
+        atual.IpOrigem = ipOrigem;
+        Estado.Value = atual;
+    }
+
+    public static void DefinirUserAgent(string? userAgent)
+    {
+        var atual = Estado.Value ?? new RequestState { CorrelationId = Guid.NewGuid().ToString("N") };
+        atual.UserAgent = userAgent;
+        Estado.Value = atual;
+    }
+
     public static void Reset() => Estado.Value = null;
 
     private sealed class RequestState
@@ -63,5 +81,9 @@ public sealed class AmbientRequestContext : ICurrentRequestContext
         public Guid? UsuarioId { get; set; }
 
         public string? EventoAtual { get; set; }
+
+        public string? IpOrigem { get; set; }
+
+        public string? UserAgent { get; set; }
     }
 }

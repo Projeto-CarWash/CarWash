@@ -28,6 +28,12 @@ export interface LoginResponse {
 }
 
 /**
+ * Resposta do POST /api/v1/auth/refresh — mesma forma do LoginResponse
+ * (refresh token vai pelo Set-Cookie httpOnly, não pelo body).
+ */
+export type RefreshResponse = LoginResponse;
+
+/**
  * Formato de erro (RFC 7807 ProblemDetails) devolvido pelo backend
  * — ver CarWash.Api/Middleware/ExceptionHandlingMiddleware.cs.
  */

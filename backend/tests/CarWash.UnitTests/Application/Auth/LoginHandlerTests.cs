@@ -20,7 +20,8 @@ public class LoginHandlerTests
 
     private readonly IUsuarioRepository _repo = Substitute.For<IUsuarioRepository>();
     private readonly IPasswordHasher _hasher = Substitute.For<IPasswordHasher>();
-    private readonly IAuthTokenService _tokens = Substitute.For<IAuthTokenService>();
+    private readonly IAccessTokenService _accessTokens = Substitute.For<IAccessTokenService>();
+    private readonly IRefreshTokenService _refreshTokens = Substitute.For<IRefreshTokenService>();
     private readonly IAuditLogger _auditoria = Substitute.For<IAuditLogger>();
     private readonly ICurrentRequestContext _contexto = Substitute.For<ICurrentRequestContext>();
     private readonly DummyPasswordHash _dummy = new(DummyHash);
@@ -63,8 +64,6 @@ public class LoginHandlerTests
         usuario.BloqueadoAte.Should().BeNull();
         await _repo.Received(1).SalvarAsync(Arg.Any<CancellationToken>());
 
-        // entidadeId carregado para rastreabilidade no audit log (mensagem HTTP segue unificada
-        // — quem garante anti-enumeration é o handler, não o audit log interno).
         await _auditoria.Received(1).LogAsync(
             LoginHandler.EventoFalha,
             LoginHandler.EntidadeAuditoria,
@@ -105,7 +104,6 @@ public class LoginHandlerTests
 
         await act.Should().ThrowAsync<InvalidCredentialsException>();
 
-        // Não deve ter audit de UsuarioInativo (credencial inválida tem precedência).
         await _auditoria.DidNotReceive().LogAsync(
             LoginHandler.EventoFalha,
             LoginHandler.EntidadeAuditoria,
@@ -115,22 +113,28 @@ public class LoginHandlerTests
     }
 
     [Fact]
-    public async Task Ativo_com_senha_correta_retorna_LoginResponse_com_token()
+    public async Task Ativo_com_senha_correta_retorna_LoginResultado_com_access_e_refresh()
     {
         var usuario = NovoUsuario(ativo: true);
         _repo.ObterPorEmailAsync(usuario.EmailValor, Arg.Any<CancellationToken>()).Returns(usuario);
         _hasher.Verify("Senha1234", usuario.SenhaHash).Returns(true);
         _hasher.NeedsRehash(usuario.SenhaHash).Returns(false);
 
-        var expires = DateTime.UtcNow.AddHours(8);
-        _tokens.EmitirAsync(usuario, Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(("tok_abc_xyz", expires)));
+        var accessExpires = DateTime.UtcNow.AddMinutes(15);
+        var refreshExpires = DateTime.UtcNow.AddDays(7);
+        var sessaoId = Guid.NewGuid();
+
+        _accessTokens.Emitir(usuario).Returns(("jwt_abc_xyz", accessExpires));
+        _refreshTokens.EmitirAsync(usuario, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(new RefreshTokenEmitido("ref_abc_xyz", refreshExpires, sessaoId)));
 
         var handler = NovoHandler();
         var resp = await handler.HandleAsync(new LoginCommand(usuario.EmailValor, "Senha1234"), CancellationToken.None);
 
-        resp.AccessToken.Should().Be("tok_abc_xyz");
-        resp.ExpiresAt.Should().BeAfter(DateTime.UtcNow);
+        resp.AccessToken.Should().Be("jwt_abc_xyz");
+        resp.AccessExpiresAt.Should().Be(accessExpires);
+        resp.RefreshToken.Should().Be("ref_abc_xyz");
+        resp.RefreshExpiresAt.Should().Be(refreshExpires);
         resp.Usuario.Id.Should().Be(usuario.Id);
         resp.Usuario.Nome.Should().Be(usuario.Nome);
         resp.Usuario.Email.Should().Be(usuario.EmailValor);
@@ -165,8 +169,9 @@ public class LoginHandlerTests
         _hasher.Verify("Senha1234", usuario.SenhaHash).Returns(true);
         _hasher.NeedsRehash(usuario.SenhaHash).Returns(true);
         _hasher.Hash("Senha1234").Returns("$argon2id$v=19$m=131072,t=3,p=1$bm92bw$bm92b2hhc2g");
-        _tokens.EmitirAsync(usuario, Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(("tok", DateTime.UtcNow.AddHours(8))));
+        _accessTokens.Emitir(usuario).Returns(("tok", DateTime.UtcNow.AddMinutes(15)));
+        _refreshTokens.EmitirAsync(usuario, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(new RefreshTokenEmitido("ref", DateTime.UtcNow.AddDays(7), Guid.NewGuid())));
 
         var handler = NovoHandler();
         var resp = await handler.HandleAsync(new LoginCommand(usuario.EmailValor, "Senha1234"), CancellationToken.None);
@@ -184,8 +189,9 @@ public class LoginHandlerTests
         _repo.ObterPorEmailAsync(usuario.EmailValor, Arg.Any<CancellationToken>()).Returns(usuario);
         _hasher.Verify("Senha1234", usuario.SenhaHash).Returns(true);
         _hasher.NeedsRehash(usuario.SenhaHash).Returns(false);
-        _tokens.EmitirAsync(usuario, Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(("tok", DateTime.UtcNow.AddHours(8))));
+        _accessTokens.Emitir(usuario).Returns(("tok", DateTime.UtcNow.AddMinutes(15)));
+        _refreshTokens.EmitirAsync(usuario, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(new RefreshTokenEmitido("ref", DateTime.UtcNow.AddDays(7), Guid.NewGuid())));
 
         var handler = NovoHandler();
         var resp = await handler.HandleAsync(new LoginCommand("  ALICE@CARWASH.LOCAL  ", "Senha1234"), CancellationToken.None);
@@ -208,7 +214,6 @@ public class LoginHandlerTests
         var ex = await act.Should().ThrowAsync<UsuarioBloqueadoException>();
         ex.Which.BloqueadoAte.Should().BeAfter(DateTime.UtcNow);
 
-        // Bloqueio ativo NÃO incrementa nem persiste.
         usuario.TentativasInvalidas.Should().Be(3);
         await _repo.DidNotReceive().SalvarAsync(Arg.Any<CancellationToken>());
 
@@ -229,19 +234,16 @@ public class LoginHandlerTests
 
         var handler = NovoHandler();
 
-        // 1ª falha — 401
         await handler.Invoking(h => h.HandleAsync(new LoginCommand(usuario.EmailValor, "ErradaXYZ"), CancellationToken.None))
             .Should().ThrowAsync<InvalidCredentialsException>();
         usuario.TentativasInvalidas.Should().Be(1);
         usuario.BloqueadoAte.Should().BeNull();
 
-        // 2ª falha — 401
         await handler.Invoking(h => h.HandleAsync(new LoginCommand(usuario.EmailValor, "ErradaXYZ"), CancellationToken.None))
             .Should().ThrowAsync<InvalidCredentialsException>();
         usuario.TentativasInvalidas.Should().Be(2);
         usuario.BloqueadoAte.Should().BeNull();
 
-        // 3ª falha — vira bloqueio (403)
         var act = () => handler.HandleAsync(new LoginCommand(usuario.EmailValor, "ErradaXYZ"), CancellationToken.None);
         var ex = await act.Should().ThrowAsync<UsuarioBloqueadoException>();
         ex.Which.BloqueadoAte.Should().BeCloseTo(DateTime.UtcNow.Add(LoginHandler.DuracaoBloqueio), TimeSpan.FromSeconds(5));
@@ -249,10 +251,8 @@ public class LoginHandlerTests
         usuario.TentativasInvalidas.Should().Be(LoginHandler.LimiteTentativasInvalidas);
         usuario.BloqueadoAte.Should().NotBeNull();
 
-        // 3 SalvarAsync (uma por falha).
         await _repo.Received(3).SalvarAsync(Arg.Any<CancellationToken>());
 
-        // O evento UsuarioContaBloqueada é auditado exatamente uma vez (na 3ª falha).
         await _auditoria.Received(1).LogAsync(
             LoginHandler.EventoUsuarioBloqueado,
             LoginHandler.EntidadeAuditoria,
@@ -266,7 +266,6 @@ public class LoginHandlerTests
     {
         var usuario = NovoUsuario(ativo: true);
 
-        // Simula histórico: 2 falhas anteriores acumuladas (ainda não bloqueado).
         usuario.RegistrarFalhaDeLogin(DateTime.UtcNow, LoginHandler.LimiteTentativasInvalidas, LoginHandler.DuracaoBloqueio);
         usuario.RegistrarFalhaDeLogin(DateTime.UtcNow, LoginHandler.LimiteTentativasInvalidas, LoginHandler.DuracaoBloqueio);
         usuario.TentativasInvalidas.Should().Be(2);
@@ -274,8 +273,9 @@ public class LoginHandlerTests
         _repo.ObterPorEmailAsync(usuario.EmailValor, Arg.Any<CancellationToken>()).Returns(usuario);
         _hasher.Verify("Senha1234", usuario.SenhaHash).Returns(true);
         _hasher.NeedsRehash(usuario.SenhaHash).Returns(false);
-        _tokens.EmitirAsync(usuario, Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(("tok", DateTime.UtcNow.AddHours(8))));
+        _accessTokens.Emitir(usuario).Returns(("tok", DateTime.UtcNow.AddMinutes(15)));
+        _refreshTokens.EmitirAsync(usuario, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(new RefreshTokenEmitido("ref", DateTime.UtcNow.AddDays(7), Guid.NewGuid())));
 
         var handler = NovoHandler();
         var resp = await handler.HandleAsync(new LoginCommand(usuario.EmailValor, "Senha1234"), CancellationToken.None);
@@ -284,7 +284,6 @@ public class LoginHandlerTests
         usuario.TentativasInvalidas.Should().Be(0);
         usuario.BloqueadoAte.Should().BeNull();
 
-        // O sucesso deve persistir o reset (mesmo sem rehash).
         await _repo.Received(1).SalvarAsync(Arg.Any<CancellationToken>());
     }
 
@@ -293,15 +292,15 @@ public class LoginHandlerTests
     {
         var usuario = NovoUsuario(ativo: true);
 
-        // Bloqueio que já expirou.
         BloquearUsuario(usuario, minutosNoFuturo: -1, tentativasIniciais: 3);
         usuario.EstaBloqueado(DateTime.UtcNow).Should().BeFalse();
 
         _repo.ObterPorEmailAsync(usuario.EmailValor, Arg.Any<CancellationToken>()).Returns(usuario);
         _hasher.Verify("Senha1234", usuario.SenhaHash).Returns(true);
         _hasher.NeedsRehash(usuario.SenhaHash).Returns(false);
-        _tokens.EmitirAsync(usuario, Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(("tok", DateTime.UtcNow.AddHours(8))));
+        _accessTokens.Emitir(usuario).Returns(("tok", DateTime.UtcNow.AddMinutes(15)));
+        _refreshTokens.EmitirAsync(usuario, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(new RefreshTokenEmitido("ref", DateTime.UtcNow.AddDays(7), Guid.NewGuid())));
 
         var handler = NovoHandler();
         var resp = await handler.HandleAsync(new LoginCommand(usuario.EmailValor, "Senha1234"), CancellationToken.None);
@@ -312,7 +311,7 @@ public class LoginHandlerTests
     }
 
     private LoginHandler NovoHandler() =>
-        new(_repo, _hasher, _tokens, _auditoria, _contexto, _dummy, NullLogger<LoginHandler>.Instance);
+        new(_repo, _hasher, _accessTokens, _refreshTokens, _auditoria, _contexto, _dummy, NullLogger<LoginHandler>.Instance);
 
     private static Usuario NovoUsuario(bool ativo)
     {

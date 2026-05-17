@@ -79,4 +79,53 @@ public sealed class HttpCurrentRequestContext : ICurrentRequestContext
             ?? throw new InvalidOperationException("Não há HttpContext ativo para definir evento de auditoria.");
         ctx.Items["AuditEvent"] = evento;
     }
+
+    public string? IpOrigem
+    {
+        get
+        {
+            var ctx = _httpContext.HttpContext;
+            if (ctx is null)
+            {
+                return null;
+            }
+
+            // Em prod/hom o backend roda atrás do nginx, que injeta o IP real em
+            // X-Forwarded-For. Em dev direto, cai no RemoteIpAddress.
+            if (ctx.Request.Headers.TryGetValue("X-Forwarded-For", out var forwarded)
+                && !string.IsNullOrWhiteSpace(forwarded.ToString()))
+            {
+                var first = forwarded.ToString().Split(',', 2)[0].Trim();
+                if (!string.IsNullOrWhiteSpace(first))
+                {
+                    return first;
+                }
+            }
+
+            return ctx.Connection.RemoteIpAddress?.ToString();
+        }
+    }
+
+    public string? UserAgent
+    {
+        get
+        {
+            var ctx = _httpContext.HttpContext;
+            if (ctx is null)
+            {
+                return null;
+            }
+
+            var ua = ctx.Request.Headers["User-Agent"].ToString();
+            if (string.IsNullOrWhiteSpace(ua))
+            {
+                return null;
+            }
+
+            // Trunca em 255 chars para alinhar com a coluna usuario_sessoes.user_agent
+            // (DB001 §06.5) e evitar exceções de overflow ao persistir a sessão.
+            const int MaxLen = 255;
+            return ua.Length > MaxLen ? ua[..MaxLen] : ua;
+        }
+    }
 }

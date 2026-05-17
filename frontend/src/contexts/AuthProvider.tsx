@@ -1,5 +1,6 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { accessTokenStore } from '@/services/accessTokenStore';
 import { authService } from '@/services/authService';
 
 import { AuthContext } from './AuthContext';
@@ -7,53 +8,70 @@ import { AuthContext } from './AuthContext';
 import type { LoginCommand, UsuarioLogado } from '@/types/auth';
 import type { ReactNode } from 'react';
 
-const STORAGE_TOKEN_KEY = 'carwash_token';
-const STORAGE_USER_KEY = 'carwash_user';
-
 interface AuthProviderProps {
   children: ReactNode;
 }
 
-interface RestoredSession {
-  token: string | null;
+interface SessionState {
   user: UsuarioLogado | null;
+  token: string | null;
 }
 
 /**
- * Lê do localStorage uma única vez na inicialização do estado.
- * Mantemos fora do componente para não recriar a cada render.
+ * Provider de sessão. O access token vive em memória (<see cref="accessTokenStore" />)
+ * e o refresh token vive em cookie httpOnly. No mount, o provider tenta
+ * <c>authService.refresh()</c> para restaurar a sessão a partir do cookie —
+ * se o usuário recarregou a página com cookie ainda válido, ele continua logado;
+ * caso contrário, fica deslogado e o PrivateRoute redireciona para /login.
  */
-function restoreSession(): RestoredSession {
-  if (typeof window === 'undefined') {
-    return { token: null, user: null };
-  }
-  const storedToken = localStorage.getItem(STORAGE_TOKEN_KEY);
-  const storedUser = localStorage.getItem(STORAGE_USER_KEY);
-  if (!storedToken || !storedUser) {
-    return { token: null, user: null };
-  }
-  try {
-    return { token: storedToken, user: JSON.parse(storedUser) as UsuarioLogado };
-  } catch {
-    localStorage.removeItem(STORAGE_TOKEN_KEY);
-    localStorage.removeItem(STORAGE_USER_KEY);
-    return { token: null, user: null };
-  }
-}
-
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [{ token, user }, setSession] = useState<RestoredSession>(() => restoreSession());
+  const [{ user, token }, setSession] = useState<SessionState>({ user: null, token: null });
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  // Boot: tenta restaurar sessão via cookie httpOnly. Roda uma vez.
+  useEffect(() => {
+    let cancelado = false;
+
+    void (async () => {
+      const refreshed = await authService.refresh();
+      if (cancelado) {
+        return;
+      }
+      if (refreshed) {
+        setSession({ user: refreshed.usuario, token: refreshed.accessToken });
+      }
+      setIsLoading(false);
+    })();
+
+    return () => {
+      cancelado = true;
+    };
+  }, []);
+
+  // Sincronia: se o axios interceptor renovar/limpar o token, mantém o state alinhado.
+  useEffect(() => {
+    return accessTokenStore.subscribe((newToken) => {
+      setSession((prev) => {
+        if (prev.token === newToken) {
+          return prev;
+        }
+        // Token apagado externamente (ex.: refresh falhou no 401 interceptor).
+        if (newToken === null) {
+          return { user: null, token: null };
+        }
+        return { ...prev, token: newToken };
+      });
+    });
+  }, []);
 
   const login = useCallback(async (command: LoginCommand) => {
     const response = await authService.login(command);
-    localStorage.setItem(STORAGE_TOKEN_KEY, response.accessToken);
-    localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(response.usuario));
-    setSession({ token: response.accessToken, user: response.usuario });
+    setSession({ user: response.usuario, token: response.accessToken });
   }, []);
 
-  const logout = useCallback(() => {
-    authService.logout();
-    setSession({ token: null, user: null });
+  const logout = useCallback(async () => {
+    await authService.logout();
+    setSession({ user: null, token: null });
   }, []);
 
   const value = useMemo(
@@ -61,13 +79,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
       user,
       token,
       isAuthenticated: token !== null,
-      // Restauração é síncrona (lazy init do useState); manter o flag
-      // por compatibilidade com PrivateRoute, mas já fica `false`.
-      isLoading: false,
+      isLoading,
       login,
       logout,
     }),
-    [user, token, login, logout],
+    [user, token, isLoading, login, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

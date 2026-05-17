@@ -1,5 +1,6 @@
 using CarWash.Application.Abstractions;
 using CarWash.Application.Auth.Abstractions;
+using CarWash.Application.Auth.Persistence;
 using CarWash.Application.Common.Security;
 using CarWash.Application.Interfaces;
 using CarWash.Application.Usuarios.Persistence;
@@ -37,7 +38,12 @@ public static class DependencyInjection
         services.AddSingleton<DummyPasswordHash>(sp =>
             new DummyPasswordHash(sp.GetRequiredService<IPasswordHasher>().Hash(DummyPasswordPlaintext)));
 
-        services.AddSingleton<IAuthTokenService, OpaqueAuthTokenService>();
+        // Auth: JWT access (HMAC-SHA256, singleton) + refresh persistido em UsuarioSessao (scoped).
+        // ADR 0002 §Implicações: refresh_token_hash = SHA-256 via ITokenHasher.
+        services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
+        services.AddSingleton<IAccessTokenService, JwtAccessTokenService>();
+        services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+        services.AddScoped<IUsuarioSessaoRepository, UsuarioSessaoRepository>();
 
         // Contexto de auditoria — implementação default baseada em AsyncLocal.
         // A API substitui pelo CurrentRequestContext (HttpContext) no escopo da request.

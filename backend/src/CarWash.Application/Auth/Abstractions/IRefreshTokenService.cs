@@ -1,0 +1,37 @@
+using CarWash.Domain.Entities;
+
+namespace CarWash.Application.Auth.Abstractions;
+
+/// <summary>
+/// Gerencia o ciclo de vida do refresh token (RF001 — sessão com expiração e
+/// invalidação em logout). Persiste cada token como SHA-256 em
+/// <c>usuario_sessoes.refresh_token_hash</c> (ADR 0002 §Implicações).
+/// </summary>
+public interface IRefreshTokenService
+{
+    /// <summary>
+    /// Gera um refresh token bruto (Base64Url 32B), persiste a sessão com
+    /// hash SHA-256 + IP/UA do request context, e retorna o token bruto que
+    /// deve ser entregue ao cliente (apenas via Set-Cookie httpOnly).
+    /// </summary>
+    Task<RefreshTokenEmitido> EmitirAsync(Usuario usuario, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Valida o refresh token bruto contra o hash armazenado em <c>usuario_sessoes</c>.
+    /// Lança <see cref="Common.Exceptions.RefreshTokenInvalidoException"/> se ausente,
+    /// expirado ou revogado.
+    /// </summary>
+    Task<UsuarioSessao> ValidarAsync(string refreshTokenBruto, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Revoga (marca <c>revogado_em</c>) a sessão correspondente ao refresh token
+    /// fornecido. Idempotente — chamadas com token inválido/já revogado não falham.
+    /// </summary>
+    Task RevogarAsync(string refreshTokenBruto, CancellationToken cancellationToken);
+}
+
+/// <summary>
+/// Resultado da emissão de um refresh token. <c>RefreshToken</c> é o valor BRUTO
+/// (não-hashado) que deve ir apenas pelo Set-Cookie httpOnly do response.
+/// </summary>
+public sealed record RefreshTokenEmitido(string RefreshToken, DateTime ExpiraEm, Guid SessaoId);

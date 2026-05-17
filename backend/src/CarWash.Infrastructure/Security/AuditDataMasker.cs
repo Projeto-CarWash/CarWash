@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using CarWash.Application.Common.Security;
 
 namespace CarWash.Infrastructure.Security;
 
@@ -55,6 +56,12 @@ public static class AuditDataMasker
         MaskNode(node);
         return node.ToJsonString();
     }
+
+    /// <summary>
+    /// Delega para <see cref="EmailMasker.Mask(string?)"/> — mesma política,
+    /// disponibilizada aqui para handlers que já tenham referência a <c>AuditDataMasker</c>.
+    /// </summary>
+    public static string MaskEmail(string? email) => EmailMasker.Mask(email);
 
     private static void MaskNode(JsonNode node)
     {

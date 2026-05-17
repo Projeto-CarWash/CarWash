@@ -29,4 +29,17 @@ public interface ICurrentRequestContext
     /// para que o interceptor saiba sob qual nome registrar.
     /// </summary>
     void DefinirEvento(string evento);
+
+    /// <summary>
+    /// IP de origem da request (lido de <c>HttpContext.Connection.RemoteIpAddress</c>,
+    /// considerando <c>X-Forwarded-For</c> se houver proxy reverso configurado).
+    /// Persistido em <c>usuario_sessoes.ip_origem</c> no login para rastreabilidade.
+    /// </summary>
+    string? IpOrigem { get; }
+
+    /// <summary>
+    /// User-Agent da request (lido do header HTTP). Persistido em
+    /// <c>usuario_sessoes.user_agent</c> no login para rastreabilidade.
+    /// </summary>
+    string? UserAgent { get; }
 }

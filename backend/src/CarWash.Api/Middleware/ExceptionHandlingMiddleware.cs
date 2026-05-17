@@ -54,6 +54,17 @@ public sealed class ExceptionHandlingMiddleware
                 title: ex.Message,
                 erros: null).ConfigureAwait(false);
         }
+        catch (RefreshTokenInvalidoException ex)
+        {
+            // Cookie de refresh ausente / expirado / revogado. Cliente deve
+            // redirecionar para /login. Cookie é apagado pelo endpoint que conhece o nome.
+            await EscreverProblemAsync(
+                context,
+                status: StatusCodes.Status401Unauthorized,
+                slug: "refresh-token-invalido",
+                title: ex.Message,
+                erros: null).ConfigureAwait(false);
+        }
         catch (UsuarioInativoException ex)
         {
             await EscreverProblemAsync(

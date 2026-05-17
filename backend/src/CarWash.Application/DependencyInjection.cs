@@ -1,5 +1,7 @@
 using CarWash.Application.Abstractions.Messaging;
 using CarWash.Application.Auth.Login;
+using CarWash.Application.Auth.Logout;
+using CarWash.Application.Auth.Refresh;
 using CarWash.Application.Services.Clientes;
 using CarWash.Application.Usuarios.AlterarStatus;
 using CarWash.Application.Usuarios.Common;
@@ -21,7 +23,9 @@ public static class DependencyInjection
         services.AddScoped<ICommandHandler<CriarUsuarioCommand, UsuarioResponse>, CriarUsuarioHandler>();
         services.AddScoped<IQueryHandler<ObterUsuarioPorIdQuery, UsuarioResponse>, ObterUsuarioPorIdHandler>();
         services.AddScoped<ICommandHandler<AlterarStatusUsuarioCommand, AlterarStatusUsuarioResponse>, AlterarStatusUsuarioHandler>();
-        services.AddScoped<ICommandHandler<LoginCommand, LoginResponse>, LoginHandler>();
+        services.AddScoped<ICommandHandler<LoginCommand, LoginResultado>, LoginHandler>();
+        services.AddScoped<ICommandHandler<RefreshCommand, RefreshResultado>, RefreshHandler>();
+        services.AddScoped<ICommandHandler<LogoutCommand, LogoutResultado>, LogoutHandler>();
 
         services.AddScoped<IClienteService, ClienteService>();
 

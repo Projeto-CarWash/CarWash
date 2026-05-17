@@ -8,7 +8,7 @@ export interface AuthContextData {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (command: LoginCommand) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 /**
