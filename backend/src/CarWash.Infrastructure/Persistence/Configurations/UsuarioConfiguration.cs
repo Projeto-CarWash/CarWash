@@ -14,9 +14,14 @@ public sealed class UsuarioConfiguration : IEntityTypeConfiguration<Usuario>
         ArgumentNullException.ThrowIfNull(builder);
 
         builder.ToTable("usuarios", t =>
+        {
             t.HasCheckConstraint(
                 "ck_usuarios_perfil",
-                "perfil IN ('ADMIN','FUNCIONARIO')"));
+                "perfil IN ('ADMIN','FUNCIONARIO')");
+            t.HasCheckConstraint(
+                "ck_usuarios_tentativas_invalidas",
+                "tentativas_invalidas >= 0");
+        });
 
         builder.HasKey(x => x.Id).HasName("pk_usuarios");
         builder.Property(x => x.Id).ValueGeneratedNever();
@@ -27,6 +32,13 @@ public sealed class UsuarioConfiguration : IEntityTypeConfiguration<Usuario>
         builder.Property(x => x.PerfilRaw).IsRequired().HasMaxLength(20).HasColumnName("perfil");
 
         builder.Property(x => x.Ativo).IsRequired().HasDefaultValue(true);
+        builder.Property(x => x.TentativasInvalidas)
+            .IsRequired()
+            .HasDefaultValue(0)
+            .HasColumnName("tentativas_invalidas");
+        builder.Property(x => x.BloqueadoAte)
+            .HasColumnType("timestamptz")
+            .HasColumnName("bloqueado_ate");
         builder.Property(x => x.CriadoEm).IsRequired().HasColumnType("timestamptz").HasDefaultValueSql("now()");
         builder.Property(x => x.AtualizadoEm).IsRequired().HasColumnType("timestamptz").HasDefaultValueSql("now()");
 

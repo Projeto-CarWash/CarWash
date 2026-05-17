@@ -37,6 +37,18 @@ public sealed class Usuario : IAuditable, IAuditableSetter
 
     public bool Ativo { get; private set; }
 
+    /// <summary>
+    /// Tentativas de login inválidas consecutivas desde o último sucesso (RF001 — lockout).
+    /// Reseta para zero em qualquer login bem-sucedido.
+    /// </summary>
+    public int TentativasInvalidas { get; private set; }
+
+    /// <summary>
+    /// Instante (UTC) até quando o usuário está temporariamente bloqueado por exceder o
+    /// limite de tentativas inválidas. <c>null</c> quando não há bloqueio ativo.
+    /// </summary>
+    public DateTime? BloqueadoAte { get; private set; }
+
     public DateTime CriadoEm { get; private set; }
 
     public DateTime AtualizadoEm { get; private set; }
@@ -80,6 +92,7 @@ public sealed class Usuario : IAuditable, IAuditableSetter
             SenhaHash = senhaHash,
             PerfilRaw = perfil.ToDbValue(),
             Ativo = true,
+            TentativasInvalidas = 0,
             CriadoEm = agora,
             AtualizadoEm = agora,
         };
@@ -97,6 +110,48 @@ public sealed class Usuario : IAuditable, IAuditableSetter
         }
 
         SenhaHash = novoHash;
+    }
+
+    /// <summary>
+    /// Verdadeiro quando há um <see cref="BloqueadoAte"/> futuro em relação a
+    /// <paramref name="agoraUtc"/>. Tempo passado como parâmetro para permitir testes
+    /// determinísticos.
+    /// </summary>
+    public bool EstaBloqueado(DateTime agoraUtc) =>
+        BloqueadoAte.HasValue && BloqueadoAte.Value > agoraUtc;
+
+    /// <summary>
+    /// Incrementa o contador de falhas. Se atingir <paramref name="limiteTentativas"/>,
+    /// aplica bloqueio temporário de <paramref name="duracaoBloqueio"/>. O caller decide
+    /// quando persistir (uma única <c>SalvarAsync</c> ao final do fluxo).
+    /// </summary>
+    public void RegistrarFalhaDeLogin(
+        DateTime agoraUtc,
+        int limiteTentativas,
+        TimeSpan duracaoBloqueio)
+    {
+        if (limiteTentativas <= 0)
+        {
+            throw new DomainException("Limite de tentativas inválidas deve ser positivo.");
+        }
+
+        if (duracaoBloqueio <= TimeSpan.Zero)
+        {
+            throw new DomainException("Duração do bloqueio deve ser positiva.");
+        }
+
+        TentativasInvalidas++;
+        if (TentativasInvalidas >= limiteTentativas)
+        {
+            BloqueadoAte = agoraUtc.Add(duracaoBloqueio);
+        }
+    }
+
+    /// <summary>Zera o contador e libera bloqueio. Chamar somente em login bem-sucedido.</summary>
+    public void RegistrarLoginBemSucedido()
+    {
+        TentativasInvalidas = 0;
+        BloqueadoAte = null;
     }
 
     void IAuditableSetter.SetCriadoEm(DateTime valor) => CriadoEm = valor;

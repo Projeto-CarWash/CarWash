@@ -63,6 +63,19 @@ public sealed class ExceptionHandlingMiddleware
                 title: ex.Message,
                 erros: null).ConfigureAwait(false);
         }
+        catch (UsuarioBloqueadoException ex)
+        {
+            await EscreverProblemAsync(
+                context,
+                status: StatusCodes.Status403Forbidden,
+                slug: "usuario-bloqueado",
+                title: ex.Message,
+                erros: null,
+                extensions: new Dictionary<string, object?>(StringComparer.Ordinal)
+                {
+                    ["bloqueadoAte"] = ex.BloqueadoAte.ToUniversalTime().ToString("O", System.Globalization.CultureInfo.InvariantCulture),
+                }).ConfigureAwait(false);
+        }
         catch (DomainException ex)
         {
             await EscreverProblemAsync(
@@ -124,7 +137,8 @@ public sealed class ExceptionHandlingMiddleware
         int status,
         string slug,
         string title,
-        IReadOnlyDictionary<string, string[]>? erros)
+        IReadOnlyDictionary<string, string[]>? erros,
+        IReadOnlyDictionary<string, object?>? extensions = null)
     {
         if (context.Response.HasStarted)
         {
@@ -143,6 +157,14 @@ public sealed class ExceptionHandlingMiddleware
         if (erros is { Count: > 0 })
         {
             problem.Extensions["errors"] = erros;
+        }
+
+        if (extensions is { Count: > 0 })
+        {
+            foreach (var kv in extensions)
+            {
+                problem.Extensions[kv.Key] = kv.Value;
+            }
         }
 
         context.Response.Clear();
