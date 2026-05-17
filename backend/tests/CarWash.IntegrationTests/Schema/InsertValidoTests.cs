@@ -51,7 +51,13 @@ public class InsertValidoTests : IAsyncLifetime
         _db.Usuarios.Add(usuario);
 
         // Cliente
-        var cliente = Cliente.Criar(Guid.NewGuid(), "Cliente Teste", new Cpf(GerarCpfValido()));
+        var cliente = Cliente.Criar(
+            id: Guid.NewGuid(),
+            nome: "Cliente Teste",
+            dataNascimento: new DateOnly(1990, 1, 1),
+            celular: new Telefone("11987654321"),
+            endereco: new Endereco("01310100", "Av. Paulista", "1000", null, "Bela Vista", "São Paulo", "SP"),
+            cpf: new Cpf(GerarCpfValido()));
         _db.Clientes.Add(cliente);
 
         // Servico

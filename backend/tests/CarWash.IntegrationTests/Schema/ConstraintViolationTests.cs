@@ -277,7 +277,19 @@ public class ConstraintViolationTests : IAsyncLifetime
     private static Cliente ClienteValido() => Cliente.Criar(
         id: Guid.NewGuid(),
         nome: "Cliente Teste",
+        dataNascimento: new DateOnly(1990, 1, 1),
+        celular: new Telefone("11987654321"),
+        endereco: EnderecoTeste(),
         cpf: new Cpf(GerarCpfValido()));
+
+    private static Endereco EnderecoTeste() => new(
+        cep: "01310100",
+        logradouro: "Av. Paulista",
+        numero: "1000",
+        complemento: null,
+        bairro: "Bela Vista",
+        cidade: "São Paulo",
+        uf: "SP");
 
     private static string HashPlaceholder() =>
         "$argon2id$v=19$m=65536,t=3,p=1$YWFhYWFhYWFhYWFhYWFhYQ$YWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWE";

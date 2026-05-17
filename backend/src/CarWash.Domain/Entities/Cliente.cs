@@ -4,19 +4,32 @@ using CarWash.Domain.ValueObjects;
 namespace CarWash.Domain.Entities;
 
 /// <summary>
-/// Cliente titular (PF/PJ). Exige <c>cpf</c> ou <c>cnpj</c> (CHECK <c>ck_clientes_cpf_ou_cnpj</c>)
-/// e respeita uniques parciais quando preenchidos.
+/// Cliente titular (PF/PJ). Exige <c>cpf</c> ou <c>cnpj</c> (CHECK <c>ck_clientes_cpf_ou_cnpj</c>),
+/// celular obrigatório (RF003 — alinhamento com a tela do Lucas após PR #15) e
+/// endereço estruturado (CEP + logradouro + número + bairro + cidade + UF).
 /// </summary>
 public sealed class Cliente : IAuditable, IAuditableSetter
 {
+    public const int IdadeMinima = 18;
+    public const int IdadeMaxima = 110;
+
     private Cliente()
     {
         Nome = null!;
+        Celular = null!;
+        EnderecoCep = null!;
+        EnderecoLogradouro = null!;
+        EnderecoNumero = null!;
+        EnderecoBairro = null!;
+        EnderecoCidade = null!;
+        EnderecoUf = null!;
     }
 
     public Guid Id { get; private set; }
 
     public string Nome { get; private set; }
+
+    public DateOnly DataNascimento { get; private set; }
 
     public string? Cpf { get; private set; }
 
@@ -24,13 +37,23 @@ public sealed class Cliente : IAuditable, IAuditableSetter
 
     public string? Telefone { get; private set; }
 
-    public string? Celular { get; private set; }
+    public string Celular { get; private set; }
 
     public string? Email { get; private set; }
 
-    public string? Endereco { get; private set; }
+    public string EnderecoCep { get; private set; }
 
-    public string? Observacoes { get; private set; }
+    public string EnderecoLogradouro { get; private set; }
+
+    public string EnderecoNumero { get; private set; }
+
+    public string? EnderecoComplemento { get; private set; }
+
+    public string EnderecoBairro { get; private set; }
+
+    public string EnderecoCidade { get; private set; }
+
+    public string EnderecoUf { get; private set; }
 
     public bool Ativo { get; private set; }
 
@@ -38,25 +61,34 @@ public sealed class Cliente : IAuditable, IAuditableSetter
 
     public DateTime AtualizadoEm { get; private set; }
 
+    public Endereco Endereco => new(
+        EnderecoCep,
+        EnderecoLogradouro,
+        EnderecoNumero,
+        EnderecoComplemento,
+        EnderecoBairro,
+        EnderecoCidade,
+        EnderecoUf);
+
     public static Cliente Criar(
         Guid id,
         string nome,
+        DateOnly dataNascimento,
+        Telefone celular,
+        Endereco endereco,
         Cpf? cpf = null,
         Cnpj? cnpj = null,
         Telefone? telefone = null,
-        Telefone? celular = null,
-        Email? email = null,
-        string? endereco = null,
-        string? observacoes = null)
+        Email? email = null)
     {
         if (id == Guid.Empty)
         {
             throw new DomainException("Id do cliente não pode ser vazio.");
         }
 
-        if (string.IsNullOrWhiteSpace(nome) || nome.Length > 100)
+        if (string.IsNullOrWhiteSpace(nome) || nome.Length < 3 || nome.Length > 100)
         {
-            throw new DomainException("Nome do cliente é obrigatório e deve ter no máximo 100 caracteres.");
+            throw new DomainException("Nome do cliente deve ter entre 3 e 100 caracteres.");
         }
 
         if (cpf is null && cnpj is null)
@@ -64,22 +96,70 @@ public sealed class Cliente : IAuditable, IAuditableSetter
             throw new DomainException("Cliente deve ter CPF ou CNPJ informado.");
         }
 
+        if (cpf is not null && cnpj is not null)
+        {
+            throw new DomainException("Informe apenas CPF ou CNPJ, não ambos.");
+        }
+
+        ArgumentNullException.ThrowIfNull(celular);
+        ArgumentNullException.ThrowIfNull(endereco);
+
+        ValidarIdade(dataNascimento);
+
         var agora = DateTime.UtcNow;
         return new Cliente
         {
             Id = id,
             Nome = nome,
+            DataNascimento = dataNascimento,
             Cpf = cpf?.Valor,
             Cnpj = cnpj?.Valor,
             Telefone = telefone?.Valor,
-            Celular = celular?.Valor,
+            Celular = celular.Valor,
             Email = email?.Valor,
-            Endereco = endereco,
-            Observacoes = observacoes,
+            EnderecoCep = endereco.Cep,
+            EnderecoLogradouro = endereco.Logradouro,
+            EnderecoNumero = endereco.Numero,
+            EnderecoComplemento = endereco.Complemento,
+            EnderecoBairro = endereco.Bairro,
+            EnderecoCidade = endereco.Cidade,
+            EnderecoUf = endereco.Uf,
             Ativo = true,
             CriadoEm = agora,
             AtualizadoEm = agora,
         };
+    }
+
+    public void AtualizarDados(
+        string nome,
+        DateOnly dataNascimento,
+        Telefone celular,
+        Endereco endereco,
+        Telefone? telefone = null,
+        Email? email = null)
+    {
+        if (string.IsNullOrWhiteSpace(nome) || nome.Length < 3 || nome.Length > 100)
+        {
+            throw new DomainException("Nome do cliente deve ter entre 3 e 100 caracteres.");
+        }
+
+        ArgumentNullException.ThrowIfNull(celular);
+        ArgumentNullException.ThrowIfNull(endereco);
+
+        ValidarIdade(dataNascimento);
+
+        Nome = nome;
+        DataNascimento = dataNascimento;
+        Telefone = telefone?.Valor;
+        Celular = celular.Valor;
+        Email = email?.Valor;
+        EnderecoCep = endereco.Cep;
+        EnderecoLogradouro = endereco.Logradouro;
+        EnderecoNumero = endereco.Numero;
+        EnderecoComplemento = endereco.Complemento;
+        EnderecoBairro = endereco.Bairro;
+        EnderecoCidade = endereco.Cidade;
+        EnderecoUf = endereco.Uf;
     }
 
     public void Inativar() => Ativo = false;
@@ -89,4 +169,30 @@ public sealed class Cliente : IAuditable, IAuditableSetter
     void IAuditableSetter.SetCriadoEm(DateTime valor) => CriadoEm = valor;
 
     void IAuditableSetter.SetAtualizadoEm(DateTime valor) => AtualizadoEm = valor;
+
+    private static void ValidarIdade(DateOnly dataNascimento)
+    {
+        var hoje = DateOnly.FromDateTime(DateTime.UtcNow.Date);
+
+        if (dataNascimento > hoje)
+        {
+            throw new DomainException("Data de nascimento não pode ser futura.");
+        }
+
+        var idade = hoje.Year - dataNascimento.Year;
+        if (dataNascimento > hoje.AddYears(-idade))
+        {
+            idade--;
+        }
+
+        if (idade < IdadeMinima)
+        {
+            throw new DomainException($"Cliente deve ter pelo menos {IdadeMinima} anos.");
+        }
+
+        if (idade > IdadeMaxima)
+        {
+            throw new DomainException($"Cliente deve ter no máximo {IdadeMaxima} anos.");
+        }
+    }
 }

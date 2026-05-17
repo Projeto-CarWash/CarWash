@@ -12,14 +12,17 @@ namespace CarWash.Application.Services.Clientes;
 public class ClienteService : IClienteService
 {
     private readonly IClienteRepository clienteRepository;
-    private readonly IValidator<CreateClienteRequest> validator;
+    private readonly IValidator<CreateClienteRequest> createValidator;
+    private readonly IValidator<UpdateClienteRequest> updateValidator;
 
     public ClienteService(
         IClienteRepository clienteRepository,
-        IValidator<CreateClienteRequest> validator)
+        IValidator<CreateClienteRequest> createValidator,
+        IValidator<UpdateClienteRequest> updateValidator)
     {
         this.clienteRepository = clienteRepository;
-        this.validator = validator;
+        this.createValidator = createValidator;
+        this.updateValidator = updateValidator;
     }
 
     public async Task<CreateClienteResponse> CriarAsync(
@@ -28,30 +31,24 @@ public class ClienteService : IClienteService
         Guid? usuarioId,
         CancellationToken cancellationToken)
     {
-        var validation = await validator.ValidateAsync(request, cancellationToken);
+        ArgumentNullException.ThrowIfNull(request);
+
+        var validation = await createValidator.ValidateAsync(request, cancellationToken);
 
         if (!validation.IsValid)
         {
-            var erros = validation.Errors
-                .GroupBy(e => string.IsNullOrWhiteSpace(e.PropertyName) ? "body" : e.PropertyName, StringComparer.OrdinalIgnoreCase)
-                .ToDictionary(
-                    g => g.Key,
-                    g => g.Select(e => e.ErrorMessage).ToArray(),
-                    StringComparer.OrdinalIgnoreCase);
-
             throw new ValidationException(
                 "Dados do cliente inválidos. Verifique os campos e tente novamente.",
-                erros);
+                AgruparErros(validation.Errors));
         }
 
-        var nome = InputNormalizer.TrimOrNull(request.Nome)!;
+        var nome = InputNormalizer.SanitizeTextOrNull(request.Nome)!;
         var cpfDigits = InputNormalizer.OnlyDigitsOrNull(request.Cpf);
         var cnpjDigits = InputNormalizer.OnlyDigitsOrNull(request.Cnpj);
         var telefoneDigits = InputNormalizer.OnlyDigitsOrNull(request.Telefone);
-        var celularDigits = InputNormalizer.OnlyDigitsOrNull(request.Celular);
+        var celularDigits = InputNormalizer.OnlyDigitsOrNull(request.Celular)!;
         var emailNormalizado = InputNormalizer.EmailOrNull(request.Email);
-        var endereco = InputNormalizer.TrimOrNull(request.Endereco);
-        var observacoes = InputNormalizer.TrimOrNull(request.Observacoes);
+        var endereco = MontarEndereco(request.Endereco!);
 
         if (cpfDigits is not null && await clienteRepository.ExisteCpfAsync(cpfDigits, cancellationToken))
         {
@@ -70,13 +67,13 @@ public class ClienteService : IClienteService
         var cliente = Cliente.Criar(
             id: Guid.NewGuid(),
             nome: nome,
+            dataNascimento: request.DataNascimento!.Value,
+            celular: new Telefone(celularDigits),
+            endereco: endereco,
             cpf: cpfDigits is null ? null : new Cpf(cpfDigits),
             cnpj: cnpjDigits is null ? null : new Cnpj(cnpjDigits),
             telefone: telefoneDigits is null ? null : new Telefone(telefoneDigits),
-            celular: celularDigits is null ? null : new Telefone(celularDigits),
-            email: emailNormalizado is null ? null : new Email(emailNormalizado),
-            endereco: endereco,
-            observacoes: observacoes);
+            email: emailNormalizado is null ? null : new Email(emailNormalizado));
 
         await clienteRepository.AdicionarAsync(cliente, traceId, usuarioId, cancellationToken);
 
@@ -91,26 +88,146 @@ public class ClienteService : IClienteService
     public async Task<ClienteResponse?> ObterPorIdAsync(Guid id, CancellationToken cancellationToken)
     {
         var cliente = await clienteRepository.ObterPorIdAsync(id, cancellationToken);
+        return cliente is null ? null : ToResponse(cliente);
+    }
 
-        if (cliente is null)
+    public async Task<ClienteResponse> AtualizarAsync(
+        Guid id,
+        UpdateClienteRequest request,
+        Guid? usuarioId,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        _ = usuarioId;
+
+        var validation = await updateValidator.ValidateAsync(request, cancellationToken);
+        if (!validation.IsValid)
         {
-            return null;
+            throw new ValidationException(
+                "Dados do cliente inválidos. Verifique os campos e tente novamente.",
+                AgruparErros(validation.Errors));
         }
 
-        return new ClienteResponse
+        var cliente = await clienteRepository.ObterPorIdAsync(id, cancellationToken)
+            ?? throw new NotFoundException("Cliente não encontrado.");
+
+        var nome = InputNormalizer.SanitizeTextOrNull(request.Nome)!;
+        var telefoneDigits = InputNormalizer.OnlyDigitsOrNull(request.Telefone);
+        var celularDigits = InputNormalizer.OnlyDigitsOrNull(request.Celular)!;
+        var emailNormalizado = InputNormalizer.EmailOrNull(request.Email);
+        var endereco = MontarEndereco(request.Endereco!);
+
+        cliente.AtualizarDados(
+            nome: nome,
+            dataNascimento: request.DataNascimento!.Value,
+            celular: new Telefone(celularDigits),
+            endereco: endereco,
+            telefone: telefoneDigits is null ? null : new Telefone(telefoneDigits),
+            email: emailNormalizado is null ? null : new Email(emailNormalizado));
+
+        await clienteRepository.SalvarAsync(cancellationToken);
+
+        return ToResponse(cliente);
+    }
+
+    public async Task<ClienteResponse> AlterarStatusAsync(
+        Guid id,
+        bool ativo,
+        Guid? usuarioId,
+        CancellationToken cancellationToken)
+    {
+        _ = usuarioId;
+
+        var cliente = await clienteRepository.ObterPorIdAsync(id, cancellationToken)
+            ?? throw new NotFoundException("Cliente não encontrado.");
+
+        if (ativo)
         {
-            Id = cliente.Id,
-            Nome = cliente.Nome,
-            Cpf = cliente.Cpf,
-            Cnpj = cliente.Cnpj,
-            Telefone = cliente.Telefone,
-            Celular = cliente.Celular,
-            Email = cliente.Email,
-            Endereco = cliente.Endereco,
-            Observacoes = cliente.Observacoes,
-            Ativo = cliente.Ativo,
-            CriadoEm = cliente.CriadoEm,
-            AtualizadoEm = cliente.AtualizadoEm,
+            cliente.Ativar();
+        }
+        else
+        {
+            cliente.Inativar();
+        }
+
+        await clienteRepository.SalvarAsync(cancellationToken);
+        return ToResponse(cliente);
+    }
+
+    public async Task<ListaClientesResponse> ListarAsync(
+        string? busca,
+        bool? ativo,
+        int pagina,
+        int tamanhoPagina,
+        CancellationToken cancellationToken)
+    {
+        var (itens, total) = await clienteRepository.ListarAsync(
+            busca,
+            ativo,
+            pagina,
+            tamanhoPagina,
+            cancellationToken);
+
+        return new ListaClientesResponse
+        {
+            Total = total,
+            Pagina = pagina < 1 ? 1 : pagina,
+            TamanhoPagina = tamanhoPagina < 1 ? 20 : tamanhoPagina,
+            Itens = itens.Select(c => new ClienteResumoResponse
+            {
+                Id = c.Id,
+                Nome = c.Nome,
+                Cpf = c.Cpf,
+                Cnpj = c.Cnpj,
+                Celular = c.Celular,
+                Email = c.Email,
+                Cidade = c.EnderecoCidade,
+                Uf = c.EnderecoUf,
+                Ativo = c.Ativo,
+                CriadoEm = c.CriadoEm,
+            }).ToList(),
         };
     }
+
+    private static Endereco MontarEndereco(EnderecoRequest request) => new(
+        cep: InputNormalizer.OnlyDigitsOrNull(request.Cep) ?? string.Empty,
+        logradouro: request.Logradouro ?? string.Empty,
+        numero: request.Numero ?? string.Empty,
+        complemento: request.Complemento,
+        bairro: request.Bairro ?? string.Empty,
+        cidade: request.Cidade ?? string.Empty,
+        uf: request.Uf ?? string.Empty);
+
+    private static Dictionary<string, string[]> AgruparErros(IEnumerable<FluentValidation.Results.ValidationFailure> erros)
+        => erros
+            .GroupBy(e => string.IsNullOrWhiteSpace(e.PropertyName) ? "body" : e.PropertyName, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Select(e => e.ErrorMessage).ToArray(),
+                StringComparer.OrdinalIgnoreCase);
+
+    private static ClienteResponse ToResponse(Cliente cliente) => new()
+    {
+        Id = cliente.Id,
+        Nome = cliente.Nome,
+        DataNascimento = cliente.DataNascimento,
+        Cpf = cliente.Cpf,
+        Cnpj = cliente.Cnpj,
+        Telefone = cliente.Telefone,
+        Celular = cliente.Celular,
+        Email = cliente.Email,
+        Endereco = new EnderecoResponse
+        {
+            Cep = cliente.EnderecoCep,
+            Logradouro = cliente.EnderecoLogradouro,
+            Numero = cliente.EnderecoNumero,
+            Complemento = cliente.EnderecoComplemento,
+            Bairro = cliente.EnderecoBairro,
+            Cidade = cliente.EnderecoCidade,
+            Uf = cliente.EnderecoUf,
+        },
+        Ativo = cliente.Ativo,
+        CriadoEm = cliente.CriadoEm,
+        AtualizadoEm = cliente.AtualizadoEm,
+    };
 }

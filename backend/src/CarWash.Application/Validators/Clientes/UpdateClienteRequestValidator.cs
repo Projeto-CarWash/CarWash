@@ -6,13 +6,12 @@ using FluentValidation;
 namespace CarWash.Application.Validators.Clientes;
 
 /// <summary>
-/// Validador do RF002 + RF003. Endereço estruturado, celular obrigatório,
-/// data de nascimento com idade entre <see cref="Cliente.IdadeMinima"/> e
-/// <see cref="Cliente.IdadeMaxima"/>, CPF/CNPJ exclusivos.
+/// Mesmas regras de <see cref="CreateClienteRequestValidator"/>, exceto que
+/// CPF/CNPJ não são editáveis (mantidos na entidade).
 /// </summary>
-public class CreateClienteRequestValidator : AbstractValidator<CreateClienteRequest>
+public class UpdateClienteRequestValidator : AbstractValidator<UpdateClienteRequest>
 {
-    public CreateClienteRequestValidator()
+    public UpdateClienteRequestValidator()
     {
         RuleFor(x => x.Nome)
             .Cascade(CascadeMode.Stop)
@@ -28,40 +27,6 @@ public class CreateClienteRequestValidator : AbstractValidator<CreateClienteRequ
             .Must(d => IdadeEntreLimites(d!.Value))
             .When(x => x.DataNascimento.HasValue)
             .WithMessage($"Cliente deve ter entre {Cliente.IdadeMinima} e {Cliente.IdadeMaxima} anos.");
-
-        RuleFor(x => x)
-            .Must(x => !string.IsNullOrWhiteSpace(x.Cpf) || !string.IsNullOrWhiteSpace(x.Cnpj))
-            .WithName("documento")
-            .WithMessage("Informe CPF ou CNPJ.");
-
-        RuleFor(x => x)
-            .Must(x => string.IsNullOrWhiteSpace(x.Cpf) || string.IsNullOrWhiteSpace(x.Cnpj))
-            .WithName("documento")
-            .WithMessage("Informe apenas CPF ou CNPJ, não ambos.");
-
-        RuleFor(x => x.Cpf)
-            .Cascade(CascadeMode.Stop)
-            .Must(InputNormalizer.ContainsOnlyDigits)
-            .When(x => !string.IsNullOrWhiteSpace(x.Cpf))
-            .WithMessage("CPF deve conter apenas números.")
-            .Length(11)
-            .When(x => !string.IsNullOrWhiteSpace(x.Cpf))
-            .WithMessage("CPF deve conter 11 dígitos.")
-            .Must(DocumentoValidator.CpfValido)
-            .When(x => !string.IsNullOrWhiteSpace(x.Cpf))
-            .WithMessage("CPF inválido.");
-
-        RuleFor(x => x.Cnpj)
-            .Cascade(CascadeMode.Stop)
-            .Must(InputNormalizer.ContainsOnlyDigits)
-            .When(x => !string.IsNullOrWhiteSpace(x.Cnpj))
-            .WithMessage("CNPJ deve conter apenas números.")
-            .Length(14)
-            .When(x => !string.IsNullOrWhiteSpace(x.Cnpj))
-            .WithMessage("CNPJ deve conter 14 dígitos.")
-            .Must(DocumentoValidator.CnpjValido)
-            .When(x => !string.IsNullOrWhiteSpace(x.Cnpj))
-            .WithMessage("CNPJ inválido.");
 
         RuleFor(x => x.Celular)
             .Cascade(CascadeMode.Stop)
@@ -82,14 +47,11 @@ public class CreateClienteRequestValidator : AbstractValidator<CreateClienteRequ
 
         RuleFor(x => x.Email)
             .Cascade(CascadeMode.Stop)
-            .MinimumLength(5)
-            .When(x => !string.IsNullOrWhiteSpace(x.Email))
+            .MinimumLength(5).When(x => !string.IsNullOrWhiteSpace(x.Email))
             .WithMessage("E-mail deve ter no mínimo 5 caracteres.")
-            .MaximumLength(150)
-            .When(x => !string.IsNullOrWhiteSpace(x.Email))
+            .MaximumLength(150).When(x => !string.IsNullOrWhiteSpace(x.Email))
             .WithMessage("E-mail deve ter no máximo 150 caracteres.")
-            .EmailAddress()
-            .When(x => !string.IsNullOrWhiteSpace(x.Email))
+            .EmailAddress().When(x => !string.IsNullOrWhiteSpace(x.Email))
             .WithMessage("E-mail inválido.");
 
         RuleFor(x => x.Endereco)
@@ -105,28 +67,27 @@ public class CreateClienteRequestValidator : AbstractValidator<CreateClienteRequ
 
             RuleFor(x => x.Endereco!.Logradouro)
                 .NotEmpty().WithMessage("Logradouro é obrigatório.")
-                .MaximumLength(150).WithMessage("Logradouro deve ter no máximo 150 caracteres.");
+                .MaximumLength(150);
 
             RuleFor(x => x.Endereco!.Numero)
                 .NotEmpty().WithMessage("Número é obrigatório.")
-                .MaximumLength(20).WithMessage("Número deve ter no máximo 20 caracteres.");
+                .MaximumLength(20);
 
             RuleFor(x => x.Endereco!.Complemento)
                 .MaximumLength(100)
-                .When(x => !string.IsNullOrWhiteSpace(x.Endereco!.Complemento))
-                .WithMessage("Complemento deve ter no máximo 100 caracteres.");
+                .When(x => !string.IsNullOrWhiteSpace(x.Endereco!.Complemento));
 
             RuleFor(x => x.Endereco!.Bairro)
                 .NotEmpty().WithMessage("Bairro é obrigatório.")
-                .MaximumLength(100).WithMessage("Bairro deve ter no máximo 100 caracteres.");
+                .MaximumLength(100);
 
             RuleFor(x => x.Endereco!.Cidade)
                 .NotEmpty().WithMessage("Cidade é obrigatória.")
-                .MaximumLength(100).WithMessage("Cidade deve ter no máximo 100 caracteres.");
+                .MaximumLength(100);
 
             RuleFor(x => x.Endereco!.Uf)
                 .NotEmpty().WithMessage("UF é obrigatória.")
-                .Length(2).WithMessage("UF deve ter exatamente 2 caracteres.");
+                .Length(2);
         });
     }
 

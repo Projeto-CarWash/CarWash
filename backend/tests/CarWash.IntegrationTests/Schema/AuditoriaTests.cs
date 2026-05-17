@@ -145,7 +145,13 @@ public class AuditoriaTests
     private static async Task<(Guid, Guid, Guid, Guid)> SemearAsync(CarWashDbContext db)
     {
         var filial = Filial.Criar(Guid.NewGuid(), $"FAud{Guid.NewGuid():N}".Substring(0, 30), 4);
-        var cliente = Cliente.Criar(Guid.NewGuid(), "Cliente Aud", cpf: new Cpf(GerarCpfValido()));
+        var cliente = Cliente.Criar(
+            id: Guid.NewGuid(),
+            nome: "Cliente Aud",
+            dataNascimento: new DateOnly(1990, 1, 1),
+            celular: new Telefone("11987654321"),
+            endereco: new Endereco("01310100", "Av. Paulista", "1000", null, "Bela Vista", "São Paulo", "SP"),
+            cpf: new Cpf(GerarCpfValido()));
         var veiculo = Veiculo.Criar(
             id: Guid.NewGuid(),
             clienteId: cliente.Id,

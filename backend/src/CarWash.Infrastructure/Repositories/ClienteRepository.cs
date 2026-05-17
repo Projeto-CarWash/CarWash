@@ -35,7 +35,6 @@ public class ClienteRepository : IClienteRepository
     public Task<Cliente?> ObterPorIdAsync(Guid id, CancellationToken cancellationToken)
     {
         return context.Clientes
-            .AsNoTracking()
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     }
 
@@ -61,7 +60,8 @@ public class ClienteRepository : IClienteRepository
                 Documento = MascararDocumento(cliente.Cpf ?? cliente.Cnpj),
                 PossuiEmail = !string.IsNullOrWhiteSpace(cliente.Email),
                 PossuiTelefone = !string.IsNullOrWhiteSpace(cliente.Telefone),
-                PossuiCelular = !string.IsNullOrWhiteSpace(cliente.Celular),
+                cliente.EnderecoCidade,
+                cliente.EnderecoUf,
             }));
 
         await context.AuditLogs.AddAsync(audit, cancellationToken);
@@ -79,6 +79,64 @@ public class ClienteRepository : IClienteRepository
                 "cliente-documento-duplicado",
                 ex);
         }
+    }
+
+    public Task SalvarAsync(CancellationToken cancellationToken)
+        => context.SaveChangesAsync(cancellationToken);
+
+    public async Task<(IReadOnlyList<Cliente> Itens, int Total)> ListarAsync(
+        string? busca,
+        bool? ativo,
+        int pagina,
+        int tamanhoPagina,
+        CancellationToken cancellationToken)
+    {
+        if (pagina < 1)
+        {
+            pagina = 1;
+        }
+
+        if (tamanhoPagina < 1)
+        {
+            tamanhoPagina = 20;
+        }
+
+        if (tamanhoPagina > 100)
+        {
+            tamanhoPagina = 100;
+        }
+
+        var query = context.Clientes.AsNoTracking();
+
+        if (ativo.HasValue)
+        {
+            query = query.Where(x => x.Ativo == ativo.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(busca))
+        {
+            var termo = busca.Trim();
+            var digitos = new string([.. termo.Where(char.IsDigit)]);
+            var like = $"%{termo}%";
+
+            query = query.Where(x =>
+                EF.Functions.ILike(x.Nome, like)
+                || (x.Email != null && EF.Functions.ILike(x.Email, like))
+                || EF.Functions.ILike(x.EnderecoCidade, like)
+                || (digitos.Length > 0 && x.Cpf != null && x.Cpf.Contains(digitos))
+                || (digitos.Length > 0 && x.Cnpj != null && x.Cnpj.Contains(digitos))
+                || (digitos.Length > 0 && x.Celular.Contains(digitos)));
+        }
+
+        var total = await query.CountAsync(cancellationToken);
+
+        var itens = await query
+            .OrderBy(x => x.Nome)
+            .Skip((pagina - 1) * tamanhoPagina)
+            .Take(tamanhoPagina)
+            .ToListAsync(cancellationToken);
+
+        return (itens, total);
     }
 
     private static string? MascararDocumento(string? documento)

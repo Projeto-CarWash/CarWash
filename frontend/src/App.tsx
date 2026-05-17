@@ -5,6 +5,8 @@ import { PageHeader } from '@/components/clientes/PageHeader';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import PrivateRoute from '@/components/PrivateRoute';
 import { AuthProvider } from '@/contexts/AuthProvider';
+import { ClienteDetalhePage } from '@/pages/Clientes/ClienteDetalhePage';
+import { ClientesListaPage } from '@/pages/Clientes/ClientesListaPage';
 import Dashboard from '@/pages/Dashboard/Dashboard';
 import Login from '@/pages/Login/Login';
 import { NovoUsuarioPage } from '@/pages/Usuarios/NovoUsuarioPage';
@@ -25,12 +27,34 @@ function App() {
         />
 
         <Route
+          path="/clientes"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <ClientesListaPage />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
           path="/clientes/novo"
           element={
             <PrivateRoute>
               <DashboardLayout>
                 <PageHeader />
                 <NovoClientePage />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/clientes/:id"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <ClienteDetalhePage />
               </DashboardLayout>
             </PrivateRoute>
           }

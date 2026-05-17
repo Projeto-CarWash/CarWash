@@ -1,28 +1,32 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { AxiosError } from 'axios';
 import { AlertCircle, Check, ChevronRight, X } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { onlyDigits } from '@/lib/masks';
 import { clienteSchema } from '@/schemas/clienteSchema';
+import { clienteService } from '@/services/clienteService';
 
 import { ContatoEnderecoForm } from './ContatoEnderecoForm';
 import { IdentificacaoForm } from './IdentificacaoForm';
 import { Stepper } from './Stepper';
 
 import type { ClienteFormData } from '@/schemas/clienteSchema';
+import type { ProblemDetails } from '@/types/auth';
 
 const API_MESSAGES: Record<number, string> = {
   400: 'Dados do cliente inválidos. Verifique os campos e tente novamente.',
-  401: 'Autenticação obrigatória para executar esta operação.',
+  401: 'Sessão expirada. Faça login novamente.',
   403: 'Você não possui permissão para cadastrar clientes.',
   409: 'Já existe cliente cadastrado com este documento.',
   500: 'Não foi possível concluir o cadastro no momento. Tente novamente.',
 };
 
 export function NovoClientePage() {
+  const navigate = useNavigate();
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -39,10 +43,12 @@ export function NovoClientePage() {
       celular: '',
       email: '',
       cep: '',
-      cidade: '',
-      rua: '',
+      logradouro: '',
       numero: '',
-      observacoes: '',
+      complemento: '',
+      bairro: '',
+      cidade: '',
+      uf: '',
     },
   });
 
@@ -50,12 +56,12 @@ export function NovoClientePage() {
   const dataNascimento = useWatch({ control: form.control, name: 'dataNascimento' }) || '';
   const nome = useWatch({ control: form.control, name: 'nome' }) || '';
 
-  const cpfDigits = cpfCnpj.replace(/\D/g, '');
+  const docDigits = cpfCnpj.replace(/\D/g, '');
   const dateDigits = dataNascimento.replace(/\D/g, '');
-  const isCpfFilled = cpfDigits.length === 11 || cpfDigits.length === 14;
+  const isDocFilled = docDigits.length === 11 || docDigits.length === 14;
   const isDateFilled = dateDigits.length === 8;
   const isNameFilled = nome.trim().length >= 3;
-  const isIdentificacaoComplete = isCpfFilled && isDateFilled && isNameFilled;
+  const isIdentificacaoComplete = isDocFilled && isDateFilled && isNameFilled;
 
   const handleSubmit = useCallback(
     async (data: ClienteFormData) => {
@@ -63,42 +69,23 @@ export function NovoClientePage() {
       setSuccessMsg(null);
       setIsSubmitting(true);
 
-      const payload = {
-        nome: data.nome.trim(),
-        documento: onlyDigits(data.cpfCnpj),
-        telefone: onlyDigits(data.telefone),
-        celular: data.celular ? onlyDigits(data.celular) : undefined,
-        email: data.email.toLowerCase(),
-        cep: onlyDigits(data.cep),
-        cidade: data.cidade.trim(),
-        rua: data.rua.trim(),
-        numero: data.numero.trim(),
-        dataNascimento: data.dataNascimento,
-        observacoes: data.observacoes?.trim() ?? undefined,
-      };
-
       try {
-        const response = await fetch('/api/v1/clientes', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-
-        if (response.status === 201) {
-          setSuccessMsg('Cliente cadastrado com sucesso!');
-          form.reset();
-          setTimeout(() => {
-            window.location.href = '/clientes';
-          }, 2000);
+        const resp = await clienteService.criar(data);
+        setSuccessMsg('Cliente cadastrado com sucesso! Redirecionando…');
+        form.reset();
+        setTimeout(() => {
+          void navigate(`/clientes/${resp.id}`, { replace: true });
+        }, 800);
+      } catch (error) {
+        if (!(error instanceof AxiosError) || !error.response) {
+          setGlobalError(API_MESSAGES[500]!);
           return;
         }
 
-        if (response.status === 401) {
-          setGlobalError(API_MESSAGES[401]!);
-          return;
-        }
+        const status = error.response.status;
+        const problem = error.response.data as ProblemDetails | undefined;
 
-        if (response.status === 409) {
+        if (status === 409) {
           setGlobalError(API_MESSAGES[409]!);
           form.setError('cpfCnpj', {
             message: 'Já existe cliente cadastrado com este documento.',
@@ -106,38 +93,31 @@ export function NovoClientePage() {
           return;
         }
 
-        const msg = API_MESSAGES[response.status] ?? API_MESSAGES[500]!;
-        setGlobalError(msg);
-
-        if (response.status === 400) {
-          try {
-            const body = (await response.json()) as {
-              details?: { field: string; message: string }[];
-            };
-            body.details?.forEach((detail) => {
-              const fieldName = detail.field as keyof ClienteFormData;
-              if (fieldName in clienteSchema.shape) {
-                form.setError(fieldName, { message: detail.message });
-              }
-            });
-          } catch {
-            /* empty */
+        if (status === 400 && problem?.errors) {
+          setGlobalError(problem.title ?? API_MESSAGES[400]!);
+          for (const [field, messages] of Object.entries(problem.errors)) {
+            const key = mapBackendFieldToFormField(field);
+            if (key && messages?.[0]) {
+              form.setError(key, { message: messages[0] });
+            }
           }
+          return;
         }
-      } catch {
-        setGlobalError(API_MESSAGES[500]!);
+
+        setGlobalError(API_MESSAGES[status] ?? API_MESSAGES[500]!);
       } finally {
         setIsSubmitting(false);
       }
     },
-    [form],
+    [form, navigate],
   );
 
   const handleCancel = useCallback(() => {
     form.reset();
     setGlobalError(null);
     setSuccessMsg(null);
-  }, [form]);
+    void navigate('/clientes', { replace: true });
+  }, [form, navigate]);
 
   return (
     <FormProvider {...form}>
@@ -162,6 +142,7 @@ export function NovoClientePage() {
                 type="button"
                 onClick={() => setGlobalError(null)}
                 className="shrink-0 text-red-500/60 transition-colors hover:text-red-400"
+                aria-label="Fechar mensagem de erro"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -179,6 +160,7 @@ export function NovoClientePage() {
                 type="button"
                 onClick={() => setSuccessMsg(null)}
                 className="shrink-0 text-green-500/60 transition-colors hover:text-green-400"
+                aria-label="Fechar mensagem de sucesso"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -190,7 +172,7 @@ export function NovoClientePage() {
           <div
             className={`overflow-hidden transition-all duration-700 ease-out ${
               isIdentificacaoComplete
-                ? 'mt-8 max-h-[1200px] translate-y-0 opacity-100'
+                ? 'mt-8 max-h-[1600px] translate-y-0 opacity-100'
                 : 'mt-0 max-h-0 translate-y-4 opacity-0'
             }`}
           >
@@ -222,7 +204,7 @@ export function NovoClientePage() {
                 'Salvando...'
               ) : (
                 <>
-                  Avançar para Veículos
+                  Salvar cliente
                   <ChevronRight className="ml-1 h-4 w-4" />
                 </>
               )}
@@ -232,4 +214,26 @@ export function NovoClientePage() {
       </form>
     </FormProvider>
   );
+}
+
+function mapBackendFieldToFormField(field: string): keyof ClienteFormData | null {
+  const lower = field.toLowerCase();
+  const map: Record<string, keyof ClienteFormData> = {
+    nome: 'nome',
+    datanascimento: 'dataNascimento',
+    cpf: 'cpfCnpj',
+    cnpj: 'cpfCnpj',
+    documento: 'cpfCnpj',
+    celular: 'celular',
+    telefone: 'telefone',
+    email: 'email',
+    'endereco.cep': 'cep',
+    'endereco.logradouro': 'logradouro',
+    'endereco.numero': 'numero',
+    'endereco.complemento': 'complemento',
+    'endereco.bairro': 'bairro',
+    'endereco.cidade': 'cidade',
+    'endereco.uf': 'uf',
+  };
+  return map[lower] ?? null;
 }
