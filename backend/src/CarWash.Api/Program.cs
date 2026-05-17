@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
 using CarWash.Api.Endpoints;
 using CarWash.Api.Extensions;
 using CarWash.Api.Filters;
@@ -13,6 +14,7 @@ using CarWash.Infrastructure;
 using CarWash.Infrastructure.Auth;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 
 #pragma warning disable CA1861
@@ -76,6 +78,39 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
+// ---------- Rate limiting ----------
+// Defesa em profundidade contra força-bruta no /auth/login (RF001 já tem lockout
+// por usuário; o rate-limit por IP cobre o cenário "N emails diferentes pelo mesmo IP").
+builder.Services.AddRateLimiter(opt =>
+{
+    opt.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    opt.OnRejected = async (ctx, ct) =>
+    {
+        if (ctx.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+        {
+            ctx.HttpContext.Response.Headers["Retry-After"] =
+                ((int)retryAfter.TotalSeconds).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        }
+
+        ctx.HttpContext.Response.ContentType = "application/problem+json";
+        await ctx.HttpContext.Response.WriteAsync(
+            "{\"title\":\"Muitas tentativas. Aguarde um instante e tente novamente.\",\"status\":429}",
+            ct).ConfigureAwait(false);
+    };
+
+    opt.AddPolicy("auth-login", http =>
+    {
+        var key = http.Connection.RemoteIpAddress?.ToString() ?? "anonimo";
+        return RateLimitPartition.GetFixedWindowLimiter(key, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 10,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+            AutoReplenishment = true,
+        });
+    });
+});
+
 // ---------- CORS ----------
 // Frontend usa `withCredentials: true` (cookie httpOnly do refresh) — exige
 // origin explícita (AllowAnyOrigin é rejeitado quando AllowCredentials é true).
@@ -115,6 +150,7 @@ app.UseCors(CorsPolicyName);
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 // Sem UseHttpsRedirection: o backend roda só em HTTP (dev direto; hom/prod atrás do
 // nginx que termina TLS e redireciona 80→443). Habilitar o middleware aqui emite

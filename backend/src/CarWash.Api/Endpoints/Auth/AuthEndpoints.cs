@@ -31,6 +31,7 @@ public static class AuthEndpoints
 
         grupo.MapPost("/login", LoginAsync)
             .AllowAnonymous()
+            .RequireRateLimiting("auth-login")
             .AddEndpointFilter<ValidationFilter<LoginCommand>>()
             .WithName("AuthLogin")
             .Produces<LoginResponse>(StatusCodes.Status200OK)

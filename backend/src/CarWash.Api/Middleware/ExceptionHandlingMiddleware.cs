@@ -76,6 +76,16 @@ public sealed class ExceptionHandlingMiddleware
         }
         catch (UsuarioBloqueadoException ex)
         {
+            var bloqueadoAteUtc = ex.BloqueadoAte.ToUniversalTime();
+            var segundosRestantes = Math.Max(0, (int)Math.Ceiling((bloqueadoAteUtc - DateTime.UtcNow).TotalSeconds));
+
+            // Retry-After header (RFC 7231) — segundos para o cliente poder
+            // mostrar contagem regressiva e/ou bloquear retries automáticos.
+            if (!context.Response.HasStarted)
+            {
+                context.Response.Headers["Retry-After"] = segundosRestantes.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            }
+
             await EscreverProblemAsync(
                 context,
                 status: StatusCodes.Status403Forbidden,
@@ -84,7 +94,8 @@ public sealed class ExceptionHandlingMiddleware
                 erros: null,
                 extensions: new Dictionary<string, object?>(StringComparer.Ordinal)
                 {
-                    ["bloqueadoAte"] = ex.BloqueadoAte.ToUniversalTime().ToString("O", System.Globalization.CultureInfo.InvariantCulture),
+                    ["bloqueadoAte"] = bloqueadoAteUtc.ToString("O", System.Globalization.CultureInfo.InvariantCulture),
+                    ["retryAfterSeconds"] = segundosRestantes,
                 }).ConfigureAwait(false);
         }
         catch (DomainException ex)
