@@ -1,0 +1,31 @@
+# Lista de palavras específicas do projeto — entram para o dicionário do cspell.
+# Mantenha em ordem alfabética. Comentários começam com #.
+
+# Nomes próprios / pessoas
+Brogio
+Konscious
+Mazières
+Niels
+
+# Termos técnicos / siglas
+ASIC
+LGPD
+Npgsql
+PACELC
+SGBD
+
+# Termos PT-BR sem acento que aparecem em IDs/slugs/comentários
+celulas
+componentização
+hasheada
+mudancas
+otimizacao
+sessoes
+tecnico
+usuario
+
+# Outros termos do projeto
+Prototipar
+carwash
+CarWash
+claude
