@@ -10,6 +10,8 @@ import { ClientesListaPage } from '@/pages/Clientes/ClientesListaPage';
 import Dashboard from '@/pages/Dashboard/Dashboard';
 import Login from '@/pages/Login/Login';
 import { NovoUsuarioPage } from '@/pages/Usuarios/NovoUsuarioPage';
+import { UsuarioDetalhePage } from '@/pages/Usuarios/UsuarioDetalhePage';
+import { UsuariosListaPage } from '@/pages/Usuarios/UsuariosListaPage';
 
 function App() {
   return (
@@ -61,11 +63,33 @@ function App() {
         />
 
         <Route
+          path="/usuarios"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <UsuariosListaPage />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
           path="/usuarios/novo"
           element={
             <PrivateRoute>
               <DashboardLayout>
                 <NovoUsuarioPage />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/usuarios/:id"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <UsuarioDetalhePage />
               </DashboardLayout>
             </PrivateRoute>
           }

@@ -102,6 +102,24 @@ public sealed class Usuario : IAuditable, IAuditableSetter
 
     public void Ativar() => Ativo = true;
 
+    /// <summary>
+    /// Atualiza dados cadastrais — nome, e-mail e perfil. Não altera senha,
+    /// status nem contadores de lockout (usar métodos dedicados para isso).
+    /// </summary>
+    public void AlterarDados(string nome, Email email, Enums.PerfilUsuario perfil)
+    {
+        if (string.IsNullOrWhiteSpace(nome) || nome.Length > 100)
+        {
+            throw new DomainException("Nome é obrigatório e deve ter no máximo 100 caracteres.");
+        }
+
+        ArgumentNullException.ThrowIfNull(email);
+
+        Nome = nome;
+        EmailValor = email.Valor;
+        PerfilRaw = perfil.ToDbValue();
+    }
+
     public void TrocarSenha(string novoHash)
     {
         if (string.IsNullOrWhiteSpace(novoHash))

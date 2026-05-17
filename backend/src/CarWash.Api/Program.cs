@@ -37,6 +37,7 @@ builder.Services.ConfigureHttpJsonOptions(opt =>
 // Filtros de validação genéricos (um por command/query que precisar de IValidator<T>).
 builder.Services.AddScoped<ValidationFilter<CriarUsuarioCommand>>();
 builder.Services.AddScoped<ValidationFilter<LoginCommand>>();
+builder.Services.AddScoped<ValidationFilter<CarWash.Application.Usuarios.AlterarUsuario.AlterarUsuarioCommand>>();
 
 // MVC controllers (ClientesController). Coexistem com os minimal API endpoints abaixo.
 builder.Services.AddControllers();

@@ -4,8 +4,10 @@ using CarWash.Application.Auth.Logout;
 using CarWash.Application.Auth.Refresh;
 using CarWash.Application.Services.Clientes;
 using CarWash.Application.Usuarios.AlterarStatus;
+using CarWash.Application.Usuarios.AlterarUsuario;
 using CarWash.Application.Usuarios.Common;
 using CarWash.Application.Usuarios.CriarUsuario;
+using CarWash.Application.Usuarios.Listar;
 using CarWash.Application.Usuarios.ObterUsuarioPorId;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,7 +24,9 @@ public static class DependencyInjection
 
         services.AddScoped<ICommandHandler<CriarUsuarioCommand, UsuarioResponse>, CriarUsuarioHandler>();
         services.AddScoped<IQueryHandler<ObterUsuarioPorIdQuery, UsuarioResponse>, ObterUsuarioPorIdHandler>();
+        services.AddScoped<IQueryHandler<ListarUsuariosQuery, ListaUsuariosResponse>, ListarUsuariosHandler>();
         services.AddScoped<ICommandHandler<AlterarStatusUsuarioCommand, AlterarStatusUsuarioResponse>, AlterarStatusUsuarioHandler>();
+        services.AddScoped<ICommandHandler<AlterarUsuarioCommand, UsuarioResponse>, AlterarUsuarioHandler>();
         services.AddScoped<ICommandHandler<LoginCommand, LoginResultado>, LoginHandler>();
         services.AddScoped<ICommandHandler<RefreshCommand, RefreshResultado>, RefreshHandler>();
         services.AddScoped<ICommandHandler<LogoutCommand, LogoutResultado>, LogoutHandler>();

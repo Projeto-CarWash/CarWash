@@ -31,4 +31,15 @@ public interface IUsuarioRepository
 
     /// <summary>Persiste as mudanças. Pode lançar <c>DbUpdateException</c> em violação de UK.</summary>
     Task SalvarAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Listagem paginada de usuários para gestão (RF014). Filtros opcionais:
+    /// busca livre por nome/email (ILIKE) e status (<c>ativo</c>). Ordenação por <c>nome ASC</c>.
+    /// </summary>
+    Task<(IReadOnlyList<Usuario> Itens, int Total)> ListarAsync(
+        string? busca,
+        bool? ativo,
+        int pagina,
+        int tamanhoPagina,
+        CancellationToken cancellationToken);
 }
