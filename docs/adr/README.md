@@ -25,3 +25,6 @@ Seguimos uma variante leve do [Michael Nygard ADR](https://cognitect.com/blog/20
 | --- | --- | --- | --- |
 | [0001](0001-geracao-de-uuid-pela-aplicacao.md) | Geração de UUID pela aplicação .NET | Aceita | 2026-05-13 |
 | [0002](0002-hash-de-senha-com-argon2id.md) | Hash de senha com Argon2id | Aceita | 2026-05-13 |
+| [0003](0003-minimal-api-cqrs-vertical-slices.md) | Minimal API + CQRS com Vertical Slices (sem MediatR) | Aceita | 2026-05-17 |
+
+> Guia complementar à ADR 0003: [`../arquitetura-backend.md`](../arquitetura-backend.md) — definições da literatura, comparações lado a lado, template para novas features.
