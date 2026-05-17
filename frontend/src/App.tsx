@@ -7,6 +7,7 @@ import PrivateRoute from '@/components/PrivateRoute';
 import { AuthProvider } from '@/contexts/AuthProvider';
 import Dashboard from '@/pages/Dashboard/Dashboard';
 import Login from '@/pages/Login/Login';
+import { NovoUsuarioPage } from '@/pages/Usuarios/NovoUsuarioPage';
 
 function App() {
   return (
@@ -30,6 +31,17 @@ function App() {
               <DashboardLayout>
                 <PageHeader />
                 <NovoClientePage />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/usuarios/novo"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <NovoUsuarioPage />
               </DashboardLayout>
             </PrivateRoute>
           }
