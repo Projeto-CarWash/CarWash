@@ -46,8 +46,11 @@ export const userService = {
     return data;
   },
 
-  async updateStatus(id: string, ativo: boolean): Promise<{ id: string; ativo: boolean }> {
-    const { data } = await api.patch<{ id: string; ativo: boolean }>(
+  async updateStatus(
+    id: string,
+    ativo: boolean,
+  ): Promise<{ id: string; ativo: boolean; atualizadoEm: string }> {
+    const { data } = await api.patch<{ id: string; ativo: boolean; atualizadoEm: string }>(
       `/api/v1/usuarios/${id}/status`,
       { ativo },
     );

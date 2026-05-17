@@ -9,7 +9,7 @@ namespace CarWash.Api.Endpoints.Auth;
 /// <para>Política do cookie:</para>
 /// <list type="bullet">
 ///   <item><c>HttpOnly = true</c> — inacessível ao JavaScript (mitiga XSS).</item>
-///   <item><c>Secure = true</c> em qualquer ambiente diferente de Development.</item>
+///   <item><c>Secure = true</c> apenas em prod/hom (qualquer ambiente que não seja Development nem Testing).</item>
 ///   <item><c>SameSite = Strict</c> — mitiga CSRF clássico.</item>
 ///   <item><c>Path = "/api/v1/auth"</c> — cookie só é enviado em endpoints de auth.</item>
 /// </list>
@@ -32,15 +32,7 @@ public static class AuthCookies
         context.Response.Cookies.Append(
             RefreshTokenCookieName,
             tokenBruto,
-            new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = !env.IsDevelopment(),
-                SameSite = SameSiteMode.Strict,
-                Path = CookiePath,
-                Expires = new DateTimeOffset(expiraEm, TimeSpan.Zero),
-                IsEssential = true,
-            });
+            BuildOptions(env, new DateTimeOffset(expiraEm, TimeSpan.Zero)));
     }
 
     public static void ApagarRefreshCookie(HttpContext context, IHostEnvironment env)
@@ -51,15 +43,7 @@ public static class AuthCookies
         context.Response.Cookies.Append(
             RefreshTokenCookieName,
             string.Empty,
-            new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = !env.IsDevelopment(),
-                SameSite = SameSiteMode.Strict,
-                Path = CookiePath,
-                Expires = DateTimeOffset.UnixEpoch,
-                IsEssential = true,
-            });
+            BuildOptions(env, DateTimeOffset.UnixEpoch));
     }
 
     public static string? LerRefreshCookie(HttpContext context)
@@ -74,4 +58,22 @@ public static class AuthCookies
 
         return null;
     }
+
+    private static CookieOptions BuildOptions(IHostEnvironment env, DateTimeOffset expires) => new()
+    {
+        HttpOnly = true,
+        Secure = ShouldUseSecure(env),
+        SameSite = SameSiteMode.Strict,
+        Path = CookiePath,
+        Expires = expires,
+        IsEssential = true,
+    };
+
+    /// <summary>
+    /// Habilita <c>Secure</c> apenas quando o ambiente realmente tem TLS:
+    /// nginx em hom/prod faz terminate de TLS e repassa HTTP para o backend.
+    /// Em Development e Testing o cookie precisa funcionar sob HTTP local.
+    /// </summary>
+    private static bool ShouldUseSecure(IHostEnvironment env) =>
+        !env.IsDevelopment() && !env.IsEnvironment("Testing");
 }

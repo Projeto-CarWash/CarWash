@@ -9,41 +9,94 @@ import {
   Users,
   Wrench,
 } from 'lucide-react';
+import { NavLink, useLocation } from 'react-router-dom';
 
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { useAuth } from '@/hooks/useAuth';
 
-const operacaoLinks = [
-  { icon: LayoutDashboard, label: 'Painel', badge: '12' },
+interface NavLinkItem {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  to?: string;
+}
+
+const operacaoLinks: NavLinkItem[] = [
+  { icon: LayoutDashboard, label: 'Painel', to: '/dashboard' },
   { icon: Wrench, label: 'Serviços' },
-  { icon: Users, label: 'Clientes', active: true },
+  { icon: Users, label: 'Clientes', to: '/clientes' },
   { icon: CarFront, label: 'Veículos' },
 ];
 
-const gestaoLinks = [
+const gestaoLinks: NavLinkItem[] = [
   { icon: CalendarDays, label: 'Agendamentos' },
   { icon: DollarSign, label: 'Financeiro' },
   { icon: BarChart3, label: 'Relatórios' },
-  { icon: UserCog, label: 'Equipe' },
+  { icon: UserCog, label: 'Equipe', to: '/usuarios' },
 ];
 
-const sistemaLinks = [{ icon: Settings, label: 'Configurações' }];
+const sistemaLinks: NavLinkItem[] = [{ icon: Settings, label: 'Configurações' }];
 
 export function Sidebar() {
+  const { user } = useAuth();
+  const { pathname } = useLocation();
+
+  const inicial = (user?.nome?.[0] ?? '?').toUpperCase();
+
+  function isActive(to?: string): boolean {
+    if (!to) return false;
+    return pathname === to || pathname.startsWith(`${to}/`);
+  }
+
+  function renderItem(link: NavLinkItem) {
+    const baseClasses =
+      'group relative flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all';
+    const ativo = isActive(link.to);
+    const ativoClasses = 'bg-gradient-to-r from-red-600/20 to-transparent text-white';
+    const inativoClasses = 'text-zinc-400 hover:bg-zinc-800/40 hover:text-zinc-200';
+
+    if (link.to) {
+      return (
+        <NavLink to={link.to} className={`${baseClasses} ${ativo ? ativoClasses : inativoClasses}`}>
+          {ativo && (
+            <div
+              className="absolute -left-3 top-1/2 h-8 w-1.5 -translate-y-1/2 rounded-r-full bg-red-600"
+              aria-hidden="true"
+            />
+          )}
+          <link.icon className={`h-4 w-4 ${ativo ? 'text-white' : 'text-zinc-500'}`} />
+          <span>{link.label}</span>
+        </NavLink>
+      );
+    }
+
+    return (
+      <button
+        type="button"
+        disabled
+        className={`${baseClasses} ${inativoClasses} cursor-not-allowed opacity-60`}
+      >
+        <link.icon className="h-4 w-4 text-zinc-500" />
+        <span>{link.label}</span>
+        <span className="ml-auto text-[9px] tracking-widest text-zinc-600">EM BREVE</span>
+      </button>
+    );
+  }
+
   return (
-    <aside className="fixed left-0 top-0 bottom-0 z-40 flex w-64 flex-col border-r border-zinc-800/60 bg-zinc-950">
+    <aside className="fixed bottom-0 left-0 top-0 z-40 flex w-64 flex-col border-r border-zinc-800/60 bg-zinc-950">
       <div className="flex items-center gap-3 px-5 py-5">
         <div className="flex h-12 w-12 items-center justify-center">
-          <img src="/logo.png" alt="Logo" className="h-full w-full object-contain" />
+          <img src="/logo.png" alt="Logo CarWash" className="h-full w-full object-contain" />
         </div>
         <div>
           <h1 className="text-lg font-black tracking-wider">
             <span className="text-zinc-50">CAR</span>
             <span className="text-red-600">WASH</span>
           </h1>
-          <p className="text-[10.5px] font-bold tracking-[0.2em] text-zinc-500 mt-0.5">
-            ADMIN <span className="text-zinc-600 px-0.5">•</span> v2.4
+          <p className="mt-0.5 text-[10.5px] font-bold tracking-[0.2em] text-zinc-500">
+            ADMIN <span className="px-0.5 text-zinc-600">•</span> v2.4
           </p>
         </div>
       </div>
@@ -54,57 +107,21 @@ export function Sidebar() {
         <p className="mb-2 px-3 text-[10px] font-bold tracking-[0.2em] text-zinc-600">OPERAÇÃO</p>
         <ul className="mb-4 space-y-0.5">
           {operacaoLinks.map((link) => (
-            <li key={link.label}>
-              <button
-                type="button"
-                className={`group relative flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all ${
-                  link.active
-                    ? 'bg-gradient-to-r from-red-600/20 to-transparent text-white'
-                    : 'text-zinc-400 hover:bg-zinc-800/40 hover:text-zinc-200'
-                }`}
-              >
-                {link.active && (
-                  <div className="absolute -left-3 top-1/2 h-8 w-1.5 -translate-y-1/2 rounded-r-full bg-red-600" />
-                )}
-                <link.icon className={`h-4 w-4 ${link.active ? 'text-white' : 'text-zinc-500'}`} />
-                <span>{link.label}</span>
-                {link.badge && (
-                  <Badge className="ml-auto h-5 min-w-5 justify-center rounded-full bg-red-600/20 px-1.5 text-[10px] text-red-400">
-                    {link.badge}
-                  </Badge>
-                )}
-              </button>
-            </li>
+            <li key={link.label}>{renderItem(link)}</li>
           ))}
         </ul>
 
         <p className="mb-2 px-3 text-[10px] font-bold tracking-[0.2em] text-zinc-600">GESTÃO</p>
         <ul className="mb-4 space-y-0.5">
           {gestaoLinks.map((link) => (
-            <li key={link.label}>
-              <button
-                type="button"
-                className="group flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-zinc-400 transition-all hover:bg-zinc-800/40 hover:text-zinc-200"
-              >
-                <link.icon className="h-4 w-4 text-zinc-500" />
-                <span>{link.label}</span>
-              </button>
-            </li>
+            <li key={link.label}>{renderItem(link)}</li>
           ))}
         </ul>
 
         <p className="mb-2 px-3 text-[10px] font-bold tracking-[0.2em] text-zinc-600">SISTEMA</p>
         <ul className="space-y-0.5">
           {sistemaLinks.map((link) => (
-            <li key={link.label}>
-              <button
-                type="button"
-                className="group flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-zinc-400 transition-all hover:bg-zinc-800/40 hover:text-zinc-200"
-              >
-                <link.icon className="h-4 w-4 text-zinc-500" />
-                <span>{link.label}</span>
-              </button>
-            </li>
+            <li key={link.label}>{renderItem(link)}</li>
           ))}
         </ul>
       </nav>
@@ -114,13 +131,16 @@ export function Sidebar() {
       <div className="flex items-center gap-3 px-5 py-4">
         <Avatar>
           <AvatarFallback className="bg-zinc-800 text-xs font-semibold text-zinc-300">
-            LA
+            {inicial}
           </AvatarFallback>
         </Avatar>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium text-zinc-200">Lucas Arruda</p>
-          <p className="text-[10px] font-semibold tracking-widest text-zinc-500">GERENTE</p>
+          <p className="truncate text-sm font-medium text-zinc-200">{user?.nome ?? '—'}</p>
+          <p className="text-[10px] font-semibold tracking-widest text-zinc-500">
+            {user?.perfil?.toUpperCase() ?? ''}
+          </p>
         </div>
+        <ThemeToggle className="h-8 w-8" />
       </div>
     </aside>
   );
