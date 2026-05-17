@@ -73,12 +73,14 @@ public sealed class CriarUsuarioHandler : ICommandHandler<CriarUsuarioCommand, U
 
         var senhaHash = _hasher.Hash(command.Senha);
 
+        // Perfil é nullable no command para diferenciar "ausente" de "Admin (0)".
+        // O validator garante NotNull antes deste ponto — `.Value` é seguro.
         var usuario = Usuario.Criar(
             id: Guid.NewGuid(),
             nome: command.Nome.Trim(),
             email: email,
             senhaHash: senhaHash,
-            perfil: command.Perfil);
+            perfil: command.Perfil!.Value);
 
         await _repositorio.AdicionarAsync(usuario, cancellationToken).ConfigureAwait(false);
 

@@ -32,6 +32,7 @@ public sealed partial class CriarUsuarioCommandValidator : AbstractValidator<Cri
             .Must(ContemNumero).WithMessage(MensagemSenhaFraca);
 
         RuleFor(x => x.Perfil)
+            .NotNull().WithMessage("Perfil é obrigatório.")
             .IsInEnum().WithMessage("Perfil inválido.");
     }
 

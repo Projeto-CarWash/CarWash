@@ -27,23 +27,29 @@ public static class UsuariosEndpoints
             .WithTags("Usuarios");
 
         grupo.MapPost("/", CriarAsync)
+            .RequireAuthorization()
             .AddEndpointFilter<ValidationFilter<CriarUsuarioCommand>>()
             .WithName("CriarUsuario")
             .Produces<UsuarioResponse>(StatusCodes.Status201Created)
             .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status409Conflict)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
 
         grupo.MapGet("/{id}", ObterPorIdAsync)
+            .RequireAuthorization()
             .WithName("ObterUsuarioPorId")
             .Produces<UsuarioResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
         grupo.MapPatch("/{id}/status", AlterarStatusAsync)
+            .RequireAuthorization()
             .WithName("AlterarStatusUsuario")
             .Produces<AlterarStatusUsuarioResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
 

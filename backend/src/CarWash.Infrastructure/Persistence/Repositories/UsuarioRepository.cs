@@ -95,4 +95,9 @@ public sealed class UsuarioRepository : IUsuarioRepository
 
         return (itens, total);
     }
+
+    public Task<int> ContarAdminsAtivosAsync(CancellationToken cancellationToken) =>
+        _db.Usuarios
+            .AsNoTracking()
+            .CountAsync(u => u.Ativo && u.PerfilRaw == "ADMIN", cancellationToken);
 }

@@ -3,6 +3,7 @@ using CarWash.Application.Abstractions.Messaging;
 using CarWash.Application.Common.Exceptions;
 using CarWash.Application.Usuarios.Persistence;
 using CarWash.Domain.Entities;
+using CarWash.Domain.Enums;
 using Microsoft.Extensions.Logging;
 
 namespace CarWash.Application.Usuarios.AlterarStatus;
@@ -17,6 +18,14 @@ public sealed class AlterarStatusUsuarioHandler
 {
     public const string EventoAuditoria = "UsuarioStatusAlterado";
     public const string MensagemNaoEncontrado = "Usuário não encontrado.";
+
+    public const string MensagemAutoDesativacao =
+        "Você não pode desativar a própria conta de usuário.";
+    public const string SlugAutoDesativacao = "auto-desativacao-bloqueada";
+
+    public const string MensagemUltimoAdminAtivo =
+        "Não é possível desativar o último administrador ativo do sistema.";
+    public const string SlugUltimoAdminAtivo = "ultimo-admin-ativo";
 
     private readonly IUsuarioRepository _repositorio;
     private readonly ICurrentRequestContext _contexto;
@@ -38,16 +47,19 @@ public sealed class AlterarStatusUsuarioHandler
     {
         ArgumentNullException.ThrowIfNull(command);
 
+        // Validator garante NotNull antes de chegar aqui. `.Value` é seguro.
+        var ativoDesejado = command.Ativo!.Value;
+
         _log.LogInformation(
             "Solicitação de alteração de status. UsuarioId={UsuarioId}, AtivoSolicitado={AtivoSolicitado}",
             command.UsuarioId,
-            command.Ativo);
+            ativoDesejado);
 
         var usuario = await _repositorio.ObterPorIdRastreadoAsync(command.UsuarioId, cancellationToken)
                             .ConfigureAwait(false)
                           ?? throw new NotFoundException(MensagemNaoEncontrado);
 
-        if (usuario.Ativo == command.Ativo)
+        if (usuario.Ativo == ativoDesejado)
         {
             _log.LogInformation(
                 "Status já é {AtivoAtual} para usuário {UsuarioId} — no-op (sem save, sem audit).",
@@ -58,7 +70,17 @@ public sealed class AlterarStatusUsuarioHandler
 
         var estadoAnterior = usuario.Ativo;
 
-        if (command.Ativo)
+        // BUG-U009 (auto-desativação / último admin): só vale quando o alvo está
+        // sendo INATIVADO. Reativação não tem risco. Avalia em duas frentes
+        // complementares — auto-desativação primeiro (mensagem mais útil ao caller),
+        // depois "último admin ativo".
+        if (!ativoDesejado)
+        {
+            GarantirNaoEhAutoDesativacao(usuario);
+            await GarantirNaoEhUltimoAdminAtivoAsync(usuario, cancellationToken).ConfigureAwait(false);
+        }
+
+        if (ativoDesejado)
         {
             usuario.Ativar();
         }
@@ -82,4 +104,34 @@ public sealed class AlterarStatusUsuarioHandler
 
     private static AlterarStatusUsuarioResponse ToResponse(Usuario usuario) =>
         new(usuario.Id, usuario.Ativo, usuario.AtualizadoEm);
+
+    private void GarantirNaoEhAutoDesativacao(Usuario alvo)
+    {
+        var usuarioLogadoId = _contexto.UsuarioId;
+        if (usuarioLogadoId.HasValue && usuarioLogadoId.Value == alvo.Id)
+        {
+            _log.LogWarning(
+                "Tentativa de auto-desativação bloqueada. UsuarioId={UsuarioId}",
+                alvo.Id);
+            throw new ConflictException(MensagemAutoDesativacao, SlugAutoDesativacao);
+        }
+    }
+
+    private async Task GarantirNaoEhUltimoAdminAtivoAsync(Usuario alvo, CancellationToken cancellationToken)
+    {
+        if (alvo.Perfil != PerfilUsuario.Admin)
+        {
+            return;
+        }
+
+        var totalAdminsAtivos = await _repositorio.ContarAdminsAtivosAsync(cancellationToken).ConfigureAwait(false);
+        if (totalAdminsAtivos <= 1)
+        {
+            _log.LogWarning(
+                "Tentativa de desativar o último admin ativo bloqueada. UsuarioId={UsuarioId}, AdminsAtivos={AdminsAtivos}",
+                alvo.Id,
+                totalAdminsAtivos);
+            throw new ConflictException(MensagemUltimoAdminAtivo, SlugUltimoAdminAtivo);
+        }
+    }
 }

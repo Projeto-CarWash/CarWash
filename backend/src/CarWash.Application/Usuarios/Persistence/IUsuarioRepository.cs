@@ -42,4 +42,10 @@ public interface IUsuarioRepository
         int pagina,
         int tamanhoPagina,
         CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Conta usuários com perfil <c>ADMIN</c> e <c>ativo = true</c>. Usado pela RN de
+    /// "não permitir desativar o último admin ativo" no endpoint de status (BUG-U009).
+    /// </summary>
+    Task<int> ContarAdminsAtivosAsync(CancellationToken cancellationToken);
 }
