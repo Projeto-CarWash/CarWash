@@ -8,36 +8,44 @@ export default {
         sans: ['Inter', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
       },
+      // Todas as cores vêm de frontend/src/tokens/colors/colors.css
+      // (:root light + .dark overrides). Componentes shadcn consomem por nome
+      // semântico; trocas de paleta acontecem apenas no arquivo CSS dos tokens.
       colors: {
-        border: 'hsl(var(--border))',
-        input: 'hsl(var(--input))',
-        ring: 'hsl(var(--ring))',
-        background: 'hsl(var(--background))',
-        foreground: 'hsl(var(--foreground))',
+        border: 'hsl(var(--colors--border))',
+        input: 'hsl(var(--colors--input))',
+        ring: 'hsl(var(--colors--ring))',
+        background: 'hsl(var(--colors--background))',
+        foreground: 'hsl(var(--colors--foreground))',
         primary: {
-          DEFAULT: 'hsl(var(--primary))',
-          foreground: 'hsl(var(--primary-foreground))',
+          DEFAULT: 'hsl(var(--colors--primary))',
+          foreground: 'hsl(var(--colors--primaryForeground))',
         },
         secondary: {
-          DEFAULT: 'hsl(var(--secondary))',
-          foreground: 'hsl(var(--secondary-foreground))',
+          DEFAULT: 'hsl(var(--colors--secondary))',
+          foreground: 'hsl(var(--colors--secondaryForeground))',
         },
         destructive: {
-          DEFAULT: 'hsl(var(--destructive))',
-          foreground: 'hsl(var(--destructive-foreground))',
+          DEFAULT: 'hsl(var(--colors--destructive))',
+          foreground: 'hsl(var(--colors--destructiveForeground))',
         },
         muted: {
-          DEFAULT: 'hsl(var(--muted))',
-          foreground: 'hsl(var(--muted-foreground))',
+          DEFAULT: 'hsl(var(--colors--muted))',
+          foreground: 'hsl(var(--colors--mutedForeground))',
         },
         accent: {
-          DEFAULT: 'hsl(var(--accent))',
-          foreground: 'hsl(var(--accent-foreground))',
+          DEFAULT: 'hsl(var(--colors--accent))',
+          foreground: 'hsl(var(--colors--accentForeground))',
         },
         card: {
-          DEFAULT: 'hsl(var(--card))',
-          foreground: 'hsl(var(--card-foreground))',
+          DEFAULT: 'hsl(var(--colors--card))',
+          foreground: 'hsl(var(--colors--cardForeground))',
         },
+        popover: {
+          DEFAULT: 'hsl(var(--colors--popover))',
+          foreground: 'hsl(var(--colors--popoverForeground))',
+        },
+        success: 'hsl(var(--colors--success))',
       },
       borderRadius: {
         lg: 'var(--radius)',

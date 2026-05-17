@@ -1,3 +1,9 @@
+/*
+ * Barrel dos design tokens (RF016 + RNF010). Import side-effect ativa todas
+ * as CSS custom properties (`--colors--*`, `--borders--*`, etc.) em :root /
+ * .dark. O ThemeProvider monta esse import uma vez no boot.
+ */
+
 import './borders/borders.css';
 import './colors/colors.css';
 import './fontSizes/fontSizes.css';

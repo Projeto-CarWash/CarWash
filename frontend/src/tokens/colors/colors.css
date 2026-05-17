@@ -1,49 +1,59 @@
+/*
+ * Paleta CarWash — source of truth de cores (RNF010: base vermelho/preto,
+ * com tema claro e escuro). Os valores são em HSL "crus" (sem hsl()) para
+ * que componentes shadcn possam compor `hsl(var(--colors--primary) / <alpha>)`.
+ *
+ * Tailwind (em tailwind.config.js) lê todas as cores como
+ * `hsl(var(--colors--<nome>))`, então este arquivo é o único ponto onde
+ * trocas de paleta acontecem.
+ *
+ * Toggle dark/light: <html class="dark"> (controlado pelo ThemeProvider).
+ */
+
 :root {
-  --colors--background: #09090b;
-  --colors--backgroundElevated: #0c0c0f;
-  --colors--surface: #121215;
-  --colors--surfaceStrong: #1a1a1f;
-  --colors--surfaceMuted: #141418;
-  --colors--surfaceOverlay: rgba(9, 9, 11, 0.8);
-  --colors--foreground: #f5f5f7;
-  --colors--foregroundMuted: #64646c;
-  --colors--foregroundSubtle: #9a9aa2;
-  --colors--foregroundSoft: #757575;
-  --colors--border: #26262c;
-  --colors--borderStrong: #1e1e23;
-  --colors--borderSoft: rgba(229, 229, 229, 0.16);
-  --colors--primary: #ff2a39;
-  --colors--primaryStrong: #c9121f;
-  --colors--primaryHover: #ff1f2e;
-  --colors--primaryHoverStrong: #b30f1b;
-  --colors--primaryGlow: rgba(255, 31, 46, 0.7);
-  --colors--primaryGlowStrong: rgba(255, 31, 46, 0.95);
-  --colors--primaryForeground: #ffffff;
-  --colors--destructive: #ff1f2e;
-  --colors--destructiveSoft: rgba(255, 31, 46, 0.1);
-  --colors--destructiveBorder: rgba(255, 31, 46, 0.3);
-  --colors--destructiveInk: rgba(255, 31, 46, 0.9);
-  --colors--destructiveForeground: #ffffff;
-  --colors--success: #34d399;
-  --colors--sidebar: #0c0c0f;
-  --colors--sidebarForeground: #f5f5f7;
-  --colors--sidebarPrimary: #ff2a39;
-  --colors--sidebarPrimaryForeground: #ffffff;
-  --colors--sidebarAccent: #0c0c0f;
-  --colors--sidebarAccentForeground: #f5f5f7;
-  --colors--sidebarBorder: #1e1e23;
-  --colors--sidebarRing: #ff1f2e;
-  --colors--chart1: #ff2a39;
-  --colors--chart2: #09090b;
-  --colors--chart3: #121215;
-  --colors--chart4: #f5f5f7;
-  --colors--chart5: #64646c;
-  --colors--secondary: #0c0c0f;
-  --colors--secondaryForeground: #f5f5f7;
-  --colors--muted: #0c0c0f;
-  --colors--mutedForeground: #64646c;
-  --colors--accent: #141418;
-  --colors--accentForeground: #f5f5f7;
-  --colors--ring: #ff1f2e;
-  --colors--input: #26262c;
+  /* Tema claro (default) */
+  --colors--background: 0 0% 100%;
+  --colors--foreground: 0 0% 4%;
+  --colors--card: 0 0% 100%;
+  --colors--cardForeground: 0 0% 4%;
+  --colors--popover: 0 0% 100%;
+  --colors--popoverForeground: 0 0% 4%;
+  --colors--primary: 0 72% 51%;
+  --colors--primaryForeground: 0 0% 98%;
+  --colors--secondary: 240 5% 96%;
+  --colors--secondaryForeground: 240 6% 10%;
+  --colors--muted: 240 5% 96%;
+  --colors--mutedForeground: 240 4% 46%;
+  --colors--accent: 240 5% 96%;
+  --colors--accentForeground: 240 6% 10%;
+  --colors--destructive: 0 84% 60%;
+  --colors--destructiveForeground: 0 0% 98%;
+  --colors--success: 153 60% 53%;
+  --colors--border: 240 6% 90%;
+  --colors--input: 240 6% 90%;
+  --colors--ring: 0 72% 51%;
+}
+
+.dark {
+  /* Tema escuro (paleta original do Lucas — vermelho/preto) */
+  --colors--background: 240 6% 4%;
+  --colors--foreground: 240 5% 96%;
+  --colors--card: 240 6% 6%;
+  --colors--cardForeground: 240 5% 96%;
+  --colors--popover: 240 6% 6%;
+  --colors--popoverForeground: 240 5% 96%;
+  --colors--primary: 355 100% 58%;
+  --colors--primaryForeground: 0 0% 100%;
+  --colors--secondary: 240 4% 6%;
+  --colors--secondaryForeground: 240 5% 96%;
+  --colors--muted: 240 4% 6%;
+  --colors--mutedForeground: 240 5% 41%;
+  --colors--accent: 240 6% 9%;
+  --colors--accentForeground: 240 5% 96%;
+  --colors--destructive: 355 100% 56%;
+  --colors--destructiveForeground: 0 0% 100%;
+  --colors--success: 153 60% 53%;
+  --colors--border: 240 6% 15%;
+  --colors--input: 240 6% 15%;
+  --colors--ring: 355 100% 56%;
 }
