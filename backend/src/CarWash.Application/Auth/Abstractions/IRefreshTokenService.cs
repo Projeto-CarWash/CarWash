@@ -24,6 +24,18 @@ public interface IRefreshTokenService
     Task<UsuarioSessao> ValidarAsync(string refreshTokenBruto, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Valida o refresh token bruto sob <c>SELECT ... FOR UPDATE</c> em transação
+    /// dedicada, prevenindo a race condition do BUG-010 em <c>/refresh</c> paralelo.
+    /// Retorna a sessão validada + o handle de transação — que o chamador DEVE
+    /// commitar após emitir a nova sessão (ou disposer para rollback). Se a sessão
+    /// for inválida/revogada/expirada, faz rollback interno e lança
+    /// <see cref="Common.Exceptions.RefreshTokenInvalidoException"/>; se for reuse
+    /// (revogada e ainda não expirada), revoga família dentro da transação,
+    /// commita e lança <see cref="Common.Exceptions.RefreshTokenReuseDetectadoException"/>.
+    /// </summary>
+    Task<RotacaoContexto> ValidarParaRotacaoAsync(string refreshTokenBruto, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Revoga (marca <c>revogado_em</c>) a sessão correspondente ao refresh token
     /// fornecido. Idempotente — chamadas com token inválido/já revogado não falham.
     /// </summary>

@@ -1,5 +1,6 @@
 using CarWash.Application.Abstractions;
 using CarWash.Application.Auth.Abstractions;
+using CarWash.Application.Auth.Persistence;
 using CarWash.Application.Auth.Refresh;
 using CarWash.Application.Common.Exceptions;
 using CarWash.Application.Usuarios.Persistence;
@@ -24,8 +25,8 @@ public class RefreshHandlerTests
     [Fact]
     public async Task Token_invalido_lanca_RefreshTokenInvalido()
     {
-        _refresh.ValidarAsync("ruim", Arg.Any<CancellationToken>())
-            .Returns<Task<UsuarioSessao>>(_ => throw new RefreshTokenInvalidoException());
+        _refresh.ValidarParaRotacaoAsync("ruim", Arg.Any<CancellationToken>())
+            .Returns<Task<RotacaoContexto>>(_ => throw new RefreshTokenInvalidoException());
 
         var handler = NovoHandler();
         var act = () => handler.HandleAsync(new RefreshCommand("ruim"), CancellationToken.None);
@@ -38,8 +39,10 @@ public class RefreshHandlerTests
     {
         var usuario = NovoUsuario(ativo: false);
         var sessao = NovaSessao(usuario.Id);
+        var transacao = Substitute.For<IUsuarioSessaoTransacao>();
 
-        _refresh.ValidarAsync("bom", Arg.Any<CancellationToken>()).Returns(sessao);
+        _refresh.ValidarParaRotacaoAsync("bom", Arg.Any<CancellationToken>())
+            .Returns(new RotacaoContexto(sessao, transacao));
         _repo.ObterPorIdAsync(usuario.Id, Arg.Any<CancellationToken>()).Returns(usuario);
 
         var handler = NovoHandler();
@@ -47,6 +50,8 @@ public class RefreshHandlerTests
 
         await act.Should().ThrowAsync<RefreshTokenInvalidoException>();
         await _refresh.Received(1).RevogarAsync("bom", Arg.Any<CancellationToken>());
+        await transacao.Received(1).CommitAsync(Arg.Any<CancellationToken>());
+        await transacao.Received(1).DisposeAsync();
     }
 
     [Fact]
@@ -54,8 +59,10 @@ public class RefreshHandlerTests
     {
         var usuario = NovoUsuario(ativo: true);
         var sessaoAtual = NovaSessao(usuario.Id);
+        var transacao = Substitute.For<IUsuarioSessaoTransacao>();
 
-        _refresh.ValidarAsync("antigo", Arg.Any<CancellationToken>()).Returns(sessaoAtual);
+        _refresh.ValidarParaRotacaoAsync("antigo", Arg.Any<CancellationToken>())
+            .Returns(new RotacaoContexto(sessaoAtual, transacao));
         _repo.ObterPorIdAsync(usuario.Id, Arg.Any<CancellationToken>()).Returns(usuario);
         _access.Emitir(usuario).Returns(("novo-jwt", DateTime.UtcNow.AddMinutes(15)));
         _refresh.EmitirAsync(usuario, Arg.Any<CancellationToken>())
@@ -71,6 +78,8 @@ public class RefreshHandlerTests
         // Rotação: revoga o antigo (uma vez no fluxo válido).
         await _refresh.Received(1).RevogarAsync("antigo", Arg.Any<CancellationToken>());
         await _refresh.Received(1).EmitirAsync(usuario, Arg.Any<CancellationToken>());
+        await transacao.Received(1).CommitAsync(Arg.Any<CancellationToken>());
+        await transacao.Received(1).DisposeAsync();
 
         await _audit.Received(1).LogAsync(
             RefreshHandler.EventoSucesso,

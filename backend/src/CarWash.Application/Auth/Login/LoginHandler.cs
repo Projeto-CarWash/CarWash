@@ -40,8 +40,14 @@ public sealed class LoginHandler : ICommandHandler<LoginCommand, LoginResultado>
     public const string MotivoUsuarioInativo = "UsuarioInativo";
     public const string MotivoUsuarioBloqueado = "UsuarioBloqueado";
 
-    /// <summary>RF001: limite de tentativas inválidas consecutivas antes do lockout.</summary>
-    public const int LimiteTentativasInvalidas = 3;
+    /// <summary>
+    /// RF001 / CA011 — limite de falhas consecutivas a partir do qual o usuário é
+    /// bloqueado temporariamente. A semântica esperada (QA POST_login T9) é:
+    /// tentativas 1..3 retornam 401 (`InvalidCredentialsException`); na 4ª falha
+    /// consecutiva o handler aplica o lockout e responde 403. Por isso o limite
+    /// efetivo é 4 — só ao atingir 4 falhas o bloqueio é ativado.
+    /// </summary>
+    public const int LimiteTentativasInvalidas = 4;
 
     /// <summary>RF001: duração do lockout temporário aplicado ao atingir o limite.</summary>
     public static readonly TimeSpan DuracaoBloqueio = TimeSpan.FromMinutes(15);

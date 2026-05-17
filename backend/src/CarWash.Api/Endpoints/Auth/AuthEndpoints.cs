@@ -63,10 +63,15 @@ public static class AuthEndpoints
         HttpContext http,
         CancellationToken cancellationToken)
     {
+        // Aplica `Cache-Control: no-store` ANTES de qualquer execução do handler para
+        // garantir o header tanto no caminho de sucesso quanto no de exceção. O
+        // middleware de exceção preserva headers já definidos (ProblemDetails apenas
+        // Clear o response stream — o header sobrevive).
+        http.Response.Headers[HeaderNames.CacheControl] = "no-store";
+
         var resultado = await handler.HandleAsync(command, cancellationToken).ConfigureAwait(false);
 
         AuthCookies.EscreverRefreshCookie(http, env, resultado.RefreshToken, resultado.RefreshExpiresAt);
-        http.Response.Headers[HeaderNames.CacheControl] = "no-store";
 
         return TypedResults.Ok(LoginResponse.From(resultado));
     }
@@ -77,13 +82,17 @@ public static class AuthEndpoints
         HttpContext http,
         CancellationToken cancellationToken)
     {
+        // Importante: setar `Cache-Control: no-store` ANTES de ler o cookie/lançar a
+        // exceção 401, para que TODA resposta (200 ou 401) carregue o header — exigido
+        // por RFC 6265 e CA011 (não cachear tokens de sessão).
+        http.Response.Headers[HeaderNames.CacheControl] = "no-store";
+
         var refreshToken = AuthCookies.LerRefreshCookie(http)
             ?? throw new RefreshTokenInvalidoException();
 
         var resultado = await handler.HandleAsync(new RefreshCommand(refreshToken), cancellationToken).ConfigureAwait(false);
 
         AuthCookies.EscreverRefreshCookie(http, env, resultado.RefreshToken, resultado.RefreshExpiresAt);
-        http.Response.Headers[HeaderNames.CacheControl] = "no-store";
 
         return TypedResults.Ok(RefreshResponse.From(resultado));
     }
@@ -94,12 +103,13 @@ public static class AuthEndpoints
         HttpContext http,
         CancellationToken cancellationToken)
     {
+        http.Response.Headers[HeaderNames.CacheControl] = "no-store";
+
         var refreshToken = AuthCookies.LerRefreshCookie(http);
 
         await handler.HandleAsync(new LogoutCommand(refreshToken), cancellationToken).ConfigureAwait(false);
 
         AuthCookies.ApagarRefreshCookie(http, env);
-        http.Response.Headers[HeaderNames.CacheControl] = "no-store";
 
         return TypedResults.NoContent();
     }

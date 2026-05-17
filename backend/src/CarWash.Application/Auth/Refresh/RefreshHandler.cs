@@ -51,58 +51,77 @@ public sealed class RefreshHandler : ICommandHandler<RefreshCommand, RefreshResu
     {
         ArgumentNullException.ThrowIfNull(command);
 
-        // Validar lança RefreshTokenInvalidoException se ausente/expirado/revogado.
-        var sessaoAtual = await _refreshTokens.ValidarAsync(command.RefreshToken, cancellationToken).ConfigureAwait(false);
+        // BUG-010: ValidarParaRotacaoAsync abre uma transação dedicada com lock
+        // pessimista sobre a linha da sessão. O lock garante que requisições
+        // concorrentes com o MESMO refresh token sejam serializadas — apenas a
+        // primeira segue adiante; as demais, ao adquirirem o lock após o COMMIT
+        // desta, enxergam revogado_em preenchido e caem em reuse-detection
+        // (CA011) com resposta 401. Lança RefreshTokenInvalidoException (ou
+        // subclasse) já com rollback interno se o token estiver ausente, expirado,
+        // revogado ou reuse. No caminho feliz, devolve o handle que commitamos
+        // após emitir a nova sessão.
+        var rotacao = await _refreshTokens
+            .ValidarParaRotacaoAsync(command.RefreshToken, cancellationToken)
+            .ConfigureAwait(false);
 
-        var usuario = await _repositorio.ObterPorIdAsync(sessaoAtual.UsuarioId, cancellationToken).ConfigureAwait(false);
-        var agora = DateTime.UtcNow;
-
-        if (usuario is null || !usuario.Ativo || usuario.EstaBloqueado(agora))
+        await using (rotacao.Transacao.ConfigureAwait(false))
         {
-            // Usuário desativado/excluído/bloqueado depois do login. Revoga a sessão
-            // ativa e responde como token inválido (não vaza motivo).
+            var sessaoAtual = rotacao.SessaoAtual;
+
+            var usuario = await _repositorio.ObterPorIdAsync(sessaoAtual.UsuarioId, cancellationToken).ConfigureAwait(false);
+            var agora = DateTime.UtcNow;
+
+            if (usuario is null || !usuario.Ativo || usuario.EstaBloqueado(agora))
+            {
+                // Usuário desativado/excluído/bloqueado depois do login. Revoga a sessão
+                // ativa e responde como token inválido (não vaza motivo).
+                await _refreshTokens.RevogarAsync(command.RefreshToken, cancellationToken).ConfigureAwait(false);
+                await rotacao.Transacao.CommitAsync(cancellationToken).ConfigureAwait(false);
+
+                _contexto.DefinirEvento(EventoFalha);
+                await _auditoria.LogAsync(
+                    evento: EventoFalha,
+                    entidade: EntidadeAuditoria,
+                    entidadeId: sessaoAtual.Id,
+                    dados: new { Motivo = "UsuarioInvalido" },
+                    cancellationToken: cancellationToken).ConfigureAwait(false);
+
+                throw new RefreshTokenInvalidoException();
+            }
+
+            // Rotação: revoga sessão atual e emite uma nova — tudo dentro da
+            // transação iniciada pelo FOR UPDATE para que o lock persista até o COMMIT.
             await _refreshTokens.RevogarAsync(command.RefreshToken, cancellationToken).ConfigureAwait(false);
 
-            _contexto.DefinirEvento(EventoFalha);
+            var (accessToken, accessExpiresAt) = _accessTokens.Emitir(usuario);
+            var novaSessao = await _refreshTokens.EmitirAsync(usuario, cancellationToken).ConfigureAwait(false);
+
+            await rotacao.Transacao.CommitAsync(cancellationToken).ConfigureAwait(false);
+
+            _contexto.DefinirEvento(EventoSucesso);
             await _auditoria.LogAsync(
-                evento: EventoFalha,
+                evento: EventoSucesso,
                 entidade: EntidadeAuditoria,
-                entidadeId: sessaoAtual.Id,
-                dados: new { Motivo = "UsuarioInvalido" },
+                entidadeId: novaSessao.SessaoId,
+                dados: new { SessaoAnteriorId = sessaoAtual.Id, SessaoNovaId = novaSessao.SessaoId },
                 cancellationToken: cancellationToken).ConfigureAwait(false);
 
-            throw new RefreshTokenInvalidoException();
-        }
-
-        // Rotação: revoga sessão atual e emite uma nova.
-        await _refreshTokens.RevogarAsync(command.RefreshToken, cancellationToken).ConfigureAwait(false);
-
-        var (accessToken, accessExpiresAt) = _accessTokens.Emitir(usuario);
-        var novaSessao = await _refreshTokens.EmitirAsync(usuario, cancellationToken).ConfigureAwait(false);
-
-        _contexto.DefinirEvento(EventoSucesso);
-        await _auditoria.LogAsync(
-            evento: EventoSucesso,
-            entidade: EntidadeAuditoria,
-            entidadeId: novaSessao.SessaoId,
-            dados: new { SessaoAnteriorId = sessaoAtual.Id, SessaoNovaId = novaSessao.SessaoId },
-            cancellationToken: cancellationToken).ConfigureAwait(false);
-
-        _log.LogInformation(
-            "Sessão renovada. UsuarioId={UsuarioId}, SessaoAnterior={SessaoAnterior}, SessaoNova={SessaoNova}",
-            usuario.Id,
-            sessaoAtual.Id,
-            novaSessao.SessaoId);
-
-        return new RefreshResultado(
-            AccessToken: accessToken,
-            AccessExpiresAt: accessExpiresAt,
-            RefreshToken: novaSessao.RefreshToken,
-            RefreshExpiresAt: novaSessao.ExpiraEm,
-            Usuario: new RefreshResultado.UsuarioLogado(
+            _log.LogInformation(
+                "Sessão renovada. UsuarioId={UsuarioId}, SessaoAnterior={SessaoAnterior}, SessaoNova={SessaoNova}",
                 usuario.Id,
-                usuario.Nome,
-                usuario.EmailValor,
-                usuario.Perfil));
+                sessaoAtual.Id,
+                novaSessao.SessaoId);
+
+            return new RefreshResultado(
+                AccessToken: accessToken,
+                AccessExpiresAt: accessExpiresAt,
+                RefreshToken: novaSessao.RefreshToken,
+                RefreshExpiresAt: novaSessao.ExpiraEm,
+                Usuario: new RefreshResultado.UsuarioLogado(
+                    usuario.Id,
+                    usuario.Nome,
+                    usuario.EmailValor,
+                    usuario.Perfil));
+        }
     }
 }

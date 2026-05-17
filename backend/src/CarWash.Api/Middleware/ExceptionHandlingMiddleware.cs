@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using CarWash.Application.Common.Exceptions;
 using CarWash.Domain.Common;
 using Microsoft.AspNetCore.Mvc;
@@ -13,11 +14,28 @@ namespace CarWash.Api.Middleware;
 public sealed class ExceptionHandlingMiddleware
 {
     public const string MensagemErroInterno = "Não foi possível concluir a operação no momento. Tente novamente.";
+    public const string MensagemIdentificadorInvalido = "Identificador inválido.";
+    public const string MensagemCorpoInvalido = "Corpo da requisição inválido. Verifique o JSON e tente novamente.";
+    public const string MensagemCampoInvalido = "Valor inválido para o campo informado.";
+    public const string MensagemPathParametroInvalido = "Valor inválido para o parâmetro da rota.";
+
 #pragma warning disable S1075 // URI base padronizada para o campo `type` do ProblemDetails (RFC 7807) — não é endpoint real.
     private const string BaseTypeUrl = "https://carwash/errors/";
 #pragma warning restore S1075
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+
+    // Padrões de mensagem do framework (Minimal API binder) — usados para diferenciar
+    // erro de body vs erro de path/query e extrair o nome do parâmetro de rota.
+    private static readonly Regex RegexBindParameter = new(
+        @"Failed to bind parameter ""(?<tipo>[^""\s]+)\s+(?<nome>[^""]+)"" from ""(?<valor>[^""]*)""\.?",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant,
+        TimeSpan.FromMilliseconds(50));
+
+    private static readonly Regex RegexReadBody = new(
+        @"Failed to read parameter ""(?<tipo>[^""\s]+)\s+(?<nome>[^""]+)"" from the request body as JSON\.?",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant,
+        TimeSpan.FromMilliseconds(50));
 
     private readonly RequestDelegate _next;
     private readonly ILogger<ExceptionHandlingMiddleware> _log;
@@ -127,17 +145,20 @@ public sealed class ExceptionHandlingMiddleware
         }
         catch (BadHttpRequestException ex)
         {
-            // Falha de binding do framework (Guid malformado, JSON inválido, etc.).
-            // Em Minimal APIs o framework responde 400 antes; este catch é defesa em profundidade.
+            // Falha de binding do framework — diferenciar:
+            //   • body deserialization (JSON malformado, enum desconhecido, null em campo
+            //     não-nullable) → `Corpo da requisição inválido.` + chave `body` ou nome
+            //     do campo extraído de JsonException.Path (`$.perfil` → `perfil`).
+            //   • path/query binding (Guid malformado em `{id:guid}`) → mantém
+            //     `Identificador inválido.` + chave com o nome do parâmetro (`id`).
+            // NUNCA vazar o nome do parâmetro C# (`LoginCommand command`, `Guid id`).
+            var (title, erros) = ClassificarBadRequest(ex);
             await EscreverProblemAsync(
                 context,
                 status: StatusCodes.Status400BadRequest,
                 slug: "invalid-request",
-                title: "Identificador inválido.",
-                erros: new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
-                {
-                    ["request"] = [ex.Message],
-                }).ConfigureAwait(false);
+                title: title,
+                erros: erros).ConfigureAwait(false);
         }
 #pragma warning disable CA1031 // último resort: log + 500 genérico.
         catch (Exception ex)
@@ -189,12 +210,127 @@ public sealed class ExceptionHandlingMiddleware
             }
         }
 
+        // Preserva headers de segurança/cache que o endpoint definiu ANTES da
+        // exceção. `Response.Clear()` apaga headers e body — re-aplicamos os que
+        // são parte do contrato do endpoint (ex.: `Cache-Control: no-store` em
+        // /auth/*) e o `Retry-After` já setado para 403 de lockout.
+        var cacheControl = context.Response.Headers.CacheControl.ToString();
+        var retryAfter = context.Response.Headers["Retry-After"].ToString();
+
         context.Response.Clear();
         context.Response.StatusCode = status;
         context.Response.ContentType = "application/problem+json";
 
+        if (!string.IsNullOrEmpty(cacheControl))
+        {
+            context.Response.Headers.CacheControl = cacheControl;
+        }
+
+        if (!string.IsNullOrEmpty(retryAfter))
+        {
+            context.Response.Headers["Retry-After"] = retryAfter;
+        }
+
         var payload = JsonSerializer.Serialize(problem, JsonOptions);
         await context.Response.WriteAsync(payload).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Classifica uma <see cref="BadHttpRequestException"/> entre erro de body ou
+    /// de parâmetro de rota. Devolve o <c>title</c> apropriado e o dicionário
+    /// <c>errors</c> sem expor identificadores internos (tipos/parâmetros C#).
+    /// </summary>
+    internal static (string Title, IReadOnlyDictionary<string, string[]> Erros) ClassificarBadRequest(BadHttpRequestException ex)
+    {
+        ArgumentNullException.ThrowIfNull(ex);
+
+        var mensagem = ex.Message ?? string.Empty;
+
+        // 1) Erro de path/query: "Failed to bind parameter "Guid id" from "abc"."
+        var matchBind = RegexBindParameter.Match(mensagem);
+        if (matchBind.Success)
+        {
+            var nomeParam = matchBind.Groups["nome"].Value;
+            var chave = NormalizarChaveParametro(nomeParam);
+            var tipoLower = matchBind.Groups["tipo"].Value.ToLowerInvariant();
+            var ehGuid = tipoLower.Contains("guid", StringComparison.Ordinal);
+
+            return (
+                ehGuid ? MensagemIdentificadorInvalido : MensagemPathParametroInvalido,
+                new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
+                {
+                    [chave] = [ehGuid
+                        ? "Identificador deve ser um GUID válido."
+                        : "Valor do parâmetro de rota é inválido."],
+                });
+        }
+
+        // 2) Erro de body deserialization: "Failed to read parameter "X command" from the request body as JSON."
+        if (RegexReadBody.IsMatch(mensagem))
+        {
+            var (campo, detalhe) = ExtrairCampoDeJsonException(ex.InnerException);
+
+            return (MensagemCorpoInvalido, new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
+            {
+                [campo] = [detalhe],
+            });
+        }
+
+        // 3) Fallback genérico — mensagem do framework não bate com os padrões
+        // conhecidos. Resposta neutra, sem vazar o conteúdo bruto.
+        return (MensagemCorpoInvalido, new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["body"] = ["Requisição inválida."],
+        });
+    }
+
+    private static string NormalizarChaveParametro(string nomeParametroC)
+    {
+        // "id" → "id"; "Id" → "id"; "usuarioId" → "usuarioId" (mantém camelCase).
+        if (string.IsNullOrWhiteSpace(nomeParametroC))
+        {
+            return "request";
+        }
+
+        var trimmed = nomeParametroC.Trim();
+        return char.ToLowerInvariant(trimmed[0]) + trimmed[1..];
+    }
+
+    /// <summary>
+    /// Extrai o nome do campo JSON do <c>Path</c> de uma <see cref="JsonException"/>
+    /// (ex.: <c>$.perfil</c> → <c>perfil</c>). Quando o path é raiz/ausente, devolve
+    /// <c>body</c> com mensagem genérica em PT-BR.
+    /// </summary>
+    private static (string Campo, string Detalhe) ExtrairCampoDeJsonException(Exception? inner)
+    {
+        if (inner is not JsonException json)
+        {
+            return ("body", "Corpo da requisição inválido. Verifique o JSON e tente novamente.");
+        }
+
+        var path = json.Path;
+        if (string.IsNullOrWhiteSpace(path) || path is "$" or "$.")
+        {
+            return ("body", "Corpo da requisição inválido. Verifique o JSON e tente novamente.");
+        }
+
+        // Path típico: "$.perfil", "$.itens[0].quantidade".
+        var campo = path.StartsWith("$.", StringComparison.Ordinal) ? path[2..] : path;
+
+        // Mantém apenas o nome até o primeiro `.` ou `[` — chave do campo de topo
+        // mais relevante para o cliente saber onde corrigir.
+        var corte = campo.IndexOfAny(['.', '[']);
+        if (corte > 0)
+        {
+            campo = campo[..corte];
+        }
+
+        if (string.IsNullOrWhiteSpace(campo))
+        {
+            return ("body", "Corpo da requisição inválido. Verifique o JSON e tente novamente.");
+        }
+
+        return (campo, MensagemCampoInvalido);
     }
 
     private static string ResolverCorrelationId(HttpContext context)

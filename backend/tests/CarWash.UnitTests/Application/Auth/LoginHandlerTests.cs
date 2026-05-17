@@ -226,23 +226,23 @@ public class LoginHandlerTests
     }
 
     [Fact]
-    public async Task Tres_falhas_consecutivas_bloqueiam_usuario_e_lancam_403_na_terceira()
+    public async Task Tres_falhas_consecutivas_continuam_em_401_e_quarta_bloqueia_com_403()
     {
+        // QA POST_login T9: tentativas 1..3 retornam 401 (credenciais inválidas);
+        // a 4ª falha consecutiva é que dispara o lockout (403). Limite efetivo = 4.
         var usuario = NovoUsuario(ativo: true);
         _repo.ObterPorEmailAsync(usuario.EmailValor, Arg.Any<CancellationToken>()).Returns(usuario);
         _hasher.Verify("ErradaXYZ", usuario.SenhaHash).Returns(false);
 
         var handler = NovoHandler();
 
-        await handler.Invoking(h => h.HandleAsync(new LoginCommand(usuario.EmailValor, "ErradaXYZ"), CancellationToken.None))
-            .Should().ThrowAsync<InvalidCredentialsException>();
-        usuario.TentativasInvalidas.Should().Be(1);
-        usuario.BloqueadoAte.Should().BeNull();
-
-        await handler.Invoking(h => h.HandleAsync(new LoginCommand(usuario.EmailValor, "ErradaXYZ"), CancellationToken.None))
-            .Should().ThrowAsync<InvalidCredentialsException>();
-        usuario.TentativasInvalidas.Should().Be(2);
-        usuario.BloqueadoAte.Should().BeNull();
+        for (var tentativa = 1; tentativa <= 3; tentativa++)
+        {
+            await handler.Invoking(h => h.HandleAsync(new LoginCommand(usuario.EmailValor, "ErradaXYZ"), CancellationToken.None))
+                .Should().ThrowAsync<InvalidCredentialsException>();
+            usuario.TentativasInvalidas.Should().Be(tentativa);
+            usuario.BloqueadoAte.Should().BeNull();
+        }
 
         var act = () => handler.HandleAsync(new LoginCommand(usuario.EmailValor, "ErradaXYZ"), CancellationToken.None);
         var ex = await act.Should().ThrowAsync<UsuarioBloqueadoException>();
@@ -251,7 +251,7 @@ public class LoginHandlerTests
         usuario.TentativasInvalidas.Should().Be(LoginHandler.LimiteTentativasInvalidas);
         usuario.BloqueadoAte.Should().NotBeNull();
 
-        await _repo.Received(3).SalvarAsync(Arg.Any<CancellationToken>());
+        await _repo.Received(4).SalvarAsync(Arg.Any<CancellationToken>());
 
         await _auditoria.Received(1).LogAsync(
             LoginHandler.EventoUsuarioBloqueado,
