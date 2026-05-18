@@ -366,7 +366,7 @@ export function ContatoEnderecoForm() {
                   type="text"
                   name={field.name}
                   value={field.value ?? ''}
-                  onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ''))}
+                  onChange={(e) => field.onChange(e.target.value)}
                   onBlur={field.onBlur}
                   placeholder="Ex: 1000"
                   aria-invalid={!!errors.numero}

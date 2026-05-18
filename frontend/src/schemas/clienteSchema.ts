@@ -88,9 +88,6 @@ export const clienteSchema = z.object({
     })
     .refine((val) => val.trim().length <= 100, {
       message: 'Nome deve ter no máximo 100 caracteres.',
-    })
-    .refine((val) => /^[a-zA-ZáàãâéèêíïóôõöúçñÁÀÃÂÉÈÊÍÏÓÔÕÖÚÇÑ\s]+$/.test(val), {
-      message: 'Nome deve conter apenas letras.',
     }),
 
   // Celular OBRIGATÓRIO (RF003 — alinhamento com PR #15)

@@ -172,11 +172,11 @@ export function IdentificacaoForm() {
                   type="text"
                   value={field.value}
                   onChange={(e) => {
-                    const onlyLetters = e.target.value.replace(
-                      /[^a-zA-ZáàãâéèêíïóôõöúçñÁÀÃÂÉÈÊÍÏÓÔÕÖÚÇÑ\s]/g,
+                    const sanitizedName = e.target.value.replace(
+                      /[^a-zA-Z0-9áàãâéèêíïóôõöúçñÁÀÃÂÉÈÊÍÏÓÔÕÖÚÇÑ\s.&/'-]/g,
                       '',
                     );
-                    field.onChange(onlyLetters);
+                    field.onChange(sanitizedName);
                   }}
                   onBlur={field.onBlur}
                   placeholder="Ex: Helena Quintanilha Freitas"
