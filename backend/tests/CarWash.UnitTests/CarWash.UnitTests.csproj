@@ -8,6 +8,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\CarWash.Domain\CarWash.Domain.csproj" />
     <ProjectReference Include="..\..\src\CarWash.Application\CarWash.Application.csproj" />
+    <ProjectReference Include="..\..\src\CarWash.Infrastructure\CarWash.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -15,8 +16,11 @@
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />
     <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="FluentValidation" />
     <PackageReference Include="NSubstitute" />
     <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
+    <PackageReference Include="Microsoft.IdentityModel.Tokens" />
   </ItemGroup>
 
 </Project>
