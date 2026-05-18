@@ -52,8 +52,15 @@
       - CA1848: LoggerMessage delegates é otimização de hot path; nossos handlers
         ficam no nível HTTP (baixa frequência) — preferimos ILogger.LogXxx direto
         para legibilidade.
+      - SA1402: Mediator-style — Command/Query e seu Response moram no mesmo arquivo
+        por coesão (mesma feature slice). Separar gera ruído sem ganho.
+      - S2094: records vazios são marcadores intencionais de "sem payload" no padrão
+        CQRS (ex.: LogoutResultado) — IQuery/ICommand exigem TResultado.
+      - RCS1194: exceções de domínio expõem apenas os construtores que fazem sentido
+        para o caso de uso (ex.: RefreshTokenReuseDetectado exige UsuarioId).
+        Forçar os 3 construtores padrão de Exception abre buracos semânticos.
     -->
-    <NoWarn>$(NoWarn);SA1201;SA1202;SA1204;SA1649;S3877;S1135;S1144;CA1848</NoWarn>
+    <NoWarn>$(NoWarn);SA1201;SA1202;SA1204;SA1649;S3877;S1135;S1144;CA1848;SA1402;S2094;RCS1194</NoWarn>
   </PropertyGroup>
 
   <!-- Pacotes comuns a todos os projetos: analisadores (versões em Directory.Packages.props) -->

@@ -49,8 +49,10 @@ services:
     restart: always
     build:
       args:
-        # Mantém o default da base (vazio) — caminhos absolutos /api/v1/... + nginx.
-        VITE_API_URL: ${VITE_API_URL:-}
+        # Prod usa caminhos absolutos /api/v1/... roteados pelo nginx. Forçamos vazio
+        # para neutralizar um VITE_API_URL=http://localhost:8080 que o .env de dev
+        # costuma carregar — sem isso, o bundle aponta para uma porta não exposta.
+        VITE_API_URL: ''
     deploy:
       resources:
         limits:
