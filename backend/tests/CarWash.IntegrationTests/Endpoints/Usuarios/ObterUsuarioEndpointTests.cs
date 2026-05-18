@@ -23,7 +23,7 @@ public class ObterUsuarioEndpointTests : IAsyncDisposable
     [Fact]
     public async Task GET_id_inexistente_retorna_404()
     {
-        var client = _factory.CreateClient();
+        var client = await AuthenticatedHttpClient.CreateAsync(_factory);
         var id = Guid.NewGuid();
 
         var response = await client.GetAsync(new Uri($"/api/v1/usuarios/{id}", UriKind.Relative));
@@ -39,7 +39,7 @@ public class ObterUsuarioEndpointTests : IAsyncDisposable
     [Fact]
     public async Task GET_id_malformado_retorna_400()
     {
-        var client = _factory.CreateClient();
+        var client = await AuthenticatedHttpClient.CreateAsync(_factory);
 
         var response = await client.GetAsync(new Uri("/api/v1/usuarios/abc", UriKind.Relative));
 

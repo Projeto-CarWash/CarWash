@@ -27,11 +27,12 @@ public class LoginFluxoEndToEndTests : IAsyncDisposable
     public async Task Cadastra_loga_inativa_falha_reativa_loga()
     {
         var client = _factory.CreateClient();
+        using var admin = await AuthenticatedHttpClient.CreateAsync(_factory);
 
         var email = $"e2e-{Guid.NewGuid():N}@carwash.local";
         const string senha = "Senha1234";
 
-        var cadastro = await client.PostAsJsonAsync(RotaCriar, new
+        var cadastro = await admin.PostAsJsonAsync(RotaCriar, new
         {
             nome = "E2E",
             email,
@@ -44,7 +45,7 @@ public class LoginFluxoEndToEndTests : IAsyncDisposable
         var login1 = await client.PostAsJsonAsync(RotaLogin, new { email, senha }, _json);
         login1.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var inativar = await client.PatchAsJsonAsync(
+        var inativar = await admin.PatchAsJsonAsync(
             new Uri($"/api/v1/usuarios/{id}/status", UriKind.Relative),
             new { ativo = false },
             _json);
@@ -53,7 +54,7 @@ public class LoginFluxoEndToEndTests : IAsyncDisposable
         var login2 = await client.PostAsJsonAsync(RotaLogin, new { email, senha }, _json);
         login2.StatusCode.Should().Be(HttpStatusCode.Forbidden);
 
-        var reativar = await client.PatchAsJsonAsync(
+        var reativar = await admin.PatchAsJsonAsync(
             new Uri($"/api/v1/usuarios/{id}/status", UriKind.Relative),
             new { ativo = true },
             _json);

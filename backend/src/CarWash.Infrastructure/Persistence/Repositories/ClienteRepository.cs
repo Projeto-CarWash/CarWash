@@ -1,13 +1,12 @@
 using System.Text.Json;
+using CarWash.Application.Clientes.Persistence;
 using CarWash.Application.Common.Exceptions;
-using CarWash.Application.Interfaces;
 using CarWash.Domain.Entities;
-using CarWash.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using PostgresErrorCodes = Npgsql.PostgresErrorCodes;
 
-namespace CarWash.Infrastructure.Repositories;
+namespace CarWash.Infrastructure.Persistence.Repositories;
 
 public class ClienteRepository : IClienteRepository
 {

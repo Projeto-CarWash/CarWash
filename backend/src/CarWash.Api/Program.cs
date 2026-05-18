@@ -54,9 +54,6 @@ builder.Services.AddScoped<ValidationFilter<CriarUsuarioCommand>>();
 builder.Services.AddScoped<ValidationFilter<LoginCommand>>();
 builder.Services.AddScoped<ValidationFilter<CarWash.Application.Usuarios.AlterarUsuario.AlterarUsuarioCommand>>();
 
-// MVC controllers (ClientesController). Coexistem com os minimal API endpoints abaixo.
-builder.Services.AddControllers();
-
 // ---------- Auth: JWT Bearer ----------
 var jwtConfig = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
     ?? throw new InvalidOperationException(
@@ -202,8 +199,6 @@ app.UseRateLimiter();
 // nginx que termina TLS e redireciona 80→443). Habilitar o middleware aqui emite
 // warning "Failed to determine the https port" em toda request (dev) e no startup
 // (hom/prod), sem efeito útil — a redireção pública é responsabilidade do proxy.
-app.MapControllers();
-
 app.MapHealthChecks("/health", new HealthCheckOptions { Predicate = _ => false });
 app.MapHealthChecks("/health/ready", new HealthCheckOptions { Predicate = check => check.Tags.Contains("ready") });
 app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false });

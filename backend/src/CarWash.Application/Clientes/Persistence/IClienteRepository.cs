@@ -1,7 +1,12 @@
 using CarWash.Domain.Entities;
 
-namespace CarWash.Application.Interfaces;
+namespace CarWash.Application.Clientes.Persistence;
 
+/// <summary>
+/// Porta de persistência do agregado <see cref="Cliente"/>. A implementação
+/// concreta vive em <c>CarWash.Infrastructure</c>. Mantém a Application
+/// desacoplada do EF Core.
+/// </summary>
 public interface IClienteRepository
 {
     Task<bool> ExisteCpfAsync(string cpf, CancellationToken cancellationToken);

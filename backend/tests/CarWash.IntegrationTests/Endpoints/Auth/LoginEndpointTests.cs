@@ -81,10 +81,12 @@ public class LoginEndpointTests : IAsyncDisposable
     public async Task POST_login_usuario_inativo_com_senha_correta_retorna_403()
     {
         var client = _factory.CreateClient();
+        using var admin = await AuthenticatedHttpClient.CreateAsync(_factory);
+
         var (email, senha) = await CadastrarUsuarioAsync(client);
         var id = await IdDoUsuarioPorEmailAsync(client, email, senha);
 
-        var inativar = await client.PatchAsJsonAsync(
+        var inativar = await admin.PatchAsJsonAsync(
             new Uri($"/api/v1/usuarios/{id}/status", UriKind.Relative),
             new { ativo = false },
             _json);
@@ -110,13 +112,17 @@ public class LoginEndpointTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task POST_login_tres_falhas_consecutivas_bloqueiam_e_retornam_401_401_403()
+    public async Task POST_login_falhas_consecutivas_bloqueiam_no_limite_configurado()
     {
         var client = _factory.CreateClient();
         var (email, _) = await CadastrarUsuarioAsync(client);
 
-        // 1ª e 2ª falha — 401, mensagem unificada.
-        for (var i = 0; i < 2; i++)
+        // LoginHandler.LimiteTentativasInvalidas = 4: tentativas 1..3 devolvem 401;
+        // a 4ª ativa o lockout e devolve 403. O test antigo afirmava "3 falhas"
+        // (limite legado) — atualizado para refletir a constante atual.
+        const int limite = CarWash.Application.Auth.Login.LoginHandler.LimiteTentativasInvalidas;
+
+        for (var i = 0; i < limite - 1; i++)
         {
             var falha = await client.PostAsJsonAsync(RotaLogin, new { email, senha = "Errada9999" }, _json);
             falha.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -124,7 +130,7 @@ public class LoginEndpointTests : IAsyncDisposable
             corpoFalha.GetProperty("title").GetString().Should().Be(MensagemCredencialInvalida);
         }
 
-        // 3ª falha — vira lockout, 403 com mensagem e bloqueadoAte preenchido.
+        // N-ésima falha — vira lockout, 403 com mensagem e bloqueadoAte preenchido.
         var bloqueio = await client.PostAsJsonAsync(RotaLogin, new { email, senha = "Errada9999" }, _json);
         bloqueio.StatusCode.Should().Be(HttpStatusCode.Forbidden);
         var corpoBloqueio = await bloqueio.Content.ReadFromJsonAsync<JsonElement>(_json);
@@ -139,8 +145,9 @@ public class LoginEndpointTests : IAsyncDisposable
         var client = _factory.CreateClient();
         var (email, senha) = await CadastrarUsuarioAsync(client);
 
-        // Provoca o bloqueio (3 falhas).
-        for (var i = 0; i < 3; i++)
+        // Provoca o bloqueio: limite tentativas inválidas configurado no handler.
+        const int limite = CarWash.Application.Auth.Login.LoginHandler.LimiteTentativasInvalidas;
+        for (var i = 0; i < limite; i++)
         {
             await client.PostAsJsonAsync(RotaLogin, new { email, senha = "Errada9999" }, _json);
         }
@@ -161,11 +168,18 @@ public class LoginEndpointTests : IAsyncDisposable
         resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
+#pragma warning disable S1172 // 'client' fica na assinatura por compatibilidade — cadastro usa admin autenticado.
     private async Task<(string Email, string Senha)> CadastrarUsuarioAsync(HttpClient client)
+#pragma warning restore S1172
     {
         var email = $"alice-{Guid.NewGuid():N}@carwash.local";
         const string senha = "Senha1234";
-        var resp = await client.PostAsJsonAsync(RotaCriar, new
+
+        // Cadastro de usuário interno exige Authorization (RF014). Usamos um client
+        // autenticado como admin (seed) só para a chamada de cadastro — o `client`
+        // recebido continua não-autenticado para os testes do fluxo /login.
+        using var autenticado = await AuthenticatedHttpClient.CreateAsync(_factory);
+        var resp = await autenticado.PostAsJsonAsync(RotaCriar, new
         {
             nome = "Alice",
             email,

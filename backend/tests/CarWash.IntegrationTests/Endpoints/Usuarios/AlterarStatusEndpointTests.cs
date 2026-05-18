@@ -25,7 +25,7 @@ public class AlterarStatusEndpointTests : IAsyncDisposable
     [Fact]
     public async Task PATCH_ativo_false_inativa_e_GET_confirma()
     {
-        var client = _factory.CreateClient();
+        var client = await AuthenticatedHttpClient.CreateAsync(_factory);
         var id = await CadastrarUsuarioAsync(client);
 
         var resp = await client.PatchAsJsonAsync(RotaStatus(id), new { ativo = false }, _json);
@@ -45,7 +45,7 @@ public class AlterarStatusEndpointTests : IAsyncDisposable
     [Fact]
     public async Task PATCH_idempotente_nao_altera_AtualizadoEm()
     {
-        var client = _factory.CreateClient();
+        var client = await AuthenticatedHttpClient.CreateAsync(_factory);
         var id = await CadastrarUsuarioAsync(client);
 
         var primeira = await client.PatchAsJsonAsync(RotaStatus(id), new { ativo = false }, _json);
@@ -70,7 +70,7 @@ public class AlterarStatusEndpointTests : IAsyncDisposable
     [Fact]
     public async Task PATCH_id_inexistente_retorna_404()
     {
-        var client = _factory.CreateClient();
+        var client = await AuthenticatedHttpClient.CreateAsync(_factory);
         var id = Guid.NewGuid();
 
         var resp = await client.PatchAsJsonAsync(RotaStatus(id), new { ativo = false }, _json);
@@ -83,7 +83,7 @@ public class AlterarStatusEndpointTests : IAsyncDisposable
     [Fact]
     public async Task PATCH_id_malformado_retorna_400()
     {
-        var client = _factory.CreateClient();
+        var client = await AuthenticatedHttpClient.CreateAsync(_factory);
 
         var resp = await client.PatchAsJsonAsync(
             new Uri("/api/v1/usuarios/abc/status", UriKind.Relative),
@@ -96,7 +96,7 @@ public class AlterarStatusEndpointTests : IAsyncDisposable
     [Fact]
     public async Task PATCH_body_vazio_retorna_400()
     {
-        var client = _factory.CreateClient();
+        var client = await AuthenticatedHttpClient.CreateAsync(_factory);
         var id = await CadastrarUsuarioAsync(client);
 
         var requisicao = new HttpRequestMessage(HttpMethod.Patch, RotaStatus(id))
@@ -105,17 +105,17 @@ public class AlterarStatusEndpointTests : IAsyncDisposable
         };
         var resp = await client.SendAsync(requisicao);
 
-        // {} é deserializável como request com Ativo=false (default) — então 200 ou erro?
-        // Como Ativo é bool obrigatório no JSON, com {} ele assume false (default bool).
-        // Resultado esperado: 200 com ativo=false (o usuário acabou de ser criado ativo).
-        // O cenário de "body vazio = 400" só é atingido com body null ou inválido.
-        resp.StatusCode.Should().Be(HttpStatusCode.OK);
+        // BUG-U004 (RF014): body `{}` deixa `Ativo` ausente → tipo `bool?` mantém
+        // null → validator NotNull rejeita → 400 (em vez de cair em default(bool)=false
+        // e desativar silenciosamente). Comportamento consolidado pelo commit
+        // 33baba4 — o asserto antigo (OK) refletia o bug pré-correção.
+        resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
     public async Task PATCH_payload_null_retorna_400()
     {
-        var client = _factory.CreateClient();
+        var client = await AuthenticatedHttpClient.CreateAsync(_factory);
         var id = await CadastrarUsuarioAsync(client);
 
         var requisicao = new HttpRequestMessage(HttpMethod.Patch, RotaStatus(id))
@@ -130,7 +130,7 @@ public class AlterarStatusEndpointTests : IAsyncDisposable
     [Fact]
     public async Task PATCH_ativa_inativo_volta_para_true()
     {
-        var client = _factory.CreateClient();
+        var client = await AuthenticatedHttpClient.CreateAsync(_factory);
         var id = await CadastrarUsuarioAsync(client);
 
         (await client.PatchAsJsonAsync(RotaStatus(id), new { ativo = false }, _json))
