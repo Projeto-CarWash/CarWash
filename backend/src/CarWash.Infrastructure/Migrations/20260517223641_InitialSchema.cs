@@ -68,6 +68,19 @@ namespace CarWash.Infrastructure.Migrations
                 table: "users",
                 column: "email",
                 unique: true);
+
+            // Seed: usuário administrador inicial
+            migrationBuilder.Sql(@"
+                INSERT INTO public.users (id, email, password_hash, active, failed_login_attempts, created_at)
+                VALUES (
+                    'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+                    'admins@carwash.com',
+                    '$2b$11$ci04Zu5hVy4Au4.qp6wgdODlRrG.wamY01XnQj1MZ8WlKPN5cSLaW',
+                    true,
+                    0,
+                    NOW()
+                );
+            ");
         }
 
         /// <inheritdoc />
