@@ -21,10 +21,12 @@ public sealed class AlterarStatusUsuarioHandler
 
     public const string MensagemAutoDesativacao =
         "Você não pode desativar a própria conta de usuário.";
+
     public const string SlugAutoDesativacao = "auto-desativacao-bloqueada";
 
     public const string MensagemUltimoAdminAtivo =
         "Não é possível desativar o último administrador ativo do sistema.";
+
     public const string SlugUltimoAdminAtivo = "ultimo-admin-ativo";
 
     private readonly IUsuarioRepository _repositorio;
