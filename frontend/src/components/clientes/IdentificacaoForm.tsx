@@ -172,7 +172,10 @@ export function IdentificacaoForm() {
                   type="text"
                   value={field.value}
                   onChange={(e) => {
-                    const onlyLetters = e.target.value.replace(/[^a-zA-ZáàãâéèêíïóôõöúçñÁÀÃÂÉÈÊÍÏÓÔÕÖÚÇÑ\s]/g, '');
+                    const onlyLetters = e.target.value.replace(
+                      /[^a-zA-ZáàãâéèêíïóôõöúçñÁÀÃÂÉÈÊÍÏÓÔÕÖÚÇÑ\s]/g,
+                      '',
+                    );
                     field.onChange(onlyLetters);
                   }}
                   onBlur={field.onBlur}

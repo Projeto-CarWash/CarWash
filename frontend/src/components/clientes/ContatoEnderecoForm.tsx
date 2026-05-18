@@ -70,7 +70,8 @@ export function ContatoEnderecoForm() {
 
         <div className="space-y-1.5">
           <Label htmlFor="phone" className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">
-            TELEFONE FIXO <span className="font-normal tracking-normal text-zinc-600">(opcional)</span>
+            TELEFONE FIXO{' '}
+            <span className="font-normal tracking-normal text-zinc-600">(opcional)</span>
           </Label>
           <Controller
             name="telefone"
@@ -244,7 +245,11 @@ export function ContatoEnderecoForm() {
                   type="text"
                   name={field.name}
                   value={field.value ?? ''}
-                  onChange={(e) => field.onChange(e.target.value.replace(/[^a-zA-ZáàãâéèêíïóôõöúçñÁÀÃÂÉÈÊÍÏÓÔÕÖÚÇÑ\s-]/g, ''))}
+                  onChange={(e) =>
+                    field.onChange(
+                      e.target.value.replace(/[^a-zA-ZáàãâéèêíïóôõöúçñÁÀÃÂÉÈÊÍÏÓÔÕÖÚÇÑ\s-]/g, ''),
+                    )
+                  }
                   onBlur={field.onBlur}
                   placeholder="Ex: São Paulo"
                   aria-invalid={!!errors.cidade}
