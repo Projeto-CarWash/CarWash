@@ -1,5 +1,4 @@
 import { Bell, Plus, Search } from 'lucide-react';
-
 import { Fragment } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
@@ -23,11 +22,11 @@ export function Topbar() {
     if (segment === 'clientes') return 'Clientes';
     if (segment === 'usuarios') return 'Usuários';
     if (segment === 'novo') return 'Novo';
-    
+
     if (index === segments.length - 1 && segment !== 'novo') {
       return 'Detalhes';
     }
-    
+
     return segment.charAt(0).toUpperCase() + segment.slice(1);
   }
 
