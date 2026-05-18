@@ -1,6 +1,8 @@
+using CarWash.Application.Usuarios.Common;
 using CarWash.Application.Usuarios.Persistence;
 using CarWash.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace CarWash.Infrastructure.Persistence.Repositories;
 
@@ -10,6 +12,12 @@ namespace CarWash.Infrastructure.Persistence.Repositories;
 /// </summary>
 public sealed class UsuarioRepository : IUsuarioRepository
 {
+    /// <summary>Nome da UK que protege contra e-mail duplicado (DB001 §06.4).</summary>
+    private const string ConstraintEmailUnico = "uk_usuarios_email";
+
+    /// <summary>PostgreSQL: SQLSTATE para <c>unique_violation</c>.</summary>
+    private const string PostgresUniqueViolationSqlState = "23505";
+
     private readonly CarWashDbContext _db;
 
     public UsuarioRepository(CarWashDbContext db)
@@ -46,8 +54,31 @@ public sealed class UsuarioRepository : IUsuarioRepository
         return Task.CompletedTask;
     }
 
-    public Task SalvarAsync(CancellationToken cancellationToken) =>
-        _db.SaveChangesAsync(cancellationToken);
+    public async Task SalvarAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (DbUpdateException ex) when (IsEmailUniqueViolation(ex))
+        {
+            // Race condition na UK uk_usuarios_email — traduz para exceção de
+            // domínio da Application, isolando EF/Npgsql nesta camada.
+            throw new EmailJaExisteException(ex);
+        }
+    }
+
+    private static bool IsEmailUniqueViolation(DbUpdateException ex)
+    {
+        if (ex.InnerException is not PostgresException pg)
+        {
+            return false;
+        }
+
+        return string.Equals(pg.SqlState, PostgresUniqueViolationSqlState, StringComparison.Ordinal)
+            && pg.ConstraintName is not null
+            && pg.ConstraintName.Contains(ConstraintEmailUnico, StringComparison.OrdinalIgnoreCase);
+    }
 
     public async Task<(IReadOnlyList<Usuario> Itens, int Total)> ListarAsync(
         string? busca,

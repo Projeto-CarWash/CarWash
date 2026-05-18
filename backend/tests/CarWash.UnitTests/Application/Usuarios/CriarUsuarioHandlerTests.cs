@@ -1,4 +1,3 @@
-using System.Reflection;
 using CarWash.Application.Abstractions;
 using CarWash.Application.Common.Exceptions;
 using CarWash.Application.Usuarios.Common;
@@ -7,9 +6,7 @@ using CarWash.Application.Usuarios.Persistence;
 using CarWash.Domain.Entities;
 using CarWash.Domain.Enums;
 using FluentAssertions;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
-using Npgsql;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using Xunit;
@@ -90,40 +87,24 @@ public class CriarUsuarioHandlerTests
     }
 
     [Fact]
-    public async Task Race_condition_DbUpdateException_com_UK_email_lanca_ConflictException()
+    public async Task Race_condition_repositorio_lanca_EmailJaExiste_handler_propaga_409()
     {
+        // A tradução de DbUpdateException → EmailJaExisteException agora vive na
+        // Infrastructure (UsuarioRepository.SalvarAsync) — o handler apenas observa
+        // a exceção da Application e a deixa borbulhar até o middleware global.
         _repo.ExisteComEmailAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(false);
         _hasher.Hash(Arg.Any<string>()).Returns("$argon2id$x");
 
-        var pg = CriarPostgresExceptionUniqueViolation("uk_usuarios_email");
         _repo.SalvarAsync(Arg.Any<CancellationToken>())
-            .Throws(new DbUpdateException("duplicate", pg));
+            .Throws(new EmailJaExisteException());
 
         var handler = NovoHandler();
 
         var act = () => handler.HandleAsync(NovoComando(), CancellationToken.None);
 
-        var ex = await act.Should().ThrowAsync<ConflictException>();
-        ex.Which.Message.Should().Be(CriarUsuarioHandler.MensagemEmailDuplicado);
-        ex.Which.Slug.Should().Be(CriarUsuarioHandler.SlugEmailDuplicado);
-        ex.Which.InnerException.Should().BeOfType<DbUpdateException>();
-    }
-
-    [Fact]
-    public async Task Race_condition_em_outra_constraint_propaga_DbUpdateException()
-    {
-        _repo.ExisteComEmailAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(false);
-        _hasher.Hash(Arg.Any<string>()).Returns("$argon2id$x");
-
-        var pg = CriarPostgresExceptionUniqueViolation("alguma_outra_constraint");
-        _repo.SalvarAsync(Arg.Any<CancellationToken>())
-            .Throws(new DbUpdateException("outro", pg));
-
-        var handler = NovoHandler();
-
-        var act = () => handler.HandleAsync(NovoComando(), CancellationToken.None);
-
-        await act.Should().ThrowAsync<DbUpdateException>();
+        var ex = await act.Should().ThrowAsync<EmailJaExisteException>();
+        ex.Which.Message.Should().Be(EmailJaExisteException.MensagemPadrao);
+        ex.Which.Slug.Should().Be(EmailJaExisteException.SlugPadrao);
     }
 
     [Fact]
@@ -147,37 +128,4 @@ public class CriarUsuarioHandlerTests
         Email: "alice@carwash.local",
         Senha: "Senha1234",
         Perfil: PerfilUsuario.Funcionario);
-
-    /// <summary>
-    /// Constrói uma <see cref="PostgresException"/> com SqlState=23505 e ConstraintName
-    /// arbitrário. Em Npgsql 8 a propriedade <c>ConstraintName</c> tem setter interno;
-    /// é necessário acessá-lo via reflection para popular o cenário de teste.
-    /// </summary>
-    private static PostgresException CriarPostgresExceptionUniqueViolation(string constraintName)
-    {
-        var ex = new PostgresException(
-            messageText: "duplicate key value violates unique constraint",
-            severity: "ERROR",
-            invariantSeverity: "ERROR",
-            sqlState: "23505");
-
-        var prop = typeof(PostgresException).GetProperty(
-            nameof(PostgresException.ConstraintName),
-            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-
-        if (prop is not null && prop.CanWrite)
-        {
-            prop.SetValue(ex, constraintName);
-        }
-        else
-        {
-            // Fallback para backing field do auto-property gerado pelo compilador.
-            var campo = typeof(PostgresException).GetField(
-                "<ConstraintName>k__BackingField",
-                BindingFlags.Instance | BindingFlags.NonPublic);
-            campo?.SetValue(ex, constraintName);
-        }
-
-        return ex;
-    }
 }

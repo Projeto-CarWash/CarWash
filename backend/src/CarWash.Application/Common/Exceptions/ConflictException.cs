@@ -4,7 +4,7 @@ namespace CarWash.Application.Common.Exceptions;
 /// Conflito de estado (ex.: chave única violada, recurso já existente).
 /// Mapeada para HTTP 409 + <c>ProblemDetails</c> no middleware global.
 /// </summary>
-public sealed class ConflictException : Exception
+public class ConflictException : Exception
 {
     public ConflictException(string mensagem)
         : base(mensagem)

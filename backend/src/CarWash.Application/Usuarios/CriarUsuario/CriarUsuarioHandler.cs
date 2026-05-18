@@ -6,9 +6,7 @@ using CarWash.Application.Usuarios.Persistence;
 using CarWash.Domain.Common;
 using CarWash.Domain.Entities;
 using CarWash.Domain.ValueObjects;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Npgsql;
 
 namespace CarWash.Application.Usuarios.CriarUsuario;
 
@@ -16,14 +14,26 @@ namespace CarWash.Application.Usuarios.CriarUsuario;
 /// Use case de cadastro de usuário (CA1-CA7, CA11). Defesa em duas camadas para
 /// unicidade de e-mail: pré-check + UK <c>uk_usuarios_email</c>. Senha sempre
 /// persistida como hash Argon2id; nunca em logs.
+/// <para>
+/// O tratamento da race condition vive no <see cref="IUsuarioRepository"/>
+/// (Infrastructure), que traduz <see cref="Microsoft.EntityFrameworkCore.DbUpdateException"/>
+/// em <see cref="EmailJaExisteException"/> — mantendo a Application livre de
+/// dependências do EF/Npgsql.
+/// </para>
 /// </summary>
 public sealed class CriarUsuarioHandler : ICommandHandler<CriarUsuarioCommand, UsuarioResponse>
 {
     public const string EventoAuditoria = "UsuarioCadastrado";
-    public const string MensagemEmailDuplicado = "Já existe usuário cadastrado com este e-mail.";
-    public const string SlugEmailDuplicado = "email-already-exists";
-    private const string ConstraintEmailUnico = "uk_usuarios_email";
-    private const string PostgresUniqueViolationSqlState = "23505";
+
+    /// <summary>
+    /// Mantida para retrocompatibilidade dos testes existentes do contrato HTTP.
+    /// </summary>
+    public const string MensagemEmailDuplicado = EmailJaExisteException.MensagemPadrao;
+
+    /// <summary>
+    /// Mantida para retrocompatibilidade dos testes existentes do contrato HTTP.
+    /// </summary>
+    public const string SlugEmailDuplicado = EmailJaExisteException.SlugPadrao;
 
     private readonly IUsuarioRepository _repositorio;
     private readonly IPasswordHasher _hasher;
@@ -68,7 +78,7 @@ public sealed class CriarUsuarioHandler : ICommandHandler<CriarUsuarioCommand, U
         if (await _repositorio.ExisteComEmailAsync(email.Valor, cancellationToken).ConfigureAwait(false))
         {
             _log.LogWarning("Tentativa de cadastro com e-mail já existente.");
-            throw new ConflictException(MensagemEmailDuplicado, SlugEmailDuplicado);
+            throw new EmailJaExisteException();
         }
 
         var senhaHash = _hasher.Hash(command.Senha);
@@ -84,31 +94,13 @@ public sealed class CriarUsuarioHandler : ICommandHandler<CriarUsuarioCommand, U
 
         await _repositorio.AdicionarAsync(usuario, cancellationToken).ConfigureAwait(false);
 
-        try
-        {
-            // Camada 2 — UK do banco protege contra race condition.
-            await _repositorio.SalvarAsync(cancellationToken).ConfigureAwait(false);
-        }
-        catch (DbUpdateException ex) when (IsEmailUniqueViolation(ex))
-        {
-            _log.LogWarning(ex, "Race condition de e-mail duplicado capturada pela UK uk_usuarios_email.");
-            throw new ConflictException(MensagemEmailDuplicado, SlugEmailDuplicado, ex);
-        }
+        // Camada 2 — UK do banco protege contra race condition. O repositório
+        // intercepta DbUpdateException → EmailJaExisteException antes de
+        // borbulhar para cá, mantendo a Application livre de EF/Npgsql.
+        await _repositorio.SalvarAsync(cancellationToken).ConfigureAwait(false);
 
         _log.LogInformation("Usuário {UsuarioId} cadastrado.", usuario.Id);
 
         return UsuarioResponse.FromEntity(usuario);
-    }
-
-    private static bool IsEmailUniqueViolation(DbUpdateException ex)
-    {
-        if (ex.InnerException is not PostgresException pg)
-        {
-            return false;
-        }
-
-        return string.Equals(pg.SqlState, PostgresUniqueViolationSqlState, StringComparison.Ordinal)
-            && pg.ConstraintName is not null
-            && pg.ConstraintName.Contains(ConstraintEmailUnico, StringComparison.OrdinalIgnoreCase);
     }
 }

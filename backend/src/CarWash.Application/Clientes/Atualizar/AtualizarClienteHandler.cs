@@ -83,9 +83,7 @@ public sealed class AtualizarClienteHandler : ICommandHandler<AtualizarClienteCo
         if (emailNormalizado is not null
             && await _repositorio.ExisteEmailAsync(emailNormalizado, ignoreClienteId: command.Id, cancellationToken).ConfigureAwait(false))
         {
-            throw new ConflictException(
-                "Já existe cliente cadastrado com este e-mail.",
-                "cliente-email-duplicado");
+            throw new EmailClienteJaExisteException();
         }
 
         cliente.AtualizarDados(

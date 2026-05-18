@@ -49,16 +49,12 @@ public sealed class CriarClienteHandler : ICommandHandler<CriarClienteCommand, C
 
         if (cpfDigits is not null && await _repositorio.ExisteCpfAsync(cpfDigits, cancellationToken).ConfigureAwait(false))
         {
-            throw new ConflictException(
-                "Já existe cliente cadastrado com este documento.",
-                "cliente-documento-duplicado");
+            throw new DocumentoClienteJaExisteException();
         }
 
         if (cnpjDigits is not null && await _repositorio.ExisteCnpjAsync(cnpjDigits, cancellationToken).ConfigureAwait(false))
         {
-            throw new ConflictException(
-                "Já existe cliente cadastrado com este documento.",
-                "cliente-documento-duplicado");
+            throw new DocumentoClienteJaExisteException();
         }
 
         // GAP-CW-CLI-EMAIL-1: e-mail deve ser único entre os clientes ativos
@@ -66,9 +62,7 @@ public sealed class CriarClienteHandler : ICommandHandler<CriarClienteCommand, C
         if (emailNormalizado is not null
             && await _repositorio.ExisteEmailAsync(emailNormalizado, ignoreClienteId: null, cancellationToken).ConfigureAwait(false))
         {
-            throw new ConflictException(
-                "Já existe cliente cadastrado com este e-mail.",
-                "cliente-email-duplicado");
+            throw new EmailClienteJaExisteException();
         }
 
         var cliente = Cliente.Criar(

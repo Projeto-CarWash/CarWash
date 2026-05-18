@@ -1,6 +1,6 @@
 using System.Text.Json;
+using CarWash.Application.Clientes.Common;
 using CarWash.Application.Clientes.Persistence;
-using CarWash.Application.Common.Exceptions;
 using CarWash.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
@@ -88,15 +88,30 @@ public class ClienteRepository : IClienteRepository
         catch (DbUpdateException ex) when (IsUniqueViolation(ex))
         {
             await transaction.RollbackAsync(cancellationToken);
-            throw new ConflictException(
-                "Já existe cliente cadastrado com este documento.",
-                "cliente-documento-duplicado",
-                ex);
+            throw new DocumentoClienteJaExisteException(ex);
         }
     }
 
-    public Task SalvarAsync(CancellationToken cancellationToken)
-        => context.SaveChangesAsync(cancellationToken);
+    public async Task SalvarAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (DbUpdateException ex) when (IsUniqueViolation(ex))
+        {
+            // Distingue violação de UK de e-mail vs documento pelo nome da
+            // constraint — emails passam pelo índice parcial ux_clientes_email.
+            if (ex.InnerException is PostgresException pg
+                && pg.ConstraintName is { } nome
+                && nome.Contains("email", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new EmailClienteJaExisteException(ex);
+            }
+
+            throw new DocumentoClienteJaExisteException(ex);
+        }
+    }
 
     public async Task<(IReadOnlyList<Cliente> Itens, int Total)> ListarAsync(
         string? busca,
