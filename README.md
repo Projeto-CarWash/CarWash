@@ -113,5 +113,3 @@ Parâmetros aceitos: `-Env dev|hom|prod` (default `dev`) e `-Svc <serviço>` par
 ### Dica
 
 Após `make up` / `.\make.ps1 up`, os serviços ficam disponíveis nas portas definidas no `docker-compose.dev.yml` (backend, frontend e PostgreSQL). Para limpar tudo (containers, volumes e redes) use `make clean` ou `.\make.ps1 clean` — **isso apaga o banco de desenvolvimento**.
-
----
