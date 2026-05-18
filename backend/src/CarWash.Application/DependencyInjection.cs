@@ -1,14 +1,5 @@
+using System.Reflection;
 using CarWash.Application.Abstractions.Messaging;
-using CarWash.Application.Auth.Login;
-using CarWash.Application.Auth.Logout;
-using CarWash.Application.Auth.Refresh;
-using CarWash.Application.Services.Clientes;
-using CarWash.Application.Usuarios.AlterarStatus;
-using CarWash.Application.Usuarios.AlterarUsuario;
-using CarWash.Application.Usuarios.Common;
-using CarWash.Application.Usuarios.CriarUsuario;
-using CarWash.Application.Usuarios.Listar;
-using CarWash.Application.Usuarios.ObterUsuarioPorId;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -20,19 +11,32 @@ public static class DependencyInjection
     {
         ArgumentNullException.ThrowIfNull(services);
 
-        services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly, includeInternalTypes: true);
+        var assembly = typeof(DependencyInjection).Assembly;
 
-        services.AddScoped<ICommandHandler<CriarUsuarioCommand, UsuarioResponse>, CriarUsuarioHandler>();
-        services.AddScoped<IQueryHandler<ObterUsuarioPorIdQuery, UsuarioResponse>, ObterUsuarioPorIdHandler>();
-        services.AddScoped<IQueryHandler<ListarUsuariosQuery, ListaUsuariosResponse>, ListarUsuariosHandler>();
-        services.AddScoped<ICommandHandler<AlterarStatusUsuarioCommand, AlterarStatusUsuarioResponse>, AlterarStatusUsuarioHandler>();
-        services.AddScoped<ICommandHandler<AlterarUsuarioCommand, UsuarioResponse>, AlterarUsuarioHandler>();
-        services.AddScoped<ICommandHandler<LoginCommand, LoginResultado>, LoginHandler>();
-        services.AddScoped<ICommandHandler<RefreshCommand, RefreshResultado>, RefreshHandler>();
-        services.AddScoped<ICommandHandler<LogoutCommand, LogoutResultado>, LogoutHandler>();
+        // Validators do FluentValidation — escaneia todo o assembly.
+        services.AddValidatorsFromAssembly(assembly, includeInternalTypes: true);
 
-        services.AddScoped<IClienteService, ClienteService>();
+        // Handlers CQRS — escaneia tipos concretos que implementam
+        // ICommandHandler<,> ou IQueryHandler<,> e registra como Scoped por
+        // interface fechada. Substitui o registro manual por slice e evita
+        // que um handler novo seja esquecido na bandeja do DI.
+        RegistrarHandlers(services, assembly, typeof(ICommandHandler<,>));
+        RegistrarHandlers(services, assembly, typeof(IQueryHandler<,>));
 
         return services;
+    }
+
+    private static void RegistrarHandlers(IServiceCollection services, Assembly assembly, Type interfaceAberta)
+    {
+        var tipos = assembly.GetTypes()
+            .Where(t => t is { IsClass: true, IsAbstract: false })
+            .SelectMany(t => t.GetInterfaces()
+                .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == interfaceAberta)
+                .Select(i => (Implementacao: t, Interface: i)));
+
+        foreach (var (implementacao, interfaceFechada) in tipos)
+        {
+            services.AddScoped(interfaceFechada, implementacao);
+        }
     }
 }

@@ -169,11 +169,18 @@ public class AuthFlowEndToEndTests : IAsyncDisposable
     private HttpClient ClienteComCookies()
         => _factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
 
+#pragma warning disable S1172 // 'client' fica na assinatura para preservar histórico de chamadas — o cadastro usa admin autenticado.
     private async Task<(string Email, string Senha)> CadastrarAsync(HttpClient client)
+#pragma warning restore S1172
     {
         var email = $"flow-{Guid.NewGuid():N}@carwash.local";
         const string senha = "Senha1234";
-        var resp = await client.PostAsJsonAsync(RotaCriar, new
+
+        // RF014 / RequireAuthorization: cadastro de usuário exige Authorization.
+        // O `client` argument continua usado pelos tests do fluxo /login → /refresh,
+        // mas o cadastro inicial passa por um admin autenticado (seed).
+        using var admin = await AuthenticatedHttpClient.CreateAsync(_factory);
+        var resp = await admin.PostAsJsonAsync(RotaCriar, new
         {
             nome = "Flow",
             email,

@@ -1,4 +1,5 @@
 using CarWash.Api.Endpoints.Auth;
+using CarWash.Api.Endpoints.Clientes;
 using CarWash.Api.Endpoints.Usuarios;
 
 namespace CarWash.Api.Endpoints;
@@ -14,6 +15,7 @@ public static class EndpointRouteBuilderExtensions
         ArgumentNullException.ThrowIfNull(app);
         app.MapUsuarios();
         app.MapAuth();
+        app.MapClientes();
         return app;
     }
 }

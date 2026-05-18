@@ -8,8 +8,6 @@ using CarWash.Api.Infrastructure;
 using CarWash.Api.Middleware;
 using CarWash.Application;
 using CarWash.Application.Abstractions;
-using CarWash.Application.Auth.Login;
-using CarWash.Application.Usuarios.CriarUsuario;
 using CarWash.Infrastructure;
 using CarWash.Infrastructure.Auth;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -49,13 +47,9 @@ builder.Services.AddScoped<ICurrentRequestContext, HttpCurrentRequestContext>();
 builder.Services.ConfigureHttpJsonOptions(opt =>
     opt.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
-// Filtros de validação genéricos (um por command/query que precisar de IValidator<T>).
-builder.Services.AddScoped<ValidationFilter<CriarUsuarioCommand>>();
-builder.Services.AddScoped<ValidationFilter<LoginCommand>>();
-builder.Services.AddScoped<ValidationFilter<CarWash.Application.Usuarios.AlterarUsuario.AlterarUsuarioCommand>>();
-
-// MVC controllers (ClientesController). Coexistem com os minimal API endpoints abaixo.
-builder.Services.AddControllers();
+// Filtros de validação genéricos: scan automático do assembly da Application
+// — registra ValidationFilter<T> fechado para cada Command/Query com IValidator<T>.
+builder.Services.AddValidationFilters(typeof(CarWash.Application.DependencyInjection).Assembly);
 
 // ---------- Auth: JWT Bearer ----------
 var jwtConfig = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
@@ -202,8 +196,6 @@ app.UseRateLimiter();
 // nginx que termina TLS e redireciona 80→443). Habilitar o middleware aqui emite
 // warning "Failed to determine the https port" em toda request (dev) e no startup
 // (hom/prod), sem efeito útil — a redireção pública é responsabilidade do proxy.
-app.MapControllers();
-
 app.MapHealthChecks("/health", new HealthCheckOptions { Predicate = _ => false });
 app.MapHealthChecks("/health/ready", new HealthCheckOptions { Predicate = check => check.Tags.Contains("ready") });
 app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false });

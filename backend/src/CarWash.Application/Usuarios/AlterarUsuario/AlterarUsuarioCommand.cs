@@ -13,5 +13,3 @@ public sealed record AlterarUsuarioCommand(
     string Nome,
     string Email,
     PerfilUsuario Perfil) : ICommand<UsuarioResponse>;
-
-public sealed record AlterarUsuarioRequest(string Nome, string Email, PerfilUsuario Perfil);

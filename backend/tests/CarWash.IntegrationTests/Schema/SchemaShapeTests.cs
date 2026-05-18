@@ -107,7 +107,10 @@ public class SchemaShapeTests
             "uk_usuarios_email", "idx_usuarios_ativo",
             "idx_sessoes_usuario_id", "idx_sessoes_expira_em", "idx_sessoes_revogado_em",
             "uk_filiais_nome", "idx_filiais_ativa",
-            "idx_clientes_nome", "idx_clientes_email", "uk_clientes_cpf", "uk_clientes_cnpj",
+
+            // ux_clientes_email substituiu idx_clientes_email no commit 3989691
+            // (migration AdicionaAuditoriaUsuarioCliente — índice parcial por ativo).
+            "idx_clientes_nome", "ux_clientes_email", "uk_clientes_cpf", "uk_clientes_cnpj",
             "idx_filiados_cliente_id", "idx_filiados_cpf", "uk_filiados_cliente_cpf",
             "uk_veiculos_placa", "idx_veiculos_cliente_id",
             "uk_servicos_nome", "idx_servicos_ativo",

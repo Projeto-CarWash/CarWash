@@ -20,8 +20,9 @@ ENV PATH="/root/.dotnet/tools:${PATH}"
 
 EXPOSE 8080
 
-# O código é montado via bind mount no compose.dev — não copiar nada aqui
-ENTRYPOINT ["dotnet", "watch", "run", \
-    "--project", "src/CarWash.Api/CarWash.Api.csproj", \
-    "--no-launch-profile", \
-    "--non-interactive"]
+# O código é montado via bind mount no compose.dev — não copiar nada aqui.
+# `dotnet restore` precisa rodar ANTES do watch porque o bind mount traz
+# `obj/project.assets.json` gerado no host, apontando para caminhos de NuGet
+# do host (~/.nuget/packages) inacessíveis no container. Sem restore inicial
+# o watch entra em loop de NETSDK1064 ("Package X was not found").
+ENTRYPOINT ["sh", "-c", "dotnet restore src/CarWash.Api/CarWash.Api.csproj && exec dotnet watch run --project src/CarWash.Api/CarWash.Api.csproj --no-launch-profile --non-interactive"]

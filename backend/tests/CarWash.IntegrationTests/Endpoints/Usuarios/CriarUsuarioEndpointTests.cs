@@ -30,7 +30,7 @@ public class CriarUsuarioEndpointTests : IAsyncDisposable
     [Fact]
     public async Task POST_valido_retorna_201_com_Location_e_GET_retorna_200_sem_senha_hash()
     {
-        var client = _factory.CreateClient();
+        var client = await AuthenticatedHttpClient.CreateAsync(_factory);
         var email = EmailUnico();
 
         var payload = new
@@ -80,7 +80,7 @@ public class CriarUsuarioEndpointTests : IAsyncDisposable
     [Fact]
     public async Task POST_email_duplicado_case_insensitive_retorna_409()
     {
-        var client = _factory.CreateClient();
+        var client = await AuthenticatedHttpClient.CreateAsync(_factory);
         var email = EmailUnico();
 
         var primeiro = await client.PostAsJsonAsync(RotaCriar, new
@@ -112,7 +112,7 @@ public class CriarUsuarioEndpointTests : IAsyncDisposable
     [Fact]
     public async Task POST_email_malformado_retorna_400()
     {
-        var client = _factory.CreateClient();
+        var client = await AuthenticatedHttpClient.CreateAsync(_factory);
 
         var response = await client.PostAsJsonAsync(RotaCriar, new
         {
@@ -134,7 +134,7 @@ public class CriarUsuarioEndpointTests : IAsyncDisposable
     [Fact]
     public async Task POST_senha_curta_retorna_400_com_mensagem_de_politica()
     {
-        var client = _factory.CreateClient();
+        var client = await AuthenticatedHttpClient.CreateAsync(_factory);
 
         var response = await client.PostAsJsonAsync(RotaCriar, new
         {
@@ -154,7 +154,7 @@ public class CriarUsuarioEndpointTests : IAsyncDisposable
     [Fact]
     public async Task POST_perfil_invalido_retorna_400()
     {
-        var client = _factory.CreateClient();
+        var client = await AuthenticatedHttpClient.CreateAsync(_factory);
 
         var response = await client.PostAsJsonAsync(RotaCriar, new
         {
@@ -170,7 +170,7 @@ public class CriarUsuarioEndpointTests : IAsyncDisposable
     [Fact]
     public async Task POST_payload_vazio_retorna_400()
     {
-        var client = _factory.CreateClient();
+        var client = await AuthenticatedHttpClient.CreateAsync(_factory);
 
         var response = await client.PostAsJsonAsync(RotaCriar, new { }, _json);
 
@@ -180,7 +180,7 @@ public class CriarUsuarioEndpointTests : IAsyncDisposable
     [Fact]
     public async Task POST_grava_audit_log_UsuarioCadastrado_referenciando_o_id()
     {
-        var client = _factory.CreateClient();
+        var client = await AuthenticatedHttpClient.CreateAsync(_factory);
         var email = EmailUnico();
 
         var response = await client.PostAsJsonAsync(RotaCriar, new

@@ -1,15 +1,14 @@
 using CarWash.Application.Abstractions;
 using CarWash.Application.Auth.Abstractions;
 using CarWash.Application.Auth.Persistence;
+using CarWash.Application.Clientes.Persistence;
 using CarWash.Application.Common.Security;
-using CarWash.Application.Interfaces;
 using CarWash.Application.Usuarios.Persistence;
 using CarWash.Infrastructure.Auditing;
 using CarWash.Infrastructure.Auth;
 using CarWash.Infrastructure.Persistence;
 using CarWash.Infrastructure.Persistence.Interceptors;
 using CarWash.Infrastructure.Persistence.Repositories;
-using CarWash.Infrastructure.Repositories;
 using CarWash.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
