@@ -12,6 +12,7 @@ import { clienteService } from '@/services/clienteService';
 
 import { ContatoEnderecoForm } from './ContatoEnderecoForm';
 import { IdentificacaoForm } from './IdentificacaoForm';
+import { PageHeader } from './PageHeader';
 import { Stepper } from './Stepper';
 
 import type { ClienteFormData } from '@/schemas/clienteSchema';
@@ -61,7 +62,12 @@ export function NovoClientePage() {
   const isDocFilled = docDigits.length === 11 || docDigits.length === 14;
   const isDateFilled = dateDigits.length === 8;
   const isNameFilled = nome.trim().length >= 3;
-  const isIdentificacaoComplete = isDocFilled && isDateFilled && isNameFilled;
+
+  const { errors } = form.formState;
+  const isDocValid = isDocFilled && !errors.cpfCnpj;
+  const isDateValid = isDateFilled && !errors.dataNascimento;
+  const isNameValid = isNameFilled && !errors.nome;
+  const isIdentificacaoComplete = isDocValid && isDateValid && isNameValid;
 
   const handleSubmit = useCallback(
     async (data: ClienteFormData) => {
@@ -119,13 +125,21 @@ export function NovoClientePage() {
     void navigate('/clientes', { replace: true });
   }, [form, navigate]);
 
+  const handleClearForm = useCallback(() => {
+    form.reset();
+    setGlobalError(null);
+    setSuccessMsg(null);
+  }, [form]);
+
   return (
-    <FormProvider {...form}>
-      <form
-        onSubmit={form.handleSubmit(handleSubmit)}
-        noValidate
-        className="grid grid-cols-[minmax(240px,300px)_minmax(0,1fr)] gap-6 px-8"
-      >
+    <>
+      <PageHeader onCancel={handleClearForm} step={isIdentificacaoComplete ? 2 : 1} />
+      <FormProvider {...form}>
+        <form
+          onSubmit={form.handleSubmit(handleSubmit)}
+          noValidate
+          className="grid grid-cols-[minmax(240px,300px)_minmax(0,1fr)] gap-6 px-8"
+        >
         <Stepper currentStep={isIdentificacaoComplete ? 2 : 1} />
 
         <div className="rounded-2xl border border-zinc-800/60 bg-zinc-900/30 p-8">
@@ -213,6 +227,7 @@ export function NovoClientePage() {
         </div>
       </form>
     </FormProvider>
+    </>
   );
 }
 
