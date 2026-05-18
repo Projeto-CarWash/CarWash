@@ -9,7 +9,7 @@ networks:
     driver: bridge
   internal:
     driver: bridge
-    internal: true   # rede sem saída para a internet — DB nunca exposto
+    internal: true # rede sem saída para a internet — DB nunca exposto
 
 volumes:
   pgdata:
@@ -23,13 +23,14 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-carwash}
       POSTGRES_USER: ${POSTGRES_USER:-carwash_owner}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?precisa estar em .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-carwash123}
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-carwash_owner} -d ${POSTGRES_DB:-carwash}"]
+      test:
+        ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-carwash_owner} -d ${POSTGRES_DB:-carwash}']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -43,12 +44,15 @@ services:
       dockerfile: Dockerfile
       target: migrator
     container_name: carwash-migrator
-    restart: "no"
+    restart: 'no'
     depends_on:
       postgres:
         condition: service_healthy
     environment:
-      ConnectionStrings__Default: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-carwash};Username=${POSTGRES_USER:-carwash_owner};Password=${POSTGRES_PASSWORD}"
+      ConnectionStrings__Default: 'Host=postgres;Port=5432;Database=${POSTGRES_DB:-carwash};Username=${POSTGRES_USER:-carwash_owner};Password=${POSTGRES_PASSWORD}'
+      # Necessária para a migration InitialSchema (decisão P12 / SeedPasswordResolver).
+      # Sem fallback: migration falha se ausente/vazia.
+      CARWASH_SEED_ADMIN_PASSWORD: ${CARWASH_SEED_ADMIN_PASSWORD:?precisa estar em .env}
     networks:
       - internal
 
@@ -63,7 +67,7 @@ services:
         condition: service_healthy
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
-      ConnectionStrings__Default: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-carwash};Username=${POSTGRES_USER:-carwash_owner};Password=${POSTGRES_PASSWORD}"
+      ConnectionStrings__Default: 'Host=postgres;Port=5432;Database=${POSTGRES_DB:-carwash};Username=${POSTGRES_USER:-carwash_owner};Password=${POSTGRES_PASSWORD}'
       Jwt__Secret: ${JWT_SECRET:?precisa estar em .env}
       Jwt__Issuer: ${JWT_ISSUER:-carwash}
       Jwt__Audience: ${JWT_AUDIENCE:-carwash-web}
@@ -76,7 +80,9 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: ${VITE_API_URL:-/api}
+        # baseURL do axios fica vazio: o código usa caminhos absolutos `/api/v1/...`.
+        # nginx em hom/prod já roteia `/api/*` para o backend; Vite proxy faz o mesmo em dev.
+        VITE_API_URL: ${VITE_API_URL:-}
     container_name: carwash-frontend
     restart: unless-stopped
     networks:
@@ -95,7 +101,7 @@ services:
       - ./docker/proxy/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./docker/proxy/certs:/etc/nginx/certs:ro
     ports:
-      - "${PROXY_HTTP_PORT:-80}:80"
-      - "${PROXY_HTTPS_PORT:-443}:443"
+      - '${PROXY_HTTP_PORT:-80}:80'
+      - '${PROXY_HTTPS_PORT:-443}:443'
     networks:
       - public
