@@ -1,16 +1,25 @@
 using FluentValidation;
-using ValidationException = CarWash.Application.Common.Exceptions.ValidationException;
 
 namespace CarWash.Api.Filters;
 
 /// <summary>
 /// Filtro genérico que executa o(s) <see cref="IValidator{T}"/> registrado(s) para o
 /// argumento de tipo <typeparamref name="T"/> antes do handler. Falhas viram
-/// <see cref="ValidationException"/> e são traduzidas para 400 pelo middleware global.
+/// <c>ValidationException</c> via <see cref="ValidationProblems"/> e são
+/// traduzidas para 400 pelo middleware global.
 /// </summary>
 public sealed class ValidationFilter<T> : IEndpointFilter
     where T : class
 {
+    /// <summary>
+    /// Mantida idêntica à mensagem histórica usada pelos endpoints de Usuarios
+    /// (rotas autenticadas com payload de cadastro). O contrato HTTP afirma essa
+    /// string no campo <c>title</c> do ProblemDetails — clientes/tests dependem
+    /// dela. Slices que precisem de mensagem própria devem usar validação inline.
+    /// </summary>
+    private const string MensagemPadrao =
+        "Dados do usuário inválidos. Verifique os campos e tente novamente.";
+
     private readonly IValidator<T> _validator;
 
     public ValidationFilter(IValidator<T> validator)
@@ -26,40 +35,12 @@ public sealed class ValidationFilter<T> : IEndpointFilter
         var argumento = context.Arguments.OfType<T>().FirstOrDefault();
         if (argumento is null)
         {
-            throw new ValidationException(
-                "Dados do usuário inválidos. Verifique os campos e tente novamente.",
-                new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
-                {
-                    ["body"] = ["Corpo da requisição ausente ou malformado."],
-                });
+            throw ValidationProblems.BodyAusente(MensagemPadrao, "Corpo da requisição ausente ou malformado.");
         }
 
         var resultado = await _validator.ValidateAsync(argumento, context.HttpContext.RequestAborted).ConfigureAwait(false);
-        if (!resultado.IsValid)
-        {
-            var erros = resultado.Errors
-                .GroupBy(e => NormalizarCampo(e.PropertyName), StringComparer.OrdinalIgnoreCase)
-                .ToDictionary(
-                    g => g.Key,
-                    g => g.Select(e => e.ErrorMessage).Distinct(StringComparer.Ordinal).ToArray(),
-                    StringComparer.OrdinalIgnoreCase);
-
-            throw new ValidationException(
-                "Dados do usuário inválidos. Verifique os campos e tente novamente.",
-                erros);
-        }
+        ValidationProblems.EnsureValid(resultado, MensagemPadrao);
 
         return await next(context).ConfigureAwait(false);
-    }
-
-    private static string NormalizarCampo(string propertyName)
-    {
-        if (string.IsNullOrWhiteSpace(propertyName))
-        {
-            return "body";
-        }
-
-        // FluentValidation usa PascalCase; mapear para camelCase no payload de erro.
-        return char.ToLowerInvariant(propertyName[0]) + propertyName[1..];
     }
 }

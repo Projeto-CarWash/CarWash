@@ -93,8 +93,6 @@ public static class UsuariosEndpoints
         [FromQuery] int pagina = 1,
         [FromQuery] int tamanhoPagina = 20)
     {
-        // Mesma política de paginação dos clientes — validação explícita evita
-        // que o caller acredite estar paginando com valores fora da faixa.
         var erros = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase);
         if (pagina < 1)
         {
@@ -146,27 +144,13 @@ public static class UsuariosEndpoints
     {
         if (request is null)
         {
-            throw new ValidationException(
-                MensagemPayloadInvalido,
-                new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
-                {
-                    ["body"] = ["Corpo da requisição ausente ou malformado."],
-                });
+            throw ValidationProblems.BodyAusente(MensagemPayloadInvalido, "Corpo da requisição ausente ou malformado.");
         }
 
         var command = new AlterarUsuarioCommand(id, request.Nome, request.Email, request.Perfil);
 
         var resultado = await validator.ValidateAsync(command, cancellationToken).ConfigureAwait(false);
-        if (!resultado.IsValid)
-        {
-            var erros = resultado.Errors
-                .GroupBy(e => NormalizarCampo(e.PropertyName), StringComparer.OrdinalIgnoreCase)
-                .ToDictionary(
-                    g => g.Key,
-                    g => g.Select(e => e.ErrorMessage).Distinct(StringComparer.Ordinal).ToArray(),
-                    StringComparer.OrdinalIgnoreCase);
-            throw new ValidationException(MensagemPayloadInvalido, erros);
-        }
+        ValidationProblems.EnsureValid(resultado, MensagemPayloadInvalido);
 
         var resposta = await handler.HandleAsync(command, cancellationToken).ConfigureAwait(false);
         return TypedResults.Ok(resposta);
@@ -187,39 +171,15 @@ public static class UsuariosEndpoints
     {
         if (request is null)
         {
-            throw new ValidationException(
-                MensagemPayloadInvalido,
-                new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
-                {
-                    ["body"] = ["Corpo da requisição ausente ou malformado."],
-                });
+            throw ValidationProblems.BodyAusente(MensagemPayloadInvalido, "Corpo da requisição ausente ou malformado.");
         }
 
         var command = new AlterarStatusUsuarioCommand(id, request.Ativo);
 
         var resultado = await validator.ValidateAsync(command, cancellationToken).ConfigureAwait(false);
-        if (!resultado.IsValid)
-        {
-            var erros = resultado.Errors
-                .GroupBy(e => NormalizarCampo(e.PropertyName), StringComparer.OrdinalIgnoreCase)
-                .ToDictionary(
-                    g => g.Key,
-                    g => g.Select(e => e.ErrorMessage).Distinct(StringComparer.Ordinal).ToArray(),
-                    StringComparer.OrdinalIgnoreCase);
-            throw new ValidationException(MensagemPayloadInvalido, erros);
-        }
+        ValidationProblems.EnsureValid(resultado, MensagemPayloadInvalido);
 
         var resposta = await handler.HandleAsync(command, cancellationToken).ConfigureAwait(false);
         return TypedResults.Ok(resposta);
-    }
-
-    private static string NormalizarCampo(string propertyName)
-    {
-        if (string.IsNullOrWhiteSpace(propertyName))
-        {
-            return "body";
-        }
-
-        return char.ToLowerInvariant(propertyName[0]) + propertyName[1..];
     }
 }

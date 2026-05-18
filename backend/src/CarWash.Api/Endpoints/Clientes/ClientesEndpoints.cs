@@ -1,3 +1,4 @@
+using CarWash.Api.Filters;
 using CarWash.Application.Abstractions.Messaging;
 using CarWash.Application.Clientes.AlterarStatus;
 using CarWash.Application.Clientes.Atualizar;
@@ -80,12 +81,9 @@ public static class ClientesEndpoints
     {
         if (request is null)
         {
-            throw new ValidationException(
+            throw ValidationProblems.BodyAusente(
                 "Dados do cliente inválidos. Verifique os campos e tente novamente.",
-                new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
-                {
-                    ["body"] = ["Corpo da requisição ausente ou malformado."],
-                });
+                "Corpo da requisição ausente ou malformado.");
         }
 
         var traceId = http.TraceIdentifier;
@@ -185,12 +183,9 @@ public static class ClientesEndpoints
     {
         if (request is null)
         {
-            throw new ValidationException(
+            throw ValidationProblems.BodyAusente(
                 "Dados do cliente inválidos. Verifique os campos e tente novamente.",
-                new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
-                {
-                    ["body"] = ["Corpo da requisição ausente ou malformado."],
-                });
+                "Corpo da requisição ausente ou malformado.");
         }
 
         var usuarioId = ObterUsuarioId(http);
@@ -230,6 +225,8 @@ public static class ClientesEndpoints
         // GAP-CW-CLI-STA-EMP: body {} ou ausência do campo "ativo" precisa
         // falhar com 400 — o tipo é bool? para distinguir "não informado"
         // de "false". Antes o framework caía em default(bool)=false silencioso.
+        // ValidationProblems não cobre esse caso porque a chave aqui é "ativo"
+        // (não "body") — mensagem específica que sinaliza o campo ausente.
         if (request.Ativo is null)
         {
             throw new ValidationException(
@@ -263,29 +260,7 @@ public static class ClientesEndpoints
         CancellationToken cancellationToken)
     {
         var resultado = await validator.ValidateAsync(instancia, cancellationToken).ConfigureAwait(false);
-        if (resultado.IsValid)
-        {
-            return;
-        }
-
-        var erros = resultado.Errors
-            .GroupBy(e => NormalizarCampo(e.PropertyName), StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(
-                g => g.Key,
-                g => g.Select(e => e.ErrorMessage).Distinct(StringComparer.Ordinal).ToArray(),
-                StringComparer.OrdinalIgnoreCase);
-
-        throw new ValidationException(mensagem, erros);
-    }
-
-    private static string NormalizarCampo(string propertyName)
-    {
-        if (string.IsNullOrWhiteSpace(propertyName))
-        {
-            return "body";
-        }
-
-        return char.ToLowerInvariant(propertyName[0]) + propertyName[1..];
+        ValidationProblems.EnsureValid(resultado, mensagem);
     }
 
     private static Guid? ObterUsuarioId(HttpContext http)
