@@ -1,4 +1,4 @@
-# 🚗 CarWash - Gestão de Estética Automotiva Multiunidade
+# 🚗 CarWash - Gestão de Estética Automotiva
 
 O **CarWash** é um sistema ERP web de gestão interna projetado para profissionalizar estabelecimentos de estética automotiva. Ele substitui controles manuais por uma plataforma centralizada que gerencia desde a agenda inteligente até a capacidade operacional de múltiplas filiais.
 
