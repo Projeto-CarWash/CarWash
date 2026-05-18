@@ -2,9 +2,9 @@ using FluentValidation;
 
 namespace CarWash.Application.Usuarios.AlterarUsuario;
 
-public sealed class AlterarUsuarioValidator : AbstractValidator<AlterarUsuarioCommand>
+public sealed class AlterarUsuarioCommandValidator : AbstractValidator<AlterarUsuarioCommand>
 {
-    public AlterarUsuarioValidator()
+    public AlterarUsuarioCommandValidator()
     {
         RuleFor(x => x.Id)
             .NotEqual(Guid.Empty).WithMessage("Id do usuário é obrigatório.");

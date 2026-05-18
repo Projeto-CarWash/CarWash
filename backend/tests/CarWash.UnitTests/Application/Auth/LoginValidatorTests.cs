@@ -6,7 +6,7 @@ namespace CarWash.UnitTests.Application.Auth;
 
 public class LoginValidatorTests
 {
-    private readonly LoginValidator _validator = new();
+    private readonly LoginCommandValidator _validator = new();
 
     [Fact]
     public void Payload_valido_passa()

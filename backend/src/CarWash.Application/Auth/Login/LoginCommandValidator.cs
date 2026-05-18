@@ -7,12 +7,12 @@ namespace CarWash.Application.Auth.Login;
 /// e-mail — devolver 400 para e-mail malformado criaria oráculo de enumeração;
 /// o handler trata como 401 unificado.
 /// </summary>
-public sealed class LoginValidator : AbstractValidator<LoginCommand>
+public sealed class LoginCommandValidator : AbstractValidator<LoginCommand>
 {
     public const string MensagemEmailObrigatorio = "E-mail é obrigatório.";
     public const string MensagemSenhaObrigatoria = "Senha é obrigatória.";
 
-    public LoginValidator()
+    public LoginCommandValidator()
     {
         RuleFor(x => x.Email)
             .NotEmpty().WithMessage(MensagemEmailObrigatorio)
