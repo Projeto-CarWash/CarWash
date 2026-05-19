@@ -68,9 +68,9 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
       ConnectionStrings__Default: 'Host=postgres;Port=5432;Database=${POSTGRES_DB:-carwash};Username=${POSTGRES_USER:-carwash_owner};Password=${POSTGRES_PASSWORD}'
-      Jwt__Secret: ${JWT_SECRET:?precisa estar em .env}
-      Jwt__Issuer: ${JWT_ISSUER:-carwash}
-      Jwt__Audience: ${JWT_AUDIENCE:-carwash-web}
+      Jwt__Secret: ${Jwt__Secret:?precisa estar em .env}
+      Jwt__Issuer: ${Jwt__Issuer:-carwash}
+      Jwt__Audience: ${Jwt__Audience:-carwash-web}
     networks:
       - internal
       - public
