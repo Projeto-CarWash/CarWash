@@ -36,10 +36,13 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $ComposeFiles = @('-f', 'docker-compose.yml', '-f', "docker-compose.$Env.yml")
+$EnvFileCandidate = ".env.$Env"
+$EnvFile = if (Test-Path $EnvFileCandidate) { $EnvFileCandidate } else { '.env' }
+$ComposeEnvFile = if (Test-Path $EnvFile) { @('--env-file', $EnvFile) } else { @() }
 
 function Invoke-Compose {
-    param([string[]]$Args)
-    & docker compose @ComposeFiles @Args
+    param([string[]]$ComposeArgs)
+    & docker compose @ComposeFiles @ComposeEnvFile @ComposeArgs
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
 
@@ -64,34 +67,34 @@ function Show-Help {
 switch ($Target) {
     'help'    { Show-Help }
 
-    'up'      { Invoke-Compose @('up', '-d', '--build') }
-    'down'    { Invoke-Compose @('down') }
+    'up'      { Invoke-Compose 'up', '-d', '--build' }
+    'down'    { Invoke-Compose 'down' }
     'restart' {
-        if ($Svc) { Invoke-Compose @('restart', $Svc) }
-        else      { Invoke-Compose @('restart') }
+        if ($Svc) { Invoke-Compose 'restart', $Svc }
+        else      { Invoke-Compose 'restart' }
     }
     'logs'    {
-        if ($Svc) { Invoke-Compose @('logs', '-f', $Svc) }
-        else      { Invoke-Compose @('logs', '-f') }
+        if ($Svc) { Invoke-Compose 'logs', '-f', $Svc }
+        else      { Invoke-Compose 'logs', '-f' }
     }
-    'ps'      { Invoke-Compose @('ps') }
-    'build'   { Invoke-Compose @('build', '--pull') }
-    'pull'    { Invoke-Compose @('pull') }
+    'ps'      { Invoke-Compose 'ps' }
+    'build'   { Invoke-Compose 'build', '--pull' }
+    'pull'    { Invoke-Compose 'pull' }
 
     # Em dev, migrator esta em profile "manual"; em hom/prod sobe automatico no up
-    'migrate' { Invoke-Compose @('run', '--rm', 'migrator') }
+    'migrate' { Invoke-Compose 'run', '--rm', 'migrator' }
 
     'shell-back' {
-        & docker compose @ComposeFiles exec backend /bin/bash
+        & docker compose @ComposeFiles @ComposeEnvFile exec backend /bin/bash
         if ($LASTEXITCODE -ne 0) {
-            & docker compose @ComposeFiles exec backend /bin/sh
+            & docker compose @ComposeFiles @ComposeEnvFile exec backend /bin/sh
         }
     }
-    'shell-front' { Invoke-Compose @('exec', 'frontend', '/bin/sh') }
+    'shell-front' { Invoke-Compose 'exec', 'frontend', '/bin/sh' }
     'shell-db' {
         $user = if ($env:POSTGRES_USER) { $env:POSTGRES_USER } else { 'carwash_owner' }
         $db   = if ($env:POSTGRES_DB)   { $env:POSTGRES_DB }   else { 'carwash' }
-        Invoke-Compose @('exec', 'postgres', 'psql', '-U', $user, '-d', $db)
+        Invoke-Compose 'exec', 'postgres', 'psql', '-U', $user, '-d', $db
     }
 
     'backup' {
@@ -101,7 +104,7 @@ switch ($Target) {
         $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
         $out   = "docker/postgres/backups/carwash-$stamp.sql.gz"
         # PowerShell nao tem pipe binario seguro -> usamos cmd para pipear pg_dump | gzip
-        $cmd = "docker compose $($ComposeFiles -join ' ') exec -T postgres pg_dump -U $user -d $db | gzip > `"$out`""
+        $cmd = "docker compose $($ComposeFiles -join ' ') $($ComposeEnvFile -join ' ') exec -T postgres pg_dump -U $user -d $db | gzip > `"$out`""
         cmd.exe /c $cmd
         if ($LASTEXITCODE -ne 0) { Write-Error "Backup falhou"; exit $LASTEXITCODE }
         Write-Host "Backup salvo em $out"
@@ -109,11 +112,11 @@ switch ($Target) {
 
     'smoke' {
         Write-Host "-> /health do backend..."
-        & docker compose @ComposeFiles exec -T backend wget -qO- http://localhost:8080/health | Out-Null
+        & docker compose @ComposeFiles @ComposeEnvFile exec -T backend wget -qO- http://localhost:8080/health | Out-Null
         if ($LASTEXITCODE -ne 0) { Write-Error "FALHOU: backend /health"; exit 1 }
         Write-Host ""
         Write-Host "-> index do frontend..."
-        & docker compose @ComposeFiles exec -T frontend wget -qO- http://localhost:8080/ | Out-Null
+        & docker compose @ComposeFiles @ComposeEnvFile exec -T frontend wget -qO- http://localhost:8080/ | Out-Null
         if ($LASTEXITCODE -ne 0) { Write-Error "FALHOU: frontend index"; exit 1 }
         Write-Host "Smoke OK."
     }
@@ -131,7 +134,7 @@ switch ($Target) {
         Write-Host "Cert auto-assinado gerado em docker/proxy/certs/"
     }
 
-    'clean' { Invoke-Compose @('down', '-v', '--remove-orphans') }
+    'clean' { Invoke-Compose 'down', '-v', '--remove-orphans' }
 
     default {
         Write-Error "Alvo desconhecido: '$Target'. Rode '.\make.ps1 help' para a lista."
