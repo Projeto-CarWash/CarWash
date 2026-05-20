@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json;
 using CarWash.Api.Middlewares;
 using CarWash.Application;
 using CarWash.Application.DTOs;
@@ -54,6 +55,52 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
+    options.Events = new JwtBearerEvents
+    {
+        OnChallenge = context =>
+        {
+            if (context.Response.HasStarted)
+            {
+                return Task.CompletedTask;
+            }
+
+            context.HandleResponse();
+
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            context.Response.ContentType = "application/json";
+
+            var response = new BaseResponse
+            {
+                Message = "Autenticação obrigatória para executar esta operação.",
+                Code = "AUTH_REQUIRED",
+                TraceId = context.HttpContext.TraceIdentifier
+            };
+
+            string json = JsonSerializer.Serialize(response, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+            return context.Response.WriteAsync(json);
+        },
+        OnForbidden = context =>
+        {
+            if (context.Response.HasStarted)
+            {
+                return Task.CompletedTask;
+            }
+
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            context.Response.ContentType = "application/json";
+
+            var response = new BaseResponse
+            {
+                Message = "Você não possui permissão para cadastrar ou editar veículos.",
+                Code = "AUTH_FORBIDDEN",
+                TraceId = context.HttpContext.TraceIdentifier
+            };
+
+            string json = JsonSerializer.Serialize(response, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+            return context.Response.WriteAsync(json);
+        }
+    };
+
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
@@ -64,6 +111,11 @@ builder.Services.AddAuthentication(options =>
         ValidAudience = jwtSettings["Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
     };
+});
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("CanCreateVehicle", policy => policy.RequireRole("admin"));
 });
 
 string conn = builder.Configuration.GetConnectionString("Default")

@@ -19,6 +19,12 @@ public class CarWashDbContext : DbContext, ICarWashDbContext
     public DbSet<Session> Sessions { get; set; }
 
     /// <inheritdoc/>
+    public DbSet<Cliente> Clientes { get; set; }
+
+    /// <inheritdoc/>
+    public DbSet<Veiculo> Veiculos { get; set; }
+
+    /// <inheritdoc/>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema("public");

@@ -26,6 +26,10 @@ public partial class ExceptionMiddleware
         {
             await _next(context);
         }
+        catch (ApiException ex)
+        {
+            await HandleApiExceptionAsync(context, ex);
+        }
         catch (AuthException ex)
         {
             await HandleAuthExceptionAsync(context, ex);
@@ -47,6 +51,23 @@ public partial class ExceptionMiddleware
             Message = exception.Message,
             Code = exception.ErrorCode,
             TraceId = context.TraceIdentifier
+        };
+
+        string json = JsonSerializer.Serialize(response, JsonOptions);
+        return context.Response.WriteAsync(json);
+    }
+
+    private static Task HandleApiExceptionAsync(HttpContext context, ApiException exception)
+    {
+        context.Response.ContentType = "application/json";
+        context.Response.StatusCode = exception.StatusCode;
+
+        var response = new BaseResponse
+        {
+            Message = exception.Message,
+            Code = exception.ErrorCode,
+            TraceId = context.TraceIdentifier,
+            Errors = exception.Errors
         };
 
         string json = JsonSerializer.Serialize(response, JsonOptions);

@@ -14,6 +14,16 @@ public interface ICarWashDbContext
     DbSet<User> Users { get; set; }
 
     /// <summary>
+    /// Gets or sets a tabela de clientes.
+    /// </summary>
+    DbSet<Cliente> Clientes { get; set; }
+
+    /// <summary>
+    /// Gets or sets a tabela de veiculos.
+    /// </summary>
+    DbSet<Veiculo> Veiculos { get; set; }
+
+    /// <summary>
     /// Gets or sets a tabela de sessões.
     /// </summary>
     DbSet<Session> Sessions { get; set; }
