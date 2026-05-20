@@ -41,8 +41,10 @@ services:
   proxy:
     environment:
       NGINX_ENV: homolog
+    ports:
+      - '${PROXY_HTTP_PORT:-80}:80'
     volumes:
-      - ./docker/proxy/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/proxy/nginx.hom.conf:/etc/nginx/nginx.conf:ro
       - ./docker/proxy/certs:/etc/nginx/certs:ro
       - proxy_logs:/var/log/nginx
 
