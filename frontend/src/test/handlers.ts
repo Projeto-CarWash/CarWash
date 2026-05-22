@@ -1,5 +1,10 @@
 import { HttpResponse, http } from 'msw';
 
+import type {
+  AgendaItemDetalhado,
+  AgendaItemSimples,
+  ConsultarAgendaResponse,
+} from '@/types/agenda';
 import type { AgendamentoResponse } from '@/types/agendamento';
 
 /**
@@ -41,6 +46,61 @@ const respostaCriacao: AgendamentoResponse = {
   criadoEm: '2026-05-21T12:00:00.000Z',
   mensagem: 'Agendamento criado com sucesso.',
   traceId: 'trace-abc',
+};
+
+/** Fixture de item da agenda no formato `simples`. */
+const agendaItemSimples: AgendaItemSimples = {
+  agendamentoId: '99999999-9999-4999-8999-999999999999',
+  inicio: '2099-01-01T13:00:00.000Z',
+  fim: '2099-01-01T14:30:00.000Z',
+  titulo: 'Lavagem Completa',
+  status: 'AGENDADO',
+  clienteNome: 'Maria Souza',
+  veiculoPlaca: 'ABC1D23',
+  servicosResumo: 'Lavagem Completa + 1',
+};
+
+/** Fixture de item da agenda no formato `detalhado`. */
+const agendaItemDetalhado: AgendaItemDetalhado = {
+  agendamentoId: '99999999-9999-4999-8999-999999999999',
+  status: 'AGENDADO',
+  filialId: IDS.filial,
+  inicio: '2099-01-01T13:00:00.000Z',
+  fim: '2099-01-01T14:30:00.000Z',
+  duracaoTotalMin: 90,
+  valorTotal: 150,
+  cliente: {
+    id: IDS.cliente,
+    nome: 'Maria Souza',
+    cpfCnpj: '12345678901',
+    telefone: '1133334444',
+    celular: '11999998888',
+  },
+  veiculo: {
+    id: IDS.veiculo,
+    placa: 'ABC1D23',
+    modelo: 'Civic',
+    fabricante: 'Honda',
+    cor: 'Preto',
+  },
+  servicos: [{ id: IDS.servicoA, nome: 'Lavagem Completa', duracaoMin: 60, preco: 100 }],
+  observacoes: 'Cliente pediu atenção ao porta-malas.',
+  criadoEm: '2026-04-20T12:00:00.000Z',
+  atualizadoEm: '2026-04-20T12:00:00.000Z',
+};
+
+/** Resposta `200` de `GET /api/v1/agenda` no formato `simples`. */
+const agendaRespostaSimples: ConsultarAgendaResponse<AgendaItemSimples> = {
+  message: 'Agenda consultada com sucesso.',
+  data: [agendaItemSimples],
+  traceId: 'trace-agenda-simples',
+};
+
+/** Resposta `200` de `GET /api/v1/agenda` no formato `detalhado`. */
+const agendaRespostaDetalhada: ConsultarAgendaResponse<AgendaItemDetalhado> = {
+  message: 'Agenda consultada com sucesso.',
+  data: [agendaItemDetalhado],
+  traceId: 'trace-agenda-detalhada',
 };
 
 /** Handlers do "caminho feliz" — listas de apoio e criação bem-sucedida. */
@@ -102,7 +162,15 @@ export const handlersPadrao = [
   ),
 
   http.post('/api/v1/agendamentos', () => HttpResponse.json(respostaCriacao, { status: 201 })),
+
+  // Visualização de agenda (RF009 / card 132): responde conforme o `formato`.
+  http.get('/api/v1/agenda', ({ request }) => {
+    const formato = new URL(request.url).searchParams.get('formato');
+    return HttpResponse.json(
+      formato === 'detalhado' ? agendaRespostaDetalhada : agendaRespostaSimples,
+    );
+  }),
 ];
 
 /** Resposta de criação reaproveitável em asserções. */
-export { respostaCriacao };
+export { respostaCriacao, agendaRespostaSimples, agendaRespostaDetalhada };
