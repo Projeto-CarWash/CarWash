@@ -9,7 +9,7 @@ export interface Veiculo {
   modelo: string;
   fabricante: string;
   cor: string;
-  ano?: number;
+  observacoes?: string;
   ativo: boolean;
   criadoEm: string;
   atualizadoEm: string;
@@ -29,10 +29,10 @@ export const veiculoService = {
   async cadastrar(clienteId: string, dados: VeiculoFormData): Promise<CriarVeiculoResponse> {
     const payload = {
       placa: dados.placa, // already normalized by zod schema transform
-      modelo: dados.modelo.trim(),
-      fabricante: dados.fabricante.trim(),
-      cor: dados.cor.trim(),
-      ano: dados.ano && dados.ano.trim() !== '' ? Number(dados.ano) : undefined,
+      modelo: dados.modelo,
+      fabricante: dados.fabricante,
+      cor: dados.cor,
+      observacoes: dados.observacoes ?? undefined,
     };
     const { data } = await api.post<CriarVeiculoResponse>(
       `/api/v1/clientes/${clienteId}/veiculos`,
