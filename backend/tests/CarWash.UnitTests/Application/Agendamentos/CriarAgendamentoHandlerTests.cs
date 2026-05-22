@@ -10,6 +10,7 @@ using Xunit;
 
 namespace CarWash.UnitTests.Application.Agendamentos;
 
+#pragma warning disable CS0618 // RF007 mantido obsoleto por decisão do ADR 0004 — os testes do caminho legado continuam.
 public class CriarAgendamentoHandlerTests
 {
     private static readonly Guid FilialId = Guid.NewGuid();
@@ -25,12 +26,12 @@ public class CriarAgendamentoHandlerTests
 
     public CriarAgendamentoHandlerTests()
     {
-        _catalogo.FilialExisteAsync(FilialId, Arg.Any<CancellationToken>()).Returns(true);
-        _catalogo.FilialAtivaAsync(FilialId, Arg.Any<CancellationToken>()).Returns(true);
-        _catalogo.ObterVeiculoAsync(VeiculoId, Arg.Any<CancellationToken>())
-            .Returns(new VeiculoSnapshot(VeiculoId, ClienteId, true));
-        _catalogo.ClienteExisteAsync(ClienteId, Arg.Any<CancellationToken>()).Returns(true);
-        _catalogo.ClienteAtivoAsync(ClienteId, Arg.Any<CancellationToken>()).Returns(true);
+        _catalogo.ObterFilialResumoAsync(FilialId, Arg.Any<CancellationToken>())
+            .Returns(new FilialResumoSnapshot(FilialId, "Filial Centro", true));
+        _catalogo.ObterVeiculoResumoAsync(VeiculoId, Arg.Any<CancellationToken>())
+            .Returns(new VeiculoResumoSnapshot(VeiculoId, ClienteId, "ABC1D23", "Civic", "Preto", true));
+        _catalogo.ObterClienteResumoAsync(ClienteId, Arg.Any<CancellationToken>())
+            .Returns(new ClienteResumoSnapshot(ClienteId, "Cliente Teste", "12345678901", true));
         _catalogo.ObterServicosAsync(Arg.Any<IReadOnlyCollection<Guid>>(), Arg.Any<CancellationToken>())
             .Returns(new List<ServicoSnapshot>
             {
@@ -89,7 +90,8 @@ public class CriarAgendamentoHandlerTests
     [Fact]
     public async Task Filial_inexistente_lanca_NotFound()
     {
-        _catalogo.FilialExisteAsync(FilialId, Arg.Any<CancellationToken>()).Returns(false);
+        _catalogo.ObterFilialResumoAsync(FilialId, Arg.Any<CancellationToken>())
+            .Returns((FilialResumoSnapshot?)null);
 
         var handler = NovoHandler();
         var act = () => handler.HandleAsync(NovoComando(), CancellationToken.None);
@@ -100,7 +102,8 @@ public class CriarAgendamentoHandlerTests
     [Fact]
     public async Task Filial_inativa_lanca_RecursoInativo()
     {
-        _catalogo.FilialAtivaAsync(FilialId, Arg.Any<CancellationToken>()).Returns(false);
+        _catalogo.ObterFilialResumoAsync(FilialId, Arg.Any<CancellationToken>())
+            .Returns(new FilialResumoSnapshot(FilialId, "Filial Centro", false));
 
         var handler = NovoHandler();
         var act = () => handler.HandleAsync(NovoComando(), CancellationToken.None);
@@ -111,8 +114,8 @@ public class CriarAgendamentoHandlerTests
     [Fact]
     public async Task Veiculo_inativo_lanca_RecursoInativo()
     {
-        _catalogo.ObterVeiculoAsync(VeiculoId, Arg.Any<CancellationToken>())
-            .Returns(new VeiculoSnapshot(VeiculoId, ClienteId, false));
+        _catalogo.ObterVeiculoResumoAsync(VeiculoId, Arg.Any<CancellationToken>())
+            .Returns(new VeiculoResumoSnapshot(VeiculoId, ClienteId, "ABC1D23", "Civic", "Preto", false));
 
         var handler = NovoHandler();
         var act = () => handler.HandleAsync(NovoComando(), CancellationToken.None);
@@ -211,7 +214,8 @@ public class CriarAgendamentoHandlerTests
     [Fact]
     public async Task Cliente_do_veiculo_inexistente_lanca_NotFound()
     {
-        _catalogo.ClienteExisteAsync(ClienteId, Arg.Any<CancellationToken>()).Returns(false);
+        _catalogo.ObterClienteResumoAsync(ClienteId, Arg.Any<CancellationToken>())
+            .Returns((ClienteResumoSnapshot?)null);
 
         var handler = NovoHandler();
         var act = () => handler.HandleAsync(NovoComando(), CancellationToken.None);
@@ -222,7 +226,8 @@ public class CriarAgendamentoHandlerTests
     [Fact]
     public async Task Cliente_do_veiculo_inativo_lanca_RecursoInativo()
     {
-        _catalogo.ClienteAtivoAsync(ClienteId, Arg.Any<CancellationToken>()).Returns(false);
+        _catalogo.ObterClienteResumoAsync(ClienteId, Arg.Any<CancellationToken>())
+            .Returns(new ClienteResumoSnapshot(ClienteId, "Cliente Teste", "12345678901", false));
 
         var handler = NovoHandler();
         var act = () => handler.HandleAsync(NovoComando(), CancellationToken.None);
@@ -234,8 +239,8 @@ public class CriarAgendamentoHandlerTests
     public async Task Veiculo_de_outro_cliente_lanca_ValidationException_RN002()
     {
         // RN002: o veículo informado pertence a outro titular, não ao ClienteId do payload.
-        _catalogo.ObterVeiculoAsync(VeiculoId, Arg.Any<CancellationToken>())
-            .Returns(new VeiculoSnapshot(VeiculoId, Guid.NewGuid(), true));
+        _catalogo.ObterVeiculoResumoAsync(VeiculoId, Arg.Any<CancellationToken>())
+            .Returns(new VeiculoResumoSnapshot(VeiculoId, Guid.NewGuid(), "ABC1D23", "Civic", "Preto", true));
 
         var handler = NovoHandler();
         var act = () => handler.HandleAsync(NovoComando(), CancellationToken.None);
@@ -253,8 +258,8 @@ public class CriarAgendamentoHandlerTests
     [Fact]
     public async Task Veiculo_inexistente_lanca_NotFound()
     {
-        _catalogo.ObterVeiculoAsync(VeiculoId, Arg.Any<CancellationToken>())
-            .Returns((VeiculoSnapshot?)null);
+        _catalogo.ObterVeiculoResumoAsync(VeiculoId, Arg.Any<CancellationToken>())
+            .Returns((VeiculoResumoSnapshot?)null);
 
         var handler = NovoHandler();
         var act = () => handler.HandleAsync(NovoComando(), CancellationToken.None);
@@ -392,7 +397,10 @@ public class CriarAgendamentoHandlerTests
     }
 
     private CriarAgendamentoHandler NovoHandler() =>
-        new(_agendamentos, _catalogo, NullLogger<CriarAgendamentoHandler>.Instance);
+        new(
+            _agendamentos,
+            new CalculadoraResumoAgendamento(_catalogo),
+            NullLogger<CriarAgendamentoHandler>.Instance);
 
     private static CriarAgendamentoCommand NovoComando() => new(
         FilialId: FilialId,
@@ -405,3 +413,4 @@ public class CriarAgendamentoHandlerTests
         TraceId: "trace-1",
         UsuarioId: UsuarioId);
 }
+#pragma warning restore CS0618

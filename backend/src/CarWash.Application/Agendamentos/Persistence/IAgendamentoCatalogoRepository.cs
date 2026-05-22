@@ -44,6 +44,24 @@ public interface IAgendamentoCatalogoRepository
     Task<IReadOnlyList<ServicoSnapshot>> ObterServicosAsync(
         IReadOnlyCollection<Guid> servicoIds,
         CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Snapshot rico da filial (nome + estado) para montar o resumo de
+    /// confirmação (RF015). <c>null</c> quando a filial não existe.
+    /// </summary>
+    Task<FilialResumoSnapshot?> ObterFilialResumoAsync(Guid filialId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Snapshot rico do cliente (nome + documento + estado) para o resumo de
+    /// confirmação (RF015). <c>null</c> quando o cliente não existe.
+    /// </summary>
+    Task<ClienteResumoSnapshot?> ObterClienteResumoAsync(Guid clienteId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Snapshot rico do veículo (placa + modelo + cor + titular + estado) para o
+    /// resumo de confirmação (RF015). <c>null</c> quando o veículo não existe.
+    /// </summary>
+    Task<VeiculoResumoSnapshot?> ObterVeiculoResumoAsync(Guid veiculoId, CancellationToken cancellationToken);
 }
 
 /// <summary>Projeção mínima de um veículo para validação de agendamento.</summary>
@@ -51,3 +69,18 @@ public sealed record VeiculoSnapshot(Guid Id, Guid ClienteId, bool Ativo);
 
 /// <summary>Projeção mínima de um responsável (filiado) para validação de agendamento.</summary>
 public sealed record ResponsavelSnapshot(Guid Id, Guid ClienteId, bool Ativo);
+
+/// <summary>Projeção da filial para o resumo de confirmação (RF015).</summary>
+public sealed record FilialResumoSnapshot(Guid Id, string Nome, bool Ativa);
+
+/// <summary>Projeção do cliente para o resumo de confirmação (RF015).</summary>
+public sealed record ClienteResumoSnapshot(Guid Id, string Nome, string Documento, bool Ativo);
+
+/// <summary>Projeção do veículo para o resumo de confirmação (RF015).</summary>
+public sealed record VeiculoResumoSnapshot(
+    Guid Id,
+    Guid ClienteId,
+    string Placa,
+    string Modelo,
+    string Cor,
+    bool Ativo);

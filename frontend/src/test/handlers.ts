@@ -1,6 +1,6 @@
 import { HttpResponse, http } from 'msw';
 
-import type { AgendamentoResponse } from '@/types/agendamento';
+import type { AgendamentoResponse, PreConfirmacaoResponse } from '@/types/agendamento';
 
 /**
  * Fixtures e handlers MSW para os testes da feature de agendamento (RF007).
@@ -43,7 +43,35 @@ const respostaCriacao: AgendamentoResponse = {
   traceId: 'trace-abc',
 };
 
-/** Handlers do "caminho feliz" — listas de apoio e criação bem-sucedida. */
+/** Resumo de pré-confirmação reaproveitável (RF015, card 133). */
+const respostaPreConfirmacao: PreConfirmacaoResponse = {
+  tokenConfirmacao: 'token-revisao-123',
+  expiraEm: '2099-01-01T13:45:00.000Z',
+  resumo: {
+    filial: { id: IDS.filial, nome: 'Filial Centro' },
+    cliente: {
+      id: IDS.cliente,
+      nome: 'Cliente Teste',
+      documento: '123.456.789-00',
+    },
+    veiculo: {
+      id: IDS.veiculo,
+      placa: 'ABC1D23',
+      modelo: 'Uno',
+      cor: 'Prata',
+    },
+    servicos: [{ id: IDS.servicoA, nome: 'Lavagem simples', duracaoMin: 30, preco: 50 }],
+    inicio: '2099-01-01T14:00:00.000Z',
+    fim: '2099-01-01T14:30:00.000Z',
+    duracaoTotalMin: 30,
+    valorTotal: 50,
+    observacoes: null,
+    hashResumo: 'hash-abc',
+  },
+  traceId: 'trace-pre-abc',
+};
+
+/** Handlers do "caminho feliz" — listas de apoio e fluxo de confirmação. */
 export const handlersPadrao = [
   http.get('/api/v1/clientes', () =>
     HttpResponse.json({
@@ -102,7 +130,15 @@ export const handlersPadrao = [
   ),
 
   http.post('/api/v1/agendamentos', () => HttpResponse.json(respostaCriacao, { status: 201 })),
+
+  http.post('/api/v1/agendamentos/pre-confirmacao', () =>
+    HttpResponse.json(respostaPreConfirmacao, { status: 200 }),
+  ),
+
+  http.post('/api/v1/agendamentos/confirmar', () =>
+    HttpResponse.json(respostaCriacao, { status: 201 }),
+  ),
 ];
 
-/** Resposta de criação reaproveitável em asserções. */
-export { respostaCriacao };
+/** Fixtures reaproveitáveis em asserções. */
+export { respostaCriacao, respostaPreConfirmacao };

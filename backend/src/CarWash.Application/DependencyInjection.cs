@@ -1,5 +1,6 @@
 using System.Reflection;
 using CarWash.Application.Abstractions.Messaging;
+using CarWash.Application.Agendamentos.Common;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -22,6 +23,10 @@ public static class DependencyInjection
         // que um handler novo seja esquecido na bandeja do DI.
         RegistrarHandlers(services, assembly, typeof(ICommandHandler<,>));
         RegistrarHandlers(services, assembly, typeof(IQueryHandler<,>));
+
+        // Serviço de domínio de cálculo do resumo de agendamento (RF007/RF015) —
+        // não é handler nem validator, então não é alcançado pelo scan acima.
+        services.AddScoped<CalculadoraResumoAgendamento>();
 
         return services;
     }

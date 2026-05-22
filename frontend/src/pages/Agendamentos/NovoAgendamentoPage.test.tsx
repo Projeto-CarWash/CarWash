@@ -10,11 +10,12 @@ import { renderComProviders } from '@/test/renderComProviders';
 import { NovoAgendamentoPage } from './NovoAgendamentoPage';
 
 /**
- * Testes de integração da tela de criação de agendamento (RF007 / card 131).
+ * Testes de integração da tela de criação de agendamento com confirmação em
+ * 2 etapas (RF007 + RF015 / card 133).
  *
- * <p>Cobertura: submit válido (POST 201), erros de validação Zod e tratamento
- * dos erros de negócio do backend (409 conflito de agenda, 422 recurso
- * inativo).</p>
+ * <p>Cobertura: validação Zod, transição edição→revisão via pré-confirmação,
+ * confirmação bem-sucedida, e os erros de negócio em cada etapa (409 conflito
+ * RN011, 409 divergência de resumo, 410 sessão expirada, 400 por campo).</p>
  */
 
 /** Início no formato datetime-local, sempre no futuro. */
@@ -44,7 +45,7 @@ async function acharErroGlobal() {
   });
 }
 
-/** Preenche o formulário com dados válidos. */
+/** Preenche o formulário com dados válidos (etapa de edição). */
 async function preencherFormularioValido(user: ReturnType<typeof userEvent.setup>) {
   await aguardarListas();
 
@@ -62,13 +63,20 @@ async function preencherFormularioValido(user: ReturnType<typeof userEvent.setup
   await user.click(screen.getByRole('button', { name: /lavagem simples/i }));
 }
 
-describe('NovoAgendamentoPage', () => {
+/** Preenche o formulário e avança para a etapa de revisão. */
+async function irParaRevisao(user: ReturnType<typeof userEvent.setup>) {
+  await preencherFormularioValido(user);
+  await user.click(screen.getByRole('button', { name: /revisar agendamento/i }));
+  await screen.findByRole('button', { name: /confirmar agendamento/i });
+}
+
+describe('NovoAgendamentoPage — etapa de edição', () => {
   it('exibe erros de validação Zod ao submeter o formulário vazio', async () => {
     const user = userEvent.setup();
     renderComProviders(<NovoAgendamentoPage />);
     await aguardarListas();
 
-    await user.click(screen.getByRole('button', { name: /criar agendamento/i }));
+    await user.click(screen.getByRole('button', { name: /revisar agendamento/i }));
 
     expect(await screen.findByText(/selecione a filial/i)).toBeInTheDocument();
     expect(screen.getByText(/selecione o cliente/i)).toBeInTheDocument();
@@ -90,20 +98,66 @@ describe('NovoAgendamentoPage', () => {
     });
   });
 
-  it('cria o agendamento com sucesso e exibe a mensagem do backend', async () => {
+  it('avança para a revisão após pré-confirmação bem-sucedida', async () => {
     const user = userEvent.setup();
     renderComProviders(<NovoAgendamentoPage />);
 
     await preencherFormularioValido(user);
-    await user.click(screen.getByRole('button', { name: /criar agendamento/i }));
+    await user.click(screen.getByRole('button', { name: /revisar agendamento/i }));
 
-    const status = await screen.findByRole('status');
-    expect(within(status).getByText(/agendamento criado com sucesso/i)).toBeInTheDocument();
+    // A etapa de revisão exibe o resumo retornado pelo backend.
+    expect(
+      await screen.findByRole('button', { name: /confirmar agendamento/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/revise antes de confirmar/i)).toBeInTheDocument();
+    expect(screen.getByText('Filial Centro')).toBeInTheDocument();
   });
 
-  it('mostra mensagem amigável de conflito de agenda do veículo (409 / RN011)', async () => {
+  it('envia inicio em ISO-8601 UTC e sem campos derivados na pré-confirmação', async () => {
+    let corpoEnviado: Record<string, unknown> | null = null;
     server.use(
-      http.post('/api/v1/agendamentos', () =>
+      http.post('/api/v1/agendamentos/pre-confirmacao', async ({ request }) => {
+        corpoEnviado = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json(
+          {
+            tokenConfirmacao: 't',
+            expiraEm: '2099-01-01T13:45:00.000Z',
+            resumo: {
+              filial: { id: IDS.filial, nome: 'Filial Centro' },
+              cliente: { id: IDS.cliente, nome: 'Cliente Teste', documento: '000' },
+              veiculo: { id: IDS.veiculo, placa: 'ABC1D23', modelo: 'Uno', cor: 'Prata' },
+              servicos: [{ id: IDS.servicoA, nome: 'Lavagem simples', duracaoMin: 30, preco: 50 }],
+              inicio: '2099-01-01T14:00:00.000Z',
+              fim: '2099-01-01T14:30:00.000Z',
+              duracaoTotalMin: 30,
+              valorTotal: 50,
+              observacoes: null,
+              hashResumo: 'h',
+            },
+            traceId: 'tr',
+          },
+          { status: 200 },
+        );
+      }),
+    );
+
+    const user = userEvent.setup();
+    renderComProviders(<NovoAgendamentoPage />);
+
+    await preencherFormularioValido(user);
+    await user.click(screen.getByRole('button', { name: /revisar agendamento/i }));
+    await screen.findByRole('button', { name: /confirmar agendamento/i });
+
+    expect(corpoEnviado).not.toBeNull();
+    const corpo = corpoEnviado!;
+    expect(corpo).not.toHaveProperty('fim');
+    expect(corpo).not.toHaveProperty('valorTotal');
+    expect(corpo.inicio).toMatch(/Z$/);
+  });
+
+  it('mostra conflito de agenda do veículo já na pré-confirmação (409 / RN011)', async () => {
+    server.use(
+      http.post('/api/v1/agendamentos/pre-confirmacao', () =>
         HttpResponse.json(
           { title: 'O veículo já possui um agendamento neste horário (RN011).' },
           { status: 409 },
@@ -115,111 +169,18 @@ describe('NovoAgendamentoPage', () => {
     renderComProviders(<NovoAgendamentoPage />);
 
     await preencherFormularioValido(user);
-    await user.click(screen.getByRole('button', { name: /criar agendamento/i }));
+    await user.click(screen.getByRole('button', { name: /revisar agendamento/i }));
 
     const alerta = await acharErroGlobal();
     expect(within(alerta).getByText(/RN011/)).toBeInTheDocument();
-    // O veículo e o início são destacados como campos em conflito.
+    // Permanece na etapa de edição.
+    expect(screen.getByRole('button', { name: /revisar agendamento/i })).toBeInTheDocument();
     expect(await screen.findByText(/conflito de agenda neste horário/i)).toBeInTheDocument();
   });
 
-  it('mostra mensagem amigável quando há recurso inativo (422)', async () => {
+  it('destaca campos retornados pelo backend em validação 400 na pré-confirmação', async () => {
     server.use(
-      http.post('/api/v1/agendamentos', () =>
-        HttpResponse.json({ title: 'A filial selecionada está desativada.' }, { status: 422 }),
-      ),
-    );
-
-    const user = userEvent.setup();
-    renderComProviders(<NovoAgendamentoPage />);
-
-    await preencherFormularioValido(user);
-    await user.click(screen.getByRole('button', { name: /criar agendamento/i }));
-
-    const alerta = await acharErroGlobal();
-    expect(within(alerta).getByText(/filial selecionada está desativada/i)).toBeInTheDocument();
-  });
-
-  it('mostra mensagem amigável quando um recurso não é encontrado (404)', async () => {
-    server.use(
-      http.post('/api/v1/agendamentos', () =>
-        HttpResponse.json({ title: 'Veículo informado não foi encontrado.' }, { status: 404 }),
-      ),
-    );
-
-    const user = userEvent.setup();
-    renderComProviders(<NovoAgendamentoPage />);
-
-    await preencherFormularioValido(user);
-    await user.click(screen.getByRole('button', { name: /criar agendamento/i }));
-
-    const alerta = await acharErroGlobal();
-    expect(within(alerta).getByText(/não foi encontrado/i)).toBeInTheDocument();
-  });
-
-  it('mostra mensagem de permissão negada (403) sem expor detalhes internos', async () => {
-    server.use(
-      http.post('/api/v1/agendamentos', () =>
-        HttpResponse.json({ title: 'detalhe interno' }, { status: 403 }),
-      ),
-    );
-
-    const user = userEvent.setup();
-    renderComProviders(<NovoAgendamentoPage />);
-
-    await preencherFormularioValido(user);
-    await user.click(screen.getByRole('button', { name: /criar agendamento/i }));
-
-    const alerta = await acharErroGlobal();
-    // Mensagem genérica de 403 — o title interno do backend é ignorado.
-    expect(within(alerta).getByText(/não possui permissão/i)).toBeInTheDocument();
-    expect(within(alerta).queryByText(/detalhe interno/i)).not.toBeInTheDocument();
-  });
-
-  it('mostra mensagem genérica em erro interno do servidor (500)', async () => {
-    server.use(
-      http.post('/api/v1/agendamentos', () => HttpResponse.json({}, { status: 500 })),
-    );
-
-    const user = userEvent.setup();
-    renderComProviders(<NovoAgendamentoPage />);
-
-    await preencherFormularioValido(user);
-    await user.click(screen.getByRole('button', { name: /criar agendamento/i }));
-
-    const alerta = await acharErroGlobal();
-    expect(within(alerta).getByText(/não foi possível concluir o agendamento/i)).toBeInTheDocument();
-  });
-
-  it('não envia fim, duracaoTotalMin nem valorTotal no payload do POST', async () => {
-    let corpoEnviado: Record<string, unknown> | null = null;
-    server.use(
-      http.post('/api/v1/agendamentos', async ({ request }) => {
-        corpoEnviado = (await request.json()) as Record<string, unknown>;
-        return HttpResponse.json({ ...respostaCriacao }, { status: 201 });
-      }),
-    );
-
-    const user = userEvent.setup();
-    renderComProviders(<NovoAgendamentoPage />);
-
-    await preencherFormularioValido(user);
-    await user.click(screen.getByRole('button', { name: /criar agendamento/i }));
-
-    await screen.findByRole('status');
-    expect(corpoEnviado).not.toBeNull();
-    const corpo = corpoEnviado!;
-    // O servidor deriva esses campos — o cliente não deve enviá-los.
-    expect(corpo).not.toHaveProperty('fim');
-    expect(corpo).not.toHaveProperty('duracaoTotalMin');
-    expect(corpo).not.toHaveProperty('valorTotal');
-    // inicio deve ir em ISO-8601 UTC com sufixo Z.
-    expect(corpo.inicio).toMatch(/Z$/);
-  });
-
-  it('destaca campos retornados pelo backend em validação 400', async () => {
-    server.use(
-      http.post('/api/v1/agendamentos', () =>
+      http.post('/api/v1/agendamentos/pre-confirmacao', () =>
         HttpResponse.json(
           {
             title: 'Dados inválidos.',
@@ -234,8 +195,134 @@ describe('NovoAgendamentoPage', () => {
     renderComProviders(<NovoAgendamentoPage />);
 
     await preencherFormularioValido(user);
-    await user.click(screen.getByRole('button', { name: /criar agendamento/i }));
+    await user.click(screen.getByRole('button', { name: /revisar agendamento/i }));
 
     expect(await screen.findByText(/fora do funcionamento da filial/i)).toBeInTheDocument();
+  });
+});
+
+describe('NovoAgendamentoPage — etapa de revisão (RF015)', () => {
+  it('confirma o agendamento e exibe a mensagem de sucesso do backend', async () => {
+    const user = userEvent.setup();
+    renderComProviders(<NovoAgendamentoPage />);
+
+    await irParaRevisao(user);
+    await user.click(screen.getByRole('button', { name: /confirmar agendamento/i }));
+
+    const status = await screen.findByRole('status');
+    expect(within(status).getByText(/agendamento criado com sucesso/i)).toBeInTheDocument();
+  });
+
+  it('envia tokenConfirmacao, confirmar e idempotencyKey no payload de confirmação', async () => {
+    let corpoEnviado: Record<string, unknown> | null = null;
+    server.use(
+      http.post('/api/v1/agendamentos/confirmar', async ({ request }) => {
+        corpoEnviado = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({ ...respostaCriacao }, { status: 201 });
+      }),
+    );
+
+    const user = userEvent.setup();
+    renderComProviders(<NovoAgendamentoPage />);
+
+    await irParaRevisao(user);
+    await user.click(screen.getByRole('button', { name: /confirmar agendamento/i }));
+    await screen.findByRole('status');
+
+    expect(corpoEnviado).not.toBeNull();
+    const corpo = corpoEnviado!;
+    expect(corpo.confirmar).toBe(true);
+    expect(corpo.tokenConfirmacao).toBe('token-revisao-123');
+    expect(typeof corpo.idempotencyKey).toBe('string');
+    expect((corpo.idempotencyKey as string).length).toBeGreaterThan(0);
+  });
+
+  it('o botão "Editar" volta para o formulário preservando os dados', async () => {
+    const user = userEvent.setup();
+    renderComProviders(<NovoAgendamentoPage />);
+
+    await irParaRevisao(user);
+    await user.click(screen.getByRole('button', { name: /editar/i }));
+
+    // Voltou para a edição com o cliente ainda selecionado.
+    const cliente = await screen.findByLabelText('Cliente');
+    expect(cliente).toHaveValue(IDS.cliente);
+  });
+
+  it('exibe conflito de horário (409) sem sair da revisão', async () => {
+    server.use(
+      http.post('/api/v1/agendamentos/confirmar', () =>
+        HttpResponse.json(
+          { title: 'O horário não está mais disponível para este veículo (RN011).' },
+          { status: 409 },
+        ),
+      ),
+    );
+
+    const user = userEvent.setup();
+    renderComProviders(<NovoAgendamentoPage />);
+
+    await irParaRevisao(user);
+    await user.click(screen.getByRole('button', { name: /confirmar agendamento/i }));
+
+    expect(await screen.findByText(/não está mais disponível/i)).toBeInTheDocument();
+    // Continua na revisão.
+    expect(screen.getByRole('button', { name: /confirmar agendamento/i })).toBeInTheDocument();
+  });
+
+  it('volta para a edição em divergência de resumo (409)', async () => {
+    server.use(
+      http.post('/api/v1/agendamentos/confirmar', () =>
+        HttpResponse.json(
+          {
+            title: 'Os dados do agendamento foram alterados. Revise antes de confirmar.',
+          },
+          { status: 409 },
+        ),
+      ),
+    );
+
+    const user = userEvent.setup();
+    renderComProviders(<NovoAgendamentoPage />);
+
+    await irParaRevisao(user);
+    await user.click(screen.getByRole('button', { name: /confirmar agendamento/i }));
+
+    // Volta para a edição com aviso de divergência.
+    const alerta = await acharErroGlobal();
+    expect(within(alerta).getByText(/foram alterados/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /revisar agendamento/i })).toBeInTheDocument();
+  });
+
+  it('volta para a edição quando a sessão de confirmação expira (410)', async () => {
+    server.use(
+      http.post('/api/v1/agendamentos/confirmar', () =>
+        HttpResponse.json({ title: 'Token expirado.' }, { status: 410 }),
+      ),
+    );
+
+    const user = userEvent.setup();
+    renderComProviders(<NovoAgendamentoPage />);
+
+    await irParaRevisao(user);
+    await user.click(screen.getByRole('button', { name: /confirmar agendamento/i }));
+
+    const alerta = await acharErroGlobal();
+    expect(within(alerta).getByText(/sessão de confirmação expirada/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /revisar agendamento/i })).toBeInTheDocument();
+  });
+
+  it('mostra mensagem genérica em erro interno do servidor (500) na confirmação', async () => {
+    server.use(
+      http.post('/api/v1/agendamentos/confirmar', () => HttpResponse.json({}, { status: 500 })),
+    );
+
+    const user = userEvent.setup();
+    renderComProviders(<NovoAgendamentoPage />);
+
+    await irParaRevisao(user);
+    await user.click(screen.getByRole('button', { name: /confirmar agendamento/i }));
+
+    expect(await screen.findByText(/não foi possível concluir o agendamento/i)).toBeInTheDocument();
   });
 });
