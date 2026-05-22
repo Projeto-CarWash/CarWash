@@ -42,6 +42,12 @@ public class PreConfirmarAgendamentoEndpointTests : IAsyncDisposable
         var (filialId, clienteId, veiculoId, servicoIds) = await SemearDependenciasAsync();
         var inicio = DateTime.UtcNow.AddDays(1);
 
+        int idempotenciaAntes;
+        await using (var dbAntes = NovoDbContext())
+        {
+            idempotenciaAntes = await dbAntes.IdempotenciaRequisicoes.CountAsync();
+        }
+
         var response = await client.PostAsJsonAsync(RotaPreConfirmar, new
         {
             filialId,
@@ -66,10 +72,12 @@ public class PreConfirmarAgendamentoEndpointTests : IAsyncDisposable
         resumo.GetProperty("valorTotal").GetDecimal().Should().BeGreaterThan(0m);
         resumo.GetProperty("hashResumo").GetString().Should().NotBeNullOrWhiteSpace();
 
-        // O cerne do item 1: nada foi gravado.
+        // O cerne do item 1: nada foi gravado pela pré-confirmação. A contagem de
+        // idempotência usa delta antes/depois — o banco de integração é compartilhado.
         await using var db = NovoDbContext();
         (await db.Agendamentos.CountAsync(a => a.VeiculoId == veiculoId)).Should().Be(0);
-        (await db.IdempotenciaRequisicoes.CountAsync()).Should().Be(0);
+        (await db.IdempotenciaRequisicoes.CountAsync()).Should()
+            .Be(idempotenciaAntes, "a pré-confirmação não pode criar registros de idempotência");
     }
 
     /// <summary>O token devolvido tem o formato esperado de duas partes base64url.</summary>
