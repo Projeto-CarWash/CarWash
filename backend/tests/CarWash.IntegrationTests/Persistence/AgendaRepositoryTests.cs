@@ -173,7 +173,7 @@ public class AgendaRepositoryTests : IAsyncDisposable
             criadoPor: AdminId,
             inicio: inicio,
             fim: inicio.AddMinutes(Math.Max(duracaoTotal, 30)),
-            responsavelId: AdminId,
+            responsavelId: null,
             observacoes: null,
             duracaoTotalMin: duracaoTotal,
             valorTotal: valorTotal);

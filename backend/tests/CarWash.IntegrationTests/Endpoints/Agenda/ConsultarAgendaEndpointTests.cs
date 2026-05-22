@@ -513,18 +513,19 @@ public class ConsultarAgendaEndpointTests : IAsyncDisposable
         var filialId = await SemearFilialVaziaAsync();
         var (clienteA, veiculoA) = await SemearClienteVeiculoAsync();
         var (clienteB, veiculoB) = await SemearClienteVeiculoAsync();
+        var responsavelId = await SemearFiliadoAsync(clienteA);
 
         var baseInicio = new DateTime(2026, 8, 5, 10, 0, 0, DateTimeKind.Utc);
 
-        // Apenas o primeiro agendamento tem AdminId como responsavel.
+        // Apenas o primeiro agendamento tem o filiado como responsavel.
         var idComResponsavel = await SemearAgendamentoCruAsync(
-            filialId, clienteA, veiculoA, baseInicio, responsavelId: AdminId);
+            filialId, clienteA, veiculoA, baseInicio, responsavelId: responsavelId);
         await SemearAgendamentoCruAsync(
             filialId, clienteB, veiculoB, baseInicio.AddHours(2), responsavelId: null);
 
         var url = new Uri(
             MontarUrl("simples", filialId, baseInicio.AddHours(-1), baseInicio.AddHours(4)).OriginalString
-            + $"&usuarioId={AdminId}",
+            + $"&usuarioId={responsavelId}",
             UriKind.Relative);
         var response = await client.GetAsync(url);
 
@@ -660,6 +661,24 @@ public class ConsultarAgendaEndpointTests : IAsyncDisposable
     }
 
     /// <summary>
+    /// Semeia um filiado (responsável) vinculado a um cliente e devolve o seu id —
+    /// necessário porque <c>Agendamento.ResponsavelId</c> tem FK para <c>filiados</c>.
+    /// </summary>
+    private async Task<Guid> SemearFiliadoAsync(Guid clienteId)
+    {
+        await using var db = NovoDbContext();
+        var filiado = Filiado.Criar(
+            id: Guid.NewGuid(),
+            clienteId: clienteId,
+            nome: "Responsavel Teste",
+            telefone: new Telefone("11987654321"),
+            rg: "123456789");
+        db.Filiados.Add(filiado);
+        await db.SaveChangesAsync();
+        return filiado.Id;
+    }
+
+    /// <summary>
     /// Semeia um agendamento "cru" (sem itens de serviço) numa filial dada.
     /// SaveChanges isolado garante CriadoEm distinto entre chamadas consecutivas.
     /// </summary>
@@ -755,7 +774,7 @@ public class ConsultarAgendaEndpointTests : IAsyncDisposable
             criadoPor: AdminId,
             inicio: inicio,
             fim: inicio.AddMinutes(Math.Max(duracaoTotal, 30)),
-            responsavelId: AdminId,
+            responsavelId: null,
             observacoes: observacoes,
             duracaoTotalMin: duracaoTotal,
             valorTotal: valorTotal);
