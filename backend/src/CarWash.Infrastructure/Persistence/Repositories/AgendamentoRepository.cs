@@ -100,25 +100,57 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
             await _db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
         }
-        catch (DbUpdateException ex)
+#pragma warning disable CA1031 // Toda falha de persistência é reavaliada como conflito da RN011 antes de subir.
+        catch (Exception ex)
+#pragma warning restore CA1031
         {
+            if (ex is OperationCanceledException)
+            {
+                throw;
+            }
+
             await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
 
-            // RN011: a violação direta da EXCLUDE chega como 23P01; sob concorrência,
-            // a transação perdedora pode falhar com outro SQLSTATE (deadlock, erro em
-            // cascata). Reconfirmamos relendo a agenda do veículo após o rollback — se
-            // já há um agendamento conflitante persistido, o desfecho é 409, não 500.
-            if (IsConflitoVeiculoViolation(ex)
-                || await ExisteConflitoVeiculoAsync(
-                    agendamento.VeiculoId,
-                    agendamento.Inicio,
-                    agendamento.Fim,
-                    cancellationToken).ConfigureAwait(false))
+            if (await FalhaIndicaConflitoVeiculoAsync(ex, agendamento, cancellationToken).ConfigureAwait(false))
             {
                 throw new AgendamentoConflitanteException(ex);
             }
 
             throw;
+        }
+    }
+
+    /// <summary>
+    /// Determina se uma falha de persistência foi, na verdade, a perda da corrida da
+    /// RN011. Reconhece a violação direta da EXCLUDE pelo SQLSTATE
+    /// (<see cref="IsConflitoVeiculoViolation"/>); para qualquer outra falha — deadlock,
+    /// erro em cascata, exceção não encapsulada pelo EF — reconsulta a agenda do veículo
+    /// (a transação já foi revertida). Havendo agendamento conflitante persistido, a
+    /// falha é um conflito (409). Erro na própria releitura devolve <c>false</c>.
+    /// </summary>
+    private async Task<bool> FalhaIndicaConflitoVeiculoAsync(
+        Exception falha,
+        Agendamento agendamento,
+        CancellationToken cancellationToken)
+    {
+        if (falha is DbUpdateException due && IsConflitoVeiculoViolation(due))
+        {
+            return true;
+        }
+
+        try
+        {
+            return await ExisteConflitoVeiculoAsync(
+                agendamento.VeiculoId,
+                agendamento.Inicio,
+                agendamento.Fim,
+                cancellationToken).ConfigureAwait(false);
+        }
+#pragma warning disable CA1031 // Falha na releitura não deve mascarar a exceção original.
+        catch (Exception)
+#pragma warning restore CA1031
+        {
+            return false;
         }
     }
 
