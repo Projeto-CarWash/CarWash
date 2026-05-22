@@ -21,6 +21,15 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
     /// <summary>Prefixo das constraints EXCLUDE de conflito de veículo (RN011).</summary>
     private const string ConstraintConflitoVeiculoPrefixo = "ex_ag_veiculo";
 
+    /// <summary>
+    /// SQLSTATEs de concorrência do PostgreSQL — <c>deadlock_detected</c> (40P01) e
+    /// <c>serialization_failure</c> (40001). Sob dois INSERTs concorrentes na mesma
+    /// janela, a constraint EXCLUDE GiST pode abortar a transação perdedora por
+    /// deadlock em vez de <c>exclusion_violation</c>; o desfecho da RN011 é o mesmo —
+    /// a transação não persistiu — então o resultado correto é 409, não 500.
+    /// </summary>
+    private static readonly string[] ConcorrenciaSqlStates = ["40P01", "40001"];
+
     private readonly CarWashDbContext _db;
 
     public AgendamentoRepository(CarWashDbContext db)
@@ -99,10 +108,11 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
     }
 
     /// <summary>
-    /// Detecta a violação da constraint EXCLUDE de conflito de veículo (RN011).
-    /// Reconhece tanto pelo SQLSTATE <c>23P01</c> (exclusion_violation) quanto
-    /// pelo nome da constraint começar com <c>ex_ag_veiculo</c> — cobre a
-    /// <c>ex_ag_veiculo_janela</c> criada na <c>InitialSchema</c>.
+    /// Detecta o conflito de janela de veículo (RN011) durante a persistência.
+    /// Reconhece o SQLSTATE <c>23P01</c> (exclusion_violation), o nome da constraint
+    /// começar com <c>ex_ag_veiculo</c> e ainda os SQLSTATEs de concorrência
+    /// (<c>40P01</c>/<c>40001</c>): dois INSERTs simultâneos na mesma janela podem
+    /// abortar a transação perdedora por deadlock — o desfecho da RN011 é idêntico.
     /// </summary>
     private static bool IsConflitoVeiculoViolation(DbUpdateException exception)
     {
@@ -119,6 +129,10 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
         var ehConstraintDeVeiculo = pg.ConstraintName is { } nome
             && nome.Contains(ConstraintConflitoVeiculoPrefixo, StringComparison.OrdinalIgnoreCase);
 
-        return ehExclusionViolation || ehConstraintDeVeiculo;
+        var ehConcorrencia = Array.Exists(
+            ConcorrenciaSqlStates,
+            estado => string.Equals(pg.SqlState, estado, StringComparison.Ordinal));
+
+        return ehExclusionViolation || ehConstraintDeVeiculo || ehConcorrencia;
     }
 }
