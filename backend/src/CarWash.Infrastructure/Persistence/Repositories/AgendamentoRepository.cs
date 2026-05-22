@@ -209,28 +209,30 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
             await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
             return ResultadoConfirmacaoIdempotente.Persistido();
         }
-        catch (DbUpdateException ex)
+#pragma warning disable CA1031 // Toda falha de persistência é reavaliada (idempotência/RN011) antes de subir.
+        catch (Exception ex)
+#pragma warning restore CA1031
         {
+            if (ex is OperationCanceledException)
+            {
+                throw;
+            }
+
             await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
 
             // Corrida de duas confirmações com a MESMA chave: a UNIQUE da idempotência
             // rejeitou esta transação. Relemos o registro vencedor num contexto limpo —
             // payload igual → replay; diferente → conflito.
-            if (IsIdempotenciaViolation(ex))
+            if (ex is DbUpdateException due && IsIdempotenciaViolation(due))
             {
                 return await ResolverVencedorAsync(idempotencia, cancellationToken).ConfigureAwait(false);
             }
 
             // RN011: conflito de janela do veículo. A violação direta da EXCLUDE chega
-            // como 23P01; sob concorrência a transação perdedora pode falhar com outro
-            // SQLSTATE. Reconfirmamos relendo a agenda do veículo — havendo agendamento
+            // como 23P01; sob concorrência a transação perdedora pode falhar de outras
+            // formas. Reconfirmamos relendo a agenda do veículo — havendo agendamento
             // conflitante persistido, o desfecho é 409, não 500.
-            if (IsConflitoVeiculoViolation(ex)
-                || await ExisteConflitoVeiculoAsync(
-                    agendamento.VeiculoId,
-                    agendamento.Inicio,
-                    agendamento.Fim,
-                    cancellationToken).ConfigureAwait(false))
+            if (await FalhaIndicaConflitoVeiculoAsync(ex, agendamento, cancellationToken).ConfigureAwait(false))
             {
                 throw new AgendamentoConflitanteException(
                     AgendamentoConflitanteException.MensagemConfirmacao,
