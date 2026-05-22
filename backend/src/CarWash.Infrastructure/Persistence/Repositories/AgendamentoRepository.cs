@@ -100,10 +100,25 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
             await _db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
         }
-        catch (DbUpdateException ex) when (IsConflitoVeiculoViolation(ex))
+        catch (DbUpdateException ex)
         {
             await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
-            throw new AgendamentoConflitanteException(ex);
+
+            // RN011: a violação direta da EXCLUDE chega como 23P01; sob concorrência,
+            // a transação perdedora pode falhar com outro SQLSTATE (deadlock, erro em
+            // cascata). Reconfirmamos relendo a agenda do veículo após o rollback — se
+            // já há um agendamento conflitante persistido, o desfecho é 409, não 500.
+            if (IsConflitoVeiculoViolation(ex)
+                || await ExisteConflitoVeiculoAsync(
+                    agendamento.VeiculoId,
+                    agendamento.Inicio,
+                    agendamento.Fim,
+                    cancellationToken).ConfigureAwait(false))
+            {
+                throw new AgendamentoConflitanteException(ex);
+            }
+
+            throw;
         }
     }
 
