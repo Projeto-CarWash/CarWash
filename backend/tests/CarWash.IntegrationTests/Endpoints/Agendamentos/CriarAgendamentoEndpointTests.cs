@@ -497,12 +497,19 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
 
         var respostas = await Task.WhenAll(t1, t2);
 
-        respostas.Count(r => r.StatusCode == HttpStatusCode.Created).Should().Be(1);
-        respostas.Count(r => r.StatusCode == HttpStatusCode.Conflict).Should().Be(1);
+        var codigos = respostas.Select(r => (int)r.StatusCode).ToArray();
+        var resumo = string.Join(", ", codigos);
 
-        // O banco deve ter exatamente 1 agendamento para o veículo na janela.
+        // O banco deve ter exatamente 1 agendamento para o veículo na janela —
+        // invariante de dados garantida pela constraint EXCLUDE ex_ag_veiculo_janela.
         await using var db = NovoDbContext();
-        (await db.Agendamentos.CountAsync(a => a.VeiculoId == veiculoId)).Should().Be(1);
+        (await db.Agendamentos.CountAsync(a => a.VeiculoId == veiculoId))
+            .Should().Be(1, "a EXCLUDE garante no máximo 1 agendamento na janela (códigos HTTP: {0})", resumo);
+
+        codigos.Count(c => c == 201).Should()
+            .Be(1, "exatamente um POST concorrente deve vencer com 201 (códigos HTTP: {0})", resumo);
+        codigos.Count(c => c == 409).Should()
+            .Be(1, "o POST perdedor deve receber 409, não outro código (códigos HTTP: {0})", resumo);
     }
 
     [Fact]
@@ -541,11 +548,12 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
             .ToListAsync();
         agendamentos.Should().HaveCount(1);
 
-        // Nenhum item/histórico solto de um agendamento que não existe.
-        var idsValidos = agendamentos.ToHashSet();
-        (await db.AgendamentoItens.CountAsync(i => !idsValidos.Contains(i.AgendamentoId)))
+        // Nenhum item/histórico órfão: todo AgendamentoItem/Historico deve apontar
+        // para um agendamento existente. A varredura conta só os verdadeiros órfãos
+        // (FK pendente) — não dados de outros testes no banco compartilhado.
+        (await db.AgendamentoItens.CountAsync(i => !db.Agendamentos.Any(a => a.Id == i.AgendamentoId)))
             .Should().Be(0);
-        (await db.AgendamentoHistoricos.CountAsync(h => !idsValidos.Contains(h.AgendamentoId)))
+        (await db.AgendamentoHistoricos.CountAsync(h => !db.Agendamentos.Any(a => a.Id == h.AgendamentoId)))
             .Should().Be(0);
     }
 
