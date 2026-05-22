@@ -177,9 +177,7 @@ describe('NovoAgendamentoPage', () => {
   });
 
   it('mostra mensagem genérica em erro interno do servidor (500)', async () => {
-    server.use(
-      http.post('/api/v1/agendamentos', () => HttpResponse.json({}, { status: 500 })),
-    );
+    server.use(http.post('/api/v1/agendamentos', () => HttpResponse.json({}, { status: 500 })));
 
     const user = userEvent.setup();
     renderComProviders(<NovoAgendamentoPage />);
@@ -188,7 +186,9 @@ describe('NovoAgendamentoPage', () => {
     await user.click(screen.getByRole('button', { name: /criar agendamento/i }));
 
     const alerta = await acharErroGlobal();
-    expect(within(alerta).getByText(/não foi possível concluir o agendamento/i)).toBeInTheDocument();
+    expect(
+      within(alerta).getByText(/não foi possível concluir o agendamento/i),
+    ).toBeInTheDocument();
   });
 
   it('não envia fim, duracaoTotalMin nem valorTotal no payload do POST', async () => {
