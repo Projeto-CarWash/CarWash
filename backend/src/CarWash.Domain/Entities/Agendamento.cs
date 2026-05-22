@@ -36,6 +36,18 @@ public sealed class Agendamento : IAuditable, IAuditableSetter
 
     public string? Observacoes { get; private set; }
 
+    /// <summary>
+    /// Soma das durações dos serviços do agendamento, em minutos. Total denormalizado
+    /// para consulta de agenda sem N+1 (CHECK <c>ck_ag_duracao_total</c> &gt;= 0).
+    /// </summary>
+    public int DuracaoTotalMin { get; private set; }
+
+    /// <summary>
+    /// Soma dos preços aplicados dos serviços do agendamento. Total denormalizado
+    /// (CHECK <c>ck_ag_valor_total</c> &gt;= 0).
+    /// </summary>
+    public decimal ValorTotal { get; private set; }
+
     public int Versao { get; private set; }
 
     public DateTime CriadoEm { get; private set; }
@@ -51,7 +63,9 @@ public sealed class Agendamento : IAuditable, IAuditableSetter
         DateTime inicio,
         DateTime fim,
         Guid? responsavelId = null,
-        string? observacoes = null)
+        string? observacoes = null,
+        int duracaoTotalMin = 0,
+        decimal valorTotal = 0m)
     {
         if (id == Guid.Empty)
         {
@@ -83,6 +97,16 @@ public sealed class Agendamento : IAuditable, IAuditableSetter
             throw new DomainException("Início do agendamento deve ser anterior ao fim.");
         }
 
+        if (duracaoTotalMin < 0)
+        {
+            throw new DomainException("Duração total do agendamento não pode ser negativa.");
+        }
+
+        if (valorTotal < 0m)
+        {
+            throw new DomainException("Valor total do agendamento não pode ser negativo.");
+        }
+
         var agora = DateTime.UtcNow;
         return new Agendamento
         {
@@ -96,10 +120,32 @@ public sealed class Agendamento : IAuditable, IAuditableSetter
             Inicio = DateTime.SpecifyKind(inicio, DateTimeKind.Utc),
             Fim = DateTime.SpecifyKind(fim, DateTimeKind.Utc),
             Observacoes = observacoes,
+            DuracaoTotalMin = duracaoTotalMin,
+            ValorTotal = valorTotal,
             Versao = 1,
             CriadoEm = agora,
             AtualizadoEm = agora,
         };
+    }
+
+    /// <summary>
+    /// Define os totais denormalizados (RN006) a partir dos serviços agregados.
+    /// Mantém o agregado consistente após a montagem dos <see cref="AgendamentoItem"/>.
+    /// </summary>
+    public void DefinirTotais(int duracaoTotalMin, decimal valorTotal)
+    {
+        if (duracaoTotalMin < 0)
+        {
+            throw new DomainException("Duração total do agendamento não pode ser negativa.");
+        }
+
+        if (valorTotal < 0m)
+        {
+            throw new DomainException("Valor total do agendamento não pode ser negativo.");
+        }
+
+        DuracaoTotalMin = duracaoTotalMin;
+        ValorTotal = valorTotal;
     }
 
     public void Cancelar()

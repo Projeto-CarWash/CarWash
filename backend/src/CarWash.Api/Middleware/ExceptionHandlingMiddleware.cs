@@ -116,6 +116,17 @@ public sealed class ExceptionHandlingMiddleware
                     ["retryAfterSeconds"] = segundosRestantes,
                 }).ConfigureAwait(false);
         }
+        catch (RecursoInativoException ex)
+        {
+            // Requisição sintaticamente válida, mas referencia um recurso inativo
+            // (filial/veículo/cliente/serviço) — 422 Unprocessable Entity.
+            await EscreverProblemAsync(
+                context,
+                status: StatusCodes.Status422UnprocessableEntity,
+                slug: RecursoInativoException.SlugPadrao,
+                title: ex.Message,
+                erros: null).ConfigureAwait(false);
+        }
         catch (DomainException ex)
         {
             await EscreverProblemAsync(
