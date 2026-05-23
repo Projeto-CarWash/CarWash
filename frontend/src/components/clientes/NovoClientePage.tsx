@@ -12,6 +12,7 @@ import { clienteService } from '@/services/clienteService';
 
 import { ContatoEnderecoForm } from './ContatoEnderecoForm';
 import { IdentificacaoForm } from './IdentificacaoForm';
+import { PageHeader } from './PageHeader';
 import { Stepper } from './Stepper';
 
 import type { ClienteFormData } from '@/schemas/clienteSchema';
@@ -61,7 +62,12 @@ export function NovoClientePage() {
   const isDocFilled = docDigits.length === 11 || docDigits.length === 14;
   const isDateFilled = dateDigits.length === 8;
   const isNameFilled = nome.trim().length >= 3;
-  const isIdentificacaoComplete = isDocFilled && isDateFilled && isNameFilled;
+
+  const { errors } = form.formState;
+  const isDocValid = isDocFilled && !errors.cpfCnpj;
+  const isDateValid = isDateFilled && !errors.dataNascimento;
+  const isNameValid = isNameFilled && !errors.nome;
+  const isIdentificacaoComplete = isDocValid && isDateValid && isNameValid;
 
   const handleSubmit = useCallback(
     async (data: ClienteFormData) => {
@@ -119,100 +125,109 @@ export function NovoClientePage() {
     void navigate('/clientes', { replace: true });
   }, [form, navigate]);
 
+  const handleClearForm = useCallback(() => {
+    form.reset();
+    setGlobalError(null);
+    setSuccessMsg(null);
+  }, [form]);
+
   return (
-    <FormProvider {...form}>
-      <form
-        onSubmit={form.handleSubmit(handleSubmit)}
-        noValidate
-        className="grid grid-cols-[minmax(240px,300px)_minmax(0,1fr)] gap-6 px-8"
-      >
-        <Stepper currentStep={isIdentificacaoComplete ? 2 : 1} />
+    <>
+      <PageHeader onCancel={handleClearForm} step={isIdentificacaoComplete ? 2 : 1} />
+      <FormProvider {...form}>
+        <form
+          onSubmit={form.handleSubmit(handleSubmit)}
+          noValidate
+          className="grid grid-cols-[minmax(240px,300px)_minmax(0,1fr)] gap-6 px-8"
+        >
+          <Stepper currentStep={isIdentificacaoComplete ? 2 : 1} />
 
-        <div className="rounded-2xl border border-zinc-800/60 bg-zinc-900/30 p-8">
-          {globalError && (
-            <div
-              role="alert"
-              className="mb-6 flex items-start gap-3 rounded-xl border border-red-500/30 bg-red-950/30 px-4 py-3"
-            >
-              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-red-400">{globalError}</p>
+          <div className="rounded-2xl border border-zinc-800/60 bg-zinc-900/30 p-8">
+            {globalError && (
+              <div
+                role="alert"
+                className="mb-6 flex items-start gap-3 rounded-xl border border-red-500/30 bg-red-950/30 px-4 py-3"
+              >
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-red-400">{globalError}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setGlobalError(null)}
+                  className="shrink-0 text-red-500/60 transition-colors hover:text-red-400"
+                  aria-label="Fechar mensagem de erro"
+                >
+                  <X className="h-4 w-4" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setGlobalError(null)}
-                className="shrink-0 text-red-500/60 transition-colors hover:text-red-400"
-                aria-label="Fechar mensagem de erro"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          )}
+            )}
 
-          {successMsg && (
+            {successMsg && (
+              <div
+                role="status"
+                className="mb-6 flex items-start gap-3 rounded-xl border border-green-500/30 bg-green-950/30 px-4 py-3"
+              >
+                <Check className="mt-0.5 h-4 w-4 shrink-0 text-green-500" />
+                <p className="flex-1 text-sm font-medium text-green-400">{successMsg}</p>
+                <button
+                  type="button"
+                  onClick={() => setSuccessMsg(null)}
+                  className="shrink-0 text-green-500/60 transition-colors hover:text-green-400"
+                  aria-label="Fechar mensagem de sucesso"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+
+            <IdentificacaoForm />
+
             <div
-              role="status"
-              className="mb-6 flex items-start gap-3 rounded-xl border border-green-500/30 bg-green-950/30 px-4 py-3"
+              className={`overflow-hidden transition-all duration-700 ease-out ${
+                isIdentificacaoComplete
+                  ? 'mt-8 max-h-[1600px] translate-y-0 opacity-100'
+                  : 'mt-0 max-h-0 translate-y-4 opacity-0'
+              }`}
             >
-              <Check className="mt-0.5 h-4 w-4 shrink-0 text-green-500" />
-              <p className="flex-1 text-sm font-medium text-green-400">{successMsg}</p>
-              <button
-                type="button"
-                onClick={() => setSuccessMsg(null)}
-                className="shrink-0 text-green-500/60 transition-colors hover:text-green-400"
-                aria-label="Fechar mensagem de sucesso"
-              >
-                <X className="h-4 w-4" />
-              </button>
+              <Separator className="mb-8 bg-zinc-800/50" />
+              <ContatoEnderecoForm />
             </div>
-          )}
 
-          <IdentificacaoForm />
-
-          <div
-            className={`overflow-hidden transition-all duration-700 ease-out ${
-              isIdentificacaoComplete
-                ? 'mt-8 max-h-[1600px] translate-y-0 opacity-100'
-                : 'mt-0 max-h-0 translate-y-4 opacity-0'
-            }`}
-          >
-            <Separator className="mb-8 bg-zinc-800/50" />
-            <ContatoEnderecoForm />
-          </div>
-
-          <div
-            className={`flex items-center justify-end gap-3 overflow-hidden transition-all delay-200 duration-500 ease-out ${
-              isIdentificacaoComplete
-                ? 'mt-8 max-h-20 translate-y-0 opacity-100'
-                : 'mt-0 max-h-0 translate-y-4 opacity-0'
-            }`}
-          >
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleCancel}
-              className="h-10 rounded-full border-zinc-700/60 bg-transparent px-5 text-sm text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200"
+            <div
+              className={`flex items-center justify-end gap-3 overflow-hidden transition-all delay-200 duration-500 ease-out ${
+                isIdentificacaoComplete
+                  ? 'mt-8 max-h-20 translate-y-0 opacity-100'
+                  : 'mt-0 max-h-0 translate-y-4 opacity-0'
+              }`}
             >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              className="h-10 rounded-full bg-red-600 px-6 text-sm font-semibold text-white shadow-lg shadow-red-600/25 hover:bg-red-700 disabled:opacity-50"
-            >
-              {isSubmitting ? (
-                'Salvando...'
-              ) : (
-                <>
-                  Salvar cliente
-                  <ChevronRight className="ml-1 h-4 w-4" />
-                </>
-              )}
-            </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleCancel}
+                className="h-10 rounded-full border-zinc-700/60 bg-transparent px-5 text-sm text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="h-10 rounded-full bg-red-600 px-6 text-sm font-semibold text-white shadow-lg shadow-red-600/25 hover:bg-red-700 disabled:opacity-50"
+              >
+                {isSubmitting ? (
+                  'Salvando...'
+                ) : (
+                  <>
+                    Salvar cliente
+                    <ChevronRight className="ml-1 h-4 w-4" />
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
-        </div>
-      </form>
-    </FormProvider>
+        </form>
+      </FormProvider>
+    </>
   );
 }
 

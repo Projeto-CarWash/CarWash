@@ -19,6 +19,15 @@ public sealed class JwtOptions
     /// </summary>
     public string Secret { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Chave HMAC-SHA256 dedicada à assinatura do <c>tokenConfirmacao</c> da
+    /// confirmação de agendamento em duas etapas (RF015 / ADR 0004). ≥ 32 bytes.
+    /// Deliberadamente distinta de <see cref="Secret"/> — o token de confirmação
+    /// não é um access token e não deve compartilhar material de chave. Lida de
+    /// <c>Jwt__ConfirmacaoSigningKey</c> via binding; fail-fast se ausente.
+    /// </summary>
+    public string ConfirmacaoSigningKey { get; set; } = string.Empty;
+
     /// <summary>Validade do access token JWT em segundos. Default 900s = 15min.</summary>
     public int AccessTokenValiditySeconds { get; set; } = 900;
 
