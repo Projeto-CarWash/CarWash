@@ -23,6 +23,29 @@ namespace CarWash.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("CarWash.Domain.Entities.Cliente", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("nome");
+
+                    b.HasKey("Id")
+                        .HasName("pk_clientes");
+
+                    b.ToTable("clientes", "public");
+                });
+
             modelBuilder.Entity("CarWash.Domain.Entities.Session", b =>
                 {
                     b.Property<Guid>("Id")
@@ -108,6 +131,58 @@ namespace CarWash.Infrastructure.Migrations
                     b.ToTable("users", "public");
                 });
 
+            modelBuilder.Entity("CarWash.Domain.Entities.Veiculo", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ClienteId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("cliente_id");
+
+                    b.Property<string>("Cor")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("cor");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Fabricante")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("fabricante");
+
+                    b.Property<string>("Modelo")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("modelo");
+
+                    b.Property<string>("Placa")
+                        .IsRequired()
+                        .HasMaxLength(7)
+                        .HasColumnType("character varying(7)")
+                        .HasColumnName("placa");
+
+                    b.HasKey("Id")
+                        .HasName("pk_veiculos");
+
+                    b.HasIndex("ClienteId")
+                        .HasDatabaseName("ix_veiculos_cliente_id");
+
+                    b.HasIndex("Placa")
+                        .IsUnique()
+                        .HasDatabaseName("ix_veiculos_placa");
+
+                    b.ToTable("veiculos", "public");
+                });
+
             modelBuilder.Entity("CarWash.Domain.Entities.Session", b =>
                 {
                     b.HasOne("CarWash.Domain.Entities.User", "User")
@@ -118,6 +193,18 @@ namespace CarWash.Infrastructure.Migrations
                         .HasConstraintName("fk_sessions_users_user_id");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("CarWash.Domain.Entities.Veiculo", b =>
+                {
+                    b.HasOne("CarWash.Domain.Entities.Cliente", "Cliente")
+                        .WithMany("Veiculos")
+                        .HasForeignKey("ClienteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_veiculos_clientes_cliente_id");
+
+                    b.Navigation("Cliente");
                 });
 #pragma warning restore 612, 618
         }

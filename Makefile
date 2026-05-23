@@ -1,5 +1,42 @@
 # Makefile do CarWash — comandos comuns para o time
-# Uso: `make <alvo>`. Sempre rode da raiz do repo.
+# Sempre rode da raiz do repo.
+#
+# =============================================================================
+# COMO USAR
+# =============================================================================
+#
+# --- Linux / macOS / WSL ---------------------------------------------------
+#   Pré-requisitos: GNU make, docker, docker compose v2.
+#   Sintaxe:
+#       make <alvo> [ENV=dev|hom|prod] [SVC=backend|frontend|postgres]
+#   Exemplos:
+#       make up                       # sobe ambiente dev
+#       make up ENV=hom               # sobe homologação
+#       make logs ENV=dev SVC=backend # segue logs do backend
+#       make shell-db ENV=dev         # abre psql no postgres
+#       make smoke ENV=hom            # smoke test
+#
+# --- Windows (PowerShell) --------------------------------------------------
+#   Devs no Windows NÃO precisam de `make`. Use o script `make.ps1` ao lado
+#   deste arquivo, que espelha exatamente os mesmos alvos via docker compose.
+#
+#   Pré-requisitos: Docker Desktop (com WSL2 backend) e PowerShell 5+.
+#   Na primeira vez, libere a execução de scripts locais (uma vez por usuário):
+#       Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+#
+#   Sintaxe:
+#       .\make.ps1 <alvo> [-Env dev|hom|prod] [-Svc backend|frontend|postgres]
+#   Exemplos:
+#       .\make.ps1 up                          # sobe ambiente dev
+#       .\make.ps1 up -Env hom                 # sobe homologação
+#       .\make.ps1 logs -Env dev -Svc backend  # segue logs do backend
+#       .\make.ps1 shell-db -Env dev           # abre psql no postgres
+#       .\make.ps1 smoke -Env hom              # smoke test
+#       .\make.ps1 help                        # lista os alvos
+#
+#   Alternativa Windows: rode `make` dentro do WSL2 — funciona idêntico ao Linux.
+#
+# =============================================================================
 
 SHELL := /bin/bash
 

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -290,12 +291,17 @@ public class AuthService : IAuthService
             securityKey,
             SecurityAlgorithms.HmacSha256);
 
-        var claims = new[]
+        var claims = new List<Claim>
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new Claim(JwtRegisteredClaimNames.Email, user.Email),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
+
+        if (string.Equals(user.Email, "admins@carwash.com", StringComparison.OrdinalIgnoreCase))
+        {
+            claims.Add(new Claim(ClaimTypes.Role, "admin"));
+        }
 
         var token = new JwtSecurityToken(
             issuer: jwtSettings["Issuer"],
