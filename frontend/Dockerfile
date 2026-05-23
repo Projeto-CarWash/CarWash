@@ -26,10 +26,13 @@ RUN npm run build
 FROM nginx:${NGINX_VERSION}-alpine AS final
 
 # Usuário não-root: nginx alpine já tem o usuário 'nginx', mas precisamos
-# ajustar permissões para conseguir gravar pid/cache em paths não-privilegiados
+# ajustar permissões para conseguir gravar pid/cache em paths não-privilegiados.
+# Sem o chown abaixo o master falha com "mkdir() /var/cache/nginx/client_temp (13)".
 RUN sed -i 's,listen       80;,listen       8080;,' /etc/nginx/conf.d/default.conf 2>/dev/null || true \
     && sed -i 's,/var/run/nginx.pid,/tmp/nginx.pid,' /etc/nginx/nginx.conf \
-    && sed -i 's,user  nginx;,,' /etc/nginx/nginx.conf
+    && sed -i 's,/run/nginx.pid,/tmp/nginx.pid,' /etc/nginx/nginx.conf \
+    && sed -i 's,user  nginx;,,' /etc/nginx/nginx.conf \
+    && chown -R nginx:nginx /var/cache/nginx /var/log/nginx /etc/nginx/conf.d
 
 COPY --chown=nginx:nginx nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build --chown=nginx:nginx /app/dist /usr/share/nginx/html

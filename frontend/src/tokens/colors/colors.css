@@ -1,0 +1,59 @@
+/*
+ * Paleta CarWash — source of truth de cores (RNF010: base vermelho/preto,
+ * com tema claro e escuro). Os valores são em HSL "crus" (sem hsl()) para
+ * que componentes shadcn possam compor `hsl(var(--colors--primary) / <alpha>)`.
+ *
+ * Tailwind (em tailwind.config.js) lê todas as cores como
+ * `hsl(var(--colors--<nome>))`, então este arquivo é o único ponto onde
+ * trocas de paleta acontecem.
+ *
+ * Toggle dark/light: <html class="dark"> (controlado pelo ThemeProvider).
+ */
+
+:root {
+  /* Tema claro (default) */
+  --colors--background: 0 0% 100%;
+  --colors--foreground: 0 0% 4%;
+  --colors--card: 0 0% 100%;
+  --colors--cardForeground: 0 0% 4%;
+  --colors--popover: 0 0% 100%;
+  --colors--popoverForeground: 0 0% 4%;
+  --colors--primary: 0 72% 51%;
+  --colors--primaryForeground: 0 0% 98%;
+  --colors--secondary: 240 5% 96%;
+  --colors--secondaryForeground: 240 6% 10%;
+  --colors--muted: 240 5% 96%;
+  --colors--mutedForeground: 240 4% 46%;
+  --colors--accent: 240 5% 96%;
+  --colors--accentForeground: 240 6% 10%;
+  --colors--destructive: 0 84% 60%;
+  --colors--destructiveForeground: 0 0% 98%;
+  --colors--success: 153 60% 53%;
+  --colors--border: 240 6% 90%;
+  --colors--input: 240 6% 90%;
+  --colors--ring: 0 72% 51%;
+}
+
+.dark {
+  /* Tema escuro (paleta original do Lucas — vermelho/preto) */
+  --colors--background: 240 6% 4%;
+  --colors--foreground: 240 5% 96%;
+  --colors--card: 240 6% 6%;
+  --colors--cardForeground: 240 5% 96%;
+  --colors--popover: 240 6% 6%;
+  --colors--popoverForeground: 240 5% 96%;
+  --colors--primary: 355 100% 58%;
+  --colors--primaryForeground: 0 0% 100%;
+  --colors--secondary: 240 4% 6%;
+  --colors--secondaryForeground: 240 5% 96%;
+  --colors--muted: 240 4% 6%;
+  --colors--mutedForeground: 240 5% 41%;
+  --colors--accent: 240 6% 9%;
+  --colors--accentForeground: 240 5% 96%;
+  --colors--destructive: 355 100% 56%;
+  --colors--destructiveForeground: 0 0% 100%;
+  --colors--success: 153 60% 53%;
+  --colors--border: 240 6% 15%;
+  --colors--input: 240 6% 15%;
+  --colors--ring: 355 100% 56%;
+}
