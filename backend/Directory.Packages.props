@@ -59,6 +59,8 @@
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="8.0.2" />
     <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
+    <!-- BackgroundService / IHostedService — job de limpeza de idempotência (RF015). -->
+    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.1" />
 
     <!-- Analisadores comuns (referenciados em Directory.Build.props) -->
     <PackageVersion Include="StyleCop.Analyzers" Version="1.2.0-beta.556" />

@@ -18,6 +18,13 @@ public sealed class AgendamentoConflitanteException : ConflictException
     public const string MensagemPadrao =
         "O veículo já possui um agendamento neste horário. Escolha outro horário ou veículo.";
 
+    /// <summary>
+    /// Mensagem específica do RF015: conflito detectado no momento da confirmação,
+    /// indicando ao usuário que o horário foi tomado entre a prévia e a confirmação.
+    /// </summary>
+    public const string MensagemConfirmacao =
+        "O horário não está mais disponível. Atualize e confirme novamente.";
+
     public const string SlugPadrao = "agendamento-conflito-veiculo";
 
     public AgendamentoConflitanteException()

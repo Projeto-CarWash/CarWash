@@ -1,11 +1,6 @@
 import { HttpResponse, http } from 'msw';
 
-import type {
-  AgendaItemDetalhado,
-  AgendaItemSimples,
-  ConsultarAgendaResponse,
-} from '@/types/agenda';
-import type { AgendamentoResponse } from '@/types/agendamento';
+import type { AgendamentoResponse, PreConfirmacaoResponse } from '@/types/agendamento';
 
 /**
  * Fixtures e handlers MSW para os testes da feature de agendamento (RF007).
@@ -48,62 +43,35 @@ const respostaCriacao: AgendamentoResponse = {
   traceId: 'trace-abc',
 };
 
-/** Fixture de item da agenda no formato `simples`. */
-const agendaItemSimples: AgendaItemSimples = {
-  agendamentoId: '99999999-9999-4999-8999-999999999999',
-  inicio: '2099-01-01T13:00:00.000Z',
-  fim: '2099-01-01T14:30:00.000Z',
-  titulo: 'Lavagem Completa',
-  status: 'AGENDADO',
-  clienteNome: 'Maria Souza',
-  veiculoPlaca: 'ABC1D23',
-  servicosResumo: 'Lavagem Completa + 1',
-};
-
-/** Fixture de item da agenda no formato `detalhado`. */
-const agendaItemDetalhado: AgendaItemDetalhado = {
-  agendamentoId: '99999999-9999-4999-8999-999999999999',
-  status: 'AGENDADO',
-  filialId: IDS.filial,
-  inicio: '2099-01-01T13:00:00.000Z',
-  fim: '2099-01-01T14:30:00.000Z',
-  duracaoTotalMin: 90,
-  valorTotal: 150,
-  cliente: {
-    id: IDS.cliente,
-    nome: 'Maria Souza',
-    cpfCnpj: '12345678901',
-    telefone: '1133334444',
-    celular: '11999998888',
+/** Resumo de pré-confirmação reaproveitável (RF015, card 133). */
+const respostaPreConfirmacao: PreConfirmacaoResponse = {
+  tokenConfirmacao: 'token-revisao-123',
+  expiraEm: '2099-01-01T13:45:00.000Z',
+  resumo: {
+    filial: { id: IDS.filial, nome: 'Filial Centro' },
+    cliente: {
+      id: IDS.cliente,
+      nome: 'Cliente Teste',
+      documento: '123.456.789-00',
+    },
+    veiculo: {
+      id: IDS.veiculo,
+      placa: 'ABC1D23',
+      modelo: 'Uno',
+      cor: 'Prata',
+    },
+    servicos: [{ id: IDS.servicoA, nome: 'Lavagem simples', duracaoMin: 30, preco: 50 }],
+    inicio: '2099-01-01T14:00:00.000Z',
+    fim: '2099-01-01T14:30:00.000Z',
+    duracaoTotalMin: 30,
+    valorTotal: 50,
+    observacoes: null,
+    hashResumo: 'hash-abc',
   },
-  veiculo: {
-    id: IDS.veiculo,
-    placa: 'ABC1D23',
-    modelo: 'Civic',
-    fabricante: 'Honda',
-    cor: 'Preto',
-  },
-  servicos: [{ id: IDS.servicoA, nome: 'Lavagem Completa', duracaoMin: 60, preco: 100 }],
-  observacoes: 'Cliente pediu atenção ao porta-malas.',
-  criadoEm: '2026-04-20T12:00:00.000Z',
-  atualizadoEm: '2026-04-20T12:00:00.000Z',
+  traceId: 'trace-pre-abc',
 };
 
-/** Resposta `200` de `GET /api/v1/agenda` no formato `simples`. */
-const agendaRespostaSimples: ConsultarAgendaResponse<AgendaItemSimples> = {
-  message: 'Agenda consultada com sucesso.',
-  data: [agendaItemSimples],
-  traceId: 'trace-agenda-simples',
-};
-
-/** Resposta `200` de `GET /api/v1/agenda` no formato `detalhado`. */
-const agendaRespostaDetalhada: ConsultarAgendaResponse<AgendaItemDetalhado> = {
-  message: 'Agenda consultada com sucesso.',
-  data: [agendaItemDetalhado],
-  traceId: 'trace-agenda-detalhada',
-};
-
-/** Handlers do "caminho feliz" — listas de apoio e criação bem-sucedida. */
+/** Handlers do "caminho feliz" — listas de apoio e fluxo de confirmação. */
 export const handlersPadrao = [
   http.get('/api/v1/clientes', () =>
     HttpResponse.json({
@@ -163,14 +131,14 @@ export const handlersPadrao = [
 
   http.post('/api/v1/agendamentos', () => HttpResponse.json(respostaCriacao, { status: 201 })),
 
-  // Visualização de agenda (RF009 / card 132): responde conforme o `formato`.
-  http.get('/api/v1/agenda', ({ request }) => {
-    const formato = new URL(request.url).searchParams.get('formato');
-    return HttpResponse.json(
-      formato === 'detalhado' ? agendaRespostaDetalhada : agendaRespostaSimples,
-    );
-  }),
+  http.post('/api/v1/agendamentos/pre-confirmacao', () =>
+    HttpResponse.json(respostaPreConfirmacao, { status: 200 }),
+  ),
+
+  http.post('/api/v1/agendamentos/confirmar', () =>
+    HttpResponse.json(respostaCriacao, { status: 201 }),
+  ),
 ];
 
-/** Resposta de criação reaproveitável em asserções. */
-export { respostaCriacao, agendaRespostaSimples, agendaRespostaDetalhada };
+/** Fixtures reaproveitáveis em asserções. */
+export { respostaCriacao, respostaPreConfirmacao };

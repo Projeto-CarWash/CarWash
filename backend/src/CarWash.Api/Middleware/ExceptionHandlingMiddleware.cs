@@ -154,6 +154,18 @@ public sealed class ExceptionHandlingMiddleware
                 title: ex.Message,
                 erros: null).ConfigureAwait(false);
         }
+        catch (SessaoConfirmacaoExpiradaException ex)
+        {
+            // RF015: token de confirmação válido mas expirado — o recurso (sessão
+            // de confirmação) deixou de existir. 410 Gone para o cliente saber que
+            // deve gerar uma nova pré-confirmação em vez de apenas reenviar.
+            await EscreverProblemAsync(
+                context,
+                status: StatusCodes.Status410Gone,
+                slug: SessaoConfirmacaoExpiradaException.Slug,
+                title: ex.Message,
+                erros: null).ConfigureAwait(false);
+        }
         catch (BadHttpRequestException ex)
         {
             // Falha de binding do framework — diferenciar:

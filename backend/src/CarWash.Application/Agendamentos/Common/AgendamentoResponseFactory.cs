@@ -1,0 +1,55 @@
+using CarWash.Application.Agendamentos.Persistence;
+using CarWash.Domain.Entities;
+using CarWash.Domain.Enums;
+
+namespace CarWash.Application.Agendamentos.Common;
+
+/// <summary>
+/// Monta o <see cref="AgendamentoResponse"/> a partir do agregado persistido.
+/// Compartilhado entre a criação direta (RF007) e a confirmação (RF015) para que
+/// ambos os caminhos devolvam exatamente o mesmo contrato HTTP.
+/// </summary>
+public static class AgendamentoResponseFactory
+{
+    public const string MensagemSucesso = "Agendamento criado com sucesso.";
+
+    public static AgendamentoResponse Montar(
+        Agendamento agendamento,
+        IReadOnlyCollection<AgendamentoItem> itens,
+        IReadOnlyCollection<ServicoSnapshot> servicos,
+        string traceId)
+    {
+        ArgumentNullException.ThrowIfNull(agendamento);
+        ArgumentNullException.ThrowIfNull(itens);
+        ArgumentNullException.ThrowIfNull(servicos);
+
+        return new AgendamentoResponse
+        {
+            Id = agendamento.Id,
+            FilialId = agendamento.FilialId,
+            ClienteId = agendamento.ClienteId,
+            VeiculoId = agendamento.VeiculoId,
+            ResponsavelId = agendamento.ResponsavelId,
+            Status = agendamento.Status.ToDbValue(),
+            Inicio = agendamento.Inicio,
+            Fim = agendamento.Fim,
+            DuracaoTotalMin = agendamento.DuracaoTotalMin,
+            ValorTotal = agendamento.ValorTotal,
+            Observacoes = agendamento.Observacoes,
+            Versao = agendamento.Versao,
+            Itens = itens
+                .Select(item => new AgendamentoServicoResponse
+                {
+                    Id = item.Id,
+                    ServicoId = item.ServicoId,
+                    NomeServico = servicos.First(s => s.Id == item.ServicoId).Nome,
+                    PrecoAplicado = item.PrecoAplicado,
+                    DuracaoAplicada = item.DuracaoAplicada,
+                })
+                .ToList(),
+            CriadoEm = agendamento.CriadoEm,
+            Mensagem = MensagemSucesso,
+            TraceId = traceId,
+        };
+    }
+}

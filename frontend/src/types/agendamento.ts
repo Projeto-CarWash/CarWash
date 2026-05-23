@@ -58,3 +58,84 @@ export interface AgendamentoResponse {
   mensagem: string;
   traceId: string;
 }
+
+/* ----------------------------------------------------------------------------
+ * RF015 — fluxo de confirmação em 2 etapas (card 133).
+ *
+ * O frontend submete o formulário em `POST /api/v1/agendamentos/pre-confirmacao`
+ * (gera resumo + token, NÃO persiste) e, após revisão explícita, confirma em
+ * `POST /api/v1/agendamentos/confirmar` (persiste de fato). O backend continua
+ * sendo a fonte de verdade — o `hashResumo` permite detectar divergência.
+ * -------------------------------------------------------------------------- */
+
+/** Filial no resumo de pré-confirmação. */
+export interface ResumoFilial {
+  id: string;
+  nome: string;
+}
+
+/** Cliente no resumo de pré-confirmação. */
+export interface ResumoCliente {
+  id: string;
+  nome: string;
+  documento: string;
+}
+
+/** Veículo no resumo de pré-confirmação. */
+export interface ResumoVeiculo {
+  id: string;
+  placa: string;
+  modelo: string;
+  cor: string;
+}
+
+/** Serviço no resumo de pré-confirmação (preço/duração derivados pelo servidor). */
+export interface ResumoServico {
+  id: string;
+  nome: string;
+  duracaoMin: number;
+  preco: number;
+}
+
+/**
+ * Resumo do agendamento devolvido pela pré-confirmação. Reflete os recursos
+ * resolvidos e os totais derivados pelo backend; `hashResumo` é reenviado na
+ * confirmação para detectar alteração de dados entre as etapas.
+ */
+export interface ResumoConfirmacao {
+  filial: ResumoFilial;
+  cliente: ResumoCliente;
+  veiculo: ResumoVeiculo;
+  servicos: ResumoServico[];
+  /** Início em ISO-8601 UTC com `Z`. */
+  inicio: string;
+  /** Fim derivado pelo servidor, em ISO-8601 UTC com `Z`. */
+  fim: string;
+  duracaoTotalMin: number;
+  valorTotal: number;
+  observacoes: string | null;
+  hashResumo: string;
+}
+
+/** Resposta `200 OK` de `POST /api/v1/agendamentos/pre-confirmacao`. */
+export interface PreConfirmacaoResponse {
+  /** Token opaco que autoriza a confirmação subsequente. */
+  tokenConfirmacao: string;
+  /** Expiração da sessão de confirmação, em ISO-8601 UTC com `Z`. */
+  expiraEm: string;
+  resumo: ResumoConfirmacao;
+  traceId: string;
+}
+
+/**
+ * Corpo do `POST /api/v1/agendamentos/confirmar`.
+ *
+ * <p>Carrega os mesmos campos do agendamento mais o `tokenConfirmacao` da
+ * prévia, a flag `confirmar` e uma `idempotencyKey` (GUID) estável — gerada
+ * uma única vez por sessão de revisão para tornar o replay seguro.</p>
+ */
+export interface ConfirmarAgendamentoRequest extends CriarAgendamentoRequest {
+  confirmar: true;
+  tokenConfirmacao: string;
+  idempotencyKey: string;
+}

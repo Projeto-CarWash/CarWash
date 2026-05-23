@@ -62,4 +62,37 @@ public sealed class AgendamentoCatalogoRepository : IAgendamentoCatalogoReposito
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
     }
+
+    public Task<FilialResumoSnapshot?> ObterFilialResumoAsync(Guid filialId, CancellationToken cancellationToken) =>
+        _db.Filiais
+            .AsNoTracking()
+            .Where(f => f.Id == filialId)
+            .Select(f => new FilialResumoSnapshot(f.Id, f.Nome, f.Ativa))
+            .FirstOrDefaultAsync(cancellationToken);
+
+    // O cliente é PF (CPF) ou PJ (CNPJ) — CHECK ck_clientes_cpf_ou_cnpj garante
+    // exatamente um preenchido. O coalesce expõe o documento de negócio.
+    public Task<ClienteResumoSnapshot?> ObterClienteResumoAsync(Guid clienteId, CancellationToken cancellationToken) =>
+        _db.Clientes
+            .AsNoTracking()
+            .Where(c => c.Id == clienteId)
+            .Select(c => new ClienteResumoSnapshot(
+                c.Id,
+                c.Nome,
+                c.Cpf ?? c.Cnpj ?? string.Empty,
+                c.Ativo))
+            .FirstOrDefaultAsync(cancellationToken);
+
+    public Task<VeiculoResumoSnapshot?> ObterVeiculoResumoAsync(Guid veiculoId, CancellationToken cancellationToken) =>
+        _db.Veiculos
+            .AsNoTracking()
+            .Where(v => v.Id == veiculoId)
+            .Select(v => new VeiculoResumoSnapshot(
+                v.Id,
+                v.ClienteId,
+                v.Placa,
+                v.Modelo,
+                v.Cor,
+                v.Ativo))
+            .FirstOrDefaultAsync(cancellationToken);
 }
