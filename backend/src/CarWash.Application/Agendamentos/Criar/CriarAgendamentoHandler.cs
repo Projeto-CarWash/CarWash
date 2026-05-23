@@ -1,7 +1,6 @@
 using CarWash.Application.Abstractions.Messaging;
 using CarWash.Application.Agendamentos.Common;
 using CarWash.Application.Agendamentos.Persistence;
-using CarWash.Application.Common;
 using CarWash.Application.Common.Exceptions;
 using CarWash.Domain.Entities;
 using CarWash.Domain.Enums;
@@ -16,19 +15,27 @@ namespace CarWash.Application.Agendamentos.Criar;
 /// no banco — esta última fecha a race condition e o repositório a traduz em
 /// <see cref="AgendamentoConflitanteException"/> (409).
 /// </summary>
+/// <remarks>
+/// Caminho de criação direta — mantido e marcado <c>[Obsolete]</c> a partir do
+/// RF015 (ADR 0004): o frontend passa a usar o fluxo de duas etapas
+/// (pré-confirmação + confirmação). Não remover no MVP.
+/// </remarks>
+#pragma warning disable S1133 // [Obsolete] proposital — RF007 mantido por decisão do ADR 0004; remoção é um card pós-MVP.
+[Obsolete("RF015/ADR 0004: prefira o fluxo /pre-confirmacao + /confirmar. Mantido para integrações e testes.")]
+#pragma warning restore S1133
 public sealed class CriarAgendamentoHandler : ICommandHandler<CriarAgendamentoCommand, AgendamentoResponse>
 {
     private readonly IAgendamentoRepository _agendamentos;
-    private readonly IAgendamentoCatalogoRepository _catalogo;
+    private readonly CalculadoraResumoAgendamento _calculadora;
     private readonly ILogger<CriarAgendamentoHandler> _logger;
 
     public CriarAgendamentoHandler(
         IAgendamentoRepository agendamentos,
-        IAgendamentoCatalogoRepository catalogo,
+        CalculadoraResumoAgendamento calculadora,
         ILogger<CriarAgendamentoHandler> logger)
     {
         _agendamentos = agendamentos;
-        _catalogo = catalogo;
+        _calculadora = calculadora;
         _logger = logger;
     }
 
@@ -48,40 +55,39 @@ public sealed class CriarAgendamentoHandler : ICommandHandler<CriarAgendamentoCo
                 });
         }
 
-        var inicio = DateTime.SpecifyKind(command.Inicio.Value.ToUniversalTime(), DateTimeKind.Utc);
-        var observacoes = InputNormalizer.SanitizeTextOrNull(command.Observacoes);
-
-        // --- Validação de existência e estado das dependências (RF019/RN010/CA007/CA009) ---
-        await GarantirFilialAsync(command.FilialId, cancellationToken).ConfigureAwait(false);
-        var veiculo = await GarantirVeiculoAsync(command.VeiculoId, cancellationToken).ConfigureAwait(false);
-        await GarantirClienteAsync(command.ClienteId, cancellationToken).ConfigureAwait(false);
-        GarantirVinculoVeiculoCliente(veiculo, command.ClienteId);
-        await GarantirResponsavelAsync(command.ResponsavelId, command.ClienteId, cancellationToken).ConfigureAwait(false);
-
-        var servicos = await GarantirServicosAsync(command.ServicoIds, cancellationToken).ConfigureAwait(false);
-
-        var duracaoTotal = servicos.Sum(s => s.DuracaoMin);
-        var valorTotal = servicos.Sum(s => s.Preco);
-        var fim = inicio.AddMinutes(duracaoTotal);
-
-        // --- RN011 camada 2: pré-check de conflito antes de inserir. ---
-        if (await _agendamentos.ExisteConflitoVeiculoAsync(command.VeiculoId, inicio, fim, cancellationToken).ConfigureAwait(false))
-        {
-            _logger.LogWarning(
-                "Falha de validação RN011 — veículo {VeiculoId} já agendado na janela [{Inicio:o}, {Fim:o}). TraceId: {TraceId}",
-                command.VeiculoId,
-                inicio,
-                fim,
-                command.TraceId);
-            throw new AgendamentoConflitanteException();
-        }
-
         var criadoPor = command.UsuarioId ?? throw new ValidationException(
             "Não foi possível identificar o usuário autenticado.",
             new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
             {
                 ["usuario"] = ["Usuário autenticado é obrigatório."],
             });
+
+        // --- Validação de existência/estado + cálculo de totais (RF019/RN010/CA007/CA009). ---
+        var calculado = await _calculadora.CalcularAsync(
+            command.FilialId,
+            command.ClienteId,
+            command.VeiculoId,
+            command.ResponsavelId,
+            command.Inicio.Value,
+            command.ServicoIds,
+            command.Observacoes,
+            cancellationToken).ConfigureAwait(false);
+
+        // --- RN011 camada 2: pré-check de conflito antes de inserir. ---
+        if (await _agendamentos.ExisteConflitoVeiculoAsync(
+            command.VeiculoId,
+            calculado.Inicio,
+            calculado.Fim,
+            cancellationToken).ConfigureAwait(false))
+        {
+            _logger.LogWarning(
+                "Falha de validação RN011 — veículo {VeiculoId} já agendado na janela [{Inicio:o}, {Fim:o}). TraceId: {TraceId}",
+                command.VeiculoId,
+                calculado.Inicio,
+                calculado.Fim,
+                command.TraceId);
+            throw new AgendamentoConflitanteException();
+        }
 
         var agendamentoId = Guid.NewGuid();
 
@@ -93,14 +99,14 @@ public sealed class CriarAgendamentoHandler : ICommandHandler<CriarAgendamentoCo
             clienteId: command.ClienteId,
             veiculoId: command.VeiculoId,
             criadoPor: criadoPor,
-            inicio: inicio,
-            fim: fim,
+            inicio: calculado.Inicio,
+            fim: calculado.Fim,
             responsavelId: command.ResponsavelId,
-            observacoes: observacoes,
-            duracaoTotalMin: duracaoTotal,
-            valorTotal: valorTotal);
+            observacoes: calculado.Observacoes,
+            duracaoTotalMin: calculado.DuracaoTotalMin,
+            valorTotal: calculado.ValorTotal);
 
-        var itens = servicos
+        var itens = calculado.Servicos
             .Select(s => AgendamentoItem.Criar(
                 id: Guid.NewGuid(),
                 agendamentoId: agendamentoId,
@@ -126,151 +132,11 @@ public sealed class CriarAgendamentoHandler : ICommandHandler<CriarAgendamentoCo
             agendamentoId,
             command.VeiculoId,
             command.FilialId,
-            inicio,
-            fim,
+            calculado.Inicio,
+            calculado.Fim,
             criadoPor,
             command.TraceId);
 
-        return MontarResposta(agendamento, itens, servicos, command.TraceId);
+        return AgendamentoResponseFactory.Montar(agendamento, itens, calculado.Servicos, command.TraceId);
     }
-
-    private static void GarantirVinculoVeiculoCliente(VeiculoSnapshot veiculo, Guid clienteId)
-    {
-        // RN002: o veículo informado precisa pertencer ao cliente selecionado.
-        if (veiculo.ClienteId != clienteId)
-        {
-            throw new ValidationException(
-                "Dados do agendamento inválidos. Verifique os campos e tente novamente.",
-                new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
-                {
-                    ["veiculoId"] = ["O veículo informado não pertence ao cliente selecionado."],
-                });
-        }
-    }
-
-    private async Task GarantirFilialAsync(Guid filialId, CancellationToken cancellationToken)
-    {
-        if (!await _catalogo.FilialExisteAsync(filialId, cancellationToken).ConfigureAwait(false))
-        {
-            throw new NotFoundException("Filial informada não foi encontrada.");
-        }
-
-        if (!await _catalogo.FilialAtivaAsync(filialId, cancellationToken).ConfigureAwait(false))
-        {
-            throw new RecursoInativoException("A filial selecionada está inativa e não aceita agendamentos.");
-        }
-    }
-
-    private async Task<VeiculoSnapshot> GarantirVeiculoAsync(Guid veiculoId, CancellationToken cancellationToken)
-    {
-        var veiculo = await _catalogo.ObterVeiculoAsync(veiculoId, cancellationToken).ConfigureAwait(false)
-            ?? throw new NotFoundException("Veículo informado não foi encontrado.");
-
-        if (!veiculo.Ativo)
-        {
-            throw new RecursoInativoException("O veículo selecionado está inativo e não pode ser agendado.");
-        }
-
-        return veiculo;
-    }
-
-    private async Task GarantirClienteAsync(Guid clienteId, CancellationToken cancellationToken)
-    {
-        if (!await _catalogo.ClienteExisteAsync(clienteId, cancellationToken).ConfigureAwait(false))
-        {
-            throw new NotFoundException("Cliente informado não foi encontrado.");
-        }
-
-        if (!await _catalogo.ClienteAtivoAsync(clienteId, cancellationToken).ConfigureAwait(false))
-        {
-            throw new RecursoInativoException("O cliente selecionado está inativo e não pode ser agendado.");
-        }
-    }
-
-    private async Task GarantirResponsavelAsync(Guid? responsavelId, Guid clienteId, CancellationToken cancellationToken)
-    {
-        if (!responsavelId.HasValue)
-        {
-            return;
-        }
-
-        var responsavel = await _catalogo.ObterResponsavelAsync(responsavelId.Value, cancellationToken).ConfigureAwait(false)
-            ?? throw new NotFoundException("Responsável informado não foi encontrado.");
-
-        if (!responsavel.Ativo)
-        {
-            throw new RecursoInativoException("O responsável selecionado está inativo.");
-        }
-
-        // CA009: responsável só pode agendar em nome do seu próprio titular.
-        if (responsavel.ClienteId != clienteId)
-        {
-            throw new ValidationException(
-                "Dados do agendamento inválidos. Verifique os campos e tente novamente.",
-                new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
-                {
-                    ["responsavelId"] = ["O responsável não pertence ao titular do veículo."],
-                });
-        }
-    }
-
-    private async Task<IReadOnlyList<ServicoSnapshot>> GarantirServicosAsync(
-        IReadOnlyList<Guid> servicoIds,
-        CancellationToken cancellationToken)
-    {
-        var encontrados = await _catalogo.ObterServicosAsync(servicoIds, cancellationToken).ConfigureAwait(false);
-
-        var ausentes = servicoIds
-            .Where(id => encontrados.All(s => s.Id != id))
-            .ToList();
-        if (ausentes.Count > 0)
-        {
-            throw new NotFoundException("Um ou mais serviços informados não foram encontrados.");
-        }
-
-        var inativos = encontrados.Where(s => !s.Ativo).ToList();
-        if (inativos.Count > 0)
-        {
-            throw new RecursoInativoException(
-                "Um ou mais serviços selecionados estão inativos e não podem ser agendados.");
-        }
-
-        // Preserva a ordem informada pelo cliente.
-        return servicoIds
-            .Select(id => encontrados.First(s => s.Id == id))
-            .ToList();
-    }
-
-    private static AgendamentoResponse MontarResposta(
-        Agendamento agendamento,
-        IReadOnlyCollection<AgendamentoItem> itens,
-        IReadOnlyCollection<ServicoSnapshot> servicos,
-        string traceId) => new()
-        {
-            Id = agendamento.Id,
-            FilialId = agendamento.FilialId,
-            ClienteId = agendamento.ClienteId,
-            VeiculoId = agendamento.VeiculoId,
-            ResponsavelId = agendamento.ResponsavelId,
-            Status = agendamento.Status.ToDbValue(),
-            Inicio = agendamento.Inicio,
-            Fim = agendamento.Fim,
-            DuracaoTotalMin = agendamento.DuracaoTotalMin,
-            ValorTotal = agendamento.ValorTotal,
-            Observacoes = agendamento.Observacoes,
-            Versao = agendamento.Versao,
-            Itens = itens
-                .Select(item => new AgendamentoServicoResponse
-                {
-                    Id = item.Id,
-                    ServicoId = item.ServicoId,
-                    NomeServico = servicos.First(s => s.Id == item.ServicoId).Nome,
-                    PrecoAplicado = item.PrecoAplicado,
-                    DuracaoAplicada = item.DuracaoAplicada,
-                })
-                .ToList(),
-            CriadoEm = agendamento.CriadoEm,
-            Mensagem = "Agendamento criado com sucesso.",
-            TraceId = traceId,
-        };
 }

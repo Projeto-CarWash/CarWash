@@ -621,6 +621,74 @@ namespace CarWash.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("CarWash.Domain.Entities.IdempotenciaRequisicao", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("AtualizadoEm")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("atualizado_em")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<DateTime>("CriadoEm")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("criado_em")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("Escopo")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("escopo");
+
+                    b.Property<DateTime>("ExpiraEm")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("expira_em");
+
+                    b.Property<Guid>("IdempotencyKey")
+                        .HasColumnType("uuid")
+                        .HasColumnName("idempotency_key");
+
+                    b.Property<string>("PayloadHash")
+                        .IsRequired()
+                        .HasColumnType("char(64)")
+                        .HasColumnName("payload_hash")
+                        .IsFixedLength();
+
+                    b.Property<Guid?>("RecursoId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("recurso_id");
+
+                    b.Property<string>("RespostaJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("resposta_json");
+
+                    b.Property<int>("StatusHttp")
+                        .HasColumnType("integer")
+                        .HasColumnName("status_http");
+
+                    b.Property<Guid>("UsuarioId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("usuario_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_idempotencia_requisicoes");
+
+                    b.HasIndex("ExpiraEm")
+                        .HasDatabaseName("ix_idempotencia_expira_em");
+
+                    b.HasIndex("IdempotencyKey", "Escopo")
+                        .IsUnique()
+                        .HasDatabaseName("uq_idempotencia_key_escopo");
+
+                    b.ToTable("idempotencia_requisicoes", "public");
+                });
+
             modelBuilder.Entity("CarWash.Domain.Entities.Notificacao", b =>
                 {
                     b.Property<Guid>("Id")
