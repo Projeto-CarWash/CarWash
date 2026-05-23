@@ -30,6 +30,7 @@ public class CarWashWebApplicationFactory : WebApplicationFactory<Program>
     internal const string JwtConfirmacaoTestingKey =
         "confirmacao-rf015-testing-key-com-mais-de-32-bytes-deterministica";
 
+    /// <inheritdoc/>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
