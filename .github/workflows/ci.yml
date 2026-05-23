@@ -130,7 +130,7 @@ jobs:
       - name: Validate dev/hom/prod compose
         env:
           POSTGRES_PASSWORD: ci-only
-          JWT_SECRET: ci-only-do-not-use-this-in-real-environments
+          Jwt__Secret: ci-only-do-not-use-this-in-real-environments
           CARWASH_SEED_ADMIN_PASSWORD: ci-only
         run: |
           docker compose -f docker-compose.yml -f docker-compose.dev.yml  config --quiet
