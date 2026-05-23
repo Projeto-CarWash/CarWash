@@ -64,6 +64,17 @@ function App() {
         />
 
         <Route
+          path="/agendamentos/novo"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <NovoAgendamentoPage />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
           path="/usuarios"
           element={
             <PrivateRoute>
