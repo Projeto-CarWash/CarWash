@@ -98,8 +98,6 @@ public static class DependencyInjection
 
         services.AddScoped<ICarWashDbContext, CarWashDbContext>();
 
-        services.AddScoped<ICarWashDbContext, CarWashDbContext>();
-
         return services;
     }
 }
