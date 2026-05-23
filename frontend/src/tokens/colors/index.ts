@@ -1,4 +1,54 @@
-const values = {
+export interface ColorsType {
+  background: string;
+  backgroundElevated: string;
+  surface: string;
+  surfaceStrong: string;
+  surfaceMuted: string;
+  surfaceOverlay: string;
+  foreground: string;
+  foregroundMuted: string;
+  foregroundSubtle: string;
+  foregroundSoft: string;
+  border: string;
+  borderStrong: string;
+  borderSoft: string;
+  primary: string;
+  primaryStrong: string;
+  primaryHover: string;
+  primaryHoverStrong: string;
+  primaryGlow: string;
+  primaryGlowStrong: string;
+  primaryForeground: string;
+  destructive: string;
+  destructiveSoft: string;
+  destructiveBorder: string;
+  destructiveInk: string;
+  destructiveForeground: string;
+  success: string;
+  sidebar: string;
+  sidebarForeground: string;
+  sidebarPrimary: string;
+  sidebarPrimaryForeground: string;
+  sidebarAccent: string;
+  sidebarAccentForeground: string;
+  sidebarBorder: string;
+  sidebarRing: string;
+  chart1: string;
+  chart2: string;
+  chart3: string;
+  chart4: string;
+  chart5: string;
+  secondary: string;
+  secondaryForeground: string;
+  muted: string;
+  mutedForeground: string;
+  accent: string;
+  accentForeground: string;
+  ring: string;
+  input: string;
+}
+
+export const Colors: ColorsType = {
   background: '#09090b',
   backgroundElevated: '#0c0c0f',
   surface: '#121215',
@@ -46,108 +96,4 @@ const values = {
   accentForeground: '#f5f5f7',
   ring: '#ff1f2e',
   input: '#26262c',
-} as const
-
-const vars = {
-  background: 'var(--colors--background)',
-  backgroundElevated: 'var(--colors--backgroundElevated)',
-  surface: 'var(--colors--surface)',
-  surfaceStrong: 'var(--colors--surfaceStrong)',
-  surfaceMuted: 'var(--colors--surfaceMuted)',
-  surfaceOverlay: 'var(--colors--surfaceOverlay)',
-  foreground: 'var(--colors--foreground)',
-  foregroundMuted: 'var(--colors--foregroundMuted)',
-  foregroundSubtle: 'var(--colors--foregroundSubtle)',
-  foregroundSoft: 'var(--colors--foregroundSoft)',
-  border: 'var(--colors--border)',
-  borderStrong: 'var(--colors--borderStrong)',
-  borderSoft: 'var(--colors--borderSoft)',
-  primary: 'var(--colors--primary)',
-  primaryStrong: 'var(--colors--primaryStrong)',
-  primaryHover: 'var(--colors--primaryHover)',
-  primaryHoverStrong: 'var(--colors--primaryHoverStrong)',
-  primaryGlow: 'var(--colors--primaryGlow)',
-  primaryGlowStrong: 'var(--colors--primaryGlowStrong)',
-  primaryForeground: 'var(--colors--primaryForeground)',
-  destructive: 'var(--colors--destructive)',
-  destructiveSoft: 'var(--colors--destructiveSoft)',
-  destructiveBorder: 'var(--colors--destructiveBorder)',
-  destructiveInk: 'var(--colors--destructiveInk)',
-  destructiveForeground: 'var(--colors--destructiveForeground)',
-  success: 'var(--colors--success)',
-  sidebar: 'var(--colors--sidebar)',
-  sidebarForeground: 'var(--colors--sidebarForeground)',
-  sidebarPrimary: 'var(--colors--sidebarPrimary)',
-  sidebarPrimaryForeground: 'var(--colors--sidebarPrimaryForeground)',
-  sidebarAccent: 'var(--colors--sidebarAccent)',
-  sidebarAccentForeground: 'var(--colors--sidebarAccentForeground)',
-  sidebarBorder: 'var(--colors--sidebarBorder)',
-  sidebarRing: 'var(--colors--sidebarRing)',
-  chart1: 'var(--colors--chart1)',
-  chart2: 'var(--colors--chart2)',
-  chart3: 'var(--colors--chart3)',
-  chart4: 'var(--colors--chart4)',
-  chart5: 'var(--colors--chart5)',
-  secondary: 'var(--colors--secondary)',
-  secondaryForeground: 'var(--colors--secondaryForeground)',
-  muted: 'var(--colors--muted)',
-  mutedForeground: 'var(--colors--mutedForeground)',
-  accent: 'var(--colors--accent)',
-  accentForeground: 'var(--colors--accentForeground)',
-  ring: 'var(--colors--ring)',
-  input: 'var(--colors--input)',
-} as const
-
-const toCssVars = () => ({
-  '--colors--background': values.background,
-  '--colors--backgroundElevated': values.backgroundElevated,
-  '--colors--surface': values.surface,
-  '--colors--surfaceStrong': values.surfaceStrong,
-  '--colors--surfaceMuted': values.surfaceMuted,
-  '--colors--surfaceOverlay': values.surfaceOverlay,
-  '--colors--foreground': values.foreground,
-  '--colors--foregroundMuted': values.foregroundMuted,
-  '--colors--foregroundSubtle': values.foregroundSubtle,
-  '--colors--foregroundSoft': values.foregroundSoft,
-  '--colors--border': values.border,
-  '--colors--borderStrong': values.borderStrong,
-  '--colors--borderSoft': values.borderSoft,
-  '--colors--primary': values.primary,
-  '--colors--primaryStrong': values.primaryStrong,
-  '--colors--primaryHover': values.primaryHover,
-  '--colors--primaryHoverStrong': values.primaryHoverStrong,
-  '--colors--primaryGlow': values.primaryGlow,
-  '--colors--primaryGlowStrong': values.primaryGlowStrong,
-  '--colors--primaryForeground': values.primaryForeground,
-  '--colors--destructive': values.destructive,
-  '--colors--destructiveSoft': values.destructiveSoft,
-  '--colors--destructiveBorder': values.destructiveBorder,
-  '--colors--destructiveInk': values.destructiveInk,
-  '--colors--destructiveForeground': values.destructiveForeground,
-  '--colors--success': values.success,
-  '--colors--sidebar': values.sidebar,
-  '--colors--sidebarForeground': values.sidebarForeground,
-  '--colors--sidebarPrimary': values.sidebarPrimary,
-  '--colors--sidebarPrimaryForeground': values.sidebarPrimaryForeground,
-  '--colors--sidebarAccent': values.sidebarAccent,
-  '--colors--sidebarAccentForeground': values.sidebarAccentForeground,
-  '--colors--sidebarBorder': values.sidebarBorder,
-  '--colors--sidebarRing': values.sidebarRing,
-  '--colors--chart1': values.chart1,
-  '--colors--chart2': values.chart2,
-  '--colors--chart3': values.chart3,
-  '--colors--chart4': values.chart4,
-  '--colors--chart5': values.chart5,
-  '--colors--secondary': values.secondary,
-  '--colors--secondaryForeground': values.secondaryForeground,
-  '--colors--muted': values.muted,
-  '--colors--mutedForeground': values.mutedForeground,
-  '--colors--accent': values.accent,
-  '--colors--accentForeground': values.accentForeground,
-  '--colors--ring': values.ring,
-  '--colors--input': values.input,
-})
-
-export type Colors = typeof vars
-export { values, toCssVars }
-export default vars
+};

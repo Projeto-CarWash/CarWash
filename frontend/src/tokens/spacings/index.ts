@@ -1,51 +1,51 @@
-const values = {
-  sQuark: '4px',
-  sQuarkL: '8px',
-  sNano: '8px',
-  sXXS: '12px',
-  sXS: '16px',
-  sSM: '20px',
-  sS: '24px',
-  sMD: '32px',
-  sM: '40px',
-  sLG: '48px',
-  sL: '64px',
-  sXL: '80px',
-  sXXL: '96px',
-} as const
+export interface SpacingsType {
+  sZero: number;
+  sQuarkSmall: number;
+  sQuark: number;
+  sQuarkL: number;
+  sNano: number;
+  sXXXS: number;
+  sXXS: number;
+  sXS: number;
+  sSmall: number;
+  sMedium: number;
+  sLarge: number;
+  sX: number;
+  sXL: number;
+  sXXL: number;
+  lXS: number;
+  lSmall: number;
+  lMedium: number;
+  lLarge: number;
+  lXLS: number;
+  lXL: number;
+  lXXL: number;
+  lHuge: number;
+  lGiant: number;
+}
 
-const vars = {
-  sQuark: 'var(--spacings--sQuark)',
-  sQuarkL: 'var(--spacings--sQuarkL)',
-  sNano: 'var(--spacings--sNano)',
-  sXXS: 'var(--spacings--sXXS)',
-  sXS: 'var(--spacings--sXS)',
-  sSM: 'var(--spacings--sSM)',
-  sS: 'var(--spacings--sS)',
-  sMD: 'var(--spacings--sMD)',
-  sM: 'var(--spacings--sM)',
-  sLG: 'var(--spacings--sLG)',
-  sL: 'var(--spacings--sL)',
-  sXL: 'var(--spacings--sXL)',
-  sXXL: 'var(--spacings--sXXL)',
-} as const
-
-const toCssVars = () => ({
-  '--spacings--sQuark': values.sQuark,
-  '--spacings--sQuarkL': values.sQuarkL,
-  '--spacings--sNano': values.sNano,
-  '--spacings--sXXS': values.sXXS,
-  '--spacings--sXS': values.sXS,
-  '--spacings--sSM': values.sSM,
-  '--spacings--sS': values.sS,
-  '--spacings--sMD': values.sMD,
-  '--spacings--sM': values.sM,
-  '--spacings--sLG': values.sLG,
-  '--spacings--sL': values.sL,
-  '--spacings--sXL': values.sXL,
-  '--spacings--sXXL': values.sXXL,
-})
-
-export type Spacings = typeof vars
-export { values, toCssVars }
-export default vars
+export const Spacings: SpacingsType = {
+  sZero: 0,
+  sQuarkSmall: 2,
+  sQuark: 4,
+  sQuarkL: 8,
+  sNano: 9.5,
+  sXXXS: 10,
+  sXXS: 12,
+  sXS: 16,
+  sSmall: 20,
+  sMedium: 24,
+  sLarge: 28,
+  sX: 32,
+  sXL: 36,
+  sXXL: 42,
+  lXS: 48,
+  lSmall: 56,
+  lMedium: 64,
+  lLarge: 80,
+  lXLS: 84,
+  lXL: 92,
+  lXXL: 120,
+  lHuge: 160,
+  lGiant: 216,
+};

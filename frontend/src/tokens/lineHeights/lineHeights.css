@@ -1,0 +1,8 @@
+:root {
+  --lineHeights--none: 1;
+  --lineHeights--tight: 1.25;
+  --lineHeights--snug: 1.375;
+  --lineHeights--normal: 1.5;
+  --lineHeights--relaxed: 1.625;
+  --lineHeights--loose: 2;
+}
