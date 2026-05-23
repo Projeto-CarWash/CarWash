@@ -43,6 +43,8 @@ SHELL := /bin/bash
 ENV ?= dev
 COMPOSE_FILES := -f docker-compose.yml -f docker-compose.$(ENV).yml
 COMPOSE := docker compose $(COMPOSE_FILES)
+SAFE_COMPOSE_FILES := -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.safe.yml
+SAFE_COMPOSE := docker compose $(SAFE_COMPOSE_FILES)
 
 .PHONY: help up down restart logs ps build pull migrate seed shell-back shell-front shell-db backup smoke certs-dev clean
 
@@ -83,9 +85,8 @@ build:
 pull:
 	$(COMPOSE) pull
 
-# Em dev, migrator está em profile "manual"; em hom/prod sobe automático no `up`
 migrate:
-	$(COMPOSE) run --rm migrator
+	$(if $(filter dev,$(ENV)),$(SAFE_COMPOSE),$(COMPOSE)) run --rm migrator
 
 shell-back:
 	$(COMPOSE) exec backend /bin/bash || $(COMPOSE) exec backend /bin/sh
