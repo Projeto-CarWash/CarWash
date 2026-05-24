@@ -9,7 +9,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { servicoSchema, type ServicoFormData, type ServicoFormInput } from '@/schemas/servicoSchema';
+import {
+  servicoSchema,
+  type ServicoFormData,
+  type ServicoFormInput,
+} from '@/schemas/servicoSchema';
 import { servicoService } from '@/services/servicoService';
 
 import type { ProblemDetails } from '@/types/auth';
@@ -32,7 +36,7 @@ export function ServicoFormPage() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [carregandoDados, setCarregandoDados] = useState(isEdicao);
 
-  const form = useForm<ServicoFormInput, any, ServicoFormData>({
+  const form = useForm<ServicoFormInput, unknown, ServicoFormData>({
     resolver: zodResolver(servicoSchema),
     mode: 'onChange',
     shouldFocusError: true,
@@ -50,8 +54,8 @@ export function ServicoFormPage() {
     const loadServico = async () => {
       try {
         const response = await servicoService.listar();
-        const s = response.itens.find(x => x.id === id);
-        
+        const s = response.itens.find((x) => x.id === id);
+
         if (active) {
           if (!s) {
             setGlobalError(HTTP_ERROR_MESSAGES[404] ?? 'Serviço não encontrado.');
@@ -145,10 +149,10 @@ export function ServicoFormPage() {
             }, 1500);
             return;
           }
-          
+
           if (status === 403) {
-             setGlobalError(HTTP_ERROR_MESSAGES[403]!);
-             return;
+            setGlobalError(HTTP_ERROR_MESSAGES[403]!);
+            return;
           }
 
           if (status === 404) {
@@ -171,7 +175,7 @@ export function ServicoFormPage() {
         setGlobalError(HTTP_ERROR_MESSAGES[500]!);
       }
     },
-    [form, navigate, isEdicao, id]
+    [form, navigate, isEdicao, id],
   );
 
   const isSubmitting = form.formState.isSubmitting;
@@ -317,8 +321,8 @@ export function ServicoFormPage() {
                       placeholder="Ex: 89,90"
                       value={(field.value as string | number | undefined) ?? ''}
                       onChange={(e) => {
-                         const val = e.target.value.replace(/[^0-9.,]/g, '');
-                         field.onChange(val);
+                        const val = e.target.value.replace(/[^0-9.,]/g, '');
+                        field.onChange(val);
                       }}
                       onBlur={field.onBlur}
                       ref={field.ref}

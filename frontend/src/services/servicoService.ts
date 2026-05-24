@@ -26,7 +26,10 @@ export const servicoService = {
     return response.data;
   },
 
-  async atualizar(id: string, data: { nome: string; preco: number; duracaoMin: number }): Promise<Servico> {
+  async atualizar(
+    id: string,
+    data: { nome: string; preco: number; duracaoMin: number },
+  ): Promise<Servico> {
     const response = await api.patch<Servico>(`/servicos/${id}`, data);
     return response.data;
   },

@@ -1,5 +1,3 @@
-
-
 export interface VeiculoResumo {
   id: string;
   clienteId: string;

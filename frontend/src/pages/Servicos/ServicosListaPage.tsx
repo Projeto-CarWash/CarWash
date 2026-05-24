@@ -26,7 +26,7 @@ export function ServicosListaPage() {
   const [servicos, setServicos] = useState<Servico[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
-  
+
   const [servicoAtivacao, setServicoAtivacao] = useState<Servico | null>(null);
   const [modalAtivacaoAberto, setModalAtivacaoAberto] = useState(false);
   const [salvandoStatus, setSalvandoStatus] = useState(false);
@@ -63,9 +63,7 @@ export function ServicosListaPage() {
     try {
       await servicoService.alterarStatus(servicoAtivacao.id, !servicoAtivacao.ativo);
       setServicos((prev) =>
-        prev.map((s) =>
-          s.id === servicoAtivacao.id ? { ...s, ativo: !s.ativo } : s
-        )
+        prev.map((s) => (s.id === servicoAtivacao.id ? { ...s, ativo: !s.ativo } : s)),
       );
       setModalAtivacaoAberto(false);
     } catch {
@@ -131,15 +129,14 @@ export function ServicosListaPage() {
                     key={servico.id}
                     className="border-zinc-800/40 hover:bg-zinc-800/30 transition-colors"
                   >
-                    <TableCell className="font-medium text-zinc-200">
-                      {servico.nome}
-                    </TableCell>
+                    <TableCell className="font-medium text-zinc-200">{servico.nome}</TableCell>
                     <TableCell className="text-zinc-300">
-                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(servico.preco)}
+                      {new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
+                      }).format(servico.preco)}
                     </TableCell>
-                    <TableCell className="text-zinc-300">
-                      {servico.duracaoMin} min
-                    </TableCell>
+                    <TableCell className="text-zinc-300">{servico.duracaoMin} min</TableCell>
                     <TableCell>
                       <span
                         className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
@@ -169,9 +166,7 @@ export function ServicosListaPage() {
                           className="h-8 w-8 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
                         >
                           <Power className="h-4 w-4" />
-                          <span className="sr-only">
-                            {servico.ativo ? 'Desativar' : 'Ativar'}
-                          </span>
+                          <span className="sr-only">{servico.ativo ? 'Desativar' : 'Ativar'}</span>
                         </Button>
                       </div>
                     </TableCell>

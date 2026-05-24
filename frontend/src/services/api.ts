@@ -2,7 +2,9 @@ import axios, { AxiosError, AxiosHeaders, type InternalAxiosRequestConfig } from
 
 import { accessTokenStore } from './accessTokenStore';
 
-const baseURL: string = import.meta.env.VITE_API_URL ? String(import.meta.env.VITE_API_URL).trim() : '';
+const baseURL: string = import.meta.env.VITE_API_URL
+  ? String(import.meta.env.VITE_API_URL).trim()
+  : '';
 
 const api = axios.create({
   baseURL,

@@ -15,17 +15,23 @@ export const servicoSchema = z.object({
       }
       return val;
     },
-    z.number()
+    z
+      .number()
       .positive('Preço do serviço deve ser maior que zero.')
-      .refine(val => !isNaN(val), { message: 'Preço do serviço é obrigatório e deve ser numérico.' })
+      .refine((val) => !isNaN(val), {
+        message: 'Preço do serviço é obrigatório e deve ser numérico.',
+      }),
   ),
   duracaoMin: z.preprocess(
     (val) => (typeof val === 'string' && val !== '' ? Number(val) : val),
-    z.number()
+    z
+      .number()
       .int('Duração do serviço é obrigatória e deve ser um número inteiro.')
       .positive('Duração do serviço deve ser maior que zero.')
       .max(1440, 'Duração do serviço não pode ultrapassar 1440 minutos.')
-      .refine(val => !isNaN(val), { message: 'Duração do serviço é obrigatória e deve ser um número inteiro.' })
+      .refine((val) => !isNaN(val), {
+        message: 'Duração do serviço é obrigatória e deve ser um número inteiro.',
+      }),
   ),
 });
 
