@@ -2,16 +2,7 @@ import axios, { AxiosError, AxiosHeaders, type InternalAxiosRequestConfig } from
 
 import { accessTokenStore } from './accessTokenStore';
 
-/**
- * Cliente HTTP central. O baseURL é vazio por padrão para que todas as
- * chamadas usem caminhos absolutos (`/api/v1/...`) — em dev o Vite faz
- * proxy de `/api` → backend (ver vite.config.ts); em hom/prod o nginx
- * encaminha para o serviço backend. `VITE_API_URL` pode sobrescrever.
- *
- * <p><strong>withCredentials:</strong> obrigatório para enviar o cookie
- * httpOnly de refresh token no domínio cross-origin (dev: 5173 → 8080).</p>
- */
-const baseURL: string = import.meta.env.VITE_API_URL ?? '';
+const baseURL: string = import.meta.env.VITE_API_URL ? String(import.meta.env.VITE_API_URL).trim() : '';
 
 const api = axios.create({
   baseURL,
@@ -20,9 +11,6 @@ const api = axios.create({
   withCredentials: true,
 });
 
-// Cliente "cru" para chamadas de refresh — sem interceptor para evitar
-// recursão infinita (o interceptor de 401 chama /refresh, e essa chamada
-// não deve passar pelo próprio interceptor).
 const refreshClient = axios.create({
   baseURL,
   headers: { 'Content-Type': 'application/json' },
@@ -30,7 +18,6 @@ const refreshClient = axios.create({
   withCredentials: true,
 });
 
-// Bearer token automático.
 api.interceptors.request.use((config) => {
   const token = accessTokenStore.get();
   if (token) {
@@ -39,7 +26,6 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Refresh on 401: enfileira concorrentes, tenta /refresh uma vez, replay.
 type FailedConfig = InternalAxiosRequestConfig & { _retry?: boolean };
 
 interface PendenteFila {
