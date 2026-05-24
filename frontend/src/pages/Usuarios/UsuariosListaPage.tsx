@@ -1,48 +1,80 @@
-import { ChevronLeft, ChevronRight, Plus, Search } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { ChevronLeft, ChevronRight, Filter, Plus, Search } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
 import { userService } from '@/services/userService';
 
 import type { UsuarioResponse } from '@/types/user';
 
 const TAMANHO_PAGINA = 20;
 
+type FiltroStatus = 'todos' | 'ativo' | 'inativo';
+
 export function UsuariosListaPage() {
   const navigate = useNavigate();
   const [busca, setBusca] = useState('');
+  const [filtroStatus, setFiltroStatus] = useState<FiltroStatus>('todos');
   const [pagina, setPagina] = useState(1);
   const [itens, setItens] = useState<UsuarioResponse[]>([]);
   const [total, setTotal] = useState(0);
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [alterandoStatusId, setAlterandoStatusId] = useState<string | null>(null);
+
+  const carregarUsuarios = useCallback(async () => {
+    setCarregando(true);
+    try {
+      const ativo = filtroStatus === 'todos' ? undefined : filtroStatus === 'ativo';
+      const resp = await userService.list({
+        busca: busca || undefined,
+        ativo,
+        pagina,
+        tamanhoPagina: TAMANHO_PAGINA,
+      });
+      setItens(resp.itens);
+      setTotal(resp.total);
+      setErro(null);
+    } catch {
+      setErro('Não foi possível carregar a lista de usuários.');
+    } finally {
+      setCarregando(false);
+    }
+  }, [busca, filtroStatus, pagina]);
 
   useEffect(() => {
     let cancelado = false;
     void (async () => {
-      try {
-        const resp = await userService.list({
-          busca: busca || undefined,
-          pagina,
-          tamanhoPagina: TAMANHO_PAGINA,
-        });
-        if (cancelado) return;
-        setItens(resp.itens);
-        setTotal(resp.total);
-        setErro(null);
-        setCarregando(false);
-      } catch {
-        if (cancelado) return;
-        setErro('Não foi possível carregar a lista de usuários.');
-        setCarregando(false);
-      }
+      await carregarUsuarios();
+      if (cancelado) return;
     })();
     return () => {
       cancelado = true;
     };
-  }, [busca, pagina]);
+  }, [carregarUsuarios]);
+
+  const toggleStatusInline = useCallback(
+    async (usuario: UsuarioResponse, novoAtivo: boolean) => {
+      setAlterandoStatusId(usuario.id);
+      setErro(null);
+      try {
+        await userService.updateStatus(usuario.id, novoAtivo);
+        // Atualiza o item local para feedback imediato
+        setItens((prev) =>
+          prev.map((u) => (u.id === usuario.id ? { ...u, ativo: novoAtivo } : u)),
+        );
+      } catch {
+        setErro(
+          `Não foi possível ${novoAtivo ? 'ativar' : 'inativar'} o usuário "${usuario.nome}".`,
+        );
+      } finally {
+        setAlterandoStatusId(null);
+      }
+    },
+    [],
+  );
 
   const totalPaginas = Math.max(1, Math.ceil(total / TAMANHO_PAGINA));
 
@@ -81,6 +113,28 @@ export function UsuariosListaPage() {
             className="h-10 rounded-xl border-zinc-700/60 bg-zinc-900/50 pl-9 text-sm text-zinc-200 placeholder:text-zinc-600 focus-visible:ring-0"
           />
         </div>
+
+        {/* ── Filtro por status ── */}
+        <div className="flex items-center gap-1.5 rounded-xl border border-zinc-700/60 bg-zinc-900/50 p-1">
+          <Filter className="ml-2 h-3.5 w-3.5 text-zinc-500" aria-hidden="true" />
+          {(['todos', 'ativo', 'inativo'] as FiltroStatus[]).map((f) => (
+            <button
+              key={f}
+              type="button"
+              onClick={() => {
+                setPagina(1);
+                setFiltroStatus(f);
+              }}
+              className={`rounded-lg px-3 py-1.5 text-[11px] font-semibold tracking-wide transition-colors ${
+                filtroStatus === f
+                  ? 'bg-zinc-700/60 text-zinc-100'
+                  : 'text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              {f === 'todos' ? 'Todos' : f === 'ativo' ? 'Ativos' : 'Inativos'}
+            </button>
+          ))}
+        </div>
       </div>
 
       {erro && (
@@ -100,19 +154,20 @@ export function UsuariosListaPage() {
               <th className="px-4 py-3">E-mail</th>
               <th className="px-4 py-3">Perfil</th>
               <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3 text-center">Ativo</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-800/60">
             {carregando && (
               <tr>
-                <td colSpan={4} className="px-4 py-8 text-center text-zinc-500">
+                <td colSpan={5} className="px-4 py-8 text-center text-zinc-500">
                   Carregando…
                 </td>
               </tr>
             )}
             {!carregando && itens.length === 0 && (
               <tr>
-                <td colSpan={4} className="px-4 py-8 text-center text-zinc-500">
+                <td colSpan={5} className="px-4 py-8 text-center text-zinc-500">
                   Nenhum usuário encontrado.
                 </td>
               </tr>
@@ -140,6 +195,14 @@ export function UsuariosListaPage() {
                     >
                       {u.ativo ? 'ATIVO' : 'INATIVO'}
                     </span>
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <Switch
+                      checked={u.ativo}
+                      onCheckedChange={(checked) => void toggleStatusInline(u, checked)}
+                      disabled={alterandoStatusId === u.id}
+                      aria-label={`${u.ativo ? 'Inativar' : 'Ativar'} ${u.nome}`}
+                    />
                   </td>
                 </tr>
               ))}
@@ -175,3 +238,4 @@ export function UsuariosListaPage() {
     </div>
   );
 }
+

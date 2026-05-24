@@ -9,6 +9,7 @@ import { AgendamentosCalendarioPage } from '@/pages/Agendamentos/AgendamentosCal
 import { AgendamentosDashboardPage } from '@/pages/Agendamentos/AgendamentosDashboardPage';
 import { ClienteDetalhePage } from '@/pages/Clientes/ClienteDetalhePage';
 import { ClientesListaPage } from '@/pages/Clientes/ClientesListaPage';
+import { NovoVeiculoPage } from '@/pages/Clientes/NovoVeiculoPage';
 import Dashboard from '@/pages/Dashboard/Dashboard';
 import Login from '@/pages/Login/Login';
 import { NovoUsuarioPage } from '@/pages/Usuarios/NovoUsuarioPage';
@@ -64,11 +65,11 @@ function App() {
         />
 
         <Route
-          path="/agendamentos/novo"
+          path="/clientes/:id/veiculos/novo"
           element={
             <PrivateRoute>
               <DashboardLayout>
-                <NovoAgendamentoPage />
+                <NovoVeiculoPage />
               </DashboardLayout>
             </PrivateRoute>
           }
