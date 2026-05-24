@@ -40,5 +40,6 @@ public class PostgresFixture : IAsyncLifetime
         await db.Database.MigrateAsync().ConfigureAwait(false);
     }
 
+    /// <inheritdoc/>
     public Task DisposeAsync() => _container.DisposeAsync().AsTask();
 }

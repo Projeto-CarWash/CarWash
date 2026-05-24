@@ -22,7 +22,7 @@ public class HealthEndpointTests : IAsyncDisposable
         var client = _factory.CreateClient();
 
         var response = await client.GetAsync(new Uri("/health", UriKind.Relative));
-        var body = await response.Content.ReadAsStringAsync();
+        string body = await response.Content.ReadAsStringAsync();
 
         response.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
         body.Should().Contain("Healthy");
