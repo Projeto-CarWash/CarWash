@@ -1,6 +1,6 @@
 import { Bell, Plus, Search } from 'lucide-react';
 import { Fragment } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import {
   Breadcrumb,
@@ -15,12 +15,14 @@ import { Input } from '@/components/ui/input';
 
 export function Topbar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const segments = location.pathname.split('/').filter(Boolean);
 
   function getBreadcrumbName(segment: string, index: number) {
     if (segment === 'dashboard') return 'Dashboard';
     if (segment === 'clientes') return 'Clientes';
     if (segment === 'usuarios') return 'Usuários';
+    if (segment === 'agendamentos') return 'Agendamentos';
     if (segment === 'novo') return 'Novo';
 
     if (index === segments.length - 1 && segment !== 'novo') {
@@ -86,7 +88,10 @@ export function Topbar() {
           <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500 shadow-[0_0_0_3px_rgba(239,68,68,0.2)]" />
         </button>
 
-        <Button className="h-9 rounded-full bg-red-600 px-4 text-sm font-semibold text-white shadow-lg shadow-red-600/25 hover:bg-red-700">
+        <Button
+          onClick={() => void navigate('/agendamentos/novo')}
+          className="h-9 rounded-full bg-red-600 px-4 text-sm font-semibold text-white shadow-lg shadow-red-600/25 hover:bg-red-700"
+        >
           <Plus className="mr-1 h-4 w-4" />
           Novo agendamento
         </Button>

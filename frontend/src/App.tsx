@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 
+import { NovoAgendamentoPage } from '@/components/agendamentos/NovoAgendamentoPage';
 import { NovoClientePage } from '@/components/clientes/NovoClientePage';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import PrivateRoute from '@/components/PrivateRoute';
@@ -100,6 +101,28 @@ function App() {
             <PrivateRoute>
               <DashboardLayout>
                 <UsuarioDetalhePage />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/agendamentos"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <AgendamentosDashboardPage />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/agendamentos/calendario"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <AgendamentosCalendarioPage />
               </DashboardLayout>
             </PrivateRoute>
           }
