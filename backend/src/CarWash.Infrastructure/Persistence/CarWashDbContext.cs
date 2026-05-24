@@ -41,6 +41,8 @@ public class CarWashDbContext : DbContext
 
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
+    public DbSet<IdempotenciaRequisicao> IdempotenciaRequisicoes => Set<IdempotenciaRequisicao>();
+
     public DbSet<OutboxEvento> OutboxEventos => Set<OutboxEvento>();
 
     public DbSet<Notificacao> Notificacoes => Set<Notificacao>();

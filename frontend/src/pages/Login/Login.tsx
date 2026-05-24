@@ -38,6 +38,11 @@ function extractErrorMessage(error: unknown): string {
       return 'Não foi possível contatar o servidor. Verifique sua conexão.';
     }
   }
+
+  if (error instanceof Error) {
+    return error.message;
+  }
+
   return 'Erro inesperado ao autenticar. Tente novamente.';
 }
 

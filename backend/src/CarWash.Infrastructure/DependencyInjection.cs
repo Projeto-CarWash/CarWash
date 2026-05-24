@@ -1,13 +1,18 @@
 using CarWash.Application.Abstractions;
+using CarWash.Application.Agendamentos.Abstractions;
+using CarWash.Application.Agendamentos.Persistence;
 using CarWash.Application.Auth.Abstractions;
 using CarWash.Application.Auth.Persistence;
 using CarWash.Application.Clientes.Persistence;
 using CarWash.Application.Common.Security;
+using CarWash.Application.Servicos.Persistence;
 using CarWash.Application.Usuarios.Persistence;
+using CarWash.Infrastructure.Agendamentos;
 using CarWash.Infrastructure.Auditing;
 using CarWash.Infrastructure.Auth;
 using CarWash.Infrastructure.Persistence;
 using CarWash.Infrastructure.Persistence.Interceptors;
+using CarWash.Infrastructure.Persistence.Maintenance;
 using CarWash.Infrastructure.Persistence.Repositories;
 using CarWash.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
@@ -54,14 +59,24 @@ public static class DependencyInjection
 
         services.AddScoped<IUsuarioRepository, UsuarioRepository>();
         services.AddScoped<IClienteRepository, ClienteRepository>();
+        services.AddScoped<IAgendamentoRepository, AgendamentoRepository>();
+        services.AddScoped<IAgendamentoCatalogoRepository, AgendamentoCatalogoRepository>();
+        services.AddScoped<IIdempotenciaRepository, IdempotenciaRepository>();
+
+        // RF015 — confirmação de agendamento em duas etapas (ADR 0004).
+        // Token de confirmação: singleton (sem estado mutável; só lê a chave HMAC).
+        services.AddSingleton<ITokenConfirmacaoService, TokenConfirmacaoService>();
+
+        // Limpeza diária dos registros de idempotência expirados (janela 24h).
+        services.AddHostedService<IdempotenciaCleanupService>();
 
         services.AddDbContext<CarWashDbContext>((sp, opt) =>
         {
             opt.UseNpgsql(conn, npg => npg
-                    .MigrationsAssembly(typeof(CarWashDbContext).Assembly.FullName)
-                    .MigrationsHistoryTable("__ef_migrations_history", "public"))
-               .UseSnakeCaseNamingConvention()
-               .AddInterceptors(
+                .MigrationsAssembly(typeof(CarWashDbContext).Assembly.FullName)
+                .MigrationsHistoryTable("__ef_migrations_history", "public"))
+                .UseSnakeCaseNamingConvention()
+                .AddInterceptors(
                     sp.GetRequiredService<AuditableEntitiesInterceptor>(),
                     sp.GetRequiredService<AuditLogInterceptor>());
         });
@@ -81,6 +96,8 @@ public static class DependencyInjection
 
         services.AddSingleton<IDbContextFactory<CarWashDbContext>>(
             new CarWashRuntimeDbContextFactory(factoryOptions));
+
+        services.AddScoped<ICarWashDbContext, CarWashDbContext>();
 
         return services;
     }
