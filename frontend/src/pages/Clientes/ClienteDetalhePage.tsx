@@ -1,17 +1,20 @@
-import { ArrowLeft, Power } from 'lucide-react';
+import { ArrowLeft, Car, Loader2, Plus, Power } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { clienteService, type ClienteDetalhe } from '@/services/clienteService';
+import { veiculoService, type Veiculo } from '@/services/veiculoService';
 
 export function ClienteDetalhePage() {
   const { id = '' } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [cliente, setCliente] = useState<ClienteDetalhe | null>(null);
+  const [veiculos, setVeiculos] = useState<Veiculo[]>([]);
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
+  const [carregandoVeiculos, setCarregandoVeiculos] = useState(true);
 
   useEffect(() => {
     let cancelado = false;
@@ -23,6 +26,18 @@ export function ClienteDetalhePage() {
         if (!cancelado) setErro('Cliente não encontrado.');
       }
     })();
+
+    void (async () => {
+      try {
+        const v = await veiculoService.listarPorCliente(id);
+        if (!cancelado) setVeiculos(v);
+      } catch (err) {
+        console.error('Erro ao buscar veículos do cliente:', err);
+      } finally {
+        if (!cancelado) setCarregandoVeiculos(false);
+      }
+    })();
+
     return () => {
       cancelado = true;
     };
@@ -125,6 +140,87 @@ export function ClienteDetalhePage() {
         </CardContent>
       </Card>
 
+      <Card className="border-zinc-800/60 bg-zinc-900/30">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+          <div>
+            <CardTitle className="text-lg text-zinc-100 flex items-center gap-2">
+              <Car className="h-5 w-5 text-red-500" />
+              Veículos
+            </CardTitle>
+            <p className="text-xs text-zinc-400 mt-1">
+              Veículos associados a este cliente para ordens de serviço.
+            </p>
+          </div>
+          {veiculos.length > 0 && (
+            <Button
+              type="button"
+              onClick={() => void navigate(`/clientes/${id}/veiculos/novo`)}
+              className="h-8 rounded-full bg-red-600 px-3 text-xs font-semibold text-white hover:bg-red-700 shadow-lg shadow-red-600/15"
+            >
+              <Plus className="mr-1 h-3.5 w-3.5" /> Adicionar veículo
+            </Button>
+          )}
+        </CardHeader>
+        <CardContent>
+          {carregandoVeiculos ? (
+            <div className="flex items-center justify-center py-6 text-sm text-zinc-500">
+              <Loader2 className="mr-2 h-4 w-4 animate-spin text-zinc-400" />
+              Carregando veículos…
+            </div>
+          ) : veiculos.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-zinc-800 bg-zinc-950/20 py-8 text-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-800/40 text-zinc-500 mb-3">
+                <Car className="h-6 w-6" />
+              </div>
+              <h4 className="text-sm font-semibold text-zinc-200">Nenhum veículo cadastrado</h4>
+              <p className="mt-1 text-xs text-zinc-500 max-w-[280px]">
+                Este cliente ainda não possui veículos vinculados à sua conta.
+              </p>
+              <Button
+                type="button"
+                onClick={() => void navigate(`/clientes/${id}/veiculos/novo`)}
+                className="mt-4 h-9 rounded-full bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-zinc-200 px-4 border border-zinc-700/60"
+              >
+                <Plus className="mr-1 h-3.5 w-3.5" /> Cadastrar primeiro veículo
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {veiculos.map((veiculo) => (
+                <div
+                  key={veiculo.id}
+                  className="flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-950/30 p-4 hover:border-zinc-700 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-800/60 text-zinc-400">
+                      <Car className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-semibold text-zinc-200">
+                        {veiculo.fabricante} {veiculo.modelo}
+                      </h4>
+                      <p className="text-xs text-zinc-500">
+                        {veiculo.cor}{' '}
+                        {veiculo.observacoes
+                          ? `• ${
+                              veiculo.observacoes.length > 30
+                                ? veiculo.observacoes.slice(0, 30) + '...'
+                                : veiculo.observacoes
+                            }`
+                          : ''}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="rounded-md border border-zinc-700 bg-zinc-900 px-2.5 py-1 text-xs font-mono font-bold tracking-wider text-zinc-200 uppercase shadow-inner">
+                    {formatarPlacaExibicao(veiculo.placa)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {erro && (
         <p role="alert" className="text-sm text-red-400">
           {erro}
@@ -132,6 +228,18 @@ export function ClienteDetalhePage() {
       )}
     </div>
   );
+}
+
+function formatarPlacaExibicao(placa: string) {
+  const clean = placa.toUpperCase().replace(/\s+/g, '').replace(/-/g, '');
+  if (clean.length === 7) {
+    const fifthChar = clean.charAt(4);
+    const isDigit = fifthChar >= '0' && fifthChar <= '9';
+    if (isDigit) {
+      return `${clean.slice(0, 3)}-${clean.slice(3)}`;
+    }
+  }
+  return clean;
 }
 
 function Campo({ label, valor }: { label: string; valor: string }) {
