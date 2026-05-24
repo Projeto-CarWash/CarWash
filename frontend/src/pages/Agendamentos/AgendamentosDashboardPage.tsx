@@ -10,7 +10,7 @@ export function AgendamentosDashboardPage() {
   const navigate = useNavigate();
   const [meses, setMeses] = useState<EstatisticasMes[]>([]);
   const [loading, setLoading] = useState(true);
-  const anoAtual = 2026;
+  const anoAtual = new Date().getFullYear();
 
   useEffect(() => {
     const carregarEstatisticas = async () => {

@@ -1,20 +1,5 @@
-/**
- * Tipos do módulo de agendamento (RF007).
- * Alinhados com o domínio backend (CarWash.Domain.Entities.Agendamento)
- * e preparados para os endpoints futuros.
- */
+export type StatusAgendamento = 'agendado' | 'cancelado' | 'finalizado' | 'pendente';
 
-// ---------------------------------------------------------------------------
-// Enums / Literal unions
-// ---------------------------------------------------------------------------
-
-export type StatusAgendamento = 'agendado' | 'cancelado' | 'finalizado';
-
-// ---------------------------------------------------------------------------
-// Resumos para seletores do wizard
-// ---------------------------------------------------------------------------
-
-/** Cliente resumido exibido no seletor de busca (Etapa 1). */
 export interface ClienteResumido {
   id: string;
   nome: string;
@@ -23,7 +8,6 @@ export interface ClienteResumido {
   celular: string;
 }
 
-/** Veículo vinculado a um cliente (Etapa 1). */
 export interface VeiculoResumido {
   id: string;
   placa: string;
@@ -32,55 +16,35 @@ export interface VeiculoResumido {
   ano?: number;
 }
 
-/** Serviço ativo do catálogo (Etapa 2). */
 export interface ServicoAtivo {
   id: string;
   nome: string;
-  /** Preço em reais (ex: 89.90). */
   preco: number;
-  /** Duração estimada em minutos. */
   duracao: number;
   descricao?: string;
 }
 
-// ---------------------------------------------------------------------------
-// Estado do wizard
-// ---------------------------------------------------------------------------
-
-/** Estado global persistido entre etapas do wizard. */
 export interface AgendamentoWizardState {
-  // Etapa 1
   cliente: ClienteResumido | null;
   veiculo: VeiculoResumido | null;
-  dataAgendamento: string; // formato YYYY-MM-DD
-  horaInicio: string; // formato HH:mm
-
-  // Etapa 2
+  dataAgendamento: string;
+  horaInicio: string;
   servicos: ServicoAtivo[];
 }
 
-// ---------------------------------------------------------------------------
-// Payload para API
-// ---------------------------------------------------------------------------
-
-/** Payload enviado no POST /api/v1/agendamentos. */
 export interface CriarAgendamentoPayload {
   clienteId: string;
   veiculoId: string;
-  inicio: string; // ISO 8601
-  fim: string; // ISO 8601 (calculado: inicio + duração total)
+  filialId: string;
+  responsavelId: string;
+  inicio: string;
   servicoIds: string[];
   observacoes?: string;
 }
 
-/** Resposta de sucesso do POST /api/v1/agendamentos. */
 export interface CriarAgendamentoResponse {
   id: string;
 }
-
-// ---------------------------------------------------------------------------
-// Dashboard e Calendário
-// ---------------------------------------------------------------------------
 
 export interface EstatisticasMes {
   mes: number;
@@ -95,7 +59,70 @@ export interface AgendamentoSemana {
   id: string;
   titulo: string;
   cliente: string;
-  inicio: string; // ISO 8601
-  fim: string; // ISO 8601
+  inicio: string;
+  fim: string;
   status: StatusAgendamento;
+}
+
+export interface CriarAgendamentoRequest {
+  filialId: string;
+  clienteId: string;
+  veiculoId: string;
+  responsavelId: string | null;
+  inicio: string;
+  servicoIds: string[];
+  observacoes?: string | null;
+}
+
+export interface ConfirmarAgendamentoRequest extends CriarAgendamentoRequest {
+  confirmar: true;
+  tokenConfirmacao: string;
+  idempotencyKey: string;
+}
+
+export interface AgendamentoItemResponse {
+  id: string;
+  servicoId: string;
+  nomeServico: string;
+  precoAplicado: number;
+  duracaoAplicada: number;
+}
+
+export interface AgendamentoResponse {
+  id: string;
+  filialId: string;
+  clienteId: string;
+  veiculoId: string;
+  responsavelId: string | null;
+  status: StatusAgendamento;
+  inicio: string;
+  fim: string;
+  duracaoTotalMin: number;
+  valorTotal: number;
+  observacoes: string | null;
+  versao: number;
+  itens: AgendamentoItemResponse[];
+  criadoEm: string;
+  mensagem: string;
+  traceId: string;
+}
+
+export interface ResumoConfirmacao {
+  filial: { id: string; nome: string };
+  cliente: { id: string; nome: string; documento: string };
+  veiculo: { id: string; placa: string; modelo: string; cor: string };
+  servicos: { id: string; nome: string; duracaoMin: number; preco: number }[];
+  inicio: string;
+  fim: string;
+  duracaoTotalMin: number;
+  valorTotal: number;
+  observacoes: string | null;
+  hashResumo: string;
+}
+
+export interface PreConfirmacaoResponse {
+  tokenConfirmacao: string;
+  expiraEm: string;
+  resumo: ResumoConfirmacao;
+  traceId: string;
 }

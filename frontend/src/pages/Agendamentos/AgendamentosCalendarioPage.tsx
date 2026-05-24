@@ -1,5 +1,5 @@
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, addDays, isSameDay } from 'date-fns';
-import { ptBR } from 'date-fns/locale/pt-BR';
+import { ptBR } from 'date-fns/locale';
 import {
   ArrowLeft,
   ChevronLeft,
@@ -9,40 +9,46 @@ import {
   Clock,
   XCircle,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 
 import { agendamentoService } from '@/services/agendamentoService';
 
 import type { AgendamentoSemana } from '@/types/agendamento';
 
+const parseQueryDate = (ano: string | null, mes: string | null): Date => {
+  const parsedAno = Number(ano);
+  const parsedMes = Number(mes);
+  const anoValido = Number.isFinite(parsedAno) && parsedAno >= 2000 && parsedAno <= 2100;
+  const mesValido = Number.isFinite(parsedMes) && parsedMes >= 1 && parsedMes <= 12;
+  if (!anoValido || !mesValido) return new Date();
+  const today = new Date();
+  if (today.getFullYear() === parsedAno && today.getMonth() === parsedMes - 1) return today;
+  return new Date(parsedAno, parsedMes - 1, 1);
+};
+
 export function AgendamentosCalendarioPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
   const paramAno = searchParams.get('ano');
-  const paramMes = searchParams.get('mes'); // 1 a 12
+  const paramMes = searchParams.get('mes');
 
-  const [currentDate, setCurrentDate] = useState(() => {
-    if (paramAno && paramMes) {
-      const targetAno = Number(paramAno);
-      const targetMes = Number(paramMes) - 1;
-      const today = new Date();
+  const [currentDate, setCurrentDate] = useState(() => parseQueryDate(paramAno, paramMes));
 
-      if (today.getFullYear() === targetAno && today.getMonth() === targetMes) {
-        return today;
-      }
-
-      return new Date(targetAno, targetMes, 1);
-    }
-    return new Date();
-  });
+  useEffect(() => {
+    let ignore = false;
+    void Promise.resolve().then(() => {
+      if (!ignore) setCurrentDate(parseQueryDate(paramAno, paramMes));
+    });
+    return () => { ignore = true; };
+  }, [paramAno, paramMes]);
 
   const [agendamentos, setAgendamentos] = useState<AgendamentoSemana[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const startDate = startOfWeek(currentDate, { weekStartsOn: 1 });
-  const endDate = endOfWeek(currentDate, { weekStartsOn: 1 });
+  const startDate = useMemo(() => startOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
+  const endDate = useMemo(() => endOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
 
   useEffect(() => {
     const fetchAgendamentos = async () => {
@@ -58,7 +64,7 @@ export function AgendamentosCalendarioPage() {
     };
 
     void fetchAgendamentos();
-  }, [startDate.getTime(), endDate.getTime()]);
+  }, [startDate, endDate]);
 
   const handlePrevWeek = () => setCurrentDate((prev) => subWeeks(prev, 1));
   const handleNextWeek = () => setCurrentDate((prev) => addWeeks(prev, 1));
@@ -83,6 +89,8 @@ export function AgendamentosCalendarioPage() {
         return <Clock className="h-3 w-3 text-amber-500" />;
       case 'cancelado':
         return <XCircle className="h-3 w-3 text-red-600" />;
+      case 'finalizado':
+        return <CheckCircle2 className="h-3 w-3 text-blue-500" />;
       default:
         return null;
     }
@@ -96,6 +104,8 @@ export function AgendamentosCalendarioPage() {
         return 'border-amber-500/30 hover:border-amber-500/60';
       case 'cancelado':
         return 'border-red-600/30 hover:border-red-600/60';
+      case 'finalizado':
+        return 'border-blue-500/30 hover:border-blue-500/60';
       default:
         return 'border-zinc-800/60';
     }

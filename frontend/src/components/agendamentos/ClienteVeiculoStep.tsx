@@ -85,21 +85,32 @@ export function ClienteVeiculoStep({
   }, [busca]);
 
   useEffect(() => {
-    if (!cliente) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setVeiculos([]);
-      return;
-    }
+    let ignore = false;
+    
+    void Promise.resolve().then(() => {
+      if (ignore) return;
+      
+      if (!cliente) {
+        setVeiculos([]);
+        return;
+      }
 
-    setCarregandoVeiculos(true);
-    setErroVeiculos(null);
-    agendamentoService
-      .buscarVeiculosPorCliente(cliente.id)
-      .then((v) => setVeiculos(v))
-      .catch(() =>
-        setErroVeiculos('Não foi possível carregar os veículos deste cliente. Tente novamente.'),
-      )
-      .finally(() => setCarregandoVeiculos(false));
+      setCarregandoVeiculos(true);
+      setErroVeiculos(null);
+      agendamentoService
+        .buscarVeiculosPorCliente(cliente.id)
+        .then((v) => {
+          if (!ignore) setVeiculos(v);
+        })
+        .catch(() => {
+          if (!ignore) setErroVeiculos('Não foi possível carregar os veículos deste cliente. Tente novamente.');
+        })
+        .finally(() => {
+          if (!ignore) setCarregandoVeiculos(false);
+        });
+    });
+      
+    return () => { ignore = true; };
   }, [cliente]);
 
   useEffect(() => {
@@ -381,14 +392,11 @@ export function ClienteVeiculoStep({
               value={dataAgendamento}
               min={getMinDate()}
               onChange={(e) => onDataChange(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key !== 'Tab') e.preventDefault();
-              }}
               onClick={(e) => {
                 try {
                   e.currentTarget.showPicker();
-                } catch {
-                  // Ignore
+                } catch (e) {
+                  void e;
                 }
               }}
               className={`h-10 rounded-xl text-sm text-zinc-200 focus-visible:ring-0 [color-scheme:dark] ${
@@ -423,14 +431,11 @@ export function ClienteVeiculoStep({
               type="time"
               value={horaInicio}
               onChange={(e) => onHoraChange(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key !== 'Tab') e.preventDefault();
-              }}
               onClick={(e) => {
                 try {
                   e.currentTarget.showPicker();
-                } catch {
-                  // Ignore
+                } catch (e) {
+                  void e;
                 }
               }}
               className={`h-10 rounded-xl text-sm text-zinc-200 focus-visible:ring-0 [color-scheme:dark] ${

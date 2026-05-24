@@ -21,22 +21,14 @@ import type {
 } from '@/types/agendamento';
 import type { ProblemDetails } from '@/types/auth';
 
-// ---------------------------------------------------------------------------
-// API error messages
-// ---------------------------------------------------------------------------
-
 const API_MESSAGES: Record<number, string> = {
-  400: 'Dados do agendamento inválidos. Revise as informações e tente novamente.',
-  401: 'Sessão expirada. Faça login novamente.',
-  403: 'Você não possui permissão para criar agendamentos.',
-  404: 'Cliente, veículo ou serviço não encontrado. Revise os dados.',
-  409: 'Já existe agendamento para o horário informado. Escolha outro horário.',
-  500: 'Não foi possível concluir o agendamento no momento. Tente novamente.',
+  400: 'Dados do agendamento invalidos. Revise as informacoes e tente novamente.',
+  401: 'Sessao expirada. Faca login novamente.',
+  403: 'Voce nao possui permissao para criar agendamentos.',
+  404: 'Cliente, veiculo ou servico nao encontrado. Revise os dados.',
+  409: 'Ja existe agendamento para o horario informado. Escolha outro horario.',
+  500: 'Nao foi possivel concluir o agendamento no momento. Tente novamente.',
 };
-
-// ---------------------------------------------------------------------------
-// Initial state
-// ---------------------------------------------------------------------------
 
 const INITIAL_STATE: AgendamentoWizardState = {
   cliente: null,
@@ -46,28 +38,19 @@ const INITIAL_STATE: AgendamentoWizardState = {
   servicos: [],
 };
 
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
-
 export function NovoAgendamentoPage() {
   const navigate = useNavigate();
 
-  // Wizard navigation
   const [currentStep, setCurrentStep] = useState(1);
 
-  // Global state (persisted across steps)
   const [wizardState, setWizardState] = useState<AgendamentoWizardState>(INITIAL_STATE);
 
-  // Submission
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmado, setConfirmado] = useState(false);
 
-  // Messages
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  // --- Step 1 handlers ---
   const handleClienteChange = useCallback((cliente: ClienteResumido | null) => {
     setWizardState((prev) => ({ ...prev, cliente }));
     setGlobalError(null);
@@ -88,19 +71,16 @@ export function NovoAgendamentoPage() {
     setGlobalError(null);
   }, []);
 
-  // --- Step 2 handlers ---
   const handleServicosChange = useCallback((servicos: ServicoAtivo[]) => {
     setWizardState((prev) => ({ ...prev, servicos }));
     setGlobalError(null);
   }, []);
 
-  // --- Navigation ---
   const goToStep = useCallback((step: number) => {
     setCurrentStep(step);
     setGlobalError(null);
   }, []);
 
-  // --- Cancel ---
   const handleCancel = useCallback(() => {
     setWizardState(INITIAL_STATE);
     setGlobalError(null);
@@ -109,31 +89,27 @@ export function NovoAgendamentoPage() {
     void navigate('/dashboard', { replace: true });
   }, [navigate]);
 
-  // --- Submit ---
   const handleConfirm = useCallback(async () => {
-    if (isSubmitting) return; // double-click prevention
+    if (isSubmitting) return;
     if (!confirmado) return;
 
     const { cliente, veiculo, dataAgendamento, horaInicio, servicos } = wizardState;
 
-    // Final validation
     if (!cliente || !veiculo || !dataAgendamento || !horaInicio || servicos.length === 0) {
       setGlobalError(
-        'Existem campos obrigatórios não preenchidos. Revise as etapas e tente novamente.',
+        'Existem campos obrigatorios nao preenchidos. Revise as etapas e tente novamente.',
       );
       return;
     }
 
-    // Build payload
-    const duracaoTotal = servicos.reduce((sum, s) => sum + s.duracao, 0);
     const inicio = new Date(`${dataAgendamento}T${horaInicio}:00`);
-    const fim = new Date(inicio.getTime() + duracaoTotal * 60_000);
 
     const payload: CriarAgendamentoPayload = {
       clienteId: cliente.id,
       veiculoId: veiculo.id,
+      filialId: 'mock-filial-id',
+      responsavelId: 'mock-responsavel-id',
       inicio: inicio.toISOString(),
-      fim: fim.toISOString(),
       servicoIds: servicos.map((s) => s.id),
     };
 
@@ -145,7 +121,6 @@ export function NovoAgendamentoPage() {
       await agendamentoService.criarAgendamento(payload);
       setSuccessMsg('Agendamento criado com sucesso!');
 
-      // Redirect after brief delay
       setTimeout(() => {
         void navigate('/dashboard', { replace: true });
       }, 1200);
@@ -182,7 +157,6 @@ export function NovoAgendamentoPage() {
         <AgendamentoStepper currentStep={currentStep} />
 
         <div className="rounded-2xl border border-zinc-800/60 bg-zinc-900/30 p-8">
-          {/* Global error */}
           {globalError && (
             <div
               role="alert"
@@ -203,7 +177,6 @@ export function NovoAgendamentoPage() {
             </div>
           )}
 
-          {/* Success message */}
           {successMsg && (
             <div
               role="status"
@@ -222,7 +195,6 @@ export function NovoAgendamentoPage() {
             </div>
           )}
 
-          {/* Step content */}
           {currentStep === 1 && (
             <ClienteVeiculoStep
               cliente={wizardState.cliente}
