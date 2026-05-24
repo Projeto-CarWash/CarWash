@@ -44,7 +44,9 @@ export default defineConfig([
       sourceType: 'module',
       globals: { ...globals.browser, ...globals.es2023 },
       parserOptions: {
-        projectService: true,
+        // `vitest.config.ts` não entra no build typado (clash de tipos upstream
+        // entre o Vite do app e o Vite embutido no Vitest) — usa programa default.
+        projectService: { allowDefaultProject: ['vitest.config.ts'] },
         tsconfigRootDir: import.meta.dirname,
       },
     },
@@ -108,9 +110,10 @@ export default defineConfig([
     },
   },
 
-  // Arquivos de config (vite.config, eslint.config, etc.) — relaxar regras que exigem TS project
+  // Arquivos de config (vite.config, vitest.config, eslint.config, etc.) —
+  // relaxar regras que exigem TS project (não fazem parte do build typado).
   {
-    files: ['*.config.{js,ts,mjs,cjs}', 'vite.config.ts'],
+    files: ['*.config.{js,ts,mjs,cjs}', 'vite.config.ts', 'vitest.config.ts'],
     languageOptions: {
       globals: { ...globals.node },
       parserOptions: { project: null },

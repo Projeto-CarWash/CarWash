@@ -1,4 +1,6 @@
 import { Bell, Plus, Search } from 'lucide-react';
+import { Fragment } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 
 import {
   Breadcrumb,
@@ -12,25 +14,52 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 export function Topbar() {
+  const location = useLocation();
+  const segments = location.pathname.split('/').filter(Boolean);
+
+  function getBreadcrumbName(segment: string, index: number) {
+    if (segment === 'dashboard') return 'Dashboard';
+    if (segment === 'clientes') return 'Clientes';
+    if (segment === 'usuarios') return 'Usuários';
+    if (segment === 'novo') return 'Novo';
+
+    if (index === segments.length - 1 && segment !== 'novo') {
+      return 'Detalhes';
+    }
+
+    return segment.charAt(0).toUpperCase() + segment.slice(1);
+  }
+
+  const breadcrumbs = segments.map((seg, i) => {
+    const isLast = i === segments.length - 1;
+    const name = getBreadcrumbName(seg, i);
+    const href = '/' + segments.slice(0, i + 1).join('/');
+    return { name, href, isLast };
+  });
+
   return (
     <header className="flex items-center justify-between border-b border-zinc-800/50 bg-zinc-950/80 px-6 py-3 backdrop-blur-sm">
       <Breadcrumb>
         <BreadcrumbList className="text-xs font-bold tracking-[0.18em] uppercase">
           <BreadcrumbItem>
-            <BreadcrumbLink className="text-zinc-500 hover:text-zinc-300" href="#">
-              Admin
+            <BreadcrumbLink asChild className="text-zinc-500 hover:text-zinc-300">
+              <Link to="/dashboard">Admin</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
-          <BreadcrumbSeparator className="text-zinc-600">/</BreadcrumbSeparator>
-          <BreadcrumbItem>
-            <BreadcrumbLink className="text-zinc-500 hover:text-zinc-300" href="#">
-              Clientes
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator className="text-zinc-600">/</BreadcrumbSeparator>
-          <BreadcrumbItem>
-            <BreadcrumbPage className="text-zinc-300">Novo</BreadcrumbPage>
-          </BreadcrumbItem>
+          {breadcrumbs.map((crumb) => (
+            <Fragment key={crumb.href}>
+              <BreadcrumbSeparator className="text-zinc-600">/</BreadcrumbSeparator>
+              <BreadcrumbItem>
+                {crumb.isLast ? (
+                  <BreadcrumbPage className="text-zinc-300">{crumb.name}</BreadcrumbPage>
+                ) : (
+                  <BreadcrumbLink asChild className="text-zinc-500 hover:text-zinc-300">
+                    <Link to={crumb.href}>{crumb.name}</Link>
+                  </BreadcrumbLink>
+                )}
+              </BreadcrumbItem>
+            </Fragment>
+          ))}
         </BreadcrumbList>
       </Breadcrumb>
 

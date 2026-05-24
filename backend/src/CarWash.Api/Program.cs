@@ -62,6 +62,15 @@ if (string.IsNullOrWhiteSpace(jwtConfig.Secret))
         "Jwt:Secret não configurado. Defina a variável de ambiente Jwt__Secret (≥ 32 bytes / 256 bits para HMAC-SHA256).");
 }
 
+// RF015 / ADR 0004: chave dedicada do token de confirmação de agendamento.
+// Fail-fast no startup — não esperar a primeira pré-confirmação para descobrir.
+if (string.IsNullOrWhiteSpace(jwtConfig.ConfirmacaoSigningKey))
+{
+    throw new InvalidOperationException(
+        "Jwt:ConfirmacaoSigningKey não configurada. Defina a variável de ambiente Jwt__ConfirmacaoSigningKey "
+        + "(≥ 32 bytes / 256 bits para HMAC-SHA256) — chave dedicada do token de confirmação (RF015).");
+}
+
 var jwtKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtConfig.Secret));
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

@@ -10,6 +10,7 @@ import type { ClienteFormData } from '@/schemas/clienteSchema';
 
 export function IdentificacaoForm() {
   const {
+    watch,
     control,
     formState: { errors },
   } = useFormContext<ClienteFormData>();
@@ -34,6 +35,16 @@ export function IdentificacaoForm() {
       cpfInputRef.current?.focus();
     });
   }, []);
+
+  const cpfCnpjValue = watch('cpfCnpj');
+  const [prevCpfValue, setPrevCpfValue] = useState(cpfCnpjValue);
+
+  if (cpfCnpjValue !== prevCpfValue) {
+    setPrevCpfValue(cpfCnpjValue);
+    if (!cpfCnpjValue) {
+      setIsDocLocked(false);
+    }
+  }
 
   return (
     <div>
@@ -160,7 +171,13 @@ export function IdentificacaoForm() {
                   id="name"
                   type="text"
                   value={field.value}
-                  onChange={(e) => field.onChange(e.target.value)}
+                  onChange={(e) => {
+                    const sanitizedName = e.target.value.replace(
+                      /[^a-zA-Z0-9áàãâéèêíïóôõöúçñÁÀÃÂÉÈÊÍÏÓÔÕÖÚÇÑ\s.&/'-]/g,
+                      '',
+                    );
+                    field.onChange(sanitizedName);
+                  }}
                   onBlur={field.onBlur}
                   placeholder="Ex: Helena Quintanilha Freitas"
                   aria-invalid={!!nomeError}
