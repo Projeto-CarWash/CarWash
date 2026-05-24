@@ -5,6 +5,7 @@ using CarWash.Application.Auth.Abstractions;
 using CarWash.Application.Auth.Persistence;
 using CarWash.Application.Clientes.Persistence;
 using CarWash.Application.Common.Security;
+using CarWash.Application.Servicos.Persistence;
 using CarWash.Application.Usuarios.Persistence;
 using CarWash.Infrastructure.Agendamentos;
 using CarWash.Infrastructure.Auditing;
@@ -72,10 +73,10 @@ public static class DependencyInjection
         services.AddDbContext<CarWashDbContext>((sp, opt) =>
         {
             opt.UseNpgsql(conn, npg => npg
-                    .MigrationsAssembly(typeof(CarWashDbContext).Assembly.FullName)
-                    .MigrationsHistoryTable("__ef_migrations_history", "public"))
-               .UseSnakeCaseNamingConvention()
-               .AddInterceptors(
+                .MigrationsAssembly(typeof(CarWashDbContext).Assembly.FullName)
+                .MigrationsHistoryTable("__ef_migrations_history", "public"))
+                .UseSnakeCaseNamingConvention()
+                .AddInterceptors(
                     sp.GetRequiredService<AuditableEntitiesInterceptor>(),
                     sp.GetRequiredService<AuditLogInterceptor>());
         });
