@@ -33,6 +33,13 @@ export interface ClienteDetalhe {
     cidade: string;
     uf: string;
   };
+  veiculos?: Array<{
+    id: string;
+    placa: string;
+    modelo: string;
+    fabricante: string;
+    cor: string;
+  }>;
   ativo: boolean;
   criadoEm: string;
   atualizadoEm: string;
