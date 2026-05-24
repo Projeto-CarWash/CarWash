@@ -25,7 +25,7 @@ export default defineConfig([
 
   // Código de aplicação
   {
-    files: ['**/*.{ts,tsx}'],
+    files: ['src/**/*.{ts,tsx}'],
     extends: [
       js.configs.recommended,
       tseslint.configs.recommendedTypeChecked,
@@ -110,13 +110,16 @@ export default defineConfig([
     },
   },
 
-  // Arquivos de config (vite.config, vitest.config, eslint.config, etc.) —
-  // relaxar regras que exigem TS project (não fazem parte do build typado).
+  // Arquivos de config (vite.config, eslint.config, etc.) — relaxar regras que exigem TS project
   {
     files: ['*.config.{js,ts,mjs,cjs}', 'vite.config.ts', 'vitest.config.ts'],
     languageOptions: {
       globals: { ...globals.node },
-      parserOptions: { project: null },
+      parser: tseslint.parser,
+      parserOptions: {
+        project: null,
+        projectService: false,
+      },
     },
     rules: {
       '@typescript-eslint/no-unsafe-assignment': 'off',

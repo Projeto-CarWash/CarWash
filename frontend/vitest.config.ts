@@ -10,7 +10,7 @@ import { defineConfig } from 'vitest/config';
  * `vite.config.ts`, desnecessário (e custoso) nos testes.
  */
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react() as any],
   esbuild: {
     jsx: 'automatic',
   },
