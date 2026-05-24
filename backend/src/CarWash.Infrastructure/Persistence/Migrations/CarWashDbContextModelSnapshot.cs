@@ -49,6 +49,12 @@ namespace CarWash.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("criado_por");
 
+                    b.Property<int>("DuracaoTotalMin")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("duracao_total_min");
+
                     b.Property<Guid>("FilialId")
                         .HasColumnType("uuid")
                         .HasColumnName("filial_id");
@@ -76,6 +82,12 @@ namespace CarWash.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(20)")
                         .HasDefaultValue("agendado")
                         .HasColumnName("status");
+
+                    b.Property<decimal>("ValorTotal")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(10,2)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("valor_total");
 
                     b.Property<Guid>("VeiculoId")
                         .HasColumnType("uuid")
@@ -112,9 +124,13 @@ namespace CarWash.Infrastructure.Persistence.Migrations
 
                     b.ToTable("agendamentos", "public", t =>
                         {
+                            t.HasCheckConstraint("ck_ag_duracao_total", "duracao_total_min >= 0");
+
                             t.HasCheckConstraint("ck_ag_inicio_menor_fim", "inicio < fim");
 
                             t.HasCheckConstraint("ck_ag_status", "status IN ('agendado','cancelado','finalizado')");
+
+                            t.HasCheckConstraint("ck_ag_valor_total", "valor_total >= 0");
                         });
                 });
 
@@ -603,6 +619,74 @@ namespace CarWash.Infrastructure.Persistence.Migrations
                         {
                             t.HasCheckConstraint("ck_filiais_celulas_faixa", "celulas_ativas BETWEEN 1 AND 100");
                         });
+                });
+
+            modelBuilder.Entity("CarWash.Domain.Entities.IdempotenciaRequisicao", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("AtualizadoEm")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("atualizado_em")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<DateTime>("CriadoEm")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("criado_em")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("Escopo")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("escopo");
+
+                    b.Property<DateTime>("ExpiraEm")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("expira_em");
+
+                    b.Property<Guid>("IdempotencyKey")
+                        .HasColumnType("uuid")
+                        .HasColumnName("idempotency_key");
+
+                    b.Property<string>("PayloadHash")
+                        .IsRequired()
+                        .HasColumnType("char(64)")
+                        .HasColumnName("payload_hash")
+                        .IsFixedLength();
+
+                    b.Property<Guid?>("RecursoId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("recurso_id");
+
+                    b.Property<string>("RespostaJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("resposta_json");
+
+                    b.Property<int>("StatusHttp")
+                        .HasColumnType("integer")
+                        .HasColumnName("status_http");
+
+                    b.Property<Guid>("UsuarioId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("usuario_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_idempotencia_requisicoes");
+
+                    b.HasIndex("ExpiraEm")
+                        .HasDatabaseName("ix_idempotencia_expira_em");
+
+                    b.HasIndex("IdempotencyKey", "Escopo")
+                        .IsUnique()
+                        .HasDatabaseName("uq_idempotencia_key_escopo");
+
+                    b.ToTable("idempotencia_requisicoes", "public");
                 });
 
             modelBuilder.Entity("CarWash.Domain.Entities.Notificacao", b =>

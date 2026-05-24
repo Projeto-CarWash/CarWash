@@ -1,0 +1,8 @@
+# docker-compose.safe.yml — override para testes isolados da branch
+# Uso:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.safe.yml up -d
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.safe.yml run --rm migrator
+
+volumes:
+  pgdata:
+    name: carwash_pgdata_feat_auth_session_fields

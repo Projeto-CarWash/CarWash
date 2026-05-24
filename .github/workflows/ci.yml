@@ -22,7 +22,7 @@ jobs:
         env:
           BRANCH: ${{ github.event.pull_request.head.ref }}
         run: |
-          if ! echo "$BRANCH" | grep -Eq '^((feat|fix|docs|style|refactor|test|chore|build|ci|perf)/[A-Za-z0-9._-]+)|(main|homolog|development)$'; then
+          if ! echo "$BRANCH" | grep -Eq '^(((feat|fix|docs|style|refactor|test|chore|build|ci|perf)/[A-Za-z0-9._-]+)|(main|homolog|development))$'; then
             echo "❌ Nome de branch inválido: '$BRANCH'"
             echo "   Padrão: <tipo>/<id-task>-<slug-kebab> (ver CONTRIBUTING.md §1)"
             exit 1
@@ -130,7 +130,7 @@ jobs:
       - name: Validate dev/hom/prod compose
         env:
           POSTGRES_PASSWORD: ci-only
-          JWT_SECRET: ci-only-do-not-use-this-in-real-environments
+          Jwt__Secret: ci-only-do-not-use-this-in-real-environments
           CARWASH_SEED_ADMIN_PASSWORD: ci-only
         run: |
           docker compose -f docker-compose.yml -f docker-compose.dev.yml  config --quiet

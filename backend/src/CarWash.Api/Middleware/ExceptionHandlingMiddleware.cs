@@ -116,6 +116,17 @@ public sealed class ExceptionHandlingMiddleware
                     ["retryAfterSeconds"] = segundosRestantes,
                 }).ConfigureAwait(false);
         }
+        catch (RecursoInativoException ex)
+        {
+            // Requisição sintaticamente válida, mas referencia um recurso inativo
+            // (filial/veículo/cliente/serviço) — 422 Unprocessable Entity.
+            await EscreverProblemAsync(
+                context,
+                status: StatusCodes.Status422UnprocessableEntity,
+                slug: RecursoInativoException.SlugPadrao,
+                title: ex.Message,
+                erros: null).ConfigureAwait(false);
+        }
         catch (DomainException ex)
         {
             await EscreverProblemAsync(
@@ -140,6 +151,18 @@ public sealed class ExceptionHandlingMiddleware
                 context,
                 status: StatusCodes.Status404NotFound,
                 slug: "not-found",
+                title: ex.Message,
+                erros: null).ConfigureAwait(false);
+        }
+        catch (SessaoConfirmacaoExpiradaException ex)
+        {
+            // RF015: token de confirmação válido mas expirado — o recurso (sessão
+            // de confirmação) deixou de existir. 410 Gone para o cliente saber que
+            // deve gerar uma nova pré-confirmação em vez de apenas reenviar.
+            await EscreverProblemAsync(
+                context,
+                status: StatusCodes.Status410Gone,
+                slug: SessaoConfirmacaoExpiradaException.Slug,
                 title: ex.Message,
                 erros: null).ConfigureAwait(false);
         }
