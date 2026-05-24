@@ -1,0 +1,7 @@
+:root {
+  --transitions--fast: 150ms ease;
+  --transitions--base: 200ms ease;
+  --transitions--slow: 300ms ease;
+  --transitions--slower: 500ms ease;
+  --transitions--spring: 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}

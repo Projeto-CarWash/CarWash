@@ -4,92 +4,63 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace CarWash.Infrastructure.Persistence.Configurations;
 
-public class ClienteConfiguration : IEntityTypeConfiguration<Cliente>
+public sealed class ClienteConfiguration : IEntityTypeConfiguration<Cliente>
 {
     public void Configure(EntityTypeBuilder<Cliente> builder)
     {
-        builder.ToTable("clientes");
+        ArgumentNullException.ThrowIfNull(builder);
 
-        builder.HasKey(x => x.Id);
+        builder.ToTable("clientes", t =>
+            t.HasCheckConstraint(
+                "ck_clientes_cpf_ou_cnpj",
+                "cpf IS NOT NULL OR cnpj IS NOT NULL"));
 
-        builder.Property(x => x.Id)
-            .HasColumnName("id")
-            .HasDefaultValueSql("gen_random_uuid()");
+        builder.HasKey(x => x.Id).HasName("pk_clientes");
+        builder.Property(x => x.Id).ValueGeneratedNever();
 
-        builder.Property(x => x.Nome)
-            .HasColumnName("nome")
-            .HasMaxLength(100)
-            .IsRequired();
+        builder.Property(x => x.Nome).IsRequired().HasMaxLength(100);
+        builder.Property(x => x.DataNascimento).IsRequired().HasColumnType("date");
+        builder.Property(x => x.Cpf).HasMaxLength(11);
+        builder.Property(x => x.Cnpj).HasMaxLength(14);
+        builder.Property(x => x.Telefone).HasMaxLength(11);
+        builder.Property(x => x.Celular).IsRequired().HasMaxLength(11);
+        builder.Property(x => x.Email).HasMaxLength(150);
 
-        builder.Property(x => x.Cpf)
-            .HasColumnName("cpf")
-            .HasMaxLength(11);
+        builder.Property(x => x.EnderecoCep).IsRequired().HasMaxLength(8);
+        builder.Property(x => x.EnderecoLogradouro).IsRequired().HasMaxLength(150);
+        builder.Property(x => x.EnderecoNumero).IsRequired().HasMaxLength(20);
+        builder.Property(x => x.EnderecoComplemento).HasMaxLength(100);
+        builder.Property(x => x.EnderecoBairro).IsRequired().HasMaxLength(100);
+        builder.Property(x => x.EnderecoCidade).IsRequired().HasMaxLength(100);
+        builder.Property(x => x.EnderecoUf).IsRequired().HasMaxLength(2).IsFixedLength();
 
-        builder.Property(x => x.Cnpj)
-            .HasColumnName("cnpj")
-            .HasMaxLength(14);
+        builder.Ignore(x => x.Endereco);
 
-        builder.Property(x => x.Telefone)
-            .HasColumnName("telefone")
-            .HasMaxLength(11);
+        builder.Property(x => x.Ativo).IsRequired().HasDefaultValue(true);
+        builder.Property(x => x.CriadoEm).IsRequired().HasColumnType("timestamptz").HasDefaultValueSql("now()");
+        builder.Property(x => x.AtualizadoEm).IsRequired().HasColumnType("timestamptz").HasDefaultValueSql("now()");
 
-        builder.Property(x => x.Celular)
-            .HasColumnName("celular")
-            .HasMaxLength(11);
+        // Auditoria de quem criou/alterou (GAP-CW-CLI-AUDIT-CREATE / GAP-CW-CLI-AUDIT).
+        // Nullable por enquanto: registros legados não têm o vínculo. Release futura
+        // promoverá para NOT NULL após backfill de auditoria histórica.
+        builder.Property(x => x.CriadoPorUsuarioId).HasColumnName("criado_por_usuario_id");
+        builder.Property(x => x.AtualizadoPorUsuarioId).HasColumnName("atualizado_por_usuario_id");
 
-        builder.Property(x => x.Email)
-            .HasColumnName("email")
-            .HasMaxLength(150);
-
-        builder.Property(x => x.Endereco)
-            .HasColumnName("endereco")
-            .HasMaxLength(255);
-
-        builder.Property(x => x.Observacoes)
-            .HasColumnName("observacoes")
-            .HasColumnType("text");
-
-        builder.Property(x => x.Ativo)
-            .HasColumnName("ativo")
-            .HasDefaultValue(true)
-            .IsRequired();
-
-        builder.Property(x => x.CriadoEm)
-            .HasColumnName("criado_em")
-            .HasColumnType("timestamp with time zone")
-            .IsRequired();
-
-        builder.Property(x => x.AtualizadoEm)
-            .HasColumnName("atualizado_em")
-            .HasColumnType("timestamp with time zone")
-            .IsRequired();
-
-        builder.HasCheckConstraint(
-            "ck_clientes_cpf_ou_cnpj",
-            "(cpf is not null and cnpj is null) or (cpf is null and cnpj is not null)");
-
-        builder.HasCheckConstraint(
-            "ck_clientes_telefone_somente_digitos",
-            "telefone IS NULL OR telefone ~ '^[0-9]{10,11}$'");
-
-        builder.HasCheckConstraint(
-            "ck_clientes_celular_somente_digitos",
-            "celular IS NULL OR celular ~ '^[0-9]{11}$'");
-
-        builder.HasIndex(x => x.Nome)
-            .HasDatabaseName("idx_clientes_nome");
+        builder.HasIndex(x => x.Nome).HasDatabaseName("idx_clientes_nome");
 
         builder.HasIndex(x => x.Email)
-            .HasDatabaseName("idx_clientes_email");
+            .IsUnique()
+            .HasDatabaseName("ux_clientes_email")
+            .HasFilter("email IS NOT NULL");
 
         builder.HasIndex(x => x.Cpf)
             .IsUnique()
-            .HasFilter("cpf IS NOT NULL")
-            .HasDatabaseName("uk_clientes_cpf");
+            .HasDatabaseName("uk_clientes_cpf")
+            .HasFilter("cpf IS NOT NULL");
 
         builder.HasIndex(x => x.Cnpj)
             .IsUnique()
-            .HasFilter("cnpj IS NOT NULL")
-            .HasDatabaseName("uk_clientes_cnpj");
+            .HasDatabaseName("uk_clientes_cnpj")
+            .HasFilter("cnpj IS NOT NULL");
     }
 }

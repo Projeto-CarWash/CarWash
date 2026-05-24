@@ -18,6 +18,8 @@ services:
   # quando aplicar via `make migrate` ou dotnet ef diretamente
   migrator:
     profiles: ['manual']
+    environment:
+      CARWASH_SEED_ADMIN_PASSWORD: ${CARWASH_SEED_ADMIN_PASSWORD:?precisa estar em .env}
 
   backend:
     build:
@@ -29,6 +31,9 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       DOTNET_USE_POLLING_FILE_WATCHER: '1'
+      # Senha do admin do seed inicial (DB001 §05 / decisão P12).
+      # Sem fallback — a migration falha se a variável estiver vazia.
+      CARWASH_SEED_ADMIN_PASSWORD: ${CARWASH_SEED_ADMIN_PASSWORD:?precisa estar em .env}
     volumes:
       - ./backend:/src
       - backend_nuget:/root/.nuget/packages
@@ -43,7 +48,11 @@ services:
       - ./frontend:/app
       - frontend_node_modules:/app/node_modules
     environment:
-      VITE_API_URL: ${VITE_API_URL:-http://localhost:8080}
+      # Frontend usa caminhos absolutos /api/... e o Vite dev server faz proxy
+      # para o backend (ver frontend/vite.config.ts). Mantemos VITE_API_URL vazio
+      # para evitar CORS entre 5173 e 8080.
+      VITE_API_URL: ''
+      VITE_PROXY_TARGET: ${VITE_PROXY_TARGET:-http://backend:8080}
     ports:
       - '${FRONTEND_PORT:-5173}:5173'
 
