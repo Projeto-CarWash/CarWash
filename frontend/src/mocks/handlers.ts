@@ -1,7 +1,5 @@
 import { http, HttpResponse } from 'msw';
 
-const API_URL = import.meta.env.VITE_API_URL ? String(import.meta.env.VITE_API_URL).trim() : 'http://localhost:5000/api/v1';
-
 const servicosData = [
   {
     id: 'b7b83f06-5b92-4f9e-a0e4-9d10e0f31c2a',
@@ -32,7 +30,11 @@ const servicosData = [
   },
 ];
 
-type ServicoBody = { nome?: string; preco?: number | string; duracaoMin?: number | string };
+interface ServicoBody {
+  nome?: string;
+  preco?: number | string;
+  duracaoMin?: number | string;
+}
 
 export const handlers = [
   http.get('*/servicos', ({ request }) => {
@@ -56,14 +58,21 @@ export const handlers = [
 
     if (!body.nome || !body.preco || !body.duracaoMin) {
       return HttpResponse.json(
-        { errors: { geral: ['Dados do serviço inválidos. Verifique os campos e tente novamente.'] } },
-        { status: 400 }
+        {
+          errors: { geral: ['Dados do serviço inválidos. Verifique os campos e tente novamente.'] },
+        },
+        { status: 400 },
       );
     }
 
-    const existe = servicosData.some((s) => s.nome.toLowerCase() === body.nome!.trim().toLowerCase());
+    const existe = servicosData.some(
+      (s) => s.nome.toLowerCase() === body.nome!.trim().toLowerCase(),
+    );
     if (existe) {
-      return HttpResponse.json({ message: 'Já existe serviço cadastrado com este nome.' }, { status: 409 });
+      return HttpResponse.json(
+        { message: 'Já existe serviço cadastrado com este nome.' },
+        { status: 409 },
+      );
     }
 
     const novo = {
@@ -92,20 +101,25 @@ export const handlers = [
 
     if (!body.nome || !body.preco || !body.duracaoMin) {
       return HttpResponse.json(
-        { errors: { geral: ['Dados do serviço inválidos. Verifique os campos e tente novamente.'] } },
-        { status: 400 }
+        {
+          errors: { geral: ['Dados do serviço inválidos. Verifique os campos e tente novamente.'] },
+        },
+        { status: 400 },
       );
     }
 
     const existe = servicosData.some(
-      (s) => s.nome.toLowerCase() === body.nome!.trim().toLowerCase() && s.id !== id
+      (s) => s.nome.toLowerCase() === body.nome!.trim().toLowerCase() && s.id !== id,
     );
     if (existe) {
-      return HttpResponse.json({ message: 'Já existe serviço cadastrado com este nome.' }, { status: 409 });
+      return HttpResponse.json(
+        { message: 'Já existe serviço cadastrado com este nome.' },
+        { status: 409 },
+      );
     }
 
     const atual = servicosData[servicoIndex]!;
-    
+
     servicosData[servicoIndex] = {
       ...atual,
       nome: body.nome.trim(),
