@@ -1,7 +1,6 @@
 import {
   BarChart3,
   CalendarDays,
-  CalendarRange,
   CarFront,
   DollarSign,
   LayoutDashboard,
