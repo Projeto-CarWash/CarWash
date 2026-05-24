@@ -9,7 +9,6 @@ import type { ClienteFormData } from '@/schemas/clienteSchema';
 
 export function IdentificacaoForm() {
   const {
-    watch,
     control,
     formState: { errors },
   } = useFormContext<ClienteFormData>();
@@ -35,9 +34,10 @@ export function IdentificacaoForm() {
           <Controller
             name="cpfCnpj"
             control={control}
-            render={({ field }) => {
+            render={({ field, fieldState }) => {
               const digits = field.value.replace(/\D/g, '');
-              const isValid = (digits.length === 11 || digits.length === 14) && !cpfError;
+              const isComplete = digits.length === 11 || digits.length === 14;
+              const isValid = fieldState.isTouched && !fieldState.invalid && isComplete;
 
               return (
                 <>
