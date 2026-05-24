@@ -54,26 +54,26 @@ public class ClientesController : ControllerBase
                 new { id = response.Id },
                 response);
         }
-        catch (ValidationException ex)
-        {
-            logger.LogWarning(
-                ex,
-                "Erro de validação ao cadastrar cliente. TraceId: {TraceId}",
-                traceId);
+catch (ValidationException ex)
+{
+    logger.LogWarning(
+        ex,
+        "Tentativa inválida de cadastro de cliente. TraceId: {TraceId}",
+        traceId);
 
-            return BadRequest(new ApiErrorResponse
+    return BadRequest(new ApiErrorResponse
+    {
+        Code = "CLIENTE_VALIDATION_ERROR",
+        Message = "Dados inválidos. Verifique os campos do cliente e dos veículos.",
+        TraceId = traceId,
+        Details = ex.Errors
+            .Select(error => new ApiErrorDetail
             {
-                Code = "CLIENTE_VALIDATION_ERROR",
-                Message = "Dados do cliente inválidos. Verifique os campos obrigatórios e tente novamente.",
-                TraceId = traceId,
-                Details = ex.Errors
-                    .Select(error => new ApiErrorDetail
-                    {
-                        Field = error.PropertyName,
-                        Message = error.ErrorMessage,
-                    })
-                    .ToList(),
-            });
+                Field = error.PropertyName,
+                Message = error.ErrorMessage,
+            })
+            .ToList(),
+    });
         }
         catch (ClienteDocumentoDuplicadoException)
         {
@@ -88,11 +88,24 @@ public class ClientesController : ControllerBase
                 TraceId = traceId,
             });
         }
+        catch (VeiculoPlacaDuplicadaException)
+        {
+            logger.LogWarning(
+                "Tentativa de cadastro com placa duplicada. TraceId: {TraceId}",
+                traceId);
+
+            return Conflict(new ApiErrorResponse
+            {
+                Code = "VEICULO_PLACA_DUPLICADA",
+                Message = "Já existe veículo cadastrado com uma das placas informadas.",
+                TraceId = traceId,
+            });
+        }
         catch (Exception ex)
         {
             logger.LogError(
                 ex,
-                "Falha inesperada ao cadastrar cliente. TraceId: {TraceId}",
+                "Falha inesperada ao cadastrar cliente e veículos. TraceId: {TraceId}",
                 traceId);
 
             return StatusCode(StatusCodes.Status500InternalServerError, new ApiErrorResponse

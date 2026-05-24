@@ -9,4 +9,5 @@ public class CreateClienteRequest{
     public string? Email { get; set; }
     public string? Endereco { get; set; }
     public string? Observacoes { get; set; }
+    public List<CreateVeiculoRequest>? Veiculos { get; set; }
 }

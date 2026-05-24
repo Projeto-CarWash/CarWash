@@ -39,14 +39,20 @@ public class ClienteRepository : IClienteRepository
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     }
 
-    public async Task AdicionarAsync(Cliente cliente, string correlationId, Guid? usuarioId, CancellationToken cancellationToken)
+    public async Task AdicionarAsync(
+        Cliente cliente,
+        IReadOnlyCollection<Veiculo> veiculos,
+        string correlationId,
+        Guid? usuarioId,
+        CancellationToken cancellationToken)
     {
         await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
 
         await context.Clientes.AddAsync(cliente, cancellationToken);
+        await context.Veiculos.AddRangeAsync(veiculos, cancellationToken);
 
-        var audit = new AuditLog(
-            evento: "CLIENTE_CRIADO",
+        AuditLog audit = new(
+            evento: "CLIENTE_VEICULOS_CRIADOS",
             entidade: "clientes",
             entidadeId: cliente.Id,
             usuarioId: usuarioId,
@@ -59,6 +65,8 @@ public class ClienteRepository : IClienteRepository
                 PossuiEmail = !string.IsNullOrWhiteSpace(cliente.Email),
                 PossuiTelefone = !string.IsNullOrWhiteSpace(cliente.Telefone),
                 PossuiCelular = !string.IsNullOrWhiteSpace(cliente.Celular),
+                Placas = veiculos.Select(v => v.Placa).ToList(),
+                QuantidadeVeiculos = veiculos.Count,
             }));
 
         await context.AuditLogs.AddAsync(audit, cancellationToken);
@@ -71,8 +79,23 @@ public class ClienteRepository : IClienteRepository
         catch (DbUpdateException ex) when (IsUniqueViolation(ex))
         {
             await transaction.RollbackAsync(cancellationToken);
+
+            if (IsConstraint(ex, "uk_veiculos_placa"))
+            {
+                throw new VeiculoPlacaDuplicadaException();
+            }
+
             throw new ClienteDocumentoDuplicadoException();
         }
+    }
+
+    public Task<bool> ExisteAlgumaPlacaAsync(
+        IReadOnlyCollection<string> placas,
+        CancellationToken cancellationToken)
+    {
+        return context.Veiculos
+            .AsNoTracking()
+            .AnyAsync(x => placas.Contains(x.Placa), cancellationToken);
     }
 
     private static string? MascararDocumento(string? documento)
@@ -94,5 +117,11 @@ public class ClienteRepository : IClienteRepository
     {
         return exception.InnerException is PostgresException postgresException
             && postgresException.SqlState == PostgresErrorCodes.UniqueViolation;
+    }
+
+    private static bool IsConstraint(DbUpdateException exception, string constraintName)
+    {
+        return exception.InnerException is PostgresException postgresException
+            && postgresException.ConstraintName == constraintName;
     }
 }

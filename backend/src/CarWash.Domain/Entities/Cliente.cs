@@ -70,4 +70,12 @@ public class Cliente
         Observacoes = observacoes;
         AtualizadoEm = DateTimeOffset.UtcNow;
     }
+
+    private readonly List<Veiculo> veiculos = [];
+
+    public IReadOnlyCollection<Veiculo> Veiculos => veiculos;
+
+    public void AdicionarVeiculo(Veiculo veiculo){
+        veiculos.Add(veiculo);
+    }
 }

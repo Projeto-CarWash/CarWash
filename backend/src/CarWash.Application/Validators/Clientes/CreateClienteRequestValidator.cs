@@ -1,6 +1,7 @@
 using CarWash.Application.DTOs.Clientes;
 using CarWash.Application.Common;
 using FluentValidation;
+using System.Text.RegularExpressions;
 
 namespace CarWash.Application.Validators.Clientes;
 
@@ -91,5 +92,71 @@ public class CreateClienteRequestValidator : AbstractValidator<CreateClienteRequ
         RuleFor(x => x.Observacoes)
             .Must(x => InputNormalizer.SanitizeTextOrNull(x) is null || InputNormalizer.SanitizeTextOrNull(x)!.Length <= 500)
             .WithMessage("Observações deve ter no máximo 500 caracteres.");
-    }
+
+        // ---------------------- Veiculos ----------------------
+        RuleFor(x => x.Veiculos)
+            .NotNull()
+            .WithMessage("Informe ao menos um veículo para concluir o cadastro do cliente.")
+            .Must(veiculos => veiculos is not null && veiculos.Count >= 1)
+            .WithMessage("Informe ao menos um veículo para concluir o cadastro do cliente.");
+
+        RuleForEach(x => x.Veiculos)
+            .ChildRules(veiculo =>
+            {
+                veiculo.RuleFor(x => x.Placa)
+                    .Cascade(CascadeMode.Stop)
+                    .Must(placa => InputNormalizer.PlacaOrNull(placa) is not null)
+                    .WithMessage("Placa do veículo é obrigatória.")
+                    .Must(placa =>
+                    {
+                        string? placaNormalizada = InputNormalizer.PlacaOrNull(placa);
+                        return placaNormalizada is not null
+                            && Regex.IsMatch(placaNormalizada, @"^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$");
+                    })
+                    .WithMessage("Placa inválida. Formatos aceitos: AAA0000 ou AAA0A00.");
+
+                veiculo.RuleFor(x => x.Modelo)
+                    .Cascade(CascadeMode.Stop)
+                    .Must(modelo =>
+                    {
+                        string? valor = InputNormalizer.TrimOrNull(modelo);
+                        return valor is not null && valor.Length is >= 2 and <= 80;
+                    })
+                    .WithMessage("Modelo do veículo deve ter entre 2 e 80 caracteres.");
+
+                veiculo.RuleFor(x => x.Fabricante)
+                    .Cascade(CascadeMode.Stop)
+                    .Must(fabricante =>
+                    {
+                        string? valor = InputNormalizer.TrimOrNull(fabricante);
+                        return valor is not null && valor.Length is >= 2 and <= 80;
+                    })
+                    .WithMessage("Fabricante do veículo deve ter entre 2 e 80 caracteres.");
+
+                veiculo.RuleFor(x => x.Cor)
+                    .Cascade(CascadeMode.Stop)
+                    .Must(cor =>
+                    {
+                        string? valor = InputNormalizer.TrimOrNull(cor);
+                        return valor is not null && valor.Length is >= 2 and <= 40;
+                    })
+                    .WithMessage("Cor do veículo deve ter entre 2 e 40 caracteres.");
+            });
+
+        RuleFor(x => x.Veiculos)
+            .Must(veiculos =>
+            {
+                if (veiculos is null || veiculos.Count == 0)
+                {
+                    return true;
+                }
+                List<string> placas = veiculos
+                    .Select(v => InputNormalizer.PlacaOrNull(v.Placa))
+                    .Where(placa => placa is not null)
+                    .Select(placa => placa!)
+                    .ToList();
+                return placas.Count == placas.Distinct().Count();
+            })
+            .WithMessage("Existem placas duplicadas na lista de veículos informada.");
+            }
 }

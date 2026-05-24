@@ -1,4 +1,3 @@
-using System.Text.Json;
 using CarWash.Application.Common;
 using CarWash.Application.DTOs.Clientes;
 using CarWash.Application.Exceptions;
@@ -34,14 +33,14 @@ public class ClienteService : IClienteService
             throw new ValidationException(validation.Errors);
         }
 
-        var nome = InputNormalizer.TrimOrNull(request.Nome)!;
-        var cpf = InputNormalizer.OnlyDigitsOrNull(request.Cpf);
-        var cnpj = InputNormalizer.OnlyDigitsOrNull(request.Cnpj);
-        var telefone = InputNormalizer.OnlyDigitsOrNull(request.Telefone);
-        var celular = InputNormalizer.OnlyDigitsOrNull(request.Celular);
-        var email = InputNormalizer.EmailOrNull(request.Email);
-        var endereco = InputNormalizer.TrimOrNull(request.Endereco);
-        var observacoes = InputNormalizer.TrimOrNull(request.Observacoes);
+        string nome = InputNormalizer.TrimOrNull(request.Nome)!;
+        string? cpf = InputNormalizer.OnlyDigitsOrNull(request.Cpf);
+        string? cnpj = InputNormalizer.OnlyDigitsOrNull(request.Cnpj);
+        string? telefone = InputNormalizer.OnlyDigitsOrNull(request.Telefone);
+        string? celular = InputNormalizer.OnlyDigitsOrNull(request.Celular);
+        string? email = InputNormalizer.EmailOrNull(request.Email);
+        string? endereco = InputNormalizer.SanitizeTextOrNull(request.Endereco);
+        string? observacoes = InputNormalizer.SanitizeTextOrNull(request.Observacoes);
 
         if (cpf is not null && await clienteRepository.ExisteCpfAsync(cpf, cancellationToken))
         {
@@ -51,6 +50,15 @@ public class ClienteService : IClienteService
         if (cnpj is not null && await clienteRepository.ExisteCnpjAsync(cnpj, cancellationToken))
         {
             throw new ClienteDocumentoDuplicadoException();
+        }
+
+        List<string> placasNormalizadas = request.Veiculos!
+            .Select(veiculo => InputNormalizer.PlacaOrNull(veiculo.Placa)!)
+            .ToList();
+
+        if (await clienteRepository.ExisteAlgumaPlacaAsync(placasNormalizadas, cancellationToken))
+        {
+            throw new VeiculoPlacaDuplicadaException();
         }
 
         var cliente = new Cliente(
@@ -63,19 +71,44 @@ public class ClienteService : IClienteService
             endereco,
             observacoes);
 
-        await clienteRepository.AdicionarAsync(cliente, traceId, usuarioId, cancellationToken);
+        List<Veiculo> veiculos = request.Veiculos!
+            .Select(veiculo => new Veiculo(
+                cliente.Id,
+                InputNormalizer.PlacaOrNull(veiculo.Placa)!,
+                InputNormalizer.TrimOrNull(veiculo.Modelo)!,
+                InputNormalizer.TrimOrNull(veiculo.Fabricante)!,
+                InputNormalizer.TrimOrNull(veiculo.Cor)!,
+                veiculo.Ano))
+            .ToList();
+
+        await clienteRepository.AdicionarAsync(
+            cliente,
+            veiculos,
+            traceId,
+            usuarioId,
+            cancellationToken);
 
         return new CreateClienteResponse
         {
             Id = cliente.Id,
-            Mensagem = "Cliente cadastrado com sucesso.",
+            Mensagem = "Cliente e veículos cadastrados com sucesso.",
             TraceId = traceId,
+            Veiculos = veiculos
+                .Select(veiculo => new VeiculoCriadoResponse
+                {
+                    Id = veiculo.Id,
+                    Placa = veiculo.Placa,
+                    Modelo = veiculo.Modelo,
+                    Fabricante = veiculo.Fabricante,
+                    Cor = veiculo.Cor,
+                })
+                .ToList(),
         };
     }
 
     public async Task<ClienteResponse?> ObterPorIdAsync(Guid id, CancellationToken cancellationToken)
     {
-        var cliente = await clienteRepository.ObterPorIdAsync(id, cancellationToken);
+        Cliente? cliente = await clienteRepository.ObterPorIdAsync(id, cancellationToken);
 
         if (cliente is null)
         {

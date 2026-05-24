@@ -56,4 +56,16 @@ public static class InputNormalizer
             .Replace("<", string.Empty)
             .Replace(">", string.Empty);
     }
+
+    public static string? PlacaOrNull(string? value){
+        if(string.IsNullOrWhiteSpace(value)){
+            return null;
+        }
+
+        return value
+            .Trim()
+            .Replace(" ", string.Empty)
+            .Replace("-", string.Empty)
+            .ToUpperInvariant();
+    }
 }
