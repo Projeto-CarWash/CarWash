@@ -12,18 +12,20 @@ async function enableMocking() {
   }
 
   try {
+    // eslint-disable-next-line no-console
     console.log('[MSW] Tentando iniciar Service Worker...');
     const { worker } = await import('./mocks/browser');
     await worker.start({
       onUnhandledRequest: 'bypass',
     });
+    // eslint-disable-next-line no-console
     console.log('[MSW] Service Worker iniciado com sucesso!');
   } catch (err) {
     console.error('[MSW] Erro ao iniciar:', err);
   }
 }
 
-enableMocking().finally(() => {
+void enableMocking().finally(() => {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <ThemeProvider>

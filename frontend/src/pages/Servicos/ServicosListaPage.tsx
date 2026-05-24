@@ -4,6 +4,14 @@ import { useNavigate } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
   Table,
   TableBody,
   TableCell,
@@ -12,14 +20,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { servicoService, type Servico } from '@/services/servicoService';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 
 export function ServicosListaPage() {
   const navigate = useNavigate();
@@ -48,6 +48,7 @@ export function ServicosListaPage() {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void carregarServicos();
   }, [carregarServicos]);
 

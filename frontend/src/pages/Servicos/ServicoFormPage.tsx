@@ -33,13 +33,13 @@ export function ServicoFormPage() {
   const [carregandoDados, setCarregandoDados] = useState(isEdicao);
 
   const form = useForm<ServicoFormData>({
-    resolver: zodResolver(servicoSchema) as any,
+    resolver: zodResolver(servicoSchema),
     mode: 'onChange',
     shouldFocusError: true,
     defaultValues: {
       nome: '',
-      preco: '' as unknown as number,
-      duracaoMin: '' as unknown as number,
+      preco: 0,
+      duracaoMin: 0,
     },
   });
 
@@ -59,9 +59,9 @@ export function ServicoFormPage() {
           } else {
             form.reset({
               nome: s.nome,
-              preco: s.preco.toString().replace('.', ','),
+              preco: s.preco,
               duracaoMin: s.duracaoMin,
-            } as any);
+            });
           }
         }
       } catch {
@@ -95,10 +95,10 @@ export function ServicoFormPage() {
 
       try {
         if (isEdicao && id) {
-          await servicoService.atualizar(id, data as any);
+          await servicoService.atualizar(id, data);
           setSuccessMsg('Serviço atualizado com sucesso.');
         } else {
-          await servicoService.cadastrar(data as any);
+          await servicoService.cadastrar(data);
           setSuccessMsg('Serviço cadastrado com sucesso.');
           form.reset();
         }
@@ -262,8 +262,7 @@ export function ServicoFormPage() {
           )}
 
           <form
-            onSubmit={form.handleSubmit(onSubmit as any)}
-            noValidate
+            onSubmit={form.handleSubmit(onSubmit)}
             className="grid grid-cols-1 gap-5 md:grid-cols-2"
             aria-busy={isSubmitting}
           >
