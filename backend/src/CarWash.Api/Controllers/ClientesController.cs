@@ -117,19 +117,60 @@ catch (ValidationException ex)
         }
     }
 
-    [HttpGet("{id:guid}")]
-    [ProducesResponseType(typeof(ClienteResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> ObterPorId(Guid id, CancellationToken cancellationToken)
+    [HttpGet("{id}")]
+    [ProducesResponseType(typeof(ApiDataResponse<ClienteResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> ObterPorId(string id, CancellationToken cancellationToken)
     {
-        var cliente = await clienteService.ObterPorIdAsync(id, cancellationToken);
+        string traceId = HttpContext.TraceIdentifier;
 
-        if (cliente is null)
+        if (!Guid.TryParse(id, out Guid clienteId))
         {
-            return NotFound();
+            return BadRequest(new ApiErrorResponse
+            {
+                Code = "CLIENTE_INVALID_ID",
+                Message = "Identificador de cliente inválido.",
+                TraceId = traceId,
+            });
         }
 
-        return Ok(cliente);
+        try
+        {
+            ClienteResponse? cliente = await clienteService.ObterPorIdAsync(clienteId, cancellationToken);
+
+            if (cliente is null)
+            {
+                return NotFound(new ApiErrorResponse
+                {
+                    Code = "CLIENTE_NOT_FOUND",
+                    Message = "Cliente não encontrado.",
+                    TraceId = traceId,
+                });
+            }
+
+            return Ok(new ApiDataResponse<ClienteResponse>
+            {
+                Data = cliente,
+                TraceId = traceId,
+            });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "Falha inesperada ao consultar detalhe do cliente. TraceId: {TraceId}. ClienteId: {ClienteId}",
+                traceId,
+                id);
+
+            return StatusCode(StatusCodes.Status500InternalServerError, new ApiErrorResponse
+            {
+                Code = "INTERNAL_SERVER_ERROR",
+                Message = "Não foi possível concluir a consulta no momento. Tente novamente.",
+                TraceId = traceId,
+            });
+        }
     }
 
     private Guid? ObterUsuarioId()

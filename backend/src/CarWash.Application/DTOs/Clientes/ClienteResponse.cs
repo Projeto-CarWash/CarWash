@@ -11,4 +11,5 @@ namespace CarWash.Application.DTOs.Clientes;public class ClienteResponse{
     public bool Ativo { get; set; }
     public DateTimeOffset CriadoEm { get; set; }
     public DateTimeOffset AtualizadoEm { get; set; }
+    public List<VeiculoResponse> Veiculos { get; set; } = [];
 }

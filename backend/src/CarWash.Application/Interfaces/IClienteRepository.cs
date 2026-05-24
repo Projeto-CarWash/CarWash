@@ -13,4 +13,6 @@ public interface IClienteRepository
     Task<bool> ExisteAlgumaPlacaAsync(IReadOnlyCollection<string> placas, CancellationToken cancellationToken);
 
     Task AdicionarAsync(Cliente cliente, IReadOnlyCollection<Veiculo> veiculos, string correlationId, Guid? usuarioId,  CancellationToken cancellationToken);
+
+    Task<IReadOnlyCollection<Veiculo>> ObterVeiculosPorClienteIdAsync(Guid clienteId, CancellationToken cancellationToken);
 }

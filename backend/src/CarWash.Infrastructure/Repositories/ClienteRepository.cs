@@ -124,4 +124,14 @@ public class ClienteRepository : IClienteRepository
         return exception.InnerException is PostgresException postgresException
             && postgresException.ConstraintName == constraintName;
     }
+
+    public async Task<IReadOnlyCollection<Veiculo>> ObterVeiculosPorClienteIdAsync(Guid clienteId, CancellationToken cancellationToken)
+    {
+        return await context.Veiculos
+            .AsNoTracking()
+            .Where(veiculo => veiculo.ClienteId == clienteId)
+            .OrderByDescending(veiculo => veiculo.CriadoEm)
+            .ToListAsync(cancellationToken);
+    }
+
 }
