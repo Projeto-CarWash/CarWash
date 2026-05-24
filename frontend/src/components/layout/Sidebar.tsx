@@ -1,6 +1,7 @@
 import {
   BarChart3,
   CalendarDays,
+  CalendarRange,
   CarFront,
   DollarSign,
   LayoutDashboard,
@@ -30,7 +31,7 @@ const operacaoLinks: NavLinkItem[] = [
 ];
 
 const gestaoLinks: NavLinkItem[] = [
-  { icon: CalendarDays, label: 'Agendamentos' },
+  { icon: CalendarDays, label: 'Agendamentos', to: '/agendamentos/novo' },
   { icon: DollarSign, label: 'Financeiro' },
   { icon: BarChart3, label: 'Relatórios' },
   { icon: UserCog, label: 'Equipe', to: '/usuarios' },
