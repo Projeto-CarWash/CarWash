@@ -21,6 +21,7 @@ export const clienteSchema = z.object({
       },
       { message: 'Informe um CPF (11 dígitos) ou CNPJ (14 dígitos).' },
     )
+
     .superRefine((val, ctx) => {
       const d = val.replace(/\D/g, '');
       if (d.length === 11 && !isValidCpf(d)) {
