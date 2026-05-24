@@ -1,6 +1,7 @@
 import api from './api';
 
 import type { VeiculoFormData } from '@/schemas/veiculoSchema';
+import type { ListaVeiculos } from '@/types/veiculo';
 
 export interface Veiculo {
   id: string;
@@ -8,15 +9,12 @@ export interface Veiculo {
   placa: string;
   modelo: string;
   fabricante: string;
+  marca: string;
   cor: string;
-  ano?: number;
+  observacoes?: string;
   ativo: boolean;
-  criadoEm: string;
-  atualizadoEm: string;
-}
-
-export interface ListarVeiculosResponse {
-  itens: Veiculo[];
+  criadoEm?: string;
+  atualizadoEm?: string;
 }
 
 export interface CriarVeiculoResponse {
@@ -29,10 +27,10 @@ export const veiculoService = {
   async cadastrar(clienteId: string, dados: VeiculoFormData): Promise<CriarVeiculoResponse> {
     const payload = {
       placa: dados.placa, // already normalized by zod schema transform
-      modelo: dados.modelo.trim(),
-      fabricante: dados.fabricante.trim(),
-      cor: dados.cor.trim(),
-      ano: dados.ano && dados.ano.trim() !== '' ? Number(dados.ano) : undefined,
+      modelo: dados.modelo,
+      fabricante: dados.fabricante,
+      cor: dados.cor,
+      observacoes: dados.observacoes ?? undefined,
     };
     const { data } = await api.post<CriarVeiculoResponse>(
       `/api/v1/clientes/${clienteId}/veiculos`,
@@ -41,10 +39,10 @@ export const veiculoService = {
     return data;
   },
 
-  async listarPorCliente(clienteId: string): Promise<Veiculo[]> {
-    const { data } = await api.get<ListarVeiculosResponse>(
-      `/api/v1/clientes/${clienteId}/veiculos`,
-    );
-    return data.itens;
+  async listarPorCliente(clienteId: string): Promise<ListaVeiculos> {
+    const { data } = await api.get<ListaVeiculos>('/api/v1/veiculos', {
+      params: { clienteId, tamanhoPagina: 100 },
+    });
+    return data;
   },
 };

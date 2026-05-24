@@ -1,6 +1,11 @@
 import { z } from 'zod';
 
 export const veiculoSchema = z.object({
+  clienteId: z
+    .string()
+    .min(1, 'Selecione um cliente para vincular o veículo.')
+    .uuid('Selecione um cliente para vincular o veículo.'),
+
   placa: z
     .string()
     .min(1, 'Placa é obrigatória.')
@@ -21,35 +26,28 @@ export const veiculoSchema = z.object({
   modelo: z
     .string()
     .min(1, 'Modelo é obrigatório.')
-    .refine((val) => val.trim().length <= 80, {
-      message: 'Modelo deve ter no máximo 80 caracteres.',
+    .transform((val) => val.trim())
+    .refine((val) => val.length >= 2 && val.length <= 80, {
+      message: 'Modelo deve ter entre 2 e 80 caracteres.',
     }),
 
   fabricante: z
     .string()
     .min(1, 'Fabricante é obrigatório.')
-    .refine((val) => val.trim().length <= 80, {
-      message: 'Fabricante deve ter no máximo 80 caracteres.',
+    .transform((val) => val.trim())
+    .refine((val) => val.length >= 2 && val.length <= 80, {
+      message: 'Fabricante deve ter entre 2 e 80 caracteres.',
     }),
 
   cor: z
     .string()
     .min(1, 'Cor é obrigatória.')
-    .refine((val) => val.trim().length <= 40, {
-      message: 'Cor deve ter no máximo 40 caracteres.',
+    .transform((val) => val.trim())
+    .refine((val) => val.length >= 2 && val.length <= 40, {
+      message: 'Cor deve ter entre 2 e 40 caracteres.',
     }),
 
-  ano: z
-    .string()
-    .optional()
-    .refine(
-      (val) => {
-        if (!val || val.trim() === '') return true;
-        const num = Number(val);
-        return !isNaN(num) && num >= 1900 && num <= 2100;
-      },
-      { message: 'Ano deve estar entre 1900 e 2100.' },
-    ),
+  observacoes: z.string().max(500, 'Observações deve ter no máximo 500 caracteres.').optional(),
 });
 
 export type VeiculoFormData = z.infer<typeof veiculoSchema>;
