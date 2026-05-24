@@ -13,6 +13,8 @@ import Login from '@/pages/Login/Login';
 import { NovoUsuarioPage } from '@/pages/Usuarios/NovoUsuarioPage';
 import { UsuarioDetalhePage } from '@/pages/Usuarios/UsuarioDetalhePage';
 import { UsuariosListaPage } from '@/pages/Usuarios/UsuariosListaPage';
+import { ServicosListaPage } from '@/pages/Servicos/ServicosListaPage';
+import { ServicoFormPage } from '@/pages/Servicos/ServicoFormPage';
 
 function App() {
   return (
@@ -102,6 +104,39 @@ function App() {
             <PrivateRoute>
               <DashboardLayout>
                 <UsuarioDetalhePage />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/servicos"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <ServicosListaPage />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/servicos/novo"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <ServicoFormPage />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/servicos/:id/editar"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <ServicoFormPage />
               </DashboardLayout>
             </PrivateRoute>
           }
