@@ -30,14 +30,62 @@ const MOCK_VEICULOS: Record<string, VeiculoResumido[]> = {
 };
 
 const MOCK_SERVICOS: ServicoAtivo[] = [
-  { id: 's1', nome: 'Lavagem Simples', preco: 45.0, duracao: 30, descricao: 'Lavagem externa com agua e shampoo automotivo.' },
-  { id: 's2', nome: 'Lavagem Completa', preco: 89.9, duracao: 60, descricao: 'Lavagem externa + aspiracao interna + painel.' },
-  { id: 's3', nome: 'Polimento', preco: 180.0, duracao: 120, descricao: 'Polimento com massa de corte e finalizacao.' },
-  { id: 's4', nome: 'Cristalizacao', preco: 250.0, duracao: 90, descricao: 'Cristalizacao de pintura com protecao UV.' },
-  { id: 's5', nome: 'Higienizacao Interna', preco: 120.0, duracao: 45, descricao: 'Limpeza profunda de estofados e carpetes.' },
-  { id: 's6', nome: 'Enceramento', preco: 70.0, duracao: 40, descricao: 'Aplicacao de cera protetora com brilho intenso.' },
-  { id: 's7', nome: 'Lavagem de Motor', preco: 95.0, duracao: 35, descricao: 'Desengraxe e lavagem do compartimento do motor.' },
-  { id: 's8', nome: 'Vitrificacao', preco: 350.0, duracao: 180, descricao: 'Protecao ceramica de longa duracao na pintura.' },
+  {
+    id: 's1',
+    nome: 'Lavagem Simples',
+    preco: 45.0,
+    duracao: 30,
+    descricao: 'Lavagem externa com agua e shampoo automotivo.',
+  },
+  {
+    id: 's2',
+    nome: 'Lavagem Completa',
+    preco: 89.9,
+    duracao: 60,
+    descricao: 'Lavagem externa + aspiracao interna + painel.',
+  },
+  {
+    id: 's3',
+    nome: 'Polimento',
+    preco: 180.0,
+    duracao: 120,
+    descricao: 'Polimento com massa de corte e finalizacao.',
+  },
+  {
+    id: 's4',
+    nome: 'Cristalizacao',
+    preco: 250.0,
+    duracao: 90,
+    descricao: 'Cristalizacao de pintura com protecao UV.',
+  },
+  {
+    id: 's5',
+    nome: 'Higienizacao Interna',
+    preco: 120.0,
+    duracao: 45,
+    descricao: 'Limpeza profunda de estofados e carpetes.',
+  },
+  {
+    id: 's6',
+    nome: 'Enceramento',
+    preco: 70.0,
+    duracao: 40,
+    descricao: 'Aplicacao de cera protetora com brilho intenso.',
+  },
+  {
+    id: 's7',
+    nome: 'Lavagem de Motor',
+    preco: 95.0,
+    duracao: 35,
+    descricao: 'Desengraxe e lavagem do compartimento do motor.',
+  },
+  {
+    id: 's8',
+    nome: 'Vitrificacao',
+    preco: 350.0,
+    duracao: 180,
+    descricao: 'Protecao ceramica de longa duracao na pintura.',
+  },
 ];
 
 function delay(ms: number): Promise<void> {
@@ -130,8 +178,18 @@ export const agendamentoService = {
     await delay(500);
 
     const nomesMeses = [
-      'JANEIRO', 'FEVEREIRO', 'MARCO', 'ABRIL', 'MAIO', 'JUNHO',
-      'JULHO', 'AGOSTO', 'SETEMBRO', 'OUTUBRO', 'NOVEMBRO', 'DEZEMBRO',
+      'JANEIRO',
+      'FEVEREIRO',
+      'MARCO',
+      'ABRIL',
+      'MAIO',
+      'JUNHO',
+      'JULHO',
+      'AGOSTO',
+      'SETEMBRO',
+      'OUTUBRO',
+      'NOVEMBRO',
+      'DEZEMBRO',
     ];
 
     return nomesMeses.map((nome, index) => ({

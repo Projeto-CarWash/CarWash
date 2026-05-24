@@ -62,11 +62,12 @@ export function AgendamentosDashboardPage() {
                     <h2 className="text-[11px] font-black tracking-[0.15em] text-zinc-100 uppercase transition-colors group-hover:text-white">
                       {mes.nome}
                     </h2>
-                    {mes.mes === new Date().getMonth() + 1 && anoAtual === new Date().getFullYear() && (
-                      <div className="flex h-5 items-center rounded border border-red-500/30 bg-red-500/10 px-2 text-[9px] font-bold tracking-wider text-red-500 uppercase">
-                        Mês Atual
-                      </div>
-                    )}
+                    {mes.mes === new Date().getMonth() + 1 &&
+                      anoAtual === new Date().getFullYear() && (
+                        <div className="flex h-5 items-center rounded border border-red-500/30 bg-red-500/10 px-2 text-[9px] font-bold tracking-wider text-red-500 uppercase">
+                          Mês Atual
+                        </div>
+                      )}
                   </div>
                   <div className="h-1.5 w-1.5 rounded-full bg-zinc-800 transition-colors group-hover:bg-red-600" />
                 </div>

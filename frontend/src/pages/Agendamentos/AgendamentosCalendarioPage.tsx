@@ -41,7 +41,9 @@ export function AgendamentosCalendarioPage() {
     void Promise.resolve().then(() => {
       if (!ignore) setCurrentDate(parseQueryDate(paramAno, paramMes));
     });
-    return () => { ignore = true; };
+    return () => {
+      ignore = true;
+    };
   }, [paramAno, paramMes]);
 
   const [agendamentos, setAgendamentos] = useState<AgendamentoSemana[]>([]);

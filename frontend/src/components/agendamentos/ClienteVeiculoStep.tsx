@@ -86,10 +86,10 @@ export function ClienteVeiculoStep({
 
   useEffect(() => {
     let ignore = false;
-    
+
     void Promise.resolve().then(() => {
       if (ignore) return;
-      
+
       if (!cliente) {
         setVeiculos([]);
         return;
@@ -103,14 +103,19 @@ export function ClienteVeiculoStep({
           if (!ignore) setVeiculos(v);
         })
         .catch(() => {
-          if (!ignore) setErroVeiculos('Não foi possível carregar os veículos deste cliente. Tente novamente.');
+          if (!ignore)
+            setErroVeiculos(
+              'Não foi possível carregar os veículos deste cliente. Tente novamente.',
+            );
         })
         .finally(() => {
           if (!ignore) setCarregandoVeiculos(false);
         });
     });
-      
-    return () => { ignore = true; };
+
+    return () => {
+      ignore = true;
+    };
   }, [cliente]);
 
   useEffect(() => {
