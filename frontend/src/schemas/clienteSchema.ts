@@ -21,6 +21,7 @@ export const clienteSchema = z.object({
       },
       { message: 'Informe um CPF (11 dígitos) ou CNPJ (14 dígitos).' },
     )
+
     .superRefine((val, ctx) => {
       const d = val.replace(/\D/g, '');
       if (d.length === 11 && !isValidCpf(d)) {
@@ -121,7 +122,7 @@ export const clienteSchema = z.object({
         if (val.length < 5 || val.length > 150) return false;
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
       },
-      { message: 'E-mail inválido (5–150 chars).' },
+      { message: 'E-mail Inválido' },
     ),
 
   cep: z
@@ -139,7 +140,10 @@ export const clienteSchema = z.object({
   numero: z
     .string()
     .min(1, 'Número é obrigatório.')
-    .max(20, 'Número deve ter no máximo 20 caracteres.'),
+    .max(20, 'Número deve ter no máximo 20 caracteres.')
+    .refine((val) => /^\d+$/.test(val), {
+      message: 'Número deve conter apenas dígitos numéricos.',
+    }),
 
   complemento: z.string().max(100, 'Complemento deve ter no máximo 100 caracteres.').optional(),
 
@@ -151,7 +155,10 @@ export const clienteSchema = z.object({
   cidade: z
     .string()
     .min(1, 'Cidade é obrigatória.')
-    .max(100, 'Cidade deve ter no máximo 100 caracteres.'),
+    .max(100, 'Cidade deve ter no máximo 100 caracteres.')
+    .refine((val) => /^[a-zA-ZáàãâéèêíïóôõöúçñÁÀÃÂÉÈÊÍÏÓÔÕÖÚÇÑ\s-]+$/.test(val), {
+      message: 'Cidade deve conter apenas letras.',
+    }),
 
   uf: z
     .string()
