@@ -82,6 +82,12 @@ function toCreatePayload(data: ClienteFormData) {
       cidade: data.cidade.trim(),
       uf: data.uf.trim().toUpperCase(),
     },
+    veiculos: data.veiculos.map(v => ({
+      placa: v.placa,
+      modelo: v.modelo,
+      fabricante: v.fabricante,
+      cor: v.cor
+    })),
   };
 }
 
