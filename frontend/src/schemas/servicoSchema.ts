@@ -30,3 +30,4 @@ export const servicoSchema = z.object({
 });
 
 export type ServicoFormData = z.infer<typeof servicoSchema>;
+export type ServicoFormInput = z.input<typeof servicoSchema>;

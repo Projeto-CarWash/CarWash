@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { servicoSchema, type ServicoFormData } from '@/schemas/servicoSchema';
+import { servicoSchema, type ServicoFormData, type ServicoFormInput } from '@/schemas/servicoSchema';
 import { servicoService } from '@/services/servicoService';
 
 import type { ProblemDetails } from '@/types/auth';
@@ -32,14 +32,14 @@ export function ServicoFormPage() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [carregandoDados, setCarregandoDados] = useState(isEdicao);
 
-  const form = useForm<ServicoFormData>({
+  const form = useForm<ServicoFormInput, any, ServicoFormData>({
     resolver: zodResolver(servicoSchema),
     mode: 'onChange',
     shouldFocusError: true,
     defaultValues: {
       nome: '',
-      preco: 0,
-      duracaoMin: 0,
+      preco: '',
+      duracaoMin: '',
     },
   });
 
@@ -59,8 +59,8 @@ export function ServicoFormPage() {
           } else {
             form.reset({
               nome: s.nome,
-              preco: s.preco,
-              duracaoMin: s.duracaoMin,
+              preco: s.preco.toString().replace('.', ','),
+              duracaoMin: String(s.duracaoMin),
             });
           }
         }
@@ -78,9 +78,9 @@ export function ServicoFormPage() {
     };
   }, [id, isEdicao, form, navigate]);
 
-  const mapBackendFieldToFormField = (field: string): keyof ServicoFormData | null => {
+  const mapBackendFieldToFormField = (field: string): keyof ServicoFormInput | null => {
     const lower = field.toLowerCase();
-    const map: Record<string, keyof ServicoFormData> = {
+    const map: Record<string, keyof ServicoFormInput> = {
       nome: 'nome',
       preco: 'preco',
       duracaomin: 'duracaoMin',
@@ -315,7 +315,7 @@ export function ServicoFormPage() {
                       type="text"
                       inputMode="decimal"
                       placeholder="Ex: 89,90"
-                      value={field.value}
+                      value={(field.value as string | number | undefined) ?? ''}
                       onChange={(e) => {
                          const val = e.target.value.replace(/[^0-9.,]/g, '');
                          field.onChange(val);
@@ -356,7 +356,7 @@ export function ServicoFormPage() {
                       type="number"
                       inputMode="numeric"
                       placeholder="Ex: 90"
-                      value={field.value}
+                      value={(field.value as string | number | undefined) ?? ''}
                       onChange={field.onChange}
                       onBlur={field.onBlur}
                       ref={field.ref}
