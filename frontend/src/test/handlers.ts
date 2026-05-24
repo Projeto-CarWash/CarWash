@@ -1,5 +1,6 @@
 import { HttpResponse, http } from 'msw';
 
+import type { AgendaItemDetalhado, AgendaItemSimples } from '@/types/agenda';
 import type { AgendamentoResponse, PreConfirmacaoResponse } from '@/types/agendamento';
 
 /**
@@ -71,6 +72,48 @@ const respostaPreConfirmacao: PreConfirmacaoResponse = {
   traceId: 'trace-pre-abc',
 };
 
+const agendaItemSimples: AgendaItemSimples = {
+  agendamentoId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+  inicio: '2099-01-01T14:00:00.000Z',
+  fim: '2099-01-01T15:30:00.000Z',
+  titulo: 'Lavagem Completa',
+  status: 'AGENDADO',
+  clienteNome: 'Maria Souza',
+  veiculoPlaca: 'ABC1D23',
+  servicosResumo: 'Lavagem Completa + 1',
+};
+
+const agendaItemDetalhado: AgendaItemDetalhado = {
+  agendamentoId: agendaItemSimples.agendamentoId,
+  status: 'AGENDADO',
+  filialId: IDS.filial,
+  inicio: agendaItemSimples.inicio,
+  fim: agendaItemSimples.fim,
+  duracaoTotalMin: 90,
+  valorTotal: 150,
+  cliente: {
+    id: IDS.cliente,
+    nome: 'Maria Souza',
+    cpfCnpj: '12345678901',
+    telefone: null,
+    celular: '11999990000',
+  },
+  veiculo: {
+    id: IDS.veiculo,
+    placa: 'ABC1D23',
+    modelo: 'Civic',
+    fabricante: 'Honda',
+    cor: 'Prata',
+  },
+  servicos: [
+    { id: IDS.servicoA, nome: 'Lavagem Completa', duracaoMin: 30, preco: 50 },
+    { id: IDS.servicoB, nome: 'Enceramento', duracaoMin: 60, preco: 100 },
+  ],
+  observacoes: 'Atenção ao porta-malas',
+  criadoEm: '2026-05-20T10:00:00.000Z',
+  atualizadoEm: '2026-05-20T10:05:00.000Z',
+};
+
 /** Handlers do "caminho feliz" — listas de apoio e fluxo de confirmação. */
 export const handlersPadrao = [
   http.get('/api/v1/clientes', () =>
@@ -128,6 +171,24 @@ export const handlersPadrao = [
       total: 2,
     }),
   ),
+
+  http.get('/api/v1/agenda', ({ request }) => {
+    const formato = new URL(request.url).searchParams.get('formato');
+
+    if (formato === 'detalhado') {
+      return HttpResponse.json({
+        message: 'Agenda consultada com sucesso.',
+        data: [agendaItemDetalhado],
+        traceId: 'trace-agenda-detalhada',
+      });
+    }
+
+    return HttpResponse.json({
+      message: 'Agenda consultada com sucesso.',
+      data: [agendaItemSimples],
+      traceId: 'trace-agenda-simples',
+    });
+  }),
 
   http.post('/api/v1/agendamentos', () => HttpResponse.json(respostaCriacao, { status: 201 })),
 

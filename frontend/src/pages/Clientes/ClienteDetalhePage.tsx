@@ -91,7 +91,7 @@ export function ClienteDetalhePage() {
           onClick={() => void navigate('/clientes')}
           className="h-9 rounded-full border-zinc-700/60 bg-transparent px-4 text-sm hover:bg-zinc-800/50 hover:text-zinc-200 text-zinc-400"
         >
-          <ArrowLeft className="mr-1 h-4 w-4" /> Voltar
+          <ArrowLeft className="mr-1 h-4 w-4" /> Voltar.
         </Button>
         <Button
           type="button"
