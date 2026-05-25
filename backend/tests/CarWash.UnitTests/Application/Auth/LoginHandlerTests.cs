@@ -49,8 +49,11 @@ public class LoginHandlerTests
     }
 
     [Fact]
-    public async Task Senha_errada_para_usuario_existente_lanca_InvalidCredentials_incrementa_contador()
+    public async Task Senha_errada_para_usuario_existente_lanca_InvalidCredentials_sem_incrementar_contador()
     {
+        // Lockout desativado (card-134): contador NÃO é mais incrementado e
+        // SalvarAsync NÃO é mais chamado nesse fluxo. Auditoria de credencial
+        // inválida continua sendo registrada.
         var usuario = NovoUsuario(ativo: true);
         _repo.ObterPorEmailAsync(usuario.EmailValor, Arg.Any<CancellationToken>()).Returns(usuario);
         _hasher.Verify("ErradaXYZ", usuario.SenhaHash).Returns(false);
@@ -60,9 +63,9 @@ public class LoginHandlerTests
 
         await act.Should().ThrowAsync<InvalidCredentialsException>();
 
-        usuario.TentativasInvalidas.Should().Be(1);
+        usuario.TentativasInvalidas.Should().Be(0);
         usuario.BloqueadoAte.Should().BeNull();
-        await _repo.Received(1).SalvarAsync(Arg.Any<CancellationToken>());
+        await _repo.DidNotReceive().SalvarAsync(Arg.Any<CancellationToken>());
 
         await _auditoria.Received(1).LogAsync(
             LoginHandler.EventoFalha,
@@ -200,7 +203,7 @@ public class LoginHandlerTests
         await _repo.Received(1).ObterPorEmailAsync("alice@carwash.local", Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Fact(Skip = "lockout desativado temporariamente — card-134")]
     public async Task Login_com_usuario_bloqueado_lanca_UsuarioBloqueado_sem_incrementar_contador()
     {
         var usuario = NovoUsuario(ativo: true);
@@ -225,7 +228,7 @@ public class LoginHandlerTests
             Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Fact(Skip = "lockout desativado temporariamente — card-134")]
     public async Task Tres_falhas_consecutivas_continuam_em_401_e_quarta_bloqueia_com_403()
     {
         // QA POST_login T9: tentativas 1..3 retornam 401 (credenciais inválidas);
@@ -287,7 +290,7 @@ public class LoginHandlerTests
         await _repo.Received(1).SalvarAsync(Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Fact(Skip = "lockout desativado temporariamente — card-134")]
     public async Task Bloqueio_expirado_permite_nova_tentativa_e_zera_contador_no_sucesso()
     {
         var usuario = NovoUsuario(ativo: true);
