@@ -4,10 +4,7 @@ import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
-  plugins: [react() as any],
-  esbuild: {
-    jsx: 'automatic',
-  },
+  plugins: [react()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -18,6 +15,6 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     css: false,
-    include: ['src*.{test,spec}.{ts,tsx}'],
+    include: ['src/**/*.{test,spec}.{ts,tsx}'],
   },
 });

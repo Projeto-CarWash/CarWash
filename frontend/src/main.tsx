@@ -30,11 +30,13 @@ async function enableMocking() {
 void enableMocking().finally(() => {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
-      <ThemeProvider>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
-      </ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </ThemeProvider>
+      </QueryClientProvider>
     </StrictMode>,
   );
 });
