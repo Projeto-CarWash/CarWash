@@ -55,6 +55,73 @@ public class AgendamentoTests
         ag.Status.Should().Be(StatusAgendamento.Cancelado);
     }
 
+    [Fact]
+    public void Criar_persiste_totais_informados()
+    {
+        var ag = Agendamento.Criar(
+            id: Guid.NewGuid(),
+            filialId: Guid.NewGuid(),
+            clienteId: Guid.NewGuid(),
+            veiculoId: Guid.NewGuid(),
+            criadoPor: Guid.NewGuid(),
+            inicio: DateTime.UtcNow.AddHours(1),
+            fim: DateTime.UtcNow.AddHours(2),
+            duracaoTotalMin: 90,
+            valorTotal: 135.50m);
+
+        ag.DuracaoTotalMin.Should().Be(90);
+        ag.ValorTotal.Should().Be(135.50m);
+    }
+
+    [Fact]
+    public void Criar_rejeita_duracao_total_negativa()
+    {
+        var act = () => Agendamento.Criar(
+            id: Guid.NewGuid(),
+            filialId: Guid.NewGuid(),
+            clienteId: Guid.NewGuid(),
+            veiculoId: Guid.NewGuid(),
+            criadoPor: Guid.NewGuid(),
+            inicio: DateTime.UtcNow.AddHours(1),
+            fim: DateTime.UtcNow.AddHours(2),
+            duracaoTotalMin: -1);
+        act.Should().Throw<DomainException>().WithMessage("*Duração total*");
+    }
+
+    [Fact]
+    public void Criar_rejeita_valor_total_negativo()
+    {
+        var act = () => Agendamento.Criar(
+            id: Guid.NewGuid(),
+            filialId: Guid.NewGuid(),
+            clienteId: Guid.NewGuid(),
+            veiculoId: Guid.NewGuid(),
+            criadoPor: Guid.NewGuid(),
+            inicio: DateTime.UtcNow.AddHours(1),
+            fim: DateTime.UtcNow.AddHours(2),
+            valorTotal: -0.01m);
+        act.Should().Throw<DomainException>().WithMessage("*Valor total*");
+    }
+
+    [Fact]
+    public void DefinirTotais_atualiza_duracao_e_valor()
+    {
+        var ag = NovoAgendamento();
+        ag.DefinirTotais(120, 200m);
+        ag.DuracaoTotalMin.Should().Be(120);
+        ag.ValorTotal.Should().Be(200m);
+    }
+
+    [Fact]
+    public void DefinirTotais_rejeita_valores_negativos()
+    {
+        var ag = NovoAgendamento();
+        var actDuracao = () => ag.DefinirTotais(-1, 0m);
+        var actValor = () => ag.DefinirTotais(0, -1m);
+        actDuracao.Should().Throw<DomainException>();
+        actValor.Should().Throw<DomainException>();
+    }
+
     private static Agendamento NovoAgendamento() => Agendamento.Criar(
         id: Guid.NewGuid(),
         filialId: Guid.NewGuid(),

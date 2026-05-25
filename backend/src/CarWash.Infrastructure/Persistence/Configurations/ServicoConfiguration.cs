@@ -13,13 +13,14 @@ public sealed class ServicoConfiguration : IEntityTypeConfiguration<Servico>
         builder.ToTable("servicos", t =>
         {
             t.HasCheckConstraint("ck_servicos_preco", "preco > 0");
-            t.HasCheckConstraint("ck_servicos_duracao", "duracao_min > 0");
+            t.HasCheckConstraint("ck_servicos_duracao_positiva", "duracao_min > 0");
+            t.HasCheckConstraint("ck_servicos_duracao_max", $"duracao_min <= {Servico.DuracaoMinValorMax}");
         });
 
         builder.HasKey(x => x.Id).HasName("pk_servicos");
         builder.Property(x => x.Id).ValueGeneratedNever();
 
-        builder.Property(x => x.Nome).IsRequired().HasMaxLength(120);
+        builder.Property(x => x.Nome).IsRequired().HasMaxLength(Servico.NomeMaxLength);
         builder.Property(x => x.Preco).IsRequired().HasColumnType("numeric(10,2)");
         builder.Property(x => x.DuracaoMin).IsRequired();
         builder.Property(x => x.Ativo).IsRequired().HasDefaultValue(true);
@@ -28,7 +29,8 @@ public sealed class ServicoConfiguration : IEntityTypeConfiguration<Servico>
 
         builder.HasIndex(x => x.Nome)
             .IsUnique()
-            .HasDatabaseName("uk_servicos_nome");
+            .HasDatabaseName("uk_servicos_nome")
+            .HasFilter(null);
 
         builder.HasIndex(x => x.Ativo)
             .HasDatabaseName("idx_servicos_ativo")
