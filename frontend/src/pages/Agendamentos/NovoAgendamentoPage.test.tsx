@@ -8,7 +8,6 @@ import { IDS, respostaCriacao } from '@/test/handlers';
 import { server } from '@/test/mswServer';
 import { renderComProviders } from '@/test/renderComProviders';
 
-
 /**
  * Testes de integração da tela de criação de agendamento com confirmação em
  * 2 etapas (RF007 + RF015 / card 133).
