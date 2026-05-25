@@ -57,8 +57,10 @@ public static class InputNormalizer
             .Replace(">", string.Empty, StringComparison.Ordinal);
     }
 
-    public static string? PlacaOrNull(string? value){
-        if(string.IsNullOrWhiteSpace(value)){
+    public static string? PlacaOrNull(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
             return null;
         }
 

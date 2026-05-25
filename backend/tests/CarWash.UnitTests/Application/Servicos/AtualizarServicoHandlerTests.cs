@@ -1,6 +1,6 @@
 using CarWash.Application.Common.Exceptions;
-using CarWash.Application.Servicos.Common;
 using CarWash.Application.Servicos.Atualizar;
+using CarWash.Application.Servicos.Common;
 using CarWash.Application.Servicos.Persistence;
 using CarWash.Domain.Entities;
 using FluentAssertions;
