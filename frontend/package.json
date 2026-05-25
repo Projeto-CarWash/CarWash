@@ -71,7 +71,7 @@
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.58.2",
     "vite": "^8.0.9",
-    "vitest": "^3.2.4"
+    "vitest": "^4.1.7"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
@@ -80,6 +80,11 @@
     ],
     "*.{js,jsx,json,css,md,html,yml,yaml}": [
       "prettier --write"
+    ]
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
     ]
   }
 }
