@@ -1,7 +1,7 @@
+import { AxiosError } from 'axios';
 import { ArrowLeft, Car, Loader2, Plus, Power } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { AxiosError } from 'axios';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,50 +14,66 @@ export function ClienteDetalhePage() {
   const [cliente, setCliente] = useState<ClienteDetalhe | null>(null);
   const [veiculos, setVeiculos] = useState<Veiculo[]>([]);
   const [erro, setErro] = useState<string | null>(null);
-  const [salvando, setSalvando] = useState(false);
+  const [erroHttp, setErroHttp] = useState<number | null>(null);
+  const [carregando, setCarregando] = useState(true);
   const [carregandoVeiculos, setCarregandoVeiculos] = useState(true);
+  const [salvando, setSalvando] = useState(false);
 
-  const carregarCliente = useCallback(async () => {
-    setCarregando(true);
-    setErro(null);
-    setErroHttp(null);
-    try {
-      const c = await clienteService.obterPorId(id);
-      setCliente(c);
-    } catch (error) {
-      if (error instanceof AxiosError && error.response) {
-        const status = error.response.status;
-        setErroHttp(status);
-        if (status === 401) {
-          navigate('/login', { replace: true });
-        } else if (status === 403) {
-          setErro('Você não possui permissão para consultar clientes.');
-        } else if (status === 404) {
-          setErro('Cliente não encontrado.');
+  useEffect(() => {
+    let cancelado = false;
+
+    const carregarCliente = async () => {
+      if (!cancelado) {
+        setCarregando(true);
+        setErro(null);
+        setErroHttp(null);
+      }
+      try {
+        const c = await clienteService.obterPorId(id);
+        if (!cancelado) setCliente(c);
+      } catch (error) {
+        if (cancelado) return;
+        if (error instanceof AxiosError && error.response) {
+          const status = error.response.status;
+          setErroHttp(status);
+          if (status === 401) {
+            void navigate('/login', { replace: true });
+          } else if (status === 403) {
+            setErro('Você não possui permissão para consultar clientes.');
+          } else if (status === 404) {
+            setErro('Cliente não encontrado.');
+          } else {
+            setErro('Não foi possível concluir a consulta no momento. Tente novamente.');
+          }
         } else {
           setErro('Não foi possível concluir a consulta no momento. Tente novamente.');
+          setErroHttp(500);
         }
-      } else {
-        setErro('Não foi possível concluir a consulta no momento. Tente novamente.');
-        setErroHttp(500);
+      } finally {
+        if (!cancelado) setCarregando(false);
       }
-    })();
+    };
 
-    void (async () => {
+    const carregarVeiculos = async () => {
+      if (!cancelado) setCarregandoVeiculos(true);
       try {
         const v = await veiculoService.listarPorCliente(id);
         if (!cancelado) setVeiculos(v);
       } catch (err) {
+        // Falha na busca de veículos é não-bloqueante para a visualização do cliente.
         console.error('Erro ao buscar veículos do cliente:', err);
       } finally {
         if (!cancelado) setCarregandoVeiculos(false);
       }
-    })();
+    };
+
+    void carregarCliente();
+    void carregarVeiculos();
 
     return () => {
       cancelado = true;
     };
-  }, [id]);
+  }, [id, navigate]);
 
   const toggleStatus = useCallback(async () => {
     if (!cliente) return;
@@ -100,7 +116,7 @@ export function ClienteDetalhePage() {
           onClick={() => void navigate('/clientes')}
           className="h-9 rounded-full border-zinc-700/60 bg-transparent px-4 text-sm hover:bg-zinc-800/50 hover:text-zinc-200 text-zinc-400"
         >
-          <ArrowLeft className="mr-1 h-4 w-4" /> Voltar.
+          <ArrowLeft className="mr-1 h-4 w-4" /> Voltar
         </Button>
         <Button
           type="button"
@@ -133,7 +149,7 @@ export function ClienteDetalhePage() {
         </CardHeader>
         <CardContent className="grid grid-cols-2 gap-4 text-sm text-zinc-300 sm:grid-cols-3">
           {carregando && !cliente ? (
-            <div className="col-span-3 h-32 animate-pulse bg-zinc-800/30 rounded-lg"></div>
+            <div className="col-span-3 h-32 animate-pulse bg-zinc-800/30 rounded-lg" />
           ) : cliente ? (
             <>
               <Campo label="DOCUMENTO" valor={cliente.cpf ?? cliente.cnpj ?? '—'} />
@@ -220,14 +236,8 @@ export function ClienteDetalhePage() {
                         {veiculo.fabricante} {veiculo.modelo}
                       </h4>
                       <p className="text-xs text-zinc-500">
-                        {veiculo.cor}{' '}
-                        {veiculo.observacoes
-                          ? `• ${
-                              veiculo.observacoes.length > 30
-                                ? veiculo.observacoes.slice(0, 30) + '...'
-                                : veiculo.observacoes
-                            }`
-                          : ''}
+                        {veiculo.cor}
+                        {veiculo.ano ? ` • ${veiculo.ano}` : ''}
                       </p>
                     </div>
                   </div>
@@ -241,7 +251,7 @@ export function ClienteDetalhePage() {
         </CardContent>
       </Card>
 
-      {erro && (
+      {erro && erroHttp !== 404 && (
         <p role="alert" className="text-sm text-red-400">
           {erro}
         </p>

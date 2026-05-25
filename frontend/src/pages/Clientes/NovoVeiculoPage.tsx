@@ -21,6 +21,7 @@ const HTTP_ERROR_MESSAGES: Record<number, string> = {
   403: 'Você não possui permissão para cadastrar veículos.',
   404: 'Cliente não encontrado para vincular o veículo.',
   409: 'Já existe veículo cadastrado com esta placa.',
+  422: 'Não é possível cadastrar veículos para clientes inativos.',
   500: 'Não foi possível concluir o cadastro no momento. Tente novamente.',
 };
 
@@ -50,7 +51,6 @@ export function NovoVeiculoPage() {
       modelo: '',
       fabricante: '',
       cor: '',
-      observacoes: '',
     },
   });
 
@@ -137,7 +137,6 @@ export function NovoVeiculoPage() {
       modelo: 'modelo',
       fabricante: 'fabricante',
       cor: 'cor',
-      observacoes: 'observacoes',
     };
     return map[lower] ?? null;
   };
@@ -169,6 +168,13 @@ export function NovoVeiculoPage() {
               message: 'Já existe veículo cadastrado com esta placa.',
             });
             form.setFocus('placa');
+            return;
+          }
+
+          if (status === 422) {
+            // Decisão do arquiteto (2026-05-25): cliente inativo retorna 422,
+            // não 409. 409 fica reservado para placa duplicada (RN011).
+            setGlobalError(HTTP_ERROR_MESSAGES[422]!);
             return;
           }
 
@@ -573,62 +579,6 @@ export function NovoVeiculoPage() {
                     />
                     {fieldState.error && (
                       <p id="veiculo-cor-error" role="alert" className="text-xs text-red-400">
-                        {fieldState.error.message}
-                      </p>
-                    )}
-                  </>
-                )}
-              />
-            </div>
-
-            {/* Observações */}
-            <div className="flex flex-col gap-2 md:col-span-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="veiculo-observacoes" className="text-zinc-300">
-                  Observações (Opcional)
-                </Label>
-                <Controller
-                  control={form.control}
-                  name="observacoes"
-                  render={({ field }) => (
-                    <span className="text-[11px] font-semibold text-zinc-500">
-                      {field.value ? field.value.length : 0}/500
-                    </span>
-                  )}
-                />
-              </div>
-              <Controller
-                control={form.control}
-                name="observacoes"
-                render={({ field, fieldState }) => (
-                  <>
-                    <textarea
-                      id="veiculo-observacoes"
-                      rows={3}
-                      maxLength={500}
-                      placeholder="Alguma observação sobre o veículo..."
-                      value={field.value}
-                      onChange={field.onChange}
-                      onBlur={(e) => {
-                        const val = e.target.value.trim();
-                        field.onChange(val);
-                        field.onBlur();
-                      }}
-                      ref={field.ref}
-                      aria-invalid={!!fieldState.error}
-                      aria-describedby={fieldState.error ? 'veiculo-observacoes-error' : undefined}
-                      className={`w-full rounded-lg border px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-0 resize-none ${
-                        fieldState.error
-                          ? 'border-red-500/60 bg-red-950/20 focus-visible:border-red-500'
-                          : 'border-zinc-700/60 bg-zinc-950/40 focus-visible:border-zinc-600'
-                      }`}
-                    />
-                    {fieldState.error && (
-                      <p
-                        id="veiculo-observacoes-error"
-                        role="alert"
-                        className="text-xs text-red-400"
-                      >
                         {fieldState.error.message}
                       </p>
                     )}

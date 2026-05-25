@@ -9,7 +9,7 @@ export interface Veiculo {
   modelo: string;
   fabricante: string;
   cor: string;
-  observacoes?: string;
+  ano?: number | null;
   ativo: boolean;
   criadoEm: string;
   atualizadoEm: string;
@@ -19,20 +19,17 @@ export interface ListarVeiculosResponse {
   itens: Veiculo[];
 }
 
-export interface CriarVeiculoResponse {
-  id: string;
-  mensagem: string;
-  traceId: string;
-}
+// Contrato alinhado ao slice CriarVeiculo do backend (Application/Veiculos/Criar):
+// retorna o agregado Veiculo completo, não { id, mensagem, traceId }.
+export type CriarVeiculoResponse = Veiculo;
 
 export const veiculoService = {
   async cadastrar(clienteId: string, dados: VeiculoFormData): Promise<CriarVeiculoResponse> {
     const payload = {
-      placa: dados.placa, // already normalized by zod schema transform
+      placa: dados.placa, // já normalizado pelo transform do zod
       modelo: dados.modelo,
       fabricante: dados.fabricante,
       cor: dados.cor,
-      observacoes: dados.observacoes ?? undefined,
     };
     const { data } = await api.post<CriarVeiculoResponse>(
       `/api/v1/clientes/${clienteId}/veiculos`,
