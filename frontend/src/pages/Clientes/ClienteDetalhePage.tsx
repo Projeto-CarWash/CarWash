@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowLeft, Car, Plus, Power, RefreshCcw } from 'lucide-react';
+import { ArrowLeft, Car, Loader2, Plus, Power } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AxiosError } from 'axios';
@@ -6,15 +6,16 @@ import { AxiosError } from 'axios';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { clienteService, type ClienteDetalhe } from '@/services/clienteService';
+import { veiculoService, type Veiculo } from '@/services/veiculoService';
 
 export function ClienteDetalhePage() {
   const { id = '' } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [cliente, setCliente] = useState<ClienteDetalhe | null>(null);
+  const [veiculos, setVeiculos] = useState<Veiculo[]>([]);
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
-  const [carregando, setCarregando] = useState(true);
-  const [erroHttp, setErroHttp] = useState<number | null>(null);
+  const [carregandoVeiculos, setCarregandoVeiculos] = useState(true);
 
   const carregarCliente = useCallback(async () => {
     setCarregando(true);
@@ -40,15 +41,23 @@ export function ClienteDetalhePage() {
         setErro('Não foi possível concluir a consulta no momento. Tente novamente.');
         setErroHttp(500);
       }
-    } finally {
-      setCarregando(false);
-    }
-  }, [id, navigate]);
+    })();
 
-  useEffect(() => {
-    setCliente(null);
-    void carregarCliente();
-  }, [carregarCliente]);
+    void (async () => {
+      try {
+        const v = await veiculoService.listarPorCliente(id);
+        if (!cancelado) setVeiculos(v);
+      } catch (err) {
+        console.error('Erro ao buscar veículos do cliente:', err);
+      } finally {
+        if (!cancelado) setCarregandoVeiculos(false);
+      }
+    })();
+
+    return () => {
+      cancelado = true;
+    };
+  }, [id]);
 
   const toggleStatus = useCallback(async () => {
     if (!cliente) return;
@@ -154,15 +163,15 @@ export function ClienteDetalhePage() {
       <Card className="border-zinc-800/60 bg-zinc-900/30">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <div>
-            <h2 className="text-lg text-zinc-100 flex items-center gap-2 font-semibold">
+            <CardTitle className="text-lg text-zinc-100 flex items-center gap-2">
               <Car className="h-5 w-5 text-red-500" />
-              Veículos do cliente <span className="text-sm font-normal text-zinc-400">({cliente?.veiculos?.length ?? 0})</span>
-            </h2>
+              Veículos
+            </CardTitle>
             <p className="text-xs text-zinc-400 mt-1">
               Veículos associados a este cliente para ordens de serviço.
             </p>
           </div>
-          {!carregando && !erro && (
+          {veiculos.length > 0 && (
             <Button
               type="button"
               onClick={() => void navigate(`/clientes/${id}/veiculos/novo`)}
@@ -173,56 +182,33 @@ export function ClienteDetalhePage() {
           )}
         </CardHeader>
         <CardContent>
-          {carregando ? (
-            <ul aria-busy="true" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {[1, 2, 3].map((skeleton) => (
-                <li key={skeleton} className="flex h-20 items-center justify-between rounded-xl border border-zinc-800/40 bg-zinc-900/20 p-4 animate-pulse">
-                  <div className="flex items-center gap-3 w-full">
-                    <div className="h-9 w-9 rounded-lg bg-zinc-800/50"></div>
-                    <div className="space-y-2 w-full">
-                      <div className="h-4 w-1/2 rounded bg-zinc-800/50"></div>
-                      <div className="h-3 w-1/3 rounded bg-zinc-800/50"></div>
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          ) : erro ? (
-            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-red-500/20 bg-red-950/10 py-8 text-center" aria-live="assertive">
-              <AlertTriangle className="h-8 w-8 text-red-500/80 mb-3" />
-              <p className="text-sm font-medium text-red-400">{erro}</p>
-              <Button
-                type="button"
-                onClick={carregarCliente}
-                className="mt-4 h-9 rounded-full bg-red-600/10 hover:bg-red-600/20 text-xs font-semibold text-red-400 px-4 border border-red-500/30"
-              >
-                <RefreshCcw className="mr-1 h-3.5 w-3.5" /> Tentar novamente
-              </Button>
+          {carregandoVeiculos ? (
+            <div className="flex items-center justify-center py-6 text-sm text-zinc-500">
+              <Loader2 className="mr-2 h-4 w-4 animate-spin text-zinc-400" />
+              Carregando veículos…
             </div>
-          ) : (cliente?.veiculos || []).length === 0 ? (
+          ) : veiculos.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-zinc-800 bg-zinc-950/20 py-8 text-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-800/40 text-zinc-500 mb-3">
                 <Car className="h-6 w-6" />
               </div>
-              <h4 className="text-sm font-semibold text-zinc-200">Nenhum veículo vinculado</h4>
+              <h4 className="text-sm font-semibold text-zinc-200">Nenhum veículo cadastrado</h4>
               <p className="mt-1 text-xs text-zinc-500 max-w-[280px]">
-                Este cliente ainda não possui veículos cadastrados.
+                Este cliente ainda não possui veículos vinculados à sua conta.
               </p>
               <Button
                 type="button"
                 onClick={() => void navigate(`/clientes/${id}/veiculos/novo`)}
                 className="mt-4 h-9 rounded-full bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-zinc-200 px-4 border border-zinc-700/60"
               >
-                <Plus className="mr-1 h-3.5 w-3.5" /> Adicionar veículo
+                <Plus className="mr-1 h-3.5 w-3.5" /> Cadastrar primeiro veículo
               </Button>
             </div>
           ) : (
-            <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {[...(cliente?.veiculos || [])]
-                .reverse()
-                .map((veiculo) => (
-                <li
-                  key={veiculo.id || veiculo.placa}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {veiculos.map((veiculo) => (
+                <div
+                  key={veiculo.id}
                   className="flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-950/30 p-4 hover:border-zinc-700 transition-colors"
                 >
                   <div className="flex items-center gap-3">
@@ -234,19 +220,32 @@ export function ClienteDetalhePage() {
                         {veiculo.fabricante} {veiculo.modelo}
                       </h4>
                       <p className="text-xs text-zinc-500">
-                        {veiculo.cor}
+                        {veiculo.cor}{' '}
+                        {veiculo.observacoes
+                          ? `• ${
+                              veiculo.observacoes.length > 30
+                                ? veiculo.observacoes.slice(0, 30) + '...'
+                                : veiculo.observacoes
+                            }`
+                          : ''}
                       </p>
                     </div>
                   </div>
                   <div className="rounded-md border border-zinc-700 bg-zinc-900 px-2.5 py-1 text-xs font-mono font-bold tracking-wider text-zinc-200 uppercase shadow-inner">
                     {formatarPlacaExibicao(veiculo.placa)}
                   </div>
-                </li>
+                </div>
               ))}
-            </ul>
+            </div>
           )}
         </CardContent>
       </Card>
+
+      {erro && (
+        <p role="alert" className="text-sm text-red-400">
+          {erro}
+        </p>
+      )}
     </div>
   );
 }
