@@ -21,8 +21,9 @@ public class ServicoRepository : IServicoRepository
     {
         return context.Servicos
             .AsNoTracking()
-            .AnyAsync(x => x.Nome == nome
-                && (ignoreServicoId == null || x.Id != ignoreServicoId),
+            .AnyAsync(
+                x => x.Nome == nome
+                    && (ignoreServicoId == null || x.Id != ignoreServicoId),
                 cancellationToken);
     }
 

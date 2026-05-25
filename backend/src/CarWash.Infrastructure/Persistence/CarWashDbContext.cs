@@ -25,7 +25,6 @@ public class CarWashDbContext : DbContext
 
     public DbSet<Cliente> Clientes => Set<Cliente>();
 
-<<<<<<< HEAD
     public DbSet<Filiado> Filiados => Set<Filiado>();
 
     public DbSet<Veiculo> Veiculos => Set<Veiculo>();
@@ -40,10 +39,6 @@ public class CarWashDbContext : DbContext
 
     public DbSet<FeatureFlag> FeatureFlags => Set<FeatureFlag>();
 
-=======
-    public DbSet<Veiculo> Veiculos => Set<Veiculo>();
-
->>>>>>> d18fb68 (feat(clientes): adicionar veiculos no cadastro de cliente)
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     public DbSet<IdempotenciaRequisicao> IdempotenciaRequisicoes => Set<IdempotenciaRequisicao>();
