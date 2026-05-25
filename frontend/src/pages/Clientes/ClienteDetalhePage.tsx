@@ -200,7 +200,14 @@ export function ClienteDetalhePage() {
                         {veiculo.fabricante} {veiculo.modelo}
                       </h4>
                       <p className="text-xs text-zinc-500">
-                        {veiculo.cor} {veiculo.ano ? `• ${veiculo.ano}` : ''}
+                        {veiculo.cor}{' '}
+                        {veiculo.observacoes
+                          ? `• ${
+                              veiculo.observacoes.length > 30
+                                ? veiculo.observacoes.slice(0, 30) + '...'
+                                : veiculo.observacoes
+                            }`
+                          : ''}
                       </p>
                     </div>
                   </div>
