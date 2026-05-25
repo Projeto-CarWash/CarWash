@@ -5,13 +5,13 @@ import { NovoClientePage } from '@/components/clientes/NovoClientePage';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import PrivateRoute from '@/components/PrivateRoute';
 import { AuthProvider } from '@/contexts/AuthProvider';
-import { AgendamentosCalendarioPage } from '@/pages/Agendamentos/AgendamentosCalendarioPage';
-import { AgendamentosDashboardPage } from '@/pages/Agendamentos/AgendamentosDashboardPage';
 import { ClienteDetalhePage } from '@/pages/Clientes/ClienteDetalhePage';
 import { ClientesListaPage } from '@/pages/Clientes/ClientesListaPage';
 import { NovoVeiculoPage } from '@/pages/Clientes/NovoVeiculoPage';
 import Dashboard from '@/pages/Dashboard/Dashboard';
 import Login from '@/pages/Login/Login';
+import { ServicoFormPage } from '@/pages/Servicos/ServicoFormPage';
+import { ServicosListaPage } from '@/pages/Servicos/ServicosListaPage';
 import { NovoUsuarioPage } from '@/pages/Usuarios/NovoUsuarioPage';
 import { UsuarioDetalhePage } from '@/pages/Usuarios/UsuarioDetalhePage';
 import { UsuariosListaPage } from '@/pages/Usuarios/UsuariosListaPage';
@@ -109,22 +109,33 @@ function App() {
         />
 
         <Route
-          path="/agendamentos"
+          path="/servicos"
           element={
             <PrivateRoute>
               <DashboardLayout>
-                <AgendamentosDashboardPage />
+                <ServicosListaPage />
               </DashboardLayout>
             </PrivateRoute>
           }
         />
 
         <Route
-          path="/agendamentos/calendario"
+          path="/servicos/novo"
           element={
             <PrivateRoute>
               <DashboardLayout>
-                <AgendamentosCalendarioPage />
+                <ServicoFormPage />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/servicos/:id/editar"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <ServicoFormPage />
               </DashboardLayout>
             </PrivateRoute>
           }
