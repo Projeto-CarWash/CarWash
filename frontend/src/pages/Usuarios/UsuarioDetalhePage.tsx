@@ -142,7 +142,10 @@ export function UsuarioDetalhePage() {
           {/* ── Campos de edição ── */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="detalhe-nome" className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">
+              <Label
+                htmlFor="detalhe-nome"
+                className="text-[10px] font-bold tracking-[0.2em] text-zinc-500"
+              >
                 NOME
               </Label>
               <Input
@@ -154,7 +157,10 @@ export function UsuarioDetalhePage() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="detalhe-email" className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">
+              <Label
+                htmlFor="detalhe-email"
+                className="text-[10px] font-bold tracking-[0.2em] text-zinc-500"
+              >
                 E-MAIL
               </Label>
               <Input
@@ -204,11 +210,13 @@ export function UsuarioDetalhePage() {
                   id="detalhe-status-input"
                   type="text"
                   readOnly
-                  value={usuario.ativo ? 'Ativo — acesso ao sistema permitido' : 'Inativo — acesso ao sistema bloqueado'}
-                  className={`h-10 rounded-xl border-zinc-700/60 bg-zinc-900/50 text-sm font-medium focus-visible:ring-0 ${
+                  value={
                     usuario.ativo
-                      ? 'text-green-400'
-                      : 'text-zinc-500'
+                      ? 'Ativo — acesso ao sistema permitido'
+                      : 'Inativo — acesso ao sistema bloqueado'
+                  }
+                  className={`h-10 rounded-xl border-zinc-700/60 bg-zinc-900/50 text-sm font-medium focus-visible:ring-0 ${
+                    usuario.ativo ? 'text-green-400' : 'text-zinc-500'
                   }`}
                 />
                 <p className="text-[11px] text-zinc-600">
@@ -254,7 +262,9 @@ export function UsuarioDetalhePage() {
           aria-live="polite"
           className="flex items-start gap-3 rounded-xl border border-green-500/30 bg-green-950/30 px-4 py-3"
         >
-          <span className="mt-0.5 h-4 w-4 shrink-0 text-green-500" aria-hidden="true">✓</span>
+          <span className="mt-0.5 h-4 w-4 shrink-0 text-green-500" aria-hidden="true">
+            ✓
+          </span>
           <p className="flex-1 text-sm font-medium text-green-400">{sucesso}</p>
           <button
             type="button"

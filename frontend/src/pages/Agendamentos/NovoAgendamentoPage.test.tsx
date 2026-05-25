@@ -3,11 +3,11 @@ import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
 import { describe, expect, it } from 'vitest';
 
+import { NovoAgendamentoPage } from '@/components/agendamentos/NovoAgendamentoPage';
 import { IDS, respostaCriacao } from '@/test/handlers';
 import { server } from '@/test/mswServer';
 import { renderComProviders } from '@/test/renderComProviders';
 
-import { NovoAgendamentoPage } from './NovoAgendamentoPage';
 
 /**
  * Testes de integração da tela de criação de agendamento com confirmação em

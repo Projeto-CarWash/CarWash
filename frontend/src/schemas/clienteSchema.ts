@@ -165,7 +165,7 @@ export const clienteSchema = z.object({
     .min(1, 'UF é obrigatória.')
     .transform((v) => v.toUpperCase())
     .refine((v) => UF_PATTERN.test(v), { message: 'UF inválida (use sigla dos 27 estados).' }),
-  
+
   veiculos: z
     .array(
       z.object({
@@ -206,7 +206,7 @@ export const clienteSchema = z.object({
           .refine((val) => val.length >= 2 && val.length <= 40, {
             message: 'Cor deve ter entre 2 e 40 caracteres.',
           }),
-      })
+      }),
     )
     .min(1, 'Adicione ao menos um veículo para concluir o cadastro.'),
 });
