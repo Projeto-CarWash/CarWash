@@ -21,6 +21,7 @@ export default defineConfig([
     'playwright-report',
     'test-results',
     '.vite',
+    'public/mockServiceWorker.js',
   ]),
 
   // Código de aplicação
