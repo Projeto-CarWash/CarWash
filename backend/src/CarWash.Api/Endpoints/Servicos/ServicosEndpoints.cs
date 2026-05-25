@@ -100,7 +100,9 @@ public static class ServicosEndpoints
 
         logger.LogInformation(
             "Serviço cadastrado com sucesso. TraceId: {TraceId}. ServicoId: {ServicoId}. UsuarioId: {UsuarioId}",
-            traceId, resposta.Id, usuarioId);
+            traceId,
+            resposta.Id,
+            usuarioId);
 
         return TypedResults.Created($"/api/v1/servicos/{resposta.Id}", resposta);
     }
@@ -109,7 +111,6 @@ public static class ServicosEndpoints
         [FromQuery] string? busca,
         [FromQuery] bool? ativo,
         [FromServices] IQueryHandler<ListarServicosQuery, ListaServicosResponse> handler,
-        HttpContext http,
         CancellationToken cancellationToken,
         [FromQuery] int pagina = 1,
         [FromQuery] int tamanhoPagina = 20)
@@ -146,7 +147,6 @@ public static class ServicosEndpoints
     private static async Task<Ok<ServicoResponse>> ObterPorIdAsync(
         Guid id,
         [FromServices] IQueryHandler<ObterServicoPorIdQuery, ServicoResponse> handler,
-        HttpContext http,
         CancellationToken cancellationToken)
     {
         var resposta = await handler.HandleAsync(new ObterServicoPorIdQuery(id), cancellationToken).ConfigureAwait(false);
@@ -187,7 +187,9 @@ public static class ServicosEndpoints
 
         logger.LogInformation(
             "Serviço atualizado. TraceId: {TraceId}. ServicoId: {ServicoId}. UsuarioId: {UsuarioId}",
-            traceId, id, usuarioId);
+            traceId,
+            id,
+            usuarioId);
 
         return TypedResults.Ok(resposta);
     }
@@ -224,7 +226,10 @@ public static class ServicosEndpoints
 
         logger.LogInformation(
             "Status do serviço alterado. TraceId: {TraceId}. ServicoId: {ServicoId}. Ativo: {Ativo}. UsuarioId: {UsuarioId}",
-            traceId, id, request.Ativo.Value, usuarioId);
+            traceId,
+            id,
+            request.Ativo.Value,
+            usuarioId);
 
         return TypedResults.Ok(resposta);
     }

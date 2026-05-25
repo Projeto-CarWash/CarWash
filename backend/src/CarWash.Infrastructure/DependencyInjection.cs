@@ -1,4 +1,5 @@
 using CarWash.Application.Abstractions;
+using CarWash.Application.Agenda.Persistence;
 using CarWash.Application.Agendamentos.Abstractions;
 using CarWash.Application.Agendamentos.Persistence;
 using CarWash.Application.Auth.Abstractions;
@@ -7,6 +8,7 @@ using CarWash.Application.Clientes.Persistence;
 using CarWash.Application.Common.Security;
 using CarWash.Application.Servicos.Persistence;
 using CarWash.Application.Usuarios.Persistence;
+using CarWash.Application.Veiculos.Persistence;
 using CarWash.Infrastructure.Agendamentos;
 using CarWash.Infrastructure.Auditing;
 using CarWash.Infrastructure.Auth;
@@ -62,6 +64,9 @@ public static class DependencyInjection
         services.AddScoped<IAgendamentoRepository, AgendamentoRepository>();
         services.AddScoped<IAgendamentoCatalogoRepository, AgendamentoCatalogoRepository>();
         services.AddScoped<IIdempotenciaRepository, IdempotenciaRepository>();
+        services.AddScoped<IServicoRepository, ServicoRepository>();
+        services.AddScoped<IAgendaRepository, AgendaRepository>();
+        services.AddScoped<IVeiculoRepository, VeiculoRepository>();
 
         // RF015 — confirmação de agendamento em duas etapas (ADR 0004).
         // Token de confirmação: singleton (sem estado mutável; só lê a chave HMAC).
@@ -96,8 +101,6 @@ public static class DependencyInjection
 
         services.AddSingleton<IDbContextFactory<CarWashDbContext>>(
             new CarWashRuntimeDbContextFactory(factoryOptions));
-
-        services.AddScoped<ICarWashDbContext, CarWashDbContext>();
 
         return services;
     }

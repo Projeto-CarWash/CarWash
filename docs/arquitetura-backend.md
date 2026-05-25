@@ -464,6 +464,29 @@ backend/tests/CarWash.IntegrationTests/Agendamentos/
 
 ---
 
+## 8.6 Padrão de migrations EF Core
+
+**Diretório canônico:** `backend/src/CarWash.Infrastructure/Persistence/Migrations/`. Todas as classes `[Migration]` devem viver no namespace `CarWash.Infrastructure.Persistence.Migrations` — sem exceção.
+
+Por que a regra existe: em 2026-05 dois conjuntos paralelos de migrations no mesmo assembly criaram duas histórias com `InitialSchema` diferente, o que fez o EF Core tentar aplicar ambas e quebrar 183/187 testes de integração com `relation "clientes" already exists`. O caso está documentado em `docs/adr/0006-consolidacao-arvore-migrations-ef-core.md`.
+
+**Comando para criar nova migration:**
+
+```bash
+dotnet ef migrations add <NomeDescritivo> \
+  --project src/CarWash.Infrastructure \
+  --startup-project src/CarWash.Api \
+  --output-dir Persistence/Migrations
+```
+
+O `--output-dir Persistence/Migrations` é obrigatório — sem ele o `dotnet ef` cai no padrão `Migrations/` e gera a regressão histórica.
+
+**Configuração no DI:** `MigrationsAssembly` e `MigrationsHistoryTable` já estão configurados explicitamente em `CarWash.Infrastructure/DependencyInjection.cs` (tanto no `AddDbContext` quanto no `IDbContextFactory`).
+
+**Teste de convenção:** `backend/tests/CarWash.UnitTests/Architecture/MigrationConventionTests.cs` falha o build se qualquer classe com `[Migration]` aparecer fora do namespace canônico. Não remova nem desabilite este teste.
+
+---
+
 ## 9. Mapeamento requisito → código
 
 Esta convenção facilita rastreabilidade entre o DRP/DVP-E e o código.
