@@ -1,6 +1,7 @@
 import { ArrowLeft, Car, Loader2, Plus, Power } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { AxiosError } from 'axios';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,14 +17,29 @@ export function ClienteDetalhePage() {
   const [salvando, setSalvando] = useState(false);
   const [carregandoVeiculos, setCarregandoVeiculos] = useState(true);
 
-  useEffect(() => {
-    let cancelado = false;
-    void (async () => {
-      try {
-        const c = await clienteService.obterPorId(id);
-        if (!cancelado) setCliente(c);
-      } catch {
-        if (!cancelado) setErro('Cliente não encontrado.');
+  const carregarCliente = useCallback(async () => {
+    setCarregando(true);
+    setErro(null);
+    setErroHttp(null);
+    try {
+      const c = await clienteService.obterPorId(id);
+      setCliente(c);
+    } catch (error) {
+      if (error instanceof AxiosError && error.response) {
+        const status = error.response.status;
+        setErroHttp(status);
+        if (status === 401) {
+          navigate('/login', { replace: true });
+        } else if (status === 403) {
+          setErro('Você não possui permissão para consultar clientes.');
+        } else if (status === 404) {
+          setErro('Cliente não encontrado.');
+        } else {
+          setErro('Não foi possível concluir a consulta no momento. Tente novamente.');
+        }
+      } else {
+        setErro('Não foi possível concluir a consulta no momento. Tente novamente.');
+        setErroHttp(500);
       }
     })();
 
@@ -49,7 +65,7 @@ export function ClienteDetalhePage() {
     setErro(null);
     try {
       const novo = await clienteService.alterarStatus(cliente.id, !cliente.ativo);
-      setCliente(novo);
+      setCliente((prev) => (prev ? { ...prev, ativo: novo.ativo } : null));
     } catch {
       setErro('Não foi possível alterar o status do cliente.');
     } finally {
@@ -57,7 +73,7 @@ export function ClienteDetalhePage() {
     }
   }, [cliente]);
 
-  if (erro && !cliente) {
+  if (erro && !cliente && erroHttp === 404) {
     return (
       <div className="px-8 py-8">
         <Button
@@ -75,10 +91,6 @@ export function ClienteDetalhePage() {
     );
   }
 
-  if (!cliente) {
-    return <div className="px-8 py-8 text-sm text-zinc-500">Carregando…</div>;
-  }
-
   return (
     <div className="space-y-6 px-8 py-8">
       <div className="flex items-center justify-between">
@@ -86,57 +98,65 @@ export function ClienteDetalhePage() {
           type="button"
           variant="outline"
           onClick={() => void navigate('/clientes')}
-          className="h-9 rounded-full border-zinc-700/60 bg-transparent px-4 text-sm"
+          className="h-9 rounded-full border-zinc-700/60 bg-transparent px-4 text-sm hover:bg-zinc-800/50 hover:text-zinc-200 text-zinc-400"
         >
           <ArrowLeft className="mr-1 h-4 w-4" /> Voltar.
         </Button>
         <Button
           type="button"
           variant="outline"
-          disabled={salvando}
+          disabled={salvando || carregando || !cliente}
           onClick={toggleStatus}
-          className="h-9 rounded-full border-zinc-700/60 bg-transparent px-4 text-sm"
+          className="h-9 rounded-full border-zinc-700/60 bg-transparent px-4 text-sm hover:bg-zinc-800/50 hover:text-zinc-200 text-zinc-400"
         >
           <Power className="mr-1 h-4 w-4" />
-          {cliente.ativo ? 'Inativar cliente' : 'Reativar cliente'}
+          {cliente?.ativo ? 'Inativar cliente' : 'Reativar cliente'}
         </Button>
       </div>
 
       <Card className="border-zinc-800/60 bg-zinc-900/30">
         <CardHeader>
           <CardTitle className="flex items-center gap-3 text-xl text-zinc-100">
-            {cliente.nome}
-            <span
-              className={
-                cliente.ativo
-                  ? 'rounded-full bg-green-500/10 px-2 py-0.5 text-[10px] font-bold tracking-[0.15em] text-green-400'
-                  : 'rounded-full bg-zinc-700/40 px-2 py-0.5 text-[10px] font-bold tracking-[0.15em] text-zinc-500'
-              }
-            >
-              {cliente.ativo ? 'ATIVO' : 'INATIVO'}
-            </span>
+            {carregando && !cliente ? 'Carregando...' : cliente?.nome}
+            {cliente && (
+              <span
+                className={
+                  cliente.ativo
+                    ? 'rounded-full bg-green-500/10 px-2 py-0.5 text-[10px] font-bold tracking-[0.15em] text-green-400'
+                    : 'rounded-full bg-zinc-700/40 px-2 py-0.5 text-[10px] font-bold tracking-[0.15em] text-zinc-500'
+                }
+              >
+                {cliente.ativo ? 'ATIVO' : 'INATIVO'}
+              </span>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-2 gap-4 text-sm text-zinc-300 sm:grid-cols-3">
-          <Campo label="DOCUMENTO" valor={cliente.cpf ?? cliente.cnpj ?? '—'} />
-          <Campo label="NASCIMENTO" valor={cliente.dataNascimento} />
-          <Campo label="CELULAR" valor={cliente.celular} />
-          {cliente.telefone && <Campo label="TELEFONE" valor={cliente.telefone} />}
-          {cliente.email && <Campo label="E-MAIL" valor={cliente.email} />}
-          <Campo
-            label="ENDEREÇO"
-            valor={`${cliente.endereco.logradouro}, ${cliente.endereco.numero}${cliente.endereco.complemento ? ' — ' + cliente.endereco.complemento : ''}`}
-          />
-          <Campo
-            label="BAIRRO / CIDADE / UF"
-            valor={`${cliente.endereco.bairro} — ${cliente.endereco.cidade} / ${cliente.endereco.uf}`}
-          />
-          <Campo label="CEP" valor={cliente.endereco.cep} />
-          <Campo label="CRIADO EM" valor={new Date(cliente.criadoEm).toLocaleString('pt-BR')} />
-          <Campo
-            label="ATUALIZADO EM"
-            valor={new Date(cliente.atualizadoEm).toLocaleString('pt-BR')}
-          />
+          {carregando && !cliente ? (
+            <div className="col-span-3 h-32 animate-pulse bg-zinc-800/30 rounded-lg"></div>
+          ) : cliente ? (
+            <>
+              <Campo label="DOCUMENTO" valor={cliente.cpf ?? cliente.cnpj ?? '—'} />
+              <Campo label="NASCIMENTO" valor={cliente.dataNascimento} />
+              <Campo label="CELULAR" valor={cliente.celular} />
+              {cliente.telefone && <Campo label="TELEFONE" valor={cliente.telefone} />}
+              {cliente.email && <Campo label="E-MAIL" valor={cliente.email} />}
+              <Campo
+                label="ENDEREÇO"
+                valor={`${cliente.endereco.logradouro}, ${cliente.endereco.numero}${cliente.endereco.complemento ? ' — ' + cliente.endereco.complemento : ''}`}
+              />
+              <Campo
+                label="BAIRRO / CIDADE / UF"
+                valor={`${cliente.endereco.bairro} — ${cliente.endereco.cidade} / ${cliente.endereco.uf}`}
+              />
+              <Campo label="CEP" valor={cliente.endereco.cep} />
+              <Campo label="CRIADO EM" valor={new Date(cliente.criadoEm).toLocaleString('pt-BR')} />
+              <Campo
+                label="ATUALIZADO EM"
+                valor={new Date(cliente.atualizadoEm).toLocaleString('pt-BR')}
+              />
+            </>
+          ) : null}
         </CardContent>
       </Card>
 
