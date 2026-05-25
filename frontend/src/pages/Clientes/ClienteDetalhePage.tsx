@@ -30,7 +30,7 @@ export function ClienteDetalhePage() {
     void (async () => {
       try {
         const v = await veiculoService.listarPorCliente(id);
-        if (!cancelado) setVeiculos(v.itens as Veiculo[]);
+        if (!cancelado) setVeiculos(v);
       } catch (err) {
         console.error('Erro ao buscar veículos do cliente:', err);
       } finally {
@@ -88,7 +88,7 @@ export function ClienteDetalhePage() {
           onClick={() => void navigate('/clientes')}
           className="h-9 rounded-full border-zinc-700/60 bg-transparent px-4 text-sm"
         >
-          <ArrowLeft className="mr-1 h-4 w-4" /> Voltar
+          <ArrowLeft className="mr-1 h-4 w-4" /> Voltar.
         </Button>
         <Button
           type="button"

@@ -11,7 +11,21 @@ import { accessTokenStore } from './accessTokenStore';
  * <p><strong>withCredentials:</strong> obrigatório para enviar o cookie
  * httpOnly de refresh token no domínio cross-origin (dev: 5173 → 8080).</p>
  */
-const baseURL: string = import.meta.env.VITE_API_URL ?? '';
+function normalizarBaseUrl(raw: string | undefined): string {
+  if (!raw) {
+    return '';
+  }
+
+  const trimmed = raw.trim();
+  if (trimmed === '/api' || trimmed === '/api/') {
+    // Endpoints já usam caminho absoluto "/api/v1/...".
+    return '';
+  }
+
+  return trimmed.endsWith('/') ? trimmed.slice(0, -1) : trimmed;
+}
+
+const baseURL: string = normalizarBaseUrl(import.meta.env.VITE_API_URL);
 
 const api = axios.create({
   baseURL,
