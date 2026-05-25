@@ -141,6 +141,17 @@ function App() {
           }
         />
 
+        <Route
+          path="/agendamentos/novo"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <NovoAgendamentoPage />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>

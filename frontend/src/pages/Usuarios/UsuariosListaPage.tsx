@@ -55,26 +55,19 @@ export function UsuariosListaPage() {
     };
   }, [carregarUsuarios]);
 
-  const toggleStatusInline = useCallback(
-    async (usuario: UsuarioResponse, novoAtivo: boolean) => {
-      setAlterandoStatusId(usuario.id);
-      setErro(null);
-      try {
-        await userService.updateStatus(usuario.id, novoAtivo);
-        // Atualiza o item local para feedback imediato
-        setItens((prev) =>
-          prev.map((u) => (u.id === usuario.id ? { ...u, ativo: novoAtivo } : u)),
-        );
-      } catch {
-        setErro(
-          `Não foi possível ${novoAtivo ? 'ativar' : 'inativar'} o usuário "${usuario.nome}".`,
-        );
-      } finally {
-        setAlterandoStatusId(null);
-      }
-    },
-    [],
-  );
+  const toggleStatusInline = useCallback(async (usuario: UsuarioResponse, novoAtivo: boolean) => {
+    setAlterandoStatusId(usuario.id);
+    setErro(null);
+    try {
+      await userService.updateStatus(usuario.id, novoAtivo);
+      // Atualiza o item local para feedback imediato
+      setItens((prev) => prev.map((u) => (u.id === usuario.id ? { ...u, ativo: novoAtivo } : u)));
+    } catch {
+      setErro(`Não foi possível ${novoAtivo ? 'ativar' : 'inativar'} o usuário "${usuario.nome}".`);
+    } finally {
+      setAlterandoStatusId(null);
+    }
+  }, []);
 
   const totalPaginas = Math.max(1, Math.ceil(total / TAMANHO_PAGINA));
 
@@ -238,4 +231,3 @@ export function UsuariosListaPage() {
     </div>
   );
 }
-
