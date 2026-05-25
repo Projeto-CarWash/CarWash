@@ -30,7 +30,7 @@ export function ClienteDetalhePage() {
     void (async () => {
       try {
         const v = await veiculoService.listarPorCliente(id);
-        if (!cancelado) setVeiculos(v.itens as Veiculo[]);
+        if (!cancelado) setVeiculos(v);
       } catch (err) {
         console.error('Erro ao buscar veículos do cliente:', err);
       } finally {

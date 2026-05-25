@@ -1,7 +1,6 @@
 import api from './api';
 
 import type { VeiculoFormData } from '@/schemas/veiculoSchema';
-import type { ListaVeiculos } from '@/types/veiculo';
 
 export interface Veiculo {
   id: string;
@@ -9,12 +8,15 @@ export interface Veiculo {
   placa: string;
   modelo: string;
   fabricante: string;
-  marca: string;
   cor: string;
   observacoes?: string;
   ativo: boolean;
-  criadoEm?: string;
-  atualizadoEm?: string;
+  criadoEm: string;
+  atualizadoEm: string;
+}
+
+export interface ListarVeiculosResponse {
+  itens: Veiculo[];
 }
 
 export interface CriarVeiculoResponse {
@@ -39,10 +41,10 @@ export const veiculoService = {
     return data;
   },
 
-  async listarPorCliente(clienteId: string): Promise<ListaVeiculos> {
-    const { data } = await api.get<ListaVeiculos>('/api/v1/veiculos', {
-      params: { clienteId, tamanhoPagina: 100 },
-    });
-    return data;
+  async listarPorCliente(clienteId: string): Promise<Veiculo[]> {
+    const { data } = await api.get<ListarVeiculosResponse>(
+      `/api/v1/clientes/${clienteId}/veiculos`,
+    );
+    return data.itens;
   },
 };

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 using CarWash.Domain.Common;
 using CarWash.Domain.ValueObjects;
 
@@ -20,10 +21,17 @@ public sealed class Veiculo : IAuditable, IAuditableSetter
         Cor = null!;
     }
 
+=======
+namespace CarWash.Domain.Entities;
+
+public class Veiculo
+{
+>>>>>>> d18fb68 (feat(clientes): adicionar veiculos no cadastro de cliente)
     public Guid Id { get; private set; }
 
     public Guid ClienteId { get; private set; }
 
+<<<<<<< HEAD
     public string Placa { get; private set; }
 
     public string Modelo { get; private set; }
@@ -31,11 +39,23 @@ public sealed class Veiculo : IAuditable, IAuditableSetter
     public string Fabricante { get; private set; }
 
     public string Cor { get; private set; }
+=======
+    public Cliente Cliente { get; private set; } = null!;
+
+    public string Placa { get; private set; } = string.Empty;
+
+    public string Modelo { get; private set; } = string.Empty;
+
+    public string Fabricante { get; private set; } = string.Empty;
+
+    public string Cor { get; private set; } = string.Empty;
+>>>>>>> d18fb68 (feat(clientes): adicionar veiculos no cadastro de cliente)
 
     public int? Ano { get; private set; }
 
     public bool Ativo { get; private set; }
 
+<<<<<<< HEAD
     public DateTime CriadoEm { get; private set; }
 
     public DateTime AtualizadoEm { get; private set; }
@@ -44,11 +64,21 @@ public sealed class Veiculo : IAuditable, IAuditableSetter
         Guid id,
         Guid clienteId,
         Placa placa,
+=======
+    public DateTimeOffset CriadoEm { get; private set; }
+
+    public DateTimeOffset AtualizadoEm { get; private set; }
+
+    public Veiculo(
+        Guid clienteId,
+        string placa,
+>>>>>>> d18fb68 (feat(clientes): adicionar veiculos no cadastro de cliente)
         string modelo,
         string fabricante,
         string cor,
         int? ano = null)
     {
+<<<<<<< HEAD
         ArgumentNullException.ThrowIfNull(placa);
 
         if (id == Guid.Empty)
@@ -104,4 +134,21 @@ public sealed class Veiculo : IAuditable, IAuditableSetter
     void IAuditableSetter.SetCriadoEm(DateTime valor) => CriadoEm = valor;
 
     void IAuditableSetter.SetAtualizadoEm(DateTime valor) => AtualizadoEm = valor;
+=======
+        Id = Guid.NewGuid();
+        ClienteId = clienteId;
+        Placa = placa;
+        Modelo = modelo;
+        Fabricante = fabricante;
+        Cor = cor;
+        Ano = ano;
+        Ativo = true;
+        CriadoEm = DateTimeOffset.UtcNow;
+        AtualizadoEm = DateTimeOffset.UtcNow;
+    }
+
+    protected Veiculo()
+    {
+    }
+>>>>>>> d18fb68 (feat(clientes): adicionar veiculos no cadastro de cliente)
 }
