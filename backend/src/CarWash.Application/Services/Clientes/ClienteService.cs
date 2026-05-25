@@ -115,9 +115,6 @@ public class ClienteService : IClienteService
             return null;
         }
 
-        IReadOnlyCollection<Veiculo> veiculos =
-            await clienteRepository.ObterVeiculosPorClienteIdAsync(id, cancellationToken);
-
         return new ClienteResponse
         {
             Id = cliente.Id,
@@ -132,16 +129,6 @@ public class ClienteService : IClienteService
             Ativo = cliente.Ativo,
             CriadoEm = cliente.CriadoEm,
             AtualizadoEm = cliente.AtualizadoEm,
-            Veiculos = veiculos
-                .Select(veiculo => new VeiculoResponse
-                {
-                    Id = veiculo.Id,
-                    Placa = veiculo.Placa,
-                    Modelo = veiculo.Modelo,
-                    Fabricante = veiculo.Fabricante,
-                    Cor = veiculo.Cor,
-                })
-                .ToList(),
         };
     }
 }
