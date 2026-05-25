@@ -46,8 +46,6 @@ export const veiculoSchema = z.object({
     .refine((val) => val.length >= 2 && val.length <= 40, {
       message: 'Cor deve ter entre 2 e 40 caracteres.',
     }),
-
-  observacoes: z.string().max(500, 'Observações deve ter no máximo 500 caracteres.').optional(),
 });
 
 export type VeiculoFormData = z.infer<typeof veiculoSchema>;
