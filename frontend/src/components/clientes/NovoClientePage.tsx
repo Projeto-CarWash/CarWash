@@ -14,6 +14,7 @@ import { ContatoEnderecoForm } from './ContatoEnderecoForm';
 import { IdentificacaoForm } from './IdentificacaoForm';
 import { PageHeader } from './PageHeader';
 import { Stepper } from './Stepper';
+import { VeiculosClienteForm } from './VeiculosClienteForm';
 
 import type { ClienteFormData } from '@/schemas/clienteSchema';
 import type { ProblemDetails } from '@/types/auth';
@@ -50,6 +51,7 @@ export function NovoClientePage() {
       bairro: '',
       cidade: '',
       uf: '',
+      veiculos: [],
     },
   });
 
@@ -186,12 +188,14 @@ export function NovoClientePage() {
             <div
               className={`overflow-hidden transition-all duration-700 ease-out ${
                 isIdentificacaoComplete
-                  ? 'mt-8 max-h-[1600px] translate-y-0 opacity-100'
+                  ? 'mt-8 max-h-[3000px] translate-y-0 opacity-100'
                   : 'mt-0 max-h-0 translate-y-4 opacity-0'
               }`}
             >
               <Separator className="mb-8 bg-zinc-800/50" />
               <ContatoEnderecoForm />
+              <Separator className="my-8 bg-zinc-800/50" />
+              <VeiculosClienteForm />
             </div>
 
             <div
