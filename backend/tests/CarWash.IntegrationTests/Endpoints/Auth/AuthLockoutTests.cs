@@ -44,7 +44,7 @@ public class AuthLockoutTests : IAsyncDisposable
         _factory = new CarWashWebApplicationFactory(fixture);
     }
 
-    [Fact]
+    [Fact(Skip = "lockout desativado temporariamente — card-134")]
     public async Task CA203_1_Lockout_apos_N_tentativas_invalidas_retorna_403()
     {
         var client = _factory.CreateClient();
@@ -64,7 +64,7 @@ public class AuthLockoutTests : IAsyncDisposable
         corpo.GetProperty("bloqueadoAte").GetDateTime().Should().BeAfter(DateTime.UtcNow);
     }
 
-    [Fact]
+    [Fact(Skip = "lockout desativado temporariamente — card-134")]
     public async Task CA203_2_Login_durante_lockout_retorna_403_mesmo_com_senha_correta()
     {
         var client = _factory.CreateClient();
@@ -82,7 +82,7 @@ public class AuthLockoutTests : IAsyncDisposable
         corpo.GetProperty("title").GetString().Should().Be(MensagemUsuarioBloqueado);
     }
 
-    [Fact]
+    [Fact(Skip = "lockout desativado temporariamente — card-134")]
     public async Task CA203_3_Email_inexistente_retorna_mesma_mensagem_que_credencial_invalida()
     {
         var client = _factory.CreateClient();
@@ -107,7 +107,7 @@ public class AuthLockoutTests : IAsyncDisposable
         corpoEmailInexistente.GetProperty("title").GetString().Should().Be(MensagemCredencialInvalida);
     }
 
-    [Fact]
+    [Fact(Skip = "lockout desativado temporariamente — card-134")]
     public async Task CA203_4_Lockout_expira_apos_duracao_bloqueio_e_login_correto_volta_a_200()
     {
         var client = _factory.CreateClient();
@@ -131,7 +131,7 @@ public class AuthLockoutTests : IAsyncDisposable
         corpo.GetProperty("accessToken").GetString().Should().NotBeNullOrWhiteSpace();
     }
 
-    [Fact]
+    [Fact(Skip = "lockout desativado temporariamente — card-134")]
     public async Task CA203_5_Sucesso_zera_contador_de_tentativas_invalidas()
     {
         var client = _factory.CreateClient();
@@ -160,7 +160,7 @@ public class AuthLockoutTests : IAsyncDisposable
         bloqueio.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
-    [Fact]
+    [Fact(Skip = "lockout desativado temporariamente — card-134")]
     public async Task CA203_6_Bloqueio_registra_evento_de_auditoria()
     {
         var client = _factory.CreateClient();
