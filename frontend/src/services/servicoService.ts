@@ -1,31 +1,41 @@
-import api from './api';
+import api from '@/services/api';
 
-import type { ListaServicos } from '@/types/servico';
+export interface Servico {
+  id: string;
+  nome: string;
+  preco: number;
+  duracaoMin: number;
+  ativo: boolean;
+  criadoEm: string;
+  atualizadoEm: string;
+}
 
-/**
- * Service de serviços do catálogo (RF006).
- *
- * <p><strong>DEPENDÊNCIA PENDENTE (card 131):</strong> o endpoint
- * <code>GET /api/v1/servicos</code> ainda NÃO existe no backend. Alinhar com
- * `dev-dotnet-carwash` o contrato de listagem (campos `precoBase` e
- * `duracaoMin` são necessários para o resumo inline de totais estimados).</p>
- *
- * <p>A função está escrita no padrão de `clienteService` e funcionará assim
- * que o endpoint for entregue — sem mock silencioso; até lá a chamada retorna
- * 404 e a UI exibe o estado de erro.</p>
- */
-export const ENDPOINT_SERVICOS_PENDENTE = true as const;
+export interface ListaServicosResponse {
+  itens: Servico[];
+  total: number;
+}
 
 export const servicoService = {
-  /**
-   * Lista os serviços ativos do catálogo.
-   *
-   * @remarks Depende de `GET /api/v1/servicos` (pendente — ver acima).
-   */
-  async listar(): Promise<ListaServicos> {
-    const { data } = await api.get<ListaServicos>('/api/v1/servicos', {
-      params: { ativo: true },
-    });
-    return data;
+  async listar(params?: { ativo?: boolean; query?: string }): Promise<ListaServicosResponse> {
+    const response = await api.get<ListaServicosResponse>('/servicos', { params });
+    return response.data;
+  },
+
+  async cadastrar(data: { nome: string; preco: number; duracaoMin: number }): Promise<Servico> {
+    const response = await api.post<Servico>('/servicos', data);
+    return response.data;
+  },
+
+  async atualizar(
+    id: string,
+    data: { nome: string; preco: number; duracaoMin: number },
+  ): Promise<Servico> {
+    const response = await api.patch<Servico>(`/servicos/${id}`, data);
+    return response.data;
+  },
+
+  async alterarStatus(id: string, ativo: boolean): Promise<Servico> {
+    const response = await api.patch<Servico>(`/servicos/${id}/status`, { ativo });
+    return response.data;
   },
 };
