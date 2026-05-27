@@ -23,4 +23,6 @@ public class CriarClienteRequest
     public string? Email { get; set; }
 
     public EnderecoRequest? Endereco { get; set; }
+
+    public string? Observacoes  { get; set; }
 }

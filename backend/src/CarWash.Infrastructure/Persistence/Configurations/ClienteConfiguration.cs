@@ -34,6 +34,8 @@ public sealed class ClienteConfiguration : IEntityTypeConfiguration<Cliente>
         builder.Property(x => x.EnderecoCidade).IsRequired().HasMaxLength(100);
         builder.Property(x => x.EnderecoUf).IsRequired().HasMaxLength(2).IsFixedLength();
 
+        builder.Property(x => x.Observacoes).HasColumnName("observacoes").HasMaxLength(500);
+
         builder.Ignore(x => x.Endereco);
 
         // Veiculos é uma coleção de domínio exposta no agregado Cliente para invariantes
