@@ -47,10 +47,15 @@ public class FilialRepository : IFilialRepository
         // para `LOWER(nome) = LOWER($1)`, casando exatamente com o índice
         // funcional uk_filiais_nome_lower. Evita falsos 409 quando o nome contém
         // os curingas LIKE `%` ou `_`, que `ILike` interpretaria como wildcard.
-        var normalizado = nome?.Trim() ?? string.Empty;
+        // Os .ToLower() abaixo são expressões LINQ traduzidas pelo provider para
+        // `LOWER(...)` no servidor — não executam em runtime C# — então
+        // CA1304/CA1311/CA1862/RCS1155 não se aplicam aqui.
+        var normalizado = (nome ?? string.Empty).Trim();
+#pragma warning disable CA1304, CA1311, CA1862, RCS1155
         return context.Filiais
             .AsNoTracking()
             .AnyAsync(x => x.Nome.ToLower() == normalizado.ToLower(), cancellationToken);
+#pragma warning restore CA1304, CA1311, CA1862, RCS1155
     }
 
     public Task<Filial?> ObterPorIdAsync(Guid id, CancellationToken cancellationToken)
