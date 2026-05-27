@@ -35,9 +35,11 @@ public sealed class CriarFilialCommandValidator : AbstractValidator<CriarFilialC
             .WithMessage("O código deve conter de 2 a 20 caracteres alfanuméricos (A-Z, 0-9).");
 
         RuleFor(x => x.CelulasAtivas)
-            .Cascade(CascadeMode.Stop)
-            .NotNull().WithMessage("Quantidade de células ativas é obrigatória.")
-            .InclusiveBetween(Filial.MinCelulasAtivas, Filial.MaxCelulasAtivas)
+            .NotNull()
+            .WithMessage("Quantidade de células ativas é obrigatória.");
+
+        RuleFor(x => x.CelulasAtivas)
+            .Must(v => !v.HasValue || (v.Value >= Filial.MinCelulasAtivas && v.Value <= Filial.MaxCelulasAtivas))
             .When(x => x.CelulasAtivas.HasValue)
             .WithMessage($"Quantidade de células ativas deve estar entre {Filial.MinCelulasAtivas} e {Filial.MaxCelulasAtivas}.");
 
