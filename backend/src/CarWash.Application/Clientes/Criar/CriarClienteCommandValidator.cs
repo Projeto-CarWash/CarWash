@@ -131,7 +131,7 @@ public sealed class CriarClienteCommandValidator : AbstractValidator<CriarClient
         RuleFor(x => x.Observacoes)
             .MaximumLength(500)
             .WithMessage("Observações deve ter no máximo 500 caracteres.");
-        }
+    }
 
     private static bool IdadeEntreLimites(DateOnly dataNascimento)
     {
@@ -141,7 +141,7 @@ public sealed class CriarClienteCommandValidator : AbstractValidator<CriarClient
             return false;
         }
 
-        var idade = hoje.Year - dataNascimento.Year;
+        int idade = hoje.Year - dataNascimento.Year;
         if (dataNascimento > hoje.AddYears(-idade))
         {
             idade--;

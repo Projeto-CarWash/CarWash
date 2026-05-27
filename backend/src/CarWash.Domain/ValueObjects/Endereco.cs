@@ -39,7 +39,7 @@ public sealed record Endereco
         string cidade,
         string uf)
     {
-        var cepDigits = ApenasDigitos(cep);
+        string cepDigits = ApenasDigitos(cep);
         if (cepDigits.Length != 8)
         {
             throw new DomainException("CEP deve possuir 8 dígitos.");
@@ -70,7 +70,7 @@ public sealed record Endereco
             throw new DomainException("Cidade é obrigatória e deve ter no máximo 100 caracteres.");
         }
 
-        var ufNormalizada = (uf ?? string.Empty).Trim().ToUpperInvariant();
+        string ufNormalizada = (uf ?? string.Empty).Trim().ToUpperInvariant();
         if (!UfsValidas.Contains(ufNormalizada))
         {
             throw new DomainException("UF inválida.");

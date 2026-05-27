@@ -85,20 +85,21 @@ public sealed class LoginHandler : ICommandHandler<LoginCommand, LoginResultado>
         _log = log;
     }
 
+    /// <inheritdoc/>
     public async Task<LoginResultado> HandleAsync(LoginCommand command, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(command);
 
-        var emailNormalizado = (command.Email ?? string.Empty).Trim().ToLowerInvariant();
-        var emailMascarado = EmailMasker.Mask(emailNormalizado);
+        string emailNormalizado = (command.Email ?? string.Empty).Trim().ToLowerInvariant();
+        string emailMascarado = EmailMasker.Mask(emailNormalizado);
 
         var usuario = await _repositorio.ObterPorEmailAsync(emailNormalizado, cancellationToken)
                                          .ConfigureAwait(false);
 
         // Sempre executa o Verify (com hash real ou dummy) para nivelar latência
         // — anti-enumeration. O resultado é usado nas decisões abaixo.
-        var hashParaVerificar = usuario?.SenhaHash ?? _dummy.Value;
-        var senhaConfere = _hasher.Verify(command.Senha ?? string.Empty, hashParaVerificar);
+        string hashParaVerificar = usuario?.SenhaHash ?? _dummy.Value;
+        bool senhaConfere = _hasher.Verify(command.Senha ?? string.Empty, hashParaVerificar);
 
 #pragma warning disable S1481 // Preservado para reativação do lockout (card-134).
         var agora = DateTime.UtcNow;
@@ -204,7 +205,7 @@ public sealed class LoginHandler : ICommandHandler<LoginCommand, LoginResultado>
         // Sucesso: zera contador, libera bloqueio (idempotente) e rehash silencioso se preciso.
         // Tudo persistido em uma única SalvarAsync.
         usuario.RegistrarLoginBemSucedido();
-        var precisaRehash = _hasher.NeedsRehash(usuario.SenhaHash);
+        bool precisaRehash = _hasher.NeedsRehash(usuario.SenhaHash);
         if (precisaRehash)
         {
             usuario.TrocarSenha(_hasher.Hash(command.Senha!));

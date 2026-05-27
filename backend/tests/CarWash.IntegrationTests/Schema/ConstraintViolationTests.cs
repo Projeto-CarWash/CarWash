@@ -26,12 +26,14 @@ public class ConstraintViolationTests : IAsyncLifetime
         _fixture = fixture;
     }
 
+    /// <inheritdoc/>
     public Task InitializeAsync()
     {
         _db = CarWashDbContextFactoryForTests.Create(_fixture);
         return Task.CompletedTask;
     }
 
+    /// <inheritdoc/>
     public async Task DisposeAsync() => await _db.DisposeAsync().ConfigureAwait(false);
 
     [Fact]
@@ -240,7 +242,7 @@ public class ConstraintViolationTests : IAsyncLifetime
         _db.Agendamentos.Add(a2);
         await _db.SaveChangesAsync().ConfigureAwait(false);
 
-        var total = await _db.Agendamentos
+        int total = await _db.Agendamentos
             .CountAsync(x => x.VeiculoId == veiculoId && (x.Id == a1.Id || x.Id == a2.Id))
             .ConfigureAwait(false);
         total.Should().Be(2);
@@ -297,7 +299,7 @@ public class ConstraintViolationTests : IAsyncLifetime
     private static string GerarPlacaAleatoria()
     {
         var rng = Random.Shared;
-        var letras = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        string letras = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         return $"{letras[rng.Next(26)]}{letras[rng.Next(26)]}{letras[rng.Next(26)]}{rng.Next(0, 10)}{letras[rng.Next(26)]}{rng.Next(0, 10)}{rng.Next(0, 10)}";
     }
 
@@ -306,15 +308,15 @@ public class ConstraintViolationTests : IAsyncLifetime
         // Gera 9 dígitos aleatórios e calcula DVs. Garante unicidade por teste.
         Span<int> d = stackalloc int[11];
         var rng = Random.Shared;
-        for (var i = 0; i < 9; i++)
+        for (int i = 0; i < 9; i++)
         {
             d[i] = rng.Next(0, 10);
         }
 
         d[9] = Dv(d[..9], 10);
         d[10] = Dv(d[..10], 11);
-        var chars = new char[11];
-        for (var i = 0; i < 11; i++)
+        char[] chars = new char[11];
+        for (int i = 0; i < 11; i++)
         {
             chars[i] = (char)('0' + d[i]);
         }
@@ -323,13 +325,13 @@ public class ConstraintViolationTests : IAsyncLifetime
 
         static int Dv(ReadOnlySpan<int> parcial, int pesoInicial)
         {
-            var soma = 0;
-            for (var i = 0; i < parcial.Length; i++)
+            int soma = 0;
+            for (int i = 0; i < parcial.Length; i++)
             {
                 soma += parcial[i] * (pesoInicial - i);
             }
 
-            var resto = soma % 11;
+            int resto = soma % 11;
             return resto < 2 ? 0 : 11 - resto;
         }
     }

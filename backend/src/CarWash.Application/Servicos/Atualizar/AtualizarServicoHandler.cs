@@ -20,6 +20,7 @@ public sealed class AtualizarServicoHandler : ICommandHandler<AtualizarServicoCo
         _repositorio = repositorio;
     }
 
+    /// <inheritdoc/>
     public async Task<ServicoResponse> HandleAsync(AtualizarServicoCommand command, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(command);
@@ -49,7 +50,7 @@ public sealed class AtualizarServicoHandler : ICommandHandler<AtualizarServicoCo
         var servico = await _repositorio.ObterPorIdAsync(command.Id, cancellationToken).ConfigureAwait(false)
             ?? throw new NotFoundException("Serviço não encontrado.");
 
-        var nome = InputNormalizer.SanitizeTextOrNull(command.Nome)!;
+        string nome = InputNormalizer.SanitizeTextOrNull(command.Nome)!;
 
         // GAP-CW-SRV-PATCH-NOME: nome deve continuar único entre serviços,
         // ignorando o próprio serviço (permite manter o mesmo valor).

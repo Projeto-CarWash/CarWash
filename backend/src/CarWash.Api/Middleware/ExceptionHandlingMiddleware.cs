@@ -95,7 +95,7 @@ public sealed class ExceptionHandlingMiddleware
         catch (UsuarioBloqueadoException ex)
         {
             var bloqueadoAteUtc = ex.BloqueadoAte.ToUniversalTime();
-            var segundosRestantes = Math.Max(0, (int)Math.Ceiling((bloqueadoAteUtc - DateTime.UtcNow).TotalSeconds));
+            int segundosRestantes = Math.Max(0, (int)Math.Ceiling((bloqueadoAteUtc - DateTime.UtcNow).TotalSeconds));
 
             // Retry-After header (RFC 7231) — segundos para o cliente poder
             // mostrar contagem regressiva e/ou bloquear retries automáticos.
@@ -186,7 +186,7 @@ public sealed class ExceptionHandlingMiddleware
 #pragma warning disable CA1031 // último resort: log + 500 genérico.
         catch (Exception ex)
         {
-            var correlationId = ResolverCorrelationId(context);
+            string correlationId = ResolverCorrelationId(context);
             _log.LogError(ex, "Falha não tratada. CorrelationId={CorrelationId}", correlationId);
             await EscreverProblemAsync(
                 context,
@@ -211,7 +211,7 @@ public sealed class ExceptionHandlingMiddleware
             return;
         }
 
-        var correlationId = ResolverCorrelationId(context);
+        string correlationId = ResolverCorrelationId(context);
 
         var problem = new ProblemDetails
         {
@@ -237,8 +237,8 @@ public sealed class ExceptionHandlingMiddleware
         // exceção. `Response.Clear()` apaga headers e body — re-aplicamos os que
         // são parte do contrato do endpoint (ex.: `Cache-Control: no-store` em
         // /auth/*) e o `Retry-After` já setado para 403 de lockout.
-        var cacheControl = context.Response.Headers.CacheControl.ToString();
-        var retryAfter = context.Response.Headers["Retry-After"].ToString();
+        string cacheControl = context.Response.Headers.CacheControl.ToString();
+        string retryAfter = context.Response.Headers["Retry-After"].ToString();
 
         context.Response.Clear();
         context.Response.StatusCode = status;
@@ -254,7 +254,7 @@ public sealed class ExceptionHandlingMiddleware
             context.Response.Headers["Retry-After"] = retryAfter;
         }
 
-        var payload = JsonSerializer.Serialize(problem, JsonOptions);
+        string payload = JsonSerializer.Serialize(problem, JsonOptions);
         await context.Response.WriteAsync(payload).ConfigureAwait(false);
     }
 
@@ -263,20 +263,21 @@ public sealed class ExceptionHandlingMiddleware
     /// de parâmetro de rota. Devolve o <c>title</c> apropriado e o dicionário
     /// <c>errors</c> sem expor identificadores internos (tipos/parâmetros C#).
     /// </summary>
+    /// <returns></returns>
     internal static (string Title, IReadOnlyDictionary<string, string[]> Erros) ClassificarBadRequest(BadHttpRequestException ex)
     {
         ArgumentNullException.ThrowIfNull(ex);
 
-        var mensagem = ex.Message ?? string.Empty;
+        string mensagem = ex.Message ?? string.Empty;
 
         // 1) Erro de path/query: "Failed to bind parameter "Guid id" from "abc"."
         var matchBind = RegexBindParameter.Match(mensagem);
         if (matchBind.Success)
         {
-            var nomeParam = matchBind.Groups["nome"].Value;
-            var chave = NormalizarChaveParametro(nomeParam);
-            var tipoLower = matchBind.Groups["tipo"].Value.ToLowerInvariant();
-            var ehGuid = tipoLower.Contains("guid", StringComparison.Ordinal);
+            string nomeParam = matchBind.Groups["nome"].Value;
+            string chave = NormalizarChaveParametro(nomeParam);
+            string tipoLower = matchBind.Groups["tipo"].Value.ToLowerInvariant();
+            bool ehGuid = tipoLower.Contains("guid", StringComparison.Ordinal);
 
             return (
                 ehGuid ? MensagemIdentificadorInvalido : MensagemPathParametroInvalido,
@@ -315,7 +316,7 @@ public sealed class ExceptionHandlingMiddleware
             return "request";
         }
 
-        var trimmed = nomeParametroC.Trim();
+        string trimmed = nomeParametroC.Trim();
         return char.ToLowerInvariant(trimmed[0]) + trimmed[1..];
     }
 
@@ -331,18 +332,18 @@ public sealed class ExceptionHandlingMiddleware
             return ("body", "Corpo da requisição inválido. Verifique o JSON e tente novamente.");
         }
 
-        var path = json.Path;
+        string? path = json.Path;
         if (string.IsNullOrWhiteSpace(path) || path is "$" or "$.")
         {
             return ("body", "Corpo da requisição inválido. Verifique o JSON e tente novamente.");
         }
 
         // Path típico: "$.perfil", "$.itens[0].quantidade".
-        var campo = path.StartsWith("$.", StringComparison.Ordinal) ? path[2..] : path;
+        string campo = path.StartsWith("$.", StringComparison.Ordinal) ? path[2..] : path;
 
         // Mantém apenas o nome até o primeiro `.` ou `[` — chave do campo de topo
         // mais relevante para o cliente saber onde corrigir.
-        var corte = campo.IndexOfAny(['.', '[']);
+        int corte = campo.IndexOfAny(['.', '[']);
         if (corte > 0)
         {
             campo = campo[..corte];
@@ -358,7 +359,7 @@ public sealed class ExceptionHandlingMiddleware
 
     private static string ResolverCorrelationId(HttpContext context)
     {
-        if (context.Items.TryGetValue(CorrelationIdMiddleware.ItemKey, out var raw)
+        if (context.Items.TryGetValue(CorrelationIdMiddleware.ItemKey, out object? raw)
             && raw is string id
             && !string.IsNullOrWhiteSpace(id))
         {

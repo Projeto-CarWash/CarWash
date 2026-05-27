@@ -6,6 +6,7 @@ namespace CarWash.Infrastructure.Persistence.Configurations;
 
 public sealed class ClienteConfiguration : IEntityTypeConfiguration<Cliente>
 {
+    /// <inheritdoc/>
     public void Configure(EntityTypeBuilder<Cliente> builder)
     {
         ArgumentNullException.ThrowIfNull(builder);

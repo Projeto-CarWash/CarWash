@@ -46,6 +46,7 @@ public sealed class ConfirmarAgendamentoHandler
         _logger = logger;
     }
 
+    /// <inheritdoc/>
     public async Task<ConfirmarAgendamentoResultado> HandleAsync(
         ConfirmarAgendamentoCommand command,
         CancellationToken cancellationToken)

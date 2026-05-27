@@ -24,5 +24,5 @@ public class CriarClienteRequest
 
     public EnderecoRequest? Endereco { get; set; }
 
-    public string? Observacoes  { get; set; }
+    public string? Observacoes { get; set; }
 }

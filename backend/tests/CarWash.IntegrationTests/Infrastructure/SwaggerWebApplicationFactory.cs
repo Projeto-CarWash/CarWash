@@ -17,6 +17,7 @@ public class SwaggerWebApplicationFactory : WebApplicationFactory<Program>
         _fixture = fixture;
     }
 
+    /// <inheritdoc/>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);

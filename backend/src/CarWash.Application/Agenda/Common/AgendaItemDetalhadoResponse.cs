@@ -7,81 +7,81 @@ namespace CarWash.Application.Agenda.Common;
 /// </summary>
 public sealed class AgendaItemDetalhadoResponse
 {
-    /// <summary>Identificador do agendamento.</summary>
+    /// <summary>Gets identificador do agendamento.</summary>
     public Guid AgendamentoId { get; init; }
 
-    /// <summary>Status no contrato da API (uppercase).</summary>
+    /// <summary>Gets status no contrato da API (uppercase).</summary>
     public string Status { get; init; } = string.Empty;
 
-    /// <summary>Filial do agendamento.</summary>
+    /// <summary>Gets filial do agendamento.</summary>
     public Guid FilialId { get; init; }
 
-    /// <summary>Início do agendamento (UTC ISO-8601).</summary>
+    /// <summary>Gets início do agendamento (UTC ISO-8601).</summary>
     public DateTime Inicio { get; init; }
 
-    /// <summary>Fim do agendamento (UTC ISO-8601).</summary>
+    /// <summary>Gets fim do agendamento (UTC ISO-8601).</summary>
     public DateTime Fim { get; init; }
 
-    /// <summary>Duração total denormalizada, em minutos.</summary>
+    /// <summary>Gets duração total denormalizada, em minutos.</summary>
     public int DuracaoTotalMin { get; init; }
 
-    /// <summary>Valor total denormalizado.</summary>
+    /// <summary>Gets valor total denormalizado.</summary>
     public decimal ValorTotal { get; init; }
 
-    /// <summary>Cliente titular do agendamento.</summary>
+    /// <summary>Gets cliente titular do agendamento.</summary>
     public AgendaClienteResponse Cliente { get; init; } = new();
 
-    /// <summary>Veículo do agendamento.</summary>
+    /// <summary>Gets veículo do agendamento.</summary>
     public AgendaVeiculoResponse Veiculo { get; init; } = new();
 
-    /// <summary>Serviços do agendamento, na ordem de criação.</summary>
+    /// <summary>Gets serviços do agendamento, na ordem de criação.</summary>
     public IReadOnlyList<AgendaServicoResponse> Servicos { get; init; } = [];
 
-    /// <summary>Observações livres do agendamento.</summary>
+    /// <summary>Gets observações livres do agendamento.</summary>
     public string? Observacoes { get; init; }
 
-    /// <summary>Data de criação do agendamento (UTC ISO-8601).</summary>
+    /// <summary>Gets data de criação do agendamento (UTC ISO-8601).</summary>
     public DateTime CriadoEm { get; init; }
 
-    /// <summary>Data da última atualização do agendamento (UTC ISO-8601).</summary>
+    /// <summary>Gets data da última atualização do agendamento (UTC ISO-8601).</summary>
     public DateTime AtualizadoEm { get; init; }
 }
 
 /// <summary>Cliente titular no formato detalhado da agenda.</summary>
 public sealed class AgendaClienteResponse
 {
-    /// <summary>Identificador do cliente.</summary>
+    /// <summary>Gets identificador do cliente.</summary>
     public Guid Id { get; init; }
 
-    /// <summary>Nome do cliente.</summary>
+    /// <summary>Gets nome do cliente.</summary>
     public string Nome { get; init; } = string.Empty;
 
-    /// <summary>Documento do cliente: CPF (PF) ou CNPJ (PJ).</summary>
+    /// <summary>Gets documento do cliente: CPF (PF) ou CNPJ (PJ).</summary>
     public string? CpfCnpj { get; init; }
 
-    /// <summary>Telefone fixo do cliente (opcional).</summary>
+    /// <summary>Gets telefone fixo do cliente (opcional).</summary>
     public string? Telefone { get; init; }
 
-    /// <summary>Celular do cliente.</summary>
+    /// <summary>Gets celular do cliente.</summary>
     public string Celular { get; init; } = string.Empty;
 }
 
 /// <summary>Veículo no formato detalhado da agenda.</summary>
 public sealed class AgendaVeiculoResponse
 {
-    /// <summary>Identificador do veículo.</summary>
+    /// <summary>Gets identificador do veículo.</summary>
     public Guid Id { get; init; }
 
-    /// <summary>Placa do veículo.</summary>
+    /// <summary>Gets placa do veículo.</summary>
     public string Placa { get; init; } = string.Empty;
 
-    /// <summary>Modelo do veículo.</summary>
+    /// <summary>Gets modelo do veículo.</summary>
     public string Modelo { get; init; } = string.Empty;
 
-    /// <summary>Fabricante do veículo.</summary>
+    /// <summary>Gets fabricante do veículo.</summary>
     public string Fabricante { get; init; } = string.Empty;
 
-    /// <summary>Cor do veículo.</summary>
+    /// <summary>Gets cor do veículo.</summary>
     public string Cor { get; init; } = string.Empty;
 }
 
@@ -91,15 +91,15 @@ public sealed class AgendaVeiculoResponse
 /// </summary>
 public sealed class AgendaServicoResponse
 {
-    /// <summary>Identificador do serviço de catálogo.</summary>
+    /// <summary>Gets identificador do serviço de catálogo.</summary>
     public Guid Id { get; init; }
 
-    /// <summary>Nome do serviço.</summary>
+    /// <summary>Gets nome do serviço.</summary>
     public string Nome { get; init; } = string.Empty;
 
-    /// <summary>Duração aplicada (snapshot RN006), em minutos.</summary>
+    /// <summary>Gets duração aplicada (snapshot RN006), em minutos.</summary>
     public int DuracaoMin { get; init; }
 
-    /// <summary>Preço aplicado (snapshot RN006).</summary>
+    /// <summary>Gets preço aplicado (snapshot RN006).</summary>
     public decimal Preco { get; init; }
 }

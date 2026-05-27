@@ -49,7 +49,7 @@ public class SchemaShapeTests
             + "WHERE table_schema = 'public' AND table_type = 'BASE TABLE' "
             + "ORDER BY table_name;").ConfigureAwait(false);
 
-        foreach (var t in TabelasEsperadas)
+        foreach (string t in TabelasEsperadas)
         {
             encontradas.Should().Contain(t, $"a tabela {t} deve existir após a migration");
         }
@@ -65,7 +65,7 @@ public class SchemaShapeTests
             "SELECT count(*) FROM information_schema.columns "
             + "WHERE column_name = 'id' AND table_schema = 'public' "
             + "AND column_default IS NOT NULL;";
-        var result = (long)(await cmd.ExecuteScalarAsync().ConfigureAwait(false))!;
+        long result = (long)(await cmd.ExecuteScalarAsync().ConfigureAwait(false))!;
         result.Should().Be(0, "ADR 0001: UUID é gerado em C#, sem DEFAULT no banco");
     }
 
@@ -88,7 +88,7 @@ public class SchemaShapeTests
         cmd.CommandText =
             "SELECT pg_get_constraintdef(oid) "
             + "FROM pg_constraint WHERE conname = 'ex_ag_veiculo_janela';";
-        var def = (string?)await cmd.ExecuteScalarAsync().ConfigureAwait(false);
+        string? def = (string?)await cmd.ExecuteScalarAsync().ConfigureAwait(false);
 
         def.Should().NotBeNullOrWhiteSpace();
         def.Should().Contain("EXCLUDE USING gist");
@@ -124,7 +124,7 @@ public class SchemaShapeTests
             "uk_flag_nome_ambiente_filial",
         ];
 
-        foreach (var idx in esperados)
+        foreach (string idx in esperados)
         {
             indices.Should().Contain(idx, $"o índice {idx} é exigido pela DoD §6");
         }

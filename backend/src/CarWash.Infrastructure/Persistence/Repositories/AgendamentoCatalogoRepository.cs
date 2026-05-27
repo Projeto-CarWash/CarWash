@@ -17,12 +17,15 @@ public sealed class AgendamentoCatalogoRepository : IAgendamentoCatalogoReposito
         _db = db;
     }
 
+    /// <inheritdoc/>
     public Task<bool> FilialAtivaAsync(Guid filialId, CancellationToken cancellationToken) =>
         _db.Filiais.AsNoTracking().AnyAsync(f => f.Id == filialId && f.Ativa, cancellationToken);
 
+    /// <inheritdoc/>
     public Task<bool> FilialExisteAsync(Guid filialId, CancellationToken cancellationToken) =>
         _db.Filiais.AsNoTracking().AnyAsync(f => f.Id == filialId, cancellationToken);
 
+    /// <inheritdoc/>
     public Task<VeiculoSnapshot?> ObterVeiculoAsync(Guid veiculoId, CancellationToken cancellationToken) =>
         _db.Veiculos
             .AsNoTracking()
@@ -30,12 +33,15 @@ public sealed class AgendamentoCatalogoRepository : IAgendamentoCatalogoReposito
             .Select(v => new VeiculoSnapshot(v.Id, v.ClienteId, v.Ativo))
             .FirstOrDefaultAsync(cancellationToken);
 
+    /// <inheritdoc/>
     public Task<bool> ClienteAtivoAsync(Guid clienteId, CancellationToken cancellationToken) =>
         _db.Clientes.AsNoTracking().AnyAsync(c => c.Id == clienteId && c.Ativo, cancellationToken);
 
+    /// <inheritdoc/>
     public Task<bool> ClienteExisteAsync(Guid clienteId, CancellationToken cancellationToken) =>
         _db.Clientes.AsNoTracking().AnyAsync(c => c.Id == clienteId, cancellationToken);
 
+    /// <inheritdoc/>
     public Task<ResponsavelSnapshot?> ObterResponsavelAsync(Guid responsavelId, CancellationToken cancellationToken) =>
         _db.Filiados
             .AsNoTracking()
@@ -43,6 +49,7 @@ public sealed class AgendamentoCatalogoRepository : IAgendamentoCatalogoReposito
             .Select(f => new ResponsavelSnapshot(f.Id, f.ClienteId, f.Ativo))
             .FirstOrDefaultAsync(cancellationToken);
 
+    /// <inheritdoc/>
     public async Task<IReadOnlyList<ServicoSnapshot>> ObterServicosAsync(
         IReadOnlyCollection<Guid> servicoIds,
         CancellationToken cancellationToken)
@@ -63,6 +70,7 @@ public sealed class AgendamentoCatalogoRepository : IAgendamentoCatalogoReposito
             .ConfigureAwait(false);
     }
 
+    /// <inheritdoc/>
     public Task<FilialResumoSnapshot?> ObterFilialResumoAsync(Guid filialId, CancellationToken cancellationToken) =>
         _db.Filiais
             .AsNoTracking()
@@ -72,6 +80,7 @@ public sealed class AgendamentoCatalogoRepository : IAgendamentoCatalogoReposito
 
     // O cliente é PF (CPF) ou PJ (CNPJ) — CHECK ck_clientes_cpf_ou_cnpj garante
     // exatamente um preenchido. O coalesce expõe o documento de negócio.
+    /// <inheritdoc/>
     public Task<ClienteResumoSnapshot?> ObterClienteResumoAsync(Guid clienteId, CancellationToken cancellationToken) =>
         _db.Clientes
             .AsNoTracking()
@@ -83,6 +92,7 @@ public sealed class AgendamentoCatalogoRepository : IAgendamentoCatalogoReposito
                 c.Ativo))
             .FirstOrDefaultAsync(cancellationToken);
 
+    /// <inheritdoc/>
     public Task<VeiculoResumoSnapshot?> ObterVeiculoResumoAsync(Guid veiculoId, CancellationToken cancellationToken) =>
         _db.Veiculos
             .AsNoTracking()

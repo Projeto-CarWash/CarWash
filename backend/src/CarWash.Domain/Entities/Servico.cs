@@ -27,8 +27,10 @@ public sealed class Servico : IAuditable, IAuditableSetter
 
     public bool Ativo { get; private set; }
 
+    /// <inheritdoc/>
     public DateTime CriadoEm { get; private set; }
 
+    /// <inheritdoc/>
     public DateTime AtualizadoEm { get; private set; }
 
     public static Servico Criar(Guid id, string nome, decimal preco, int duracaoMin)
@@ -111,7 +113,9 @@ public sealed class Servico : IAuditable, IAuditableSetter
         AtualizadoEm = DateTime.UtcNow;
     }
 
+    /// <inheritdoc/>
     void IAuditableSetter.SetCriadoEm(DateTime valor) => CriadoEm = valor;
 
+    /// <inheritdoc/>
     void IAuditableSetter.SetAtualizadoEm(DateTime valor) => AtualizadoEm = valor;
 }

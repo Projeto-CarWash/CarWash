@@ -13,6 +13,7 @@ public interface IUsuarioSessaoRepository
     /// quando não encontrada (não distingue "inexistente" de "expirada/revogada"
     /// para o chamador; a verificação de validade é feita por <c>EstaAtiva</c>).
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     Task<UsuarioSessao?> ObterPorHashAsync(string refreshTokenHash, CancellationToken cancellationToken);
 
     /// <summary>
@@ -24,6 +25,7 @@ public interface IUsuarioSessaoRepository
     /// concorrente liberar o lock, a leitura aqui já enxergará <c>revogado_em</c>
     /// preenchido e cairá no caminho de reuse-detection (CA011).
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     Task<UsuarioSessao?> ObterPorHashParaAtualizacaoAsync(string refreshTokenHash, CancellationToken cancellationToken);
 
     /// <summary>
@@ -33,9 +35,11 @@ public interface IUsuarioSessaoRepository
     /// via <c>await using</c>). Quando já existir uma transação ativa, retorna um
     /// handle "no-op" para evitar BEGIN aninhado.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     Task<IUsuarioSessaoTransacao> IniciarTransacaoAsync(CancellationToken cancellationToken);
 
     /// <summary>Adiciona uma nova sessão ao contexto (não persiste ainda).</summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     Task AdicionarAsync(UsuarioSessao sessao, CancellationToken cancellationToken);
 
     /// <summary>
@@ -44,8 +48,10 @@ public interface IUsuarioSessaoRepository
     /// reuse de refresh token — política de "global revoke da família" do OAuth 2.1
     /// (CA011). Retorna o número de sessões afetadas. Persiste em seguida.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     Task<int> RevogarTodasAtivasDoUsuarioAsync(Guid usuarioId, DateTime quandoUtc, CancellationToken cancellationToken);
 
     /// <summary>Persiste alterações pendentes (insert/update).</summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     Task SalvarAsync(CancellationToken cancellationToken);
 }
