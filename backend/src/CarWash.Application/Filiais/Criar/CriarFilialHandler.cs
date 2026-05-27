@@ -1,6 +1,7 @@
 using CarWash.Application.Abstractions;
 using CarWash.Application.Abstractions.Messaging;
 using CarWash.Application.Common;
+using CarWash.Application.Common.Exceptions;
 using CarWash.Application.Filiais.Common;
 using CarWash.Application.Filiais.Persistence;
 using CarWash.Domain.Entities;
@@ -31,6 +32,19 @@ public sealed class CriarFilialHandler : ICommandHandler<CriarFilialCommand, Cri
     public async Task<CriarFilialResponse> HandleAsync(CriarFilialCommand command, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(command);
+
+        // Defesa em profundidade: o validator já exige NotNull em CelulasAtivas,
+        // mas chamadas internas que bypassem o filter cairiam num 500 sem este
+        // guard (mesmo padrão de CriarClienteHandler para DataNascimento).
+        if (!command.CelulasAtivas.HasValue)
+        {
+            throw new ValidationException(
+                "Quantidade de células ativas é obrigatória.",
+                new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["celulasAtivas"] = ["Quantidade de células ativas é obrigatória."],
+                });
+        }
 
         _contexto.DefinirEvento(EventoAuditoria);
 

@@ -321,7 +321,7 @@ Mesma extração de `ClientesEndpoints.ObterUsuarioId` (linhas 266–271): claim
 
 ### 6.3 Auditoria
 
-- `AuditLogInterceptor` (linha 22 — `typeof(Filial)` já listada) gera linha em `audit_logs` automaticamente desde que o handler chame `_contexto.DefinirEvento("FILIAL_CRIADA")` antes do `SaveChangesAsync` (padrão de `CriarUsuarioHandler:59`).
+- `AuditLogInterceptor` (linha 22 — `typeof(Filial)` já listada) gera linha em `audit_logs` automaticamente desde que o handler chame `_contexto.DefinirEvento("FilialCriada")` antes do `SaveChangesAsync` (padrão de `CriarUsuarioHandler:59`).
 - **Decisão:** o handler **chama `DefinirEvento`**, não o repositório. Mantém Application no controle do "qual evento estamos emitindo" (consistência com `CriarUsuarioHandler`).
 - Dados a registrar no `audit_logs.dados` (JSON): `Id`, `Nome`, `Codigo`, `Cidade`, `Uf`, `CelulasAtivas`, `PossuiCnpj` (bool, não o CNPJ em si). **CNPJ nunca em log** — PII fiscal.
 
@@ -376,7 +376,7 @@ Não é necessário índice em `cnpj` para leitura — a UK já faz isso.
 - POST 409: três UKs disparam, cada uma com slug correto. Para `nome`: tentar com case diferente, garantir bloqueio. [CA-204.3]
 - POST 409 via race: dois inserts concorrentes do mesmo `codigo` — apenas um vence, o outro retorna 409 (tradução via constraint name). [CA-204.3]
 - POST 401 sem JWT. [CA-204.7]
-- POST + audit log: linha gravada em `audit_logs` com `evento = FILIAL_CRIADA`, `entidade_id = filial.Id`, `usuario_id` correto. [CA-204.10]
+- POST + audit log: linha gravada em `audit_logs` com `evento = FilialCriada`, `entidade_id = filial.Id`, `usuario_id` correto. [CA-204.10]
 - E2E: criar filial + chamar `POST /api/v1/agendamentos/pre-confirmacao` com aquele `filialId`. Pré-confirmação aceita (CA-204.4).
 - GET 200: paginação válida, filtro `?ativo=true`, busca por nome. [BE-12]
 - GET 400: `pagina=0`, `tamanhoPagina=101`. [BE-12]
@@ -408,7 +408,7 @@ Não é necessário índice em `cnpj` para leitura — a UK já faz isso.
 ### RAT04 — Auditoria e logs (DAT §11 / DRP RNF009)
 
 **Risco:** evento de criação não chegar ao `audit_logs`; vazamento de CNPJ em logs.
-**Mitigação:** `_contexto.DefinirEvento("FILIAL_CRIADA")` no handler (padrão já validado em `CriarUsuarioHandler`). Teste de integração explícito em §8.1 (`POST + audit log`). Política "nunca logar CNPJ" em §6.4 e §6.3.
+**Mitigação:** `_contexto.DefinirEvento("FilialCriada")` no handler (padrão já validado em `CriarUsuarioHandler`). Teste de integração explícito em §8.1 (`POST + audit log`). Política "nunca logar CNPJ" em §6.4 e §6.3.
 
 ### Risco específico: rollout aditivo deixa `codigo` nullable
 

@@ -1,4 +1,5 @@
 using CarWash.Application.Abstractions;
+using CarWash.Application.Common.Exceptions;
 using CarWash.Application.Filiais.Common;
 using CarWash.Application.Filiais.Criar;
 using CarWash.Application.Filiais.Persistence;
@@ -87,6 +88,16 @@ public class CriarFilialHandlerTests
         await _repo.Received(1).AdicionarAsync(
             Arg.Is<Filial>(f => f.Codigo == "MTZ01"),
             Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task CelulasAtivas_null_dispara_ValidationException_com_chave_celulasAtivas()
+    {
+        var handler = NovoHandler();
+        var act = () => handler.HandleAsync(NovoComando() with { CelulasAtivas = null }, CancellationToken.None);
+
+        var ex = await act.Should().ThrowAsync<ValidationException>();
+        ex.Which.Erros.Should().ContainKey("celulasAtivas");
     }
 
     private CriarFilialHandler NovoHandler() => new(_repo, _ctx);
