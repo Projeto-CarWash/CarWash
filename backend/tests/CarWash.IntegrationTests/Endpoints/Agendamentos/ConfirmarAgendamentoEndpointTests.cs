@@ -328,7 +328,7 @@ public class ConfirmarAgendamentoEndpointTests : IAsyncDisposable
     /// no ProblemDetails — base para o frontend discriminar pelo <c>type</c> em
     /// vez de regex de texto.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task POST_os_tres_409_tem_type_distintos_no_problem_details()
     {

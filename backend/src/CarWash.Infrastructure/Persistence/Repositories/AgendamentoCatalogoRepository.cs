@@ -80,6 +80,7 @@ public sealed class AgendamentoCatalogoRepository : IAgendamentoCatalogoReposito
 
     // O cliente é PF (CPF) ou PJ (CNPJ) — CHECK ck_clientes_cpf_ou_cnpj garante
     // exatamente um preenchido. O coalesce expõe o documento de negócio.
+
     /// <inheritdoc/>
     public Task<ClienteResumoSnapshot?> ObterClienteResumoAsync(Guid clienteId, CancellationToken cancellationToken) =>
         _db.Clientes

@@ -35,7 +35,7 @@ public class PreConfirmarAgendamentoEndpointTests : IAsyncDisposable
     }
 
     /// <summary>Checklist 1: pré-confirmação válida devolve o resumo completo SEM persistir.</summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task POST_valido_retorna_200_com_resumo_e_token_sem_persistir()
     {
@@ -82,7 +82,7 @@ public class PreConfirmarAgendamentoEndpointTests : IAsyncDisposable
     }
 
     /// <summary>O token devolvido tem o formato esperado de duas partes base64url.</summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task POST_valido_token_tem_formato_de_duas_partes()
     {
@@ -105,7 +105,7 @@ public class PreConfirmarAgendamentoEndpointTests : IAsyncDisposable
     }
 
     /// <summary>Checklist 9: sem autenticação a pré-confirmação retorna 401.</summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task POST_sem_token_de_acesso_retorna_401()
     {
@@ -117,7 +117,7 @@ public class PreConfirmarAgendamentoEndpointTests : IAsyncDisposable
     }
 
     /// <summary>Pré-confirmação sem filial é barrada pelo validator estrutural (CA007).</summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task POST_sem_filial_retorna_400()
     {
@@ -137,7 +137,7 @@ public class PreConfirmarAgendamentoEndpointTests : IAsyncDisposable
     }
 
     /// <summary>Filial inexistente referenciada na prévia retorna 404.</summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task POST_filial_inexistente_retorna_404()
     {
@@ -157,7 +157,7 @@ public class PreConfirmarAgendamentoEndpointTests : IAsyncDisposable
     }
 
     /// <summary>Filial inativa na prévia retorna 422 com slug de recurso inativo.</summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task POST_filial_inativa_retorna_422()
     {
@@ -183,7 +183,7 @@ public class PreConfirmarAgendamentoEndpointTests : IAsyncDisposable
     /// L9 do RF015: o conflito de veículo (RN011) é detectado já na prévia — 409
     /// com o slug <c>agendamento-conflito-veiculo</c>.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task POST_veiculo_com_conflito_de_horario_retorna_409()
     {

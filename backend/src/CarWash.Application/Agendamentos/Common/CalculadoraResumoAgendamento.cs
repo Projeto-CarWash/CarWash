@@ -33,7 +33,7 @@ public sealed class CalculadoraResumoAgendamento
     /// <see cref="RecursoInativoException"/> (recurso inativo) ou
     /// <see cref="ValidationException"/> (vínculo inconsistente — RN002/CA009).
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     public async Task<ResumoAgendamentoCalculado> CalcularAsync(
         Guid filialId,
         Guid clienteId,
