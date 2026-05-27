@@ -86,32 +86,32 @@ public sealed class Filial : IAuditable, IAuditableSetter
     /// aditivo). Não persistido — <c>FilialConfiguration</c> aplica
     /// <c>Ignore(x =&gt; x.Endereco)</c>.
     /// </summary>
-public Endereco? Endereco
-{
-    get
+    public Endereco? Endereco
     {
-        // Durante o rollout aditivo, as colunas de endereço podem existir de forma parcial.
-        // Só materializa o VO quando todos os campos obrigatórios estiverem presentes.
-        if (string.IsNullOrWhiteSpace(EnderecoCep)
-            || string.IsNullOrWhiteSpace(EnderecoLogradouro)
-            || string.IsNullOrWhiteSpace(EnderecoNumero)
-            || string.IsNullOrWhiteSpace(EnderecoBairro)
-            || string.IsNullOrWhiteSpace(EnderecoCidade)
-            || string.IsNullOrWhiteSpace(EnderecoUf))
+        get
         {
-            return null;
-        }
+            // Durante o rollout aditivo, as colunas de endereço podem existir de forma parcial.
+            // Só materializa o VO quando todos os campos obrigatórios estiverem presentes.
+            if (string.IsNullOrWhiteSpace(EnderecoCep)
+                || string.IsNullOrWhiteSpace(EnderecoLogradouro)
+                || string.IsNullOrWhiteSpace(EnderecoNumero)
+                || string.IsNullOrWhiteSpace(EnderecoBairro)
+                || string.IsNullOrWhiteSpace(EnderecoCidade)
+                || string.IsNullOrWhiteSpace(EnderecoUf))
+            {
+                return null;
+            }
 
-        return new Endereco(
-            EnderecoCep,
-            EnderecoLogradouro,
-            EnderecoNumero,
-            EnderecoComplemento,
-            EnderecoBairro,
-            EnderecoCidade,
-            EnderecoUf);
+            return new Endereco(
+                EnderecoCep,
+                EnderecoLogradouro,
+                EnderecoNumero,
+                EnderecoComplemento,
+                EnderecoBairro,
+                EnderecoCidade,
+                EnderecoUf);
+        }
     }
-}
 
     /// <summary>
     /// Fábrica do agregado <see cref="Filial"/> (RF017 + RF018). Aplica as
