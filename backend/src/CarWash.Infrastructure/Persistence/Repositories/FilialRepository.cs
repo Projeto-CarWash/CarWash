@@ -53,11 +53,11 @@ public class FilialRepository : IFilialRepository
         // (não executa em runtime C#) — por isso CA1304/CA1862/RCS1155 ficam
         // suprimidos apenas nesse trecho.
         var normalizadoLower = (nome ?? string.Empty).Trim().ToLowerInvariant();
-#pragma warning disable CA1304, CA1862, RCS1155
+#pragma warning disable CA1304, CA1311, CA1862, RCS1155
         return context.Filiais
             .AsNoTracking()
             .AnyAsync(x => x.Nome.ToLower() == normalizadoLower, cancellationToken);
-#pragma warning restore CA1304, CA1862, RCS1155
+#pragma warning restore CA1304, CA1311, CA1862, RCS1155
     }
 
     public Task<Filial?> ObterPorIdAsync(Guid id, CancellationToken cancellationToken)
