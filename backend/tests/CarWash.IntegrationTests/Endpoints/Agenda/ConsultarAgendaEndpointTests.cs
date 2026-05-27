@@ -636,11 +636,13 @@ public class ConsultarAgendaEndpointTests : IAsyncDisposable
     private async Task<Guid> SemearFilialVaziaAsync()
     {
         await using var db = NovoDbContext();
-        var filial = Filial.Criar(Guid.NewGuid(), $"Filial {Guid.NewGuid():N}"[..30], 4);
+        var filial = Filial.Criar(Guid.NewGuid(), $"Filial {Guid.NewGuid():N}"[..30], CodigoTeste(), 4);
         db.Filiais.Add(filial);
         await db.SaveChangesAsync();
         return filial.Id;
     }
+
+    private static string CodigoTeste() => $"F{Guid.NewGuid():N}"[..10].ToUpperInvariant();
 
     private async Task<(Guid ClienteId, Guid VeiculoId)> SemearClienteVeiculoAsync()
     {
@@ -722,7 +724,7 @@ public class ConsultarAgendaEndpointTests : IAsyncDisposable
     {
         await using var db = NovoDbContext();
 
-        var filial = Filial.Criar(Guid.NewGuid(), $"Filial {Guid.NewGuid():N}"[..30], 4);
+        var filial = Filial.Criar(Guid.NewGuid(), $"Filial {Guid.NewGuid():N}"[..30], CodigoTeste(), 4);
         var cliente = ClienteValido();
         var veiculo = Veiculo.Criar(
             id: Guid.NewGuid(),

@@ -144,7 +144,7 @@ public class AuditoriaTests
 
     private static async Task<(Guid, Guid, Guid, Guid)> SemearAsync(CarWashDbContext db)
     {
-        var filial = Filial.Criar(Guid.NewGuid(), $"FAud{Guid.NewGuid():N}".Substring(0, 30), 4);
+        var filial = Filial.Criar(Guid.NewGuid(), $"FAud{Guid.NewGuid():N}".Substring(0, 30), $"F{Guid.NewGuid():N}"[..10].ToUpperInvariant(), 4);
         var cliente = Cliente.Criar(
             id: Guid.NewGuid(),
             nome: "Cliente Aud",
