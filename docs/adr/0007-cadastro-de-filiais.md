@@ -150,6 +150,17 @@ Se durante a implementação o dev encontrar mais de 5 chamadas afetadas, escala
 
 **Backfill:** **não há backfill automático na migration.** Se houver filial seed pré-existente sem `codigo`, ela permanece com `codigo = NULL` e é corrigida manualmente em homologação (uma única linha). O card 207 fechará o ciclo trocando `codigo` para `NOT NULL` depois que o backfill manual confirmar 0 linhas com `codigo IS NULL`.
 
+**Pré-check obrigatório antes do deploy do `uk_filiais_nome_lower`:** o índice antigo `uk_filiais_nome` era case-sensitive, então pares como `"Filial Centro"` vs `"FILIAL CENTRO"` eram permitidos. O novo índice funcional em `LOWER(nome)` é mais restritivo e a migration falha se houver colisão pré-existente. **Rodar em homologação e produção antes do `database update`:**
+
+```sql
+SELECT LOWER(nome) AS chave, COUNT(*) AS qtd, array_agg(nome) AS nomes
+FROM filiais
+GROUP BY LOWER(nome)
+HAVING COUNT(*) > 1;
+```
+
+Se houver linhas, decidir manualmente (renomear, desativar ou consolidar) **antes** de aplicar a migration. Hoje a base do MVP tem ≤ 3 filiais seed sem colisão — risco operacional baixo, mas o pré-check é parte do runbook de deploy.
+
 **Checklist obrigatório para o dev (ADR 0006 + RAT01):**
 
 - [ ] Migration criada com `--output-dir Persistence/Migrations` (output dir canônico).
@@ -210,7 +221,7 @@ Se durante a implementação o dev encontrar mais de 5 chamadas afetadas, escala
 | Nome | Tipo | Default | Notas |
 |------|------|---------|-------|
 | `ativo` | `bool?` | `null` (sem filtro) | Frontend chama `?ativo=true`. |
-| `busca` | `string?` | `null` | Casa em `nome`, `codigo`, `endereco_cidade` (ILIKE com unaccent, espelhando o padrão de `ClienteRepository`). |
+| `busca` | `string?` | `null` | Casa em `nome`, `codigo`, `endereco_cidade` via `EF.Functions.ILike` (case-insensitive). Sem `unaccent` por enquanto; aceita-se entrar como follow-up se aparecer requisito concreto de busca tolerante a acentos. |
 | `pagina` | `int` | `1` | Mín. 1 — 400 com chave `pagina` se inválido (idêntico a `ClientesEndpoints.ListarAsync`). |
 | `tamanhoPagina` | `int` | `20` | 1..100 — 400 se fora da faixa. |
 
@@ -280,7 +291,7 @@ Se durante a implementação o dev encontrar mais de 5 chamadas afetadas, escala
 
 **Padrão `ClienteRepository`:**
 
-1. Handler chama `repositorio.ExisteCodigoAsync(codigo)`, `ExisteCnpjAsync(cnpj)` e `ExisteNomeAsync(nome)` (este último case-insensitive via `ILike` + `unaccent` opcional — basta `LOWER` por enquanto, já que o índice é em `LOWER(nome)`).
+1. Handler chama `repositorio.ExisteCodigoAsync(codigo)`, `ExisteCnpjAsync(cnpj)` e `ExisteNomeAsync(nome)` — este último faz igualdade case-insensitive em `LOWER(nome) = LOWER($1)` (lado direito pré-computado em C#), casando com o índice funcional `uk_filiais_nome_lower` e imune a curingas LIKE (`%`, `_`) no termo informado.
 2. Se algum responder true, lança a exceção específica (`FilialCodigoJaExisteException`, `FilialCnpjJaExisteException`, `FilialNomeJaExisteException`), todas herdando de `ConflictException` com slug fixo.
 3. `AdicionarAsync` envolve `SaveChangesAsync` em `try { ... } catch (DbUpdateException ex) when (IsUniqueViolation(ex)) { ... }`. Dentro do catch, **inspecionar `PostgresException.ConstraintName`** e mapear:
 

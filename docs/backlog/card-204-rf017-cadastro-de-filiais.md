@@ -1,6 +1,6 @@
 # Backlog — Card 204 / RF017 — Cadastro de filiais para operação multiunidade
 
-> Status: refinamento do analista. Pendente de decisão de Arquiteto/CEO nas lacunas L1–L8.
+> Status: implementado. Lacunas L1–L8 ratificadas pelo ADR-0007 (Aceita) e entregues nesta PR. Próximo passo: backfill de `codigo` em homologação e fechamento do card 207 (`NOT NULL` em `codigo`).
 > Rastreabilidade base: P6 (capacidade operacional rígida) + P7 (conflito entre filiais) → RF017 (Must) + RF018 (Must) — habilitadores de RF019/RF020 → UC009 → Módulo Filiais / Cadastro (DAT §4.1) / Backend/API.
 > Origem: a entidade `Filial` já existe no domínio e é referenciada por agendamento, agenda e auditoria, mas o backend nunca expôs o endpoint de cadastro. O frontend (`frontend/src/services/filialService.ts`) já consome `GET /api/v1/filiais?ativo=true` e está bloqueado por 404 — ver lacuna L7 sobre incluir a listagem neste card ou abrir card derivado.
 

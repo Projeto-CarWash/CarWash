@@ -43,19 +43,21 @@ public class FilialRepository : IFilialRepository
 
     public Task<bool> ExisteNomeAsync(string nome, CancellationToken cancellationToken)
     {
-        // Igualdade case-insensitive via LOWER em ambos os lados — Npgsql traduz
-        // para `LOWER(nome) = LOWER($1)`, casando exatamente com o índice
-        // funcional uk_filiais_nome_lower. Evita falsos 409 quando o nome contém
-        // os curingas LIKE `%` ou `_`, que `ILike` interpretaria como wildcard.
-        // Os .ToLower() abaixo são expressões LINQ traduzidas pelo provider para
-        // `LOWER(...)` no servidor — não executam em runtime C# — então
-        // CA1304/CA1311/CA1862/RCS1155 não se aplicam aqui.
-        var normalizado = (nome ?? string.Empty).Trim();
-#pragma warning disable CA1304, CA1311, CA1862, RCS1155
+        // Estratégia: igualdade case-insensitive via `LOWER(nome) = $1`, onde o
+        // lado direito é pré-computado em C# com `ToLowerInvariant()` e o lado
+        // esquerdo é traduzido pelo provider Npgsql para `LOWER(nome)` —
+        // casando exatamente com o índice funcional `uk_filiais_nome_lower`.
+        // Evita falsos 409 quando o nome contém os curingas LIKE `%` ou `_`,
+        // que `ILike` interpretaria como wildcard. O `x.Nome.ToLower()` na
+        // expressão LINQ é traduzido pelo provider para `LOWER(...)` no SQL
+        // (não executa em runtime C#) — por isso CA1304/CA1862/RCS1155 ficam
+        // suprimidos apenas nesse trecho.
+        var normalizadoLower = (nome ?? string.Empty).Trim().ToLowerInvariant();
+#pragma warning disable CA1304, CA1862, RCS1155
         return context.Filiais
             .AsNoTracking()
-            .AnyAsync(x => x.Nome.ToLower() == normalizado.ToLower(), cancellationToken);
-#pragma warning restore CA1304, CA1311, CA1862, RCS1155
+            .AnyAsync(x => x.Nome.ToLower() == normalizadoLower, cancellationToken);
+#pragma warning restore CA1304, CA1862, RCS1155
     }
 
     public Task<Filial?> ObterPorIdAsync(Guid id, CancellationToken cancellationToken)
