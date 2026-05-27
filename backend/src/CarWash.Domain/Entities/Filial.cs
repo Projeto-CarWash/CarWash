@@ -86,16 +86,32 @@ public sealed class Filial : IAuditable, IAuditableSetter
     /// aditivo). Não persistido — <c>FilialConfiguration</c> aplica
     /// <c>Ignore(x =&gt; x.Endereco)</c>.
     /// </summary>
-    public Endereco? Endereco => string.IsNullOrEmpty(EnderecoCep)
-        ? null
-        : new Endereco(
+public Endereco? Endereco
+{
+    get
+    {
+        // Durante o rollout aditivo, as colunas de endereço podem existir de forma parcial.
+        // Só materializa o VO quando todos os campos obrigatórios estiverem presentes.
+        if (string.IsNullOrWhiteSpace(EnderecoCep)
+            || string.IsNullOrWhiteSpace(EnderecoLogradouro)
+            || string.IsNullOrWhiteSpace(EnderecoNumero)
+            || string.IsNullOrWhiteSpace(EnderecoBairro)
+            || string.IsNullOrWhiteSpace(EnderecoCidade)
+            || string.IsNullOrWhiteSpace(EnderecoUf))
+        {
+            return null;
+        }
+
+        return new Endereco(
             EnderecoCep,
-            EnderecoLogradouro ?? string.Empty,
-            EnderecoNumero ?? string.Empty,
+            EnderecoLogradouro,
+            EnderecoNumero,
             EnderecoComplemento,
-            EnderecoBairro ?? string.Empty,
-            EnderecoCidade ?? string.Empty,
-            EnderecoUf ?? string.Empty);
+            EnderecoBairro,
+            EnderecoCidade,
+            EnderecoUf);
+    }
+}
 
     /// <summary>
     /// Fábrica do agregado <see cref="Filial"/> (RF017 + RF018). Aplica as
