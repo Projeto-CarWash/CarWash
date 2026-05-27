@@ -121,7 +121,7 @@ Se durante a implementação o dev encontrar mais de 5 chamadas afetadas, escala
 | `ck_filiais_celulas_faixa` | CHECK | `celulas_ativas BETWEEN 1 AND 100` (já existe) | CA-204.2 + RN009 + CA008 | Defesa final RN009. |
 | `ck_filiais_codigo_formato` | CHECK | `codigo IS NULL OR codigo ~ '^[A-Z0-9]{2,20}$'` | CA-204.2 + CA-204.3 | Garante formato mesmo em escrita fora do fluxo da app. Permite NULL durante rollout. |
 | `idx_filiais_ativa` | índice parcial | `WHERE ativa = true` (já existe) | CA-204.4 + RF019 | Suporta a consulta padrão do agendamento (`ativo=true`). |
-| `idx_filiais_cidade_uf` | índice composto | `(endereco_cidade, endereco_uf) WHERE endereco_cidade IS NOT NULL` | GET listagem | Útil quando o GET filtra por cidade/UF. **Adicionar** — barato e antecipa filtros do front. |
+| `idx_filiais_cidade_uf` | índice composto parcial | `(endereco_cidade, endereco_uf) WHERE endereco_cidade IS NOT NULL` | GET listagem | Útil quando o GET filtra por cidade/UF. **Adicionar** — barato e antecipa filtros do front. O `LOWER(endereco_cidade)` entrará como follow-up se aparecer query case-insensitive concreta nessa coluna. |
 
 ### 3.3 Justificativa por CA
 
@@ -146,7 +146,7 @@ Se durante a implementação o dev encontrar mais de 5 chamadas afetadas, escala
 7. `CREATE UNIQUE INDEX uk_filiais_nome_lower ON filiais (LOWER(nome));`
 8. `CREATE UNIQUE INDEX uk_filiais_codigo ON filiais (codigo) WHERE codigo IS NOT NULL;`
 9. `CREATE UNIQUE INDEX uk_filiais_cnpj ON filiais (cnpj) WHERE cnpj IS NOT NULL;`
-10. `CREATE INDEX idx_filiais_cidade_uf ON filiais (endereco_cidade, endereco_uf) WHERE endereco_cidade IS NOT NULL;`
+10. `CREATE INDEX idx_filiais_cidade_uf ON filiais (endereco_cidade, endereco_uf) WHERE endereco_cidade IS NOT NULL;` (índice composto parcial; ver §3.2 sobre `LOWER(endereco_cidade)` como follow-up)
 
 **Backfill:** **não há backfill automático na migration.** Se houver filial seed pré-existente sem `codigo`, ela permanece com `codigo = NULL` e é corrigida manualmente em homologação (uma única linha). O card 207 fechará o ciclo trocando `codigo` para `NOT NULL` depois que o backfill manual confirmar 0 linhas com `codigo IS NULL`.
 
@@ -241,9 +241,9 @@ Se durante a implementação o dev encontrar mais de 5 chamadas afetadas, escala
 
 | Status | Quando | Slug (`type`) | Chave de campo |
 |--------|--------|---------------|----------------|
-| **400** | Validator falhou (nome, código formato, CNPJ DV, UF inválida, células fora 1..100, endereço incompleto) | (padrão `ValidationException` → `validation-failed`) | `nome` / `codigo` / `cnpj` / `celulasAtivas` / `endereco.*` |
-| **400** | Body ausente ou malformado | `body-ausente` | `body` |
-| **400** | `pagina` < 1 ou `tamanhoPagina` fora 1..100 (apenas GET) | `validation-failed` | `pagina` / `tamanhoPagina` |
+| **400** | Validator falhou (nome, código formato, CNPJ DV, UF inválida, células fora 1..100, endereço incompleto) | (padrão `ValidationException` → `validation-error`) | `nome` / `codigo` / `cnpj` / `celulasAtivas` / `endereco.*` |
+| **400** | Body ausente ou malformado | `validation-error` (chave de campo `body`) | `body` |
+| **400** | `pagina` < 1 ou `tamanhoPagina` fora 1..100 (apenas GET) | `validation-error` | `pagina` / `tamanhoPagina` |
 | **401** | Sem `Authorization: Bearer` | (padrão middleware auth) | — |
 | **403** | Não aplicável no MVP (L5=a). Se RF-FUT003 introduzir policy, este status fica reservado. | — | — |
 | **409** | `codigo` duplicado | `filial-codigo-ja-existe` | — |

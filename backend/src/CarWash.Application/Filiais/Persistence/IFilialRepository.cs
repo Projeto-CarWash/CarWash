@@ -17,20 +17,22 @@ public interface IFilialRepository
     Task<bool> ExisteCnpjAsync(string cnpj, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Verifica unicidade de nome ignorando caixa (UK funcional
-    /// <c>uk_filiais_nome_lower</c>). O termo informado é comparado em
-    /// <c>LOWER(nome)</c>.
+    /// Verifica unicidade de nome ignorando caixa via <c>LOWER(nome) =
+    /// LOWER($1)</c> — casa com o índice funcional
+    /// <c>uk_filiais_nome_lower</c> e é imune a curingas LIKE (<c>%</c>,
+    /// <c>_</c>) no termo informado.
     /// </summary>
     Task<bool> ExisteNomeAsync(string nome, CancellationToken cancellationToken);
 
     Task<Filial?> ObterPorIdAsync(Guid id, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Persiste a filial recém-criada dentro de uma transação curta com a
-    /// linha de <c>audit_logs</c>. Traduz <c>DbUpdateException</c> por
-    /// violação de UK em exceções específicas (ADR-0007 §5.2).
+    /// Persiste a filial recém-criada. Traduz <c>DbUpdateException</c> por
+    /// violação de UK em exceções específicas (ADR-0007 §5.2). A linha em
+    /// <c>audit_logs</c> é emitida automaticamente pelo
+    /// <c>AuditLogInterceptor</c> a partir do evento definido no handler.
     /// </summary>
-    Task AdicionarAsync(Filial filial, string correlationId, Guid? usuarioId, CancellationToken cancellationToken);
+    Task AdicionarAsync(Filial filial, CancellationToken cancellationToken);
 
     /// <summary>
     /// Lista filiais paginadas com filtro opcional por <c>ativo</c> e por

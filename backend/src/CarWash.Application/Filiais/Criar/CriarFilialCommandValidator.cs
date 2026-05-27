@@ -17,6 +17,13 @@ public sealed class CriarFilialCommandValidator : AbstractValidator<CriarFilialC
         RegexOptions.Compiled | RegexOptions.CultureInvariant,
         TimeSpan.FromMilliseconds(50));
 
+    private static readonly HashSet<string> UfsValidas = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES", "GO", "MA",
+        "MG", "MS", "MT", "PA", "PB", "PE", "PI", "PR", "RJ", "RN",
+        "RO", "RR", "RS", "SC", "SE", "SP", "TO",
+    };
+
     public CriarFilialCommandValidator()
     {
         RuleFor(x => x.Nome)
@@ -91,7 +98,9 @@ public sealed class CriarFilialCommandValidator : AbstractValidator<CriarFilialC
 
             RuleFor(x => x.Endereco!.Uf)
                 .NotEmpty().WithMessage("UF é obrigatória.")
-                .Length(2).WithMessage("UF deve ter exatamente 2 caracteres.");
+                .Length(2).WithMessage("UF deve ter exatamente 2 caracteres.")
+                .Must(uf => UfsValidas.Contains(uf?.Trim().ToUpperInvariant() ?? string.Empty))
+                .WithMessage("UF inválida.");
         });
     }
 

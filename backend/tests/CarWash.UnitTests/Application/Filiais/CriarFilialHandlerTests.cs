@@ -32,8 +32,6 @@ public class CriarFilialHandlerTests
 
         await _repo.Received(1).AdicionarAsync(
             Arg.Is<Filial>(f => f.Nome == "Filial Matriz" && f.Codigo == "MTZ01"),
-            "trace-1",
-            Arg.Any<Guid?>(),
             Arg.Any<CancellationToken>());
     }
 
@@ -88,8 +86,6 @@ public class CriarFilialHandlerTests
 
         await _repo.Received(1).AdicionarAsync(
             Arg.Is<Filial>(f => f.Codigo == "MTZ01"),
-            Arg.Any<string>(),
-            Arg.Any<Guid?>(),
             Arg.Any<CancellationToken>());
     }
 

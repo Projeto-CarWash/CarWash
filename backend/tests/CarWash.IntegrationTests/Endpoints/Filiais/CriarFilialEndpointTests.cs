@@ -84,7 +84,7 @@ public class CriarFilialEndpointTests : IAsyncDisposable
         corpo.GetProperty("errors").TryGetProperty("nome", out _).Should().BeTrue();
     }
 
-    // CA-204.2 — UF inválida.
+    // CA-204.2 — UF inválida (comprimento errado: 3 caracteres).
     [Fact]
     public async Task POST_uf_invalida_retorna_400()
     {
@@ -98,11 +98,36 @@ public class CriarFilialEndpointTests : IAsyncDisposable
             numero = "1000",
             bairro = "Bela Vista",
             cidade = "São Paulo",
-            uf = "ZZ", // UF inexistente
+            uf = "ZZZ", // 3 caracteres: pega Length(2) do validator
         };
 
         var response = await client.PostAsJsonAsync(RotaCriar, payload, _json);
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    // C5 — UF com 2 caracteres mas fora da lista das 27 UFs deve cair no
+    // validator (400) e NÃO escapar para o VO `Endereco` (que viraria 500).
+    [Fact]
+    public async Task POST_uf_dois_caracteres_fora_da_lista_retorna_400()
+    {
+        var client = await AuthenticatedHttpClient.CreateAsync(_factory);
+
+        var payload = PayloadValido();
+        payload["endereco"] = new
+        {
+            cep = "01310100",
+            logradouro = "Av. Paulista",
+            numero = "1000",
+            bairro = "Bela Vista",
+            cidade = "São Paulo",
+            uf = "XX", // UF inexistente, mas com 2 caracteres
+        };
+
+        var response = await client.PostAsJsonAsync(RotaCriar, payload, _json);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var corpo = await response.Content.ReadFromJsonAsync<JsonElement>(_json);
+        corpo.GetProperty("errors").TryGetProperty("Endereco.Uf", out _).Should().BeTrue();
     }
 
     // CA-204.2 — células fora da faixa.
@@ -185,6 +210,41 @@ public class CriarFilialEndpointTests : IAsyncDisposable
         r2.StatusCode.Should().Be(HttpStatusCode.Conflict);
         var corpo = await r2.Content.ReadFromJsonAsync<JsonElement>(_json);
         corpo.GetProperty("type").GetString().Should().Contain("filial-nome-ja-existe");
+    }
+
+    // C1 — nome com curingas LIKE literais (`%` e `_`) NÃO pode disparar 409
+    // falso. A consulta deve usar igualdade case-insensitive (LOWER), e não
+    // ILIKE — caso contrário "FOO%" casaria com "FOOBAR" via wildcard.
+    [Fact]
+    public async Task POST_nome_com_curingas_like_literais_nao_gera_409_falso()
+    {
+        var client = await AuthenticatedHttpClient.CreateAsync(_factory);
+
+        var sufixo = Guid.NewGuid().ToString("N")[..6].ToUpperInvariant();
+        var nomeBase = $"FOO{sufixo}BAR";
+        var nomeComPercent = $"FOO{sufixo}%";
+        var nomeComUnderscore = $"FOO{sufixo}_";
+
+        // Cria primeiro o nome "concreto" que serviria de gabarito caso a
+        // implementação errada usasse ILIKE com wildcards.
+        var primeiro = PayloadValido();
+        primeiro["nome"] = nomeBase;
+        var r1 = await client.PostAsJsonAsync(RotaCriar, primeiro, _json);
+        r1.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        // Agora tenta cadastrar dois nomes contendo `%` e `_` literais. Com
+        // LOWER+igualdade, nenhum deles colide com `nomeBase`.
+        var segundo = PayloadValido();
+        segundo["nome"] = nomeComPercent;
+        var r2 = await client.PostAsJsonAsync(RotaCriar, segundo, _json);
+        r2.StatusCode.Should().Be(HttpStatusCode.Created,
+            "nome com `%` literal não pode casar com outro nome via wildcard");
+
+        var terceiro = PayloadValido();
+        terceiro["nome"] = nomeComUnderscore;
+        var r3 = await client.PostAsJsonAsync(RotaCriar, terceiro, _json);
+        r3.StatusCode.Should().Be(HttpStatusCode.Created,
+            "nome com `_` literal não pode casar com outro nome via wildcard");
     }
 
     // CA-204.3 — race condition: dois POSTs concorrentes com mesmo código.

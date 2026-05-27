@@ -111,6 +111,20 @@ public class CriarFilialCommandValidatorTests
         result.ShouldHaveValidationErrorFor("Endereco.Uf");
     }
 
+    // C5: UF com exatamente 2 caracteres mas fora da lista das 27 UFs deve falhar
+    // antes de o VO `Endereco` lançar `DomainException` (que viraria 500).
+    [Theory]
+    [InlineData("XX")]
+    [InlineData("ZZ")]
+    [InlineData("AA")]
+    public void Uf_dois_caracteres_fora_da_lista_falha_com_chave_endereco_uf(string uf)
+    {
+        var cmd = NovoComando() with { Endereco = EnderecoValido() };
+        cmd.Endereco!.Uf = uf;
+        var result = _validator.TestValidate(cmd);
+        result.ShouldHaveValidationErrorFor("Endereco.Uf");
+    }
+
     [Fact]
     public void Endereco_cep_curto_falha()
     {

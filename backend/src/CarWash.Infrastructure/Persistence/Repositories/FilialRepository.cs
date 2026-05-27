@@ -43,12 +43,14 @@ public class FilialRepository : IFilialRepository
 
     public Task<bool> ExisteNomeAsync(string nome, CancellationToken cancellationToken)
     {
-        // ILike (PostgreSQL) é case-insensitive e traduzível para SQL via Npgsql.
-        // Sem wildcards, equivale a igualdade case-insensitive — consistente com
-        // o índice funcional uk_filiais_nome_lower (LOWER(nome)).
+        // Igualdade case-insensitive via LOWER em ambos os lados — Npgsql traduz
+        // para `LOWER(nome) = LOWER($1)`, casando exatamente com o índice
+        // funcional uk_filiais_nome_lower. Evita falsos 409 quando o nome contém
+        // os curingas LIKE `%` ou `_`, que `ILike` interpretaria como wildcard.
+        var normalizado = nome?.Trim() ?? string.Empty;
         return context.Filiais
             .AsNoTracking()
-            .AnyAsync(x => EF.Functions.ILike(x.Nome, nome), cancellationToken);
+            .AnyAsync(x => x.Nome.ToLower() == normalizado.ToLower(), cancellationToken);
     }
 
     public Task<Filial?> ObterPorIdAsync(Guid id, CancellationToken cancellationToken)
@@ -56,7 +58,7 @@ public class FilialRepository : IFilialRepository
         return context.Filiais.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     }
 
-    public async Task AdicionarAsync(Filial filial, string correlationId, Guid? usuarioId, CancellationToken cancellationToken)
+    public async Task AdicionarAsync(Filial filial, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(filial);
 

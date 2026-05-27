@@ -69,8 +69,7 @@ public sealed class CriarFilialHandler : ICommandHandler<CriarFilialCommand, Cri
         filial.RegistrarCriadoPor(command.UsuarioId);
 
         // Camada 2 — UKs do banco + tradução em FilialXxxJaExisteException.
-        await _repositorio.AdicionarAsync(filial, command.TraceId, command.UsuarioId, cancellationToken)
-            .ConfigureAwait(false);
+        await _repositorio.AdicionarAsync(filial, cancellationToken).ConfigureAwait(false);
 
         return new CriarFilialResponse
         {
