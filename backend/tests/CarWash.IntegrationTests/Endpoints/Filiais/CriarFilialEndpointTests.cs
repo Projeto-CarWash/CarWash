@@ -127,6 +127,7 @@ public class CriarFilialEndpointTests : IAsyncDisposable
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
         var corpo = await response.Content.ReadFromJsonAsync<JsonElement>(_json);
+
         // ValidationProblems.NormalizarCampo apenas baixa o 1º caractere do
         // PropertyName do FluentValidation: "Endereco.Uf" → "endereco.Uf".
         corpo.GetProperty("errors").TryGetProperty("endereco.Uf", out _).Should().BeTrue();
