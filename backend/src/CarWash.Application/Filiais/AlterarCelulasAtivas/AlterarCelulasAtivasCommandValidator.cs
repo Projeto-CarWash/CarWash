@@ -21,6 +21,7 @@ public sealed class AlterarCelulasAtivasCommandValidator : AbstractValidator<Alt
             .NotEqual(Guid.Empty).WithMessage(MensagemFilialIdInvalido);
 
         RuleFor(x => x.CelulasAtivas)
+            .Cascade(CascadeMode.Stop)
             .NotNull().WithMessage(MensagemCelulasObrigatorio)
             .Must(v => v is >= Filial.MinCelulasAtivas and <= Filial.MaxCelulasAtivas)
                 .WithMessage(MensagemFaixa);
