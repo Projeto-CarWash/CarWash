@@ -1,3 +1,4 @@
+using CarWash.Application.Abstractions;
 using CarWash.Application.Agendamentos.Abstractions;
 using CarWash.Application.Agendamentos.Common;
 using CarWash.Application.Agendamentos.Persistence;
@@ -154,7 +155,10 @@ public class PreConfirmarAgendamentoHandlerTests
 
     private PreConfirmarAgendamentoHandler NovoHandler() =>
         new(
-            new CalculadoraResumoAgendamento(_catalogo),
+            new CalculadoraResumoAgendamento(
+                _catalogo,
+                Substitute.For<IAuditLogger>(),
+                NullLogger<CalculadoraResumoAgendamento>.Instance),
             _agendamentos,
             _tokens,
             NullLogger<PreConfirmarAgendamentoHandler>.Instance);

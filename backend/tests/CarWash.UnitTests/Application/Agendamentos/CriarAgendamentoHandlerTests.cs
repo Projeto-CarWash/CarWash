@@ -1,3 +1,4 @@
+using CarWash.Application.Abstractions;
 using CarWash.Application.Agendamentos.Common;
 using CarWash.Application.Agendamentos.Criar;
 using CarWash.Application.Agendamentos.Persistence;
@@ -409,7 +410,10 @@ public class CriarAgendamentoHandlerTests
     private CriarAgendamentoHandler NovoHandler() =>
         new(
             _agendamentos,
-            new CalculadoraResumoAgendamento(_catalogo),
+            new CalculadoraResumoAgendamento(
+                _catalogo,
+                Substitute.For<IAuditLogger>(),
+                NullLogger<CalculadoraResumoAgendamento>.Instance),
             NullLogger<CriarAgendamentoHandler>.Instance);
 
     private static CriarAgendamentoCommand NovoComando() => new(

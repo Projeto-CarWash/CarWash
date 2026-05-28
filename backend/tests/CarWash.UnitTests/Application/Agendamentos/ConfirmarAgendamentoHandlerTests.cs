@@ -1,4 +1,5 @@
 using System.Text.Json;
+using CarWash.Application.Abstractions;
 using CarWash.Application.Agendamentos.Abstractions;
 using CarWash.Application.Agendamentos.Common;
 using CarWash.Application.Agendamentos.Confirmar;
@@ -280,7 +281,10 @@ public class ConfirmarAgendamentoHandlerTests
 
     private ConfirmarAgendamentoHandler NovoHandler() =>
         new(
-            new CalculadoraResumoAgendamento(_catalogo),
+            new CalculadoraResumoAgendamento(
+                _catalogo,
+                Substitute.For<IAuditLogger>(),
+                NullLogger<CalculadoraResumoAgendamento>.Instance),
             _agendamentos,
             _idempotencia,
             _tokens,
