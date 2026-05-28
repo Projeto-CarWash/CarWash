@@ -271,6 +271,34 @@ public class ConfirmarAgendamentoHandlerTests
     }
 
     [Fact]
+    public async Task Filial_inativa_na_confirmacao_lanca_FilialInativaException()
+    {
+        // RF019/card 142: a confirmação re-valida a filial; se ela ficou inativa
+        // entre a prévia e a confirmação, o terceiro fluxo também devolve 409.
+        _catalogo.ObterFilialResumoAsync(FilialId, Arg.Any<CancellationToken>())
+            .Returns(new FilialResumoSnapshot(FilialId, "Filial Centro", false));
+
+        var handler = NovoHandler();
+        var act = () => handler.HandleAsync(NovoComando(), CancellationToken.None);
+
+        var ex = await act.Should().ThrowAsync<FilialInativaException>();
+        ex.Which.Slug.Should().Be(FilialInativaException.SlugPadrao);
+    }
+
+    [Fact]
+    public async Task Filial_inexistente_na_confirmacao_lanca_NotFound()
+    {
+        _catalogo.ObterFilialResumoAsync(FilialId, Arg.Any<CancellationToken>())
+            .Returns((FilialResumoSnapshot?)null);
+
+        var handler = NovoHandler();
+        var act = () => handler.HandleAsync(NovoComando(), CancellationToken.None);
+
+        var ex = await act.Should().ThrowAsync<NotFoundException>();
+        ex.Which.Message.Should().Be(MensagensFilialAgendamento.NaoEncontrada);
+    }
+
+    [Fact]
     public async Task Sem_usuario_autenticado_lanca_ValidationException()
     {
         var handler = NovoHandler();
