@@ -24,6 +24,7 @@ public class CriarAgendamentoHandlerTests
 
     private readonly IAgendamentoRepository _agendamentos = Substitute.For<IAgendamentoRepository>();
     private readonly IAgendamentoCatalogoRepository _catalogo = Substitute.For<IAgendamentoCatalogoRepository>();
+    private readonly IAuditLogger _audit = Substitute.For<IAuditLogger>();
 
     public CriarAgendamentoHandlerTests()
     {
@@ -99,7 +100,7 @@ public class CriarAgendamentoHandlerTests
     }
 
     [Fact]
-    public async Task Filial_inexistente_lanca_NotFound()
+    public async Task Filial_inexistente_lanca_NotFound_e_audita_motivo_filial_inexistente()
     {
         _catalogo.ObterFilialResumoAsync(FilialId, Arg.Any<CancellationToken>())
             .Returns((FilialResumoSnapshot?)null);
@@ -107,19 +108,41 @@ public class CriarAgendamentoHandlerTests
         var handler = NovoHandler();
         var act = () => handler.HandleAsync(NovoComando(), CancellationToken.None);
 
-        await act.Should().ThrowAsync<NotFoundException>();
+        var ex = await act.Should().ThrowAsync<NotFoundException>();
+        ex.Which.Message.Should().Be(MensagensFilialAgendamento.NaoEncontrada);
+
+        // RF019/DAT §9.1: a rejeição é auditada com motivo estruturado antes do throw.
+        await _audit.Received(1).LogAsync(
+            CalculadoraResumoAgendamento.EventoFilialRejeitada,
+            CalculadoraResumoAgendamento.EntidadeAuditoria,
+            null,
+            Arg.Is<object>(d => MotivoDe(d) == MotivosFalhaFilial.Inexistente),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task Filial_inativa_lanca_RecursoInativo()
+    public async Task Filial_inativa_lanca_FilialInativaException()
     {
+        // RF019: filial inativa é o único recurso que vira 409 (slug filial-inativa),
+        // via FilialInativaException : ConflictException — distinto de veículo/
+        // cliente/serviço/responsável inativos, que seguem 422 (RecursoInativoException).
         _catalogo.ObterFilialResumoAsync(FilialId, Arg.Any<CancellationToken>())
             .Returns(new FilialResumoSnapshot(FilialId, "Filial Centro", false));
 
         var handler = NovoHandler();
         var act = () => handler.HandleAsync(NovoComando(), CancellationToken.None);
 
-        await act.Should().ThrowAsync<RecursoInativoException>();
+        var ex = await act.Should().ThrowAsync<FilialInativaException>();
+        ex.Which.Slug.Should().Be(FilialInativaException.SlugPadrao);
+        ex.Which.Message.Should().Be(MensagensFilialAgendamento.Inativa);
+
+        // RF019/DAT §9.1: a rejeição é auditada com motivo estruturado antes do throw.
+        await _audit.Received(1).LogAsync(
+            CalculadoraResumoAgendamento.EventoFilialRejeitada,
+            CalculadoraResumoAgendamento.EntidadeAuditoria,
+            null,
+            Arg.Is<object>(d => MotivoDe(d) == MotivosFalhaFilial.Inativa),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -407,12 +430,27 @@ public class CriarAgendamentoHandlerTests
             Arg.Any<CancellationToken>());
     }
 
+    /// <summary>
+    /// Lê o campo <c>motivo</c> do objeto anônimo <c>dados</c> passado ao
+    /// <see cref="IAuditLogger"/> (<c>new { motivo, filialId }</c>). Confirmado
+    /// empiricamente: a serialização preserva o nome do membro (camelCase), igual
+    /// ao que cai em <c>audit_logs.dados</c>.
+    /// </summary>
+    private static string? MotivoDe(object dados)
+    {
+        using var doc = System.Text.Json.JsonDocument.Parse(
+            System.Text.Json.JsonSerializer.Serialize(dados));
+        return doc.RootElement.TryGetProperty("motivo", out var motivo)
+            ? motivo.GetString()
+            : null;
+    }
+
     private CriarAgendamentoHandler NovoHandler() =>
         new(
             _agendamentos,
             new CalculadoraResumoAgendamento(
                 _catalogo,
-                Substitute.For<IAuditLogger>(),
+                _audit,
                 NullLogger<CalculadoraResumoAgendamento>.Instance),
             NullLogger<CriarAgendamentoHandler>.Instance);
 
