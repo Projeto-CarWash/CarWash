@@ -6,9 +6,11 @@ namespace CarWash.IntegrationTests.Infrastructure;
 
 /// <summary>
 /// Helper que cria um usuário de perfil <c>Funcionario</c> (via Admin) e devolve
-/// um <see cref="HttpClient"/> autenticado com o token DESSE funcionário. Necessário
-/// para exercitar o 403 das rotas Admin-only do RF018 (POST/PATCH de filiais) —
-/// um funcionário autenticado é barrado pela policy "Admin".
+/// um <see cref="HttpClient"/> autenticado com o token DESSE funcionário. Após a
+/// reconciliação com a development, as rotas de filiais usam
+/// <c>RequireAuthorization()</c> puro (sem policy Admin / sem 403 por perfil —
+/// adiado para RF-FUT003). Permanece útil para validar que um funcionário
+/// autenticado tem acesso às rotas apenas-autenticadas (ex.: GET por id).
 /// </summary>
 public static class FuncionarioHttpClient
 {

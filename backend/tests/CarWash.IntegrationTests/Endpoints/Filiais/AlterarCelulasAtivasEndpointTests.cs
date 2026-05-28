@@ -14,8 +14,8 @@ namespace CarWash.IntegrationTests.Endpoints.Filiais;
 
 /// <summary>
 /// RF018 — <c>PATCH /api/v1/filiais/{id}/celulas-ativas</c> ponta a ponta.
-/// Cobre 200/400/401/403/404, consistência via GET, idempotência (sem auditoria
-/// extra) e auditoria com {valorAnterior, valorNovo}.
+/// Cobre 200/400/401/404, consistência via GET, idempotência (sem auditoria
+/// extra) e auditoria com {valorAnterior, valorNovo}. 403 por perfil: ver RF-FUT003.
 /// </summary>
 [Collection(nameof(PostgresCollection))]
 public class AlterarCelulasAtivasEndpointTests : IAsyncDisposable
@@ -171,34 +171,29 @@ public class AlterarCelulasAtivasEndpointTests : IAsyncDisposable
 
         var patch = await anonimo.PatchAsJsonAsync(RotaCelulas(Guid.NewGuid()), new { celulasAtivas = 7 }, _json);
 
+        // Sem JwtBearerEvents customizado (reconciliação com development): o 401 volta
+        // ao default do framework — corpo não traz mais `title` customizado. Asserta
+        // apenas o status.
         patch.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
-        var corpo = await patch.Content.ReadFromJsonAsync<JsonElement>(_json);
-        corpo.GetProperty("title").GetString()
-            .Should().Be("Autenticação obrigatória para executar esta operação.");
     }
 
-    [Fact]
-    public async Task PATCH_funcionario_retorna_403()
-    {
-        var admin = await AuthenticatedHttpClient.CreateAsync(_factory);
-        var id = await CriarFilialAsync(admin, celulas: 4);
-
-        var funcionario = await FuncionarioHttpClient.CreateAsync(_factory);
-        var patch = await funcionario.PatchAsJsonAsync(RotaCelulas(id), new { celulasAtivas = 7 }, _json);
-
-        patch.StatusCode.Should().Be(HttpStatusCode.Forbidden);
-        var corpo = await patch.Content.ReadFromJsonAsync<JsonElement>(_json);
-        corpo.GetProperty("title").GetString()
-            .Should().Be("Você não possui permissão para alterar configuração da filial.");
-    }
-
+    // 403 por perfil: ver RF-FUT003. A policy Admin e os JwtBearerEvents foram
+    // removidos na reconciliação com a development (RequireAuthorization() puro),
+    // logo não há mais 403 por perfil — funcionário autenticado consegue alterar.
     private async Task<Guid> CriarFilialAsync(HttpClient adminClient, int celulas)
     {
         var nome = $"Filial {Guid.NewGuid():N}"[..30];
-        var response = await adminClient.PostAsJsonAsync(RotaFiliais, new { nome, celulasAtivas = celulas }, _json);
+        var codigo = CodigoUnico();
+        var response = await adminClient.PostAsJsonAsync(RotaFiliais, new { nome, codigo, celulasAtivas = celulas }, _json);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         return (await response.Content.ReadFromJsonAsync<JsonElement>(_json)).GetProperty("id").GetGuid();
     }
+
+    /// <summary>
+    /// Código alfanumérico maiúsculo único por filial (regex ^[A-Z0-9]{2,20}$). O
+    /// POST de filial passou a exigir `codigo` após a reconciliação com a development.
+    /// </summary>
+    private static string CodigoUnico() => $"F{Guid.NewGuid():N}"[..8].ToUpperInvariant();
 
     private static Uri RotaCelulas(Guid id) =>
         new($"/api/v1/filiais/{id}/celulas-ativas", UriKind.Relative);

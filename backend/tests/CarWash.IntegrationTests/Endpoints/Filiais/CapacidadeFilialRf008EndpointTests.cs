@@ -125,7 +125,11 @@ public class CapacidadeFilialRf008EndpointTests : IAsyncDisposable
     private async Task<Guid> CriarFilialAsync(HttpClient client, int celulas)
     {
         var nome = $"Filial {Guid.NewGuid():N}"[..30];
-        var response = await client.PostAsJsonAsync(RotaFiliais, new { nome, celulasAtivas = celulas }, _json);
+
+        // POST de filial agora exige `codigo` (regex ^[A-Z0-9]{2,20}$, único por filial)
+        // após a reconciliação com a development.
+        var codigo = $"F{Guid.NewGuid():N}"[..8].ToUpperInvariant();
+        var response = await client.PostAsJsonAsync(RotaFiliais, new { nome, codigo, celulasAtivas = celulas }, _json);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         return (await response.Content.ReadFromJsonAsync<JsonElement>(_json)).GetProperty("id").GetGuid();
     }
