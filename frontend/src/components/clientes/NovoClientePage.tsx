@@ -94,10 +94,24 @@ export function NovoClientePage() {
         const problem = error.response.data as ProblemDetails | undefined;
 
         if (status === 409) {
+          const isPlacaDuplicada = problem?.type?.includes('veiculo-placa-duplicada');
+          if (isPlacaDuplicada) {
+            setGlobalError('Já existe veículo cadastrado com esta placa.');
+            return;
+          }
+
           setGlobalError(API_MESSAGES[409]!);
           form.setError('cpfCnpj', {
             message: 'Já existe cliente cadastrado com este documento.',
           });
+          return;
+        }
+
+        if (status === 401) {
+          setGlobalError(API_MESSAGES[401]!);
+          setTimeout(() => {
+            void navigate('/login', { replace: true });
+          }, 1500);
           return;
         }
 

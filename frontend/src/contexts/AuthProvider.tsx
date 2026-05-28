@@ -71,6 +71,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const logout = useCallback(async () => {
     await authService.logout();
+    localStorage.removeItem('carwash_remember_email');
     setSession({ user: null, token: null });
   }, []);
 
