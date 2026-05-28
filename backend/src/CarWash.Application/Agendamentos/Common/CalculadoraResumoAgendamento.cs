@@ -192,12 +192,19 @@ public sealed class CalculadoraResumoAgendamento
 
     private async Task<FilialResumoSnapshot> GarantirFilialAsync(Guid filialId, CancellationToken cancellationToken)
     {
-        var filial = await _catalogo.ObterFilialResumoAsync(filialId, cancellationToken).ConfigureAwait(false)
-            ?? throw new NotFoundException("Filial informada não foi encontrada.");
+        // RF019: a filial é a única dependência cujo card pede 409 (inativa) — as
+        // demais (veículo/cliente/serviço/responsável) seguem 422 via
+        // RecursoInativoException. 404 e 409 têm mensagens próprias do card.
+        var filial = await _catalogo.ObterFilialResumoAsync(filialId, cancellationToken).ConfigureAwait(false);
+
+        if (filial is null)
+        {
+            throw new NotFoundException(MensagensFilialAgendamento.NaoEncontrada);
+        }
 
         if (!filial.Ativa)
         {
-            throw new RecursoInativoException("A filial selecionada está inativa e não aceita agendamentos.");
+            throw new FilialInativaException();
         }
 
         return filial;
