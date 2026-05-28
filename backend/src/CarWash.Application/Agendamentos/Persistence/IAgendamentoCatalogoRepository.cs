@@ -62,6 +62,26 @@ public interface IAgendamentoCatalogoRepository
     /// resumo de confirmação (RF015). <c>null</c> quando o veículo não existe.
     /// </summary>
     Task<VeiculoResumoSnapshot?> ObterVeiculoResumoAsync(Guid veiculoId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Retorna <c>celulas_ativas</c> da filial (RN009/RF018). <c>null</c> se a
+    /// filial não existir. AsNoTracking. Reaproveitado aqui (em vez de chamar
+    /// <see cref="Filiais.Persistence.IFilialRepository"/>) para manter o slice
+    /// de Agendamentos auto-suficiente em suas leituras de validação.
+    /// </summary>
+    Task<int?> ObterCelulasAtivasFilialAsync(Guid filialId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Conta agendamentos com status <c>agendado</c> na filial cuja janela
+    /// <c>[inicio_existente, fim_existente)</c> se sobrepõe a <c>[inicio, fim)</c>.
+    /// Suporta a validação de capacidade do RF008/RF018 — best-effort no MVP
+    /// (ver ADR RF018 §9.4 sobre race condition residual).
+    /// </summary>
+    Task<int> ContarSobreposicoesNaFilialAsync(
+        Guid filialId,
+        DateTime inicio,
+        DateTime fim,
+        CancellationToken cancellationToken);
 }
 
 /// <summary>Projeção mínima de um veículo para validação de agendamento.</summary>
