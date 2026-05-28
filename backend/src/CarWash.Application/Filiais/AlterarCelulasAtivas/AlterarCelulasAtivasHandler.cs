@@ -46,7 +46,10 @@ public sealed class AlterarCelulasAtivasHandler
         // Validator garante NotNull antes de chegar aqui — `.Value` é seguro.
         var valorSolicitado = command.CelulasAtivas!.Value;
 
-        var filial = await _repo.ObterPorIdRastreadoAsync(command.FilialId, cancellationToken)
+        // ObterPorIdAsync (development) retorna a entidade RASTREADA — permite
+        // mutar (AjustarCelulas) e persistir via SalvarAsync na mesma unidade
+        // de trabalho.
+        var filial = await _repo.ObterPorIdAsync(command.FilialId, cancellationToken)
             .ConfigureAwait(false)
             ?? throw new NotFoundException(MensagemNaoEncontrado);
 

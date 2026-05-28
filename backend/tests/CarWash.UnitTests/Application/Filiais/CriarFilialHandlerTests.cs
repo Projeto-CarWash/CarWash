@@ -1,114 +1,114 @@
 using CarWash.Application.Abstractions;
+using CarWash.Application.Common.Exceptions;
 using CarWash.Application.Filiais.Common;
-using CarWash.Application.Filiais.CriarFilial;
+using CarWash.Application.Filiais.Criar;
 using CarWash.Application.Filiais.Persistence;
 using CarWash.Domain.Entities;
 using FluentAssertions;
-using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
-using NSubstitute.ExceptionExtensions;
 using Xunit;
 
 namespace CarWash.UnitTests.Application.Filiais;
 
-/// <summary>
-/// RF018 — use case de criação de filial. Mocks de repo/auditoria/contexto isolam
-/// a Application das dependências; sem I/O real.
-/// </summary>
 public class CriarFilialHandlerTests
 {
     private readonly IFilialRepository _repo = Substitute.For<IFilialRepository>();
-    private readonly IAuditLogger _audit = Substitute.For<IAuditLogger>();
     private readonly ICurrentRequestContext _ctx = Substitute.For<ICurrentRequestContext>();
 
     [Fact]
-    public async Task Caminho_feliz_cria_persiste_audita_e_retorna_response()
+    public async Task Caminho_feliz_chama_repo_e_retorna_response_com_traceId()
     {
-        _repo.ExisteComNomeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(false);
-
-        Filial? adicionada = null;
-        await _repo.AdicionarAsync(Arg.Do<Filial>(f => adicionada = f), Arg.Any<CancellationToken>());
+        _repo.ExisteCodigoAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(false);
+        _repo.ExisteCnpjAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(false);
+        _repo.ExisteNomeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(false);
 
         var handler = NovoHandler();
         var resposta = await handler.HandleAsync(NovoComando(), CancellationToken.None);
 
-        // Domínio criado e devolvido na resposta.
         resposta.Id.Should().NotBeEmpty();
-        resposta.Nome.Should().Be("Filial Centro");
-        resposta.CelulasAtivas.Should().Be(4);
-        resposta.Ativa.Should().BeTrue();
-        adicionada.Should().NotBeNull();
-        resposta.Id.Should().Be(adicionada!.Id);
+        resposta.TraceId.Should().Be("trace-1");
+        resposta.Mensagem.Should().Be("Filial cadastrada com sucesso.");
 
-        // Evento definido ANTES do SaveChanges (para o interceptor capturar o INSERT).
         _ctx.Received(1).DefinirEvento(CriarFilialHandler.EventoAuditoria);
-        await _repo.Received(1).ExisteComNomeAsync("Filial Centro", Arg.Any<CancellationToken>());
-        await _repo.Received(1).AdicionarAsync(Arg.Any<Filial>(), Arg.Any<CancellationToken>());
-        await _repo.Received(1).SalvarAsync(Arg.Any<CancellationToken>());
 
-        // Auditoria explícita com evento/entidade corretos.
-        await _audit.Received(1).LogAsync(
-            CriarFilialHandler.EventoAuditoria,
-            CriarFilialHandler.EntidadeAuditoria,
-            adicionada.Id,
-            Arg.Any<object>(),
+        await _repo.Received(1).AdicionarAsync(
+            Arg.Is<Filial>(f => f.Nome == "Filial Matriz" && f.Codigo == "MTZ01"),
             Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task Nome_normalizado_com_trim_antes_de_persistir()
+    public async Task Codigo_duplicado_lanca_exception_com_slug_correto()
     {
-        _repo.ExisteComNomeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(false);
-        Filial? adicionada = null;
-        await _repo.AdicionarAsync(Arg.Do<Filial>(f => adicionada = f), Arg.Any<CancellationToken>());
-
-        var handler = NovoHandler();
-        var resposta = await handler.HandleAsync(NovoComando() with { Nome = "  Filial Centro  " }, CancellationToken.None);
-
-        resposta.Nome.Should().Be("Filial Centro");
-        adicionada!.Nome.Should().Be("Filial Centro");
-        await _repo.Received(1).ExisteComNomeAsync("Filial Centro", Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    public async Task Pre_check_de_nome_duplicado_lanca_NomeFilialJaExisteException()
-    {
-        _repo.ExisteComNomeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(true);
+        _repo.ExisteCodigoAsync("MTZ01", Arg.Any<CancellationToken>()).Returns(true);
 
         var handler = NovoHandler();
         var act = () => handler.HandleAsync(NovoComando(), CancellationToken.None);
 
-        var ex = await act.Should().ThrowAsync<NomeFilialJaExisteException>();
-        ex.Which.Message.Should().Be(NomeFilialJaExisteException.MensagemPadrao);
-        ex.Which.Slug.Should().Be(NomeFilialJaExisteException.SlugPadrao);
-
-        // Não persiste nem audita o evento explícito quando o pré-check barra.
-        await _repo.DidNotReceive().AdicionarAsync(Arg.Any<Filial>(), Arg.Any<CancellationToken>());
-        await _repo.DidNotReceive().SalvarAsync(Arg.Any<CancellationToken>());
-        await _audit.DidNotReceive().LogAsync(
-            Arg.Any<string>(), Arg.Any<string>(), Arg.Any<Guid?>(), Arg.Any<object>(), Arg.Any<CancellationToken>());
+        var ex = await act.Should().ThrowAsync<FilialCodigoJaExisteException>();
+        ex.Which.Slug.Should().Be(FilialCodigoJaExisteException.SlugPadrao);
     }
 
     [Fact]
-    public async Task Race_condition_no_repositorio_propaga_NomeFilialJaExiste()
+    public async Task Cnpj_duplicado_lanca_exception_com_slug_correto()
     {
-        // A tradução de DbUpdateException → NomeFilialJaExisteException vive na
-        // Infrastructure (FilialRepository.SalvarAsync). O handler apenas a propaga.
-        _repo.ExisteComNomeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(false);
-        _repo.SalvarAsync(Arg.Any<CancellationToken>()).Throws(new NomeFilialJaExisteException());
+        _repo.ExisteCodigoAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(false);
+        _repo.ExisteCnpjAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(true);
 
         var handler = NovoHandler();
         var act = () => handler.HandleAsync(NovoComando(), CancellationToken.None);
 
-        var ex = await act.Should().ThrowAsync<NomeFilialJaExisteException>();
-        ex.Which.Slug.Should().Be(NomeFilialJaExisteException.SlugPadrao);
+        var ex = await act.Should().ThrowAsync<FilialCnpjJaExisteException>();
+        ex.Which.Slug.Should().Be(FilialCnpjJaExisteException.SlugPadrao);
     }
 
-    private CriarFilialHandler NovoHandler() =>
-        new(_repo, _audit, _ctx, NullLogger<CriarFilialHandler>.Instance);
+    [Fact]
+    public async Task Nome_duplicado_lanca_exception_com_slug_correto()
+    {
+        _repo.ExisteCodigoAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(false);
+        _repo.ExisteCnpjAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(false);
+        _repo.ExisteNomeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(true);
+
+        var handler = NovoHandler();
+        var act = () => handler.HandleAsync(NovoComando(), CancellationToken.None);
+
+        var ex = await act.Should().ThrowAsync<FilialNomeJaExisteException>();
+        ex.Which.Slug.Should().Be(FilialNomeJaExisteException.SlugPadrao);
+    }
+
+    [Fact]
+    public async Task Codigo_lowercase_eh_normalizado_para_upper_antes_de_persistir()
+    {
+        _repo.ExisteCodigoAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(false);
+        _repo.ExisteCnpjAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(false);
+        _repo.ExisteNomeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(false);
+
+        var handler = NovoHandler();
+        await handler.HandleAsync(NovoComando() with { Codigo = "mtz01" }, CancellationToken.None);
+
+        await _repo.Received(1).AdicionarAsync(
+            Arg.Is<Filial>(f => f.Codigo == "MTZ01"),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task CelulasAtivas_null_dispara_ValidationException_com_chave_celulasAtivas()
+    {
+        var handler = NovoHandler();
+        var act = () => handler.HandleAsync(NovoComando() with { CelulasAtivas = null }, CancellationToken.None);
+
+        var ex = await act.Should().ThrowAsync<ValidationException>();
+        ex.Which.Erros.Should().ContainKey("celulasAtivas");
+    }
+
+    private CriarFilialHandler NovoHandler() => new(_repo, _ctx);
 
     private static CriarFilialCommand NovoComando() => new(
-        Nome: "Filial Centro",
-        CelulasAtivas: 4,
-        Timezone: "America/Sao_Paulo");
+        Nome: "Filial Matriz",
+        Codigo: "MTZ01",
+        Cnpj: "11222333000181",
+        CelulasAtivas: 30,
+        Timezone: null,
+        Endereco: null,
+        TraceId: "trace-1",
+        UsuarioId: null);
 }

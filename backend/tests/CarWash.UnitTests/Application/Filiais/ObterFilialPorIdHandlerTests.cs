@@ -19,7 +19,7 @@ public class ObterFilialPorIdHandlerTests
     [Fact]
     public async Task Filial_existente_retorna_response()
     {
-        var filial = Filial.Criar(Guid.NewGuid(), "Filial Centro", 9, "America/Sao_Paulo");
+        var filial = Filial.Criar(Guid.NewGuid(), "Filial Centro", "FC01", 9, timezone: "America/Sao_Paulo");
         _repo.ObterPorIdAsync(filial.Id, Arg.Any<CancellationToken>()).Returns(filial);
 
         var handler = new ObterFilialPorIdHandler(_repo);

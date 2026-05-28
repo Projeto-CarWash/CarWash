@@ -21,11 +21,11 @@ public static class EndpointRouteBuilderExtensions
         app.MapUsuarios();
         app.MapAuth();
         app.MapClientes();
+        app.MapFiliais();
         app.MapVeiculos();
         app.MapAgendamentos();
         app.MapServicos();
         app.MapAgenda();
-        app.MapFiliais();
         return app;
     }
 }

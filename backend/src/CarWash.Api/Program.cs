@@ -1,5 +1,4 @@
 using System.Text;
-using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using CarWash.Api.Endpoints;
@@ -13,7 +12,6 @@ using CarWash.Infrastructure;
 using CarWash.Infrastructure.Auth;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
@@ -92,71 +90,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             NameClaimType = "name",
             RoleClaimType = "perfil",
         };
-
-        // Uniformiza 401/403 do JwtBearer com o padrão ProblemDetails+correlationId
-        // usado pelo ExceptionHandlingMiddleware. Sem isto, o middleware default
-        // do JwtBearer responde 401/403 com body vazio — divergindo do contrato.
-        options.Events = new JwtBearerEvents
-        {
-            OnChallenge = async ctx =>
-            {
-                // Bypass do comportamento default — escrevemos o corpo nós mesmos.
-                ctx.HandleResponse();
-                if (ctx.Response.HasStarted)
-                {
-                    return;
-                }
-
-                ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                ctx.Response.ContentType = "application/problem+json";
-
-                var correlationId = ctx.HttpContext.Items[CorrelationIdMiddleware.ItemKey] as string
-                    ?? Guid.NewGuid().ToString("N");
-
-                var problem = new ProblemDetails
-                {
-                    Type = "https://carwash/errors/auth-required",
-                    Title = "Autenticação obrigatória para executar esta operação.",
-                    Status = StatusCodes.Status401Unauthorized,
-                };
-                problem.Extensions["correlationId"] = correlationId;
-
-                await ctx.Response
-                    .WriteAsync(JsonSerializer.Serialize(problem, CarWash.Api.ProblemDetailsJsonOptions.Default))
-                    .ConfigureAwait(false);
-            },
-            OnForbidden = async ctx =>
-            {
-                if (ctx.Response.HasStarted)
-                {
-                    return;
-                }
-
-                ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
-                ctx.Response.ContentType = "application/problem+json";
-
-                var correlationId = ctx.HttpContext.Items[CorrelationIdMiddleware.ItemKey] as string
-                    ?? Guid.NewGuid().ToString("N");
-
-                // Mensagem específica do RF018. Quando aparecer a próxima rota
-                // Admin-only, este handler deve passar a inspecionar o path para
-                // devolver mensagem por recurso (documentado no ADR RF018 §8.2).
-                var problem = new ProblemDetails
-                {
-                    Type = "https://carwash/errors/forbidden",
-                    Title = "Você não possui permissão para alterar configuração da filial.",
-                    Status = StatusCodes.Status403Forbidden,
-                };
-                problem.Extensions["correlationId"] = correlationId;
-
-                await ctx.Response
-                    .WriteAsync(JsonSerializer.Serialize(problem, CarWash.Api.ProblemDetailsJsonOptions.Default))
-                    .ConfigureAwait(false);
-            },
-        };
     });
 
-builder.Services.AddCarWashAuthorization();
+builder.Services.AddAuthorization();
 
 // ---------- Rate limiting ----------
 // Defesa em profundidade contra força-bruta no /auth/login (RF001 já tem lockout
@@ -288,16 +224,6 @@ public partial class Program { }
 namespace CarWash.Api
 {
     internal static class NotFoundProblemJsonOptions
-    {
-        public static readonly System.Text.Json.JsonSerializerOptions Default =
-            new(System.Text.Json.JsonSerializerDefaults.Web);
-    }
-
-    /// <summary>
-    /// JsonSerializerOptions cacheado usado pelos JwtBearerEvents (401/403) para
-    /// serializar <c>ProblemDetails</c> sem alocar opções por request (CA1869).
-    /// </summary>
-    internal static class ProblemDetailsJsonOptions
     {
         public static readonly System.Text.Json.JsonSerializerOptions Default =
             new(System.Text.Json.JsonSerializerDefaults.Web);
