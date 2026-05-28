@@ -9,6 +9,12 @@ import { Label } from '@/components/ui/label';
 
 import type { ClienteFormData } from '@/schemas/clienteSchema';
 
+/**
+ * Regex que aceita apenas letras (incluindo acentuadas), espaços e hífens.
+ * Bloqueia números, símbolos e caracteres especiais.
+ */
+const NOME_TEXTO_PATTERN = /^[a-zA-ZáàãâäéèêëíïóôõöúüçñÁÀÃÂÄÉÈÊËÍÏÓÔÕÖÚÜÇÑ\s\-.']+$/;
+
 export function VeiculosClienteForm() {
   const { control, trigger, formState: { errors } } = useFormContext<ClienteFormData>();
   const { fields, append, remove } = useFieldArray({
@@ -47,6 +53,9 @@ export function VeiculosClienteForm() {
         .transform((val) => val.trim())
         .refine((val) => val.length >= 2 && val.length <= 80, {
           message: 'Modelo deve ter entre 2 e 80 caracteres.',
+        })
+        .refine((val) => NOME_TEXTO_PATTERN.test(val), {
+          message: 'Modelo contém caracteres inválidos.',
         }),
       fabricante: z
         .string()
@@ -54,6 +63,9 @@ export function VeiculosClienteForm() {
         .transform((val) => val.trim())
         .refine((val) => val.length >= 2 && val.length <= 80, {
           message: 'Fabricante deve ter entre 2 e 80 caracteres.',
+        })
+        .refine((val) => NOME_TEXTO_PATTERN.test(val), {
+          message: 'Fabricante contém caracteres inválidos.',
         }),
       cor: z
         .string()
@@ -61,6 +73,9 @@ export function VeiculosClienteForm() {
         .transform((val) => val.trim())
         .refine((val) => val.length >= 2 && val.length <= 40, {
           message: 'Cor deve ter entre 2 e 40 caracteres.',
+        })
+        .refine((val) => NOME_TEXTO_PATTERN.test(val), {
+          message: 'Cor contém caracteres inválidos.',
         }),
     });
 
@@ -71,7 +86,9 @@ export function VeiculosClienteForm() {
       const errMap: Record<string, string> = {};
       result.error.issues.forEach((err: z.ZodIssue) => {
         if (err.path[0]) {
-          errMap[err.path[0] as string] = err.message;
+          // Mantém apenas o primeiro erro por campo para clareza
+          const key = err.path[0] as string;
+          errMap[key] ??= err.message;
         }
       });
       setLocalErrors(errMap);
@@ -113,13 +130,29 @@ export function VeiculosClienteForm() {
           <Input
             id="veiculo-placa"
             value={placa}
-            onChange={(e) => setPlaca(e.target.value.toUpperCase())}
+            onChange={(e) => {
+              setPlaca(e.target.value.toUpperCase());
+              if (localErrors.placa) {
+                setLocalErrors((prev) => {
+                  const next = { ...prev };
+                  delete next.placa;
+                  return next;
+                });
+              }
+            }}
             placeholder="AAA0000"
+            maxLength={8}
+            aria-invalid={!!localErrors.placa}
+            aria-describedby={localErrors.placa ? 'veiculo-local-placa-error' : undefined}
             className={`border-zinc-800 bg-zinc-900/50 text-zinc-100 placeholder:text-zinc-600 ${
               localErrors.placa ? 'border-red-500/50 focus-visible:ring-red-500/50' : ''
             }`}
           />
-          {localErrors.placa && <p className="text-xs font-medium text-red-400">{localErrors.placa}</p>}
+          {localErrors.placa && (
+            <p id="veiculo-local-placa-error" role="alert" className="text-xs font-medium text-red-400">
+              {localErrors.placa}
+            </p>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -129,13 +162,29 @@ export function VeiculosClienteForm() {
           <Input
             id="veiculo-modelo"
             value={modelo}
-            onChange={(e) => setModelo(e.target.value)}
+            onChange={(e) => {
+              setModelo(e.target.value);
+              if (localErrors.modelo) {
+                setLocalErrors((prev) => {
+                  const next = { ...prev };
+                  delete next.modelo;
+                  return next;
+                });
+              }
+            }}
             placeholder="Ex: Civic"
+            maxLength={80}
+            aria-invalid={!!localErrors.modelo}
+            aria-describedby={localErrors.modelo ? 'veiculo-local-modelo-error' : undefined}
             className={`border-zinc-800 bg-zinc-900/50 text-zinc-100 placeholder:text-zinc-600 ${
               localErrors.modelo ? 'border-red-500/50 focus-visible:ring-red-500/50' : ''
             }`}
           />
-          {localErrors.modelo && <p className="text-xs font-medium text-red-400">{localErrors.modelo}</p>}
+          {localErrors.modelo && (
+            <p id="veiculo-local-modelo-error" role="alert" className="text-xs font-medium text-red-400">
+              {localErrors.modelo}
+            </p>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -145,13 +194,29 @@ export function VeiculosClienteForm() {
           <Input
             id="veiculo-fabricante"
             value={fabricante}
-            onChange={(e) => setFabricante(e.target.value)}
+            onChange={(e) => {
+              setFabricante(e.target.value);
+              if (localErrors.fabricante) {
+                setLocalErrors((prev) => {
+                  const next = { ...prev };
+                  delete next.fabricante;
+                  return next;
+                });
+              }
+            }}
             placeholder="Ex: Honda"
+            maxLength={80}
+            aria-invalid={!!localErrors.fabricante}
+            aria-describedby={localErrors.fabricante ? 'veiculo-local-fabricante-error' : undefined}
             className={`border-zinc-800 bg-zinc-900/50 text-zinc-100 placeholder:text-zinc-600 ${
               localErrors.fabricante ? 'border-red-500/50 focus-visible:ring-red-500/50' : ''
             }`}
           />
-          {localErrors.fabricante && <p className="text-xs font-medium text-red-400">{localErrors.fabricante}</p>}
+          {localErrors.fabricante && (
+            <p id="veiculo-local-fabricante-error" role="alert" className="text-xs font-medium text-red-400">
+              {localErrors.fabricante}
+            </p>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -163,8 +228,20 @@ export function VeiculosClienteForm() {
               <Input
                 id="veiculo-cor"
                 value={cor}
-                onChange={(e) => setCor(e.target.value)}
+                onChange={(e) => {
+                  setCor(e.target.value);
+                  if (localErrors.cor) {
+                    setLocalErrors((prev) => {
+                      const next = { ...prev };
+                      delete next.cor;
+                      return next;
+                    });
+                  }
+                }}
                 placeholder="Ex: Prata"
+                maxLength={40}
+                aria-invalid={!!localErrors.cor}
+                aria-describedby={localErrors.cor ? 'veiculo-local-cor-error' : undefined}
                 className={`border-zinc-800 bg-zinc-900/50 text-zinc-100 placeholder:text-zinc-600 ${
                   localErrors.cor ? 'border-red-500/50 focus-visible:ring-red-500/50' : ''
                 }`}
@@ -179,7 +256,11 @@ export function VeiculosClienteForm() {
               <Plus className="h-4 w-4" />
             </Button>
           </div>
-          {localErrors.cor && <p className="text-xs font-medium text-red-400">{localErrors.cor}</p>}
+          {localErrors.cor && (
+            <p id="veiculo-local-cor-error" role="alert" className="text-xs font-medium text-red-400">
+              {localErrors.cor}
+            </p>
+          )}
         </div>
       </div>
 

@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AxiosError } from 'axios';
-import { AlertCircle, ArrowLeft, Car, Check, ChevronDown, Loader2, Search, X } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Car, Check, ChevronDown, Loader2, Search, ShieldX, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -32,6 +32,7 @@ export function NovoVeiculoPage() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [carregandoCliente, setCarregandoCliente] = useState(false);
   const [clientes, setClientes] = useState<ClienteResumo[]>([]);
+  const [permissaoBloqueada, setPermissaoBloqueada] = useState(false);
 
   // Autocomplete state
   const [busca, setBusca] = useState('');
@@ -146,9 +147,12 @@ export function NovoVeiculoPage() {
     async (data: VeiculoFormData) => {
       setGlobalError(null);
       setSuccessMsg(null);
+      setPermissaoBloqueada(false);
 
       try {
         await veiculoService.cadastrar(data.clienteId, data);
+
+        // 201 — Confirma sucesso e atualiza fluxo do cliente
         setSuccessMsg('Veículo cadastrado com sucesso.');
         form.reset();
         setSelectedCliente(null);
@@ -162,6 +166,7 @@ export function NovoVeiculoPage() {
           const status = err.response?.status;
           const dataErr = err.response?.data as ProblemDetails | undefined;
 
+          // 409 — Destaca placa e mantém dados digitados
           if (status === 409) {
             setGlobalError(HTTP_ERROR_MESSAGES[409]!);
             form.setError('placa', {
@@ -172,8 +177,9 @@ export function NovoVeiculoPage() {
             return;
           }
 
+          // 400 — Mostra mensagens corretas por campo em cada erro local
           if (status === 400 && dataErr?.errors) {
-            setGlobalError(HTTP_ERROR_MESSAGES[400]!);
+            setGlobalError(dataErr.title ?? HTTP_ERROR_MESSAGES[400]!);
             let firstFocused = false;
 
             for (const [field, messages] of Object.entries(dataErr.errors)) {
@@ -189,6 +195,7 @@ export function NovoVeiculoPage() {
             return;
           }
 
+          // 401 — Redireciona para login
           if (status === 401) {
             setGlobalError(HTTP_ERROR_MESSAGES[401]!);
             setTimeout(() => {
@@ -197,6 +204,16 @@ export function NovoVeiculoPage() {
             return;
           }
 
+          // 403 — Exibe bloqueio de permissão
+          if (status === 403) {
+            setPermissaoBloqueada(true);
+            setGlobalError(
+              dataErr?.title ?? HTTP_ERROR_MESSAGES[403]!,
+            );
+            return;
+          }
+
+          // 404 — Cliente não encontrado
           if (status === 404) {
             setGlobalError(HTTP_ERROR_MESSAGES[404]!);
             setSelectedCliente(null);
@@ -205,17 +222,27 @@ export function NovoVeiculoPage() {
             return;
           }
 
+          // 500 — Mantém formulário e permite nova tentativa
+          if (status === 500) {
+            setGlobalError(HTTP_ERROR_MESSAGES[500]!);
+            return;
+          }
+
+          // Outros erros HTTP conhecidos
           const msg = status && status in HTTP_ERROR_MESSAGES ? HTTP_ERROR_MESSAGES[status]! : null;
           if (msg) {
             setGlobalError(msg);
             return;
           }
 
+          // Erros de rede/timeout
           if (err.code === 'ECONNABORTED' || err.code === 'ERR_NETWORK') {
             setGlobalError('Não foi possível contatar o servidor. Verifique sua conexão.');
             return;
           }
         }
+
+        // Fallback — mantém formulário e permite nova tentativa
         setGlobalError(HTTP_ERROR_MESSAGES[500]!);
       }
     },
@@ -225,7 +252,7 @@ export function NovoVeiculoPage() {
   const isSubmitting = form.formState.isSubmitting;
   const errors = form.formState.errors;
   const hasErrors = Object.keys(errors).length > 0;
-  const isSubmitDisabled = isSubmitting || hasErrors || !form.formState.isValid;
+  const isSubmitDisabled = isSubmitting || hasErrors || !form.formState.isValid || permissaoBloqueada;
 
   // Filtragem dos clientes para o autocomplete local
   const query = busca.trim().toLowerCase();
@@ -239,11 +266,56 @@ export function NovoVeiculoPage() {
     : clientes;
 
   if (carregandoCliente && !selectedCliente && !globalError) {
-    return <div className="px-8 py-8 text-sm text-zinc-500">Carregando…</div>;
+    return <div className="px-4 py-8 text-sm text-zinc-500 sm:px-8">Carregando…</div>;
+  }
+
+  // Tela de bloqueio de permissão (403)
+  if (permissaoBloqueada) {
+    return (
+      <div className="px-4 py-8 sm:px-8">
+        <div className="mb-6 flex items-center gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              if (selectedCliente) {
+                void navigate(`/clientes/${selectedCliente.id}`);
+              } else {
+                void navigate('/clientes');
+              }
+            }}
+            className="h-9 rounded-full border-zinc-700/60 bg-transparent px-4 text-sm text-zinc-300 hover:bg-zinc-800/50 hover:text-zinc-100"
+          >
+            <ArrowLeft className="mr-1 h-4 w-4" aria-hidden="true" />
+            Voltar
+          </Button>
+        </div>
+
+        <Card className="border border-red-500/20 bg-red-950/10">
+          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-500/10">
+              <ShieldX className="h-7 w-7 text-red-500" />
+            </div>
+            <h2 className="text-lg font-bold text-red-400">Acesso negado</h2>
+            <p className="mt-2 max-w-md text-sm text-zinc-400">
+              {globalError ?? HTTP_ERROR_MESSAGES[403]}
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => void navigate('/clientes')}
+              className="mt-6 h-9 rounded-full border-zinc-700/60 bg-transparent px-5 text-sm text-zinc-300 hover:bg-zinc-800/50"
+            >
+              Voltar para clientes
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (
-    <div className="px-8 py-8">
+    <div className="px-4 py-8 sm:px-8">
       {/* Toast de Sucesso */}
       {successMsg && (
         <div
@@ -258,10 +330,10 @@ export function NovoVeiculoPage() {
         </div>
       )}
 
-      <div className="mb-6 flex items-center justify-between gap-4">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <span
-            className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-600/10 text-red-500"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-600/10 text-red-500"
             aria-hidden="true"
           >
             <Car className="h-5 w-5" />
@@ -284,7 +356,7 @@ export function NovoVeiculoPage() {
             }
           }}
           disabled={isSubmitting}
-          className="h-9 rounded-full border-zinc-700/60 bg-transparent px-4 text-sm text-zinc-300 hover:bg-zinc-800/50 hover:text-zinc-100"
+          className="h-9 w-fit rounded-full border-zinc-700/60 bg-transparent px-4 text-sm text-zinc-300 hover:bg-zinc-800/50 hover:text-zinc-100"
         >
           <ArrowLeft className="mr-1 h-4 w-4" aria-hidden="true" />
           Voltar
@@ -475,6 +547,7 @@ export function NovoVeiculoPage() {
                       type="text"
                       placeholder="Ex: Volkswagen"
                       value={field.value}
+                      maxLength={80}
                       onChange={field.onChange}
                       onBlur={(e) => {
                         const val = e.target.value.trim();
@@ -519,6 +592,7 @@ export function NovoVeiculoPage() {
                       type="text"
                       placeholder="Ex: Gol 1.0"
                       value={field.value}
+                      maxLength={80}
                       onChange={field.onChange}
                       onBlur={(e) => {
                         const val = e.target.value.trim();
@@ -559,6 +633,7 @@ export function NovoVeiculoPage() {
                       type="text"
                       placeholder="Ex: Preto"
                       value={field.value}
+                      maxLength={40}
                       onChange={field.onChange}
                       onBlur={(e) => {
                         const val = e.target.value.trim();
@@ -641,7 +716,7 @@ export function NovoVeiculoPage() {
             </div>
 
             {/* Ações */}
-            <div className="flex items-center justify-end gap-3 md:col-span-2 mt-4">
+            <div className="flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end md:col-span-2 mt-4">
               <Button
                 type="button"
                 variant="outline"

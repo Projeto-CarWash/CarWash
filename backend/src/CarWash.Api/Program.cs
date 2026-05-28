@@ -37,6 +37,7 @@ builder.Host.UseSerilog((ctx, services, configuration) =>
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddControllers();
 
 // Em ambiente HTTP, sobrescreve o ICurrentRequestContext default por uma
 // implementação que lê o HttpContext (claims + correlation id + IP/UA).
@@ -210,6 +211,7 @@ app.MapHealthChecks("/health/ready", new HealthCheckOptions { Predicate = check 
 app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false });
 
 app.MapCarWashEndpoints();
+app.MapControllers();
 
 #pragma warning disable S6966 // Top-level statements: app.Run blocks intentionally; required by blueprint.
 app.Run();

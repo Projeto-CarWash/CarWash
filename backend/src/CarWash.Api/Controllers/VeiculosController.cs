@@ -21,7 +21,7 @@ public class VeiculosController : ControllerBase
     }
 
     [HttpPatch("{veiculoId}")]
-    [Authorize(Policy = "CanCreateVehicle")]
+    [Authorize]
     public async Task<IActionResult> Atualizar(
         [FromRoute] string veiculoId,
         [FromBody] CriarVeiculoRequest? request,

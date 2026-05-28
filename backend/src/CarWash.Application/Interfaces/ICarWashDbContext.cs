@@ -9,24 +9,24 @@ namespace CarWash.Application.Interfaces;
 public interface ICarWashDbContext
 {
     /// <summary>
-    /// Gets or sets a tabela de utilizadores.
+    /// Gets o DbSet de utilizadores.
     /// </summary>
-    DbSet<User> Users { get; set; }
+    DbSet<User> Users { get; }
 
     /// <summary>
-    /// Gets or sets a tabela de clientes.
+    /// Gets o DbSet de clientes.
     /// </summary>
-    DbSet<Cliente> Clientes { get; set; }
+    DbSet<Cliente> Clientes { get; }
 
     /// <summary>
-    /// Gets or sets a tabela de veiculos.
+    /// Gets o DbSet de veiculos.
     /// </summary>
-    DbSet<Veiculo> Veiculos { get; set; }
+    DbSet<Veiculo> Veiculos { get; }
 
     /// <summary>
-    /// Gets or sets a tabela de sessões.
+    /// Gets o DbSet de sessões.
     /// </summary>
-    DbSet<Session> Sessions { get; set; }
+    DbSet<Session> Sessions { get; }
 
     /// <summary>
     /// Salva as alterações no banco de dados.

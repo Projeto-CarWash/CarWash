@@ -97,6 +97,43 @@ public sealed class Veiculo : IAuditable, IAuditableSetter
         };
     }
 
+    public void Atualizar(
+        Placa placa,
+        string modelo,
+        string fabricante,
+        string cor,
+        int? ano = null)
+    {
+        ArgumentNullException.ThrowIfNull(placa);
+
+        if (string.IsNullOrWhiteSpace(modelo) || modelo.Length > 80)
+        {
+            throw new DomainException("Modelo é obrigatório e deve ter no máximo 80 caracteres.");
+        }
+
+        if (string.IsNullOrWhiteSpace(fabricante) || fabricante.Length > 80)
+        {
+            throw new DomainException("Fabricante é obrigatório e deve ter no máximo 80 caracteres.");
+        }
+
+        if (string.IsNullOrWhiteSpace(cor) || cor.Length > 40)
+        {
+            throw new DomainException("Cor é obrigatória e deve ter no máximo 40 caracteres.");
+        }
+
+        if (ano is < AnoMinimo or > AnoMaximo)
+        {
+            throw new DomainException($"Ano deve estar entre {AnoMinimo} e {AnoMaximo}.");
+        }
+
+        Placa = placa.Valor;
+        Modelo = modelo;
+        Fabricante = fabricante;
+        Cor = cor;
+        Ano = ano;
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
     public void Inativar() => Ativo = false;
 
     public void Ativar() => Ativo = true;

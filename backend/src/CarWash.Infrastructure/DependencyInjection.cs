@@ -1,10 +1,12 @@
 using CarWash.Application.Abstractions;
+using CarWash.Application.Agenda.Persistence;
 using CarWash.Application.Agendamentos.Abstractions;
 using CarWash.Application.Agendamentos.Persistence;
 using CarWash.Application.Auth.Abstractions;
 using CarWash.Application.Auth.Persistence;
 using CarWash.Application.Clientes.Persistence;
 using CarWash.Application.Common.Security;
+using CarWash.Application.Interfaces;
 using CarWash.Application.Usuarios.Persistence;
 using CarWash.Infrastructure.Agendamentos;
 using CarWash.Infrastructure.Auditing;
@@ -59,6 +61,7 @@ public static class DependencyInjection
         services.AddScoped<IUsuarioRepository, UsuarioRepository>();
         services.AddScoped<IClienteRepository, ClienteRepository>();
         services.AddScoped<IAgendamentoRepository, AgendamentoRepository>();
+        services.AddScoped<IAgendaRepository, AgendaRepository>();
         services.AddScoped<IAgendamentoCatalogoRepository, AgendamentoCatalogoRepository>();
         services.AddScoped<IIdempotenciaRepository, IdempotenciaRepository>();
 

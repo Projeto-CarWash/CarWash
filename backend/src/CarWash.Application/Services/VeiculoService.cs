@@ -4,6 +4,7 @@ using CarWash.Application.DTOs;
 using CarWash.Application.Exceptions;
 using CarWash.Application.Interfaces;
 using CarWash.Domain.Entities;
+using CarWash.Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -15,6 +16,9 @@ namespace CarWash.Application.Services;
 public class VeiculoService : IVeiculoService
 {
     private static readonly Regex PlacaRegex = new("^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$", RegexOptions.Compiled);
+    private static readonly Regex ModeloRegex = new(@"^[a-zA-ZáàãâäéèêëíïóôõöúüçñÁÀÃÂÄÉÈÊËÍÏÓÔÕÖÚÜÇÑ0-9\s.\-]+$", RegexOptions.Compiled);
+    private static readonly Regex FabricanteRegex = new(@"^[a-zA-ZáàãâäéèêëíïóôõöúüçñÁÀÃÂÄÉÈÊËÍÏÓÔÕÖÚÜÇÑ\s\-]+$", RegexOptions.Compiled);
+    private static readonly Regex CorRegex = new(@"^[a-zA-ZáàãâäéèêëíïóôõöúüçñÁÀÃÂÄÉÈÊËÍÏÓÔÕÖÚÜÇÑ\s]+$", RegexOptions.Compiled);
 
     private readonly ICarWashDbContext _context;
     private readonly ILogger<VeiculoService> _logger;
@@ -88,16 +92,14 @@ public class VeiculoService : IVeiculoService
                     "Já existe veículo cadastrado com esta placa.");
             }
 
-            var veiculo = new Veiculo
-            {
-                Id = Guid.NewGuid(),
-                Placa = normalized.Placa,
-                Modelo = normalized.Modelo,
-                Fabricante = normalized.Fabricante,
-                Cor = normalized.Cor,
-                ClienteId = clienteId,
-                CreatedAt = DateTime.UtcNow
-            };
+            var veiculo = Veiculo.Criar(
+                Guid.NewGuid(),
+                clienteId,
+                new Placa(normalized.Placa),
+                normalized.Modelo,
+                normalized.Fabricante,
+                normalized.Cor
+            );
 
             _context.Veiculos.Add(veiculo);
 
@@ -205,10 +207,12 @@ public class VeiculoService : IVeiculoService
                     "Já existe veículo cadastrado com esta placa.");
             }
 
-            veiculo.Placa = normalized.Placa;
-            veiculo.Modelo = normalized.Modelo;
-            veiculo.Fabricante = normalized.Fabricante;
-            veiculo.Cor = normalized.Cor;
+            veiculo.Atualizar(
+                new Placa(normalized.Placa),
+                normalized.Modelo,
+                normalized.Fabricante,
+                normalized.Cor
+            );
 
             await _context.SaveChangesAsync(cancellationToken);
 
@@ -283,8 +287,22 @@ public class VeiculoService : IVeiculoService
         }
 
         AddTextErrors(errors, "modelo", request.Modelo, 2, 80, "Modelo");
+        if (!errors.ContainsKey("modelo") && !string.IsNullOrWhiteSpace(request.Modelo) && !ModeloRegex.IsMatch(request.Modelo))
+        {
+            errors["modelo"] = new[] { "Modelo não deve conter caracteres especiais." };
+        }
+
         AddTextErrors(errors, "fabricante", request.Fabricante, 2, 80, "Fabricante");
+        if (!errors.ContainsKey("fabricante") && !string.IsNullOrWhiteSpace(request.Fabricante) && !FabricanteRegex.IsMatch(request.Fabricante))
+        {
+            errors["fabricante"] = new[] { "Fabricante não deve conter números ou caracteres especiais." };
+        }
+
         AddTextErrors(errors, "cor", request.Cor, 2, 40, "Cor");
+        if (!errors.ContainsKey("cor") && !string.IsNullOrWhiteSpace(request.Cor) && !CorRegex.IsMatch(request.Cor))
+        {
+            errors["cor"] = new[] { "Cor não deve conter números ou caracteres especiais." };
+        }
 
         return errors;
     }

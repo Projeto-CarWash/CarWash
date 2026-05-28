@@ -1,5 +1,6 @@
 using CarWash.Application.Abstractions.Messaging;
 using CarWash.Application.Clientes.Common;
+using CarWash.Application.DTOs;
 
 namespace CarWash.Application.Clientes.Criar;
 
@@ -17,5 +18,6 @@ public sealed record CriarClienteCommand(
     string? Celular,
     string? Email,
     EnderecoRequest? Endereco,
+    List<CriarVeiculoRequest>? Veiculos,
     string TraceId,
     Guid? UsuarioId) : ICommand<CriarClienteResponse>;

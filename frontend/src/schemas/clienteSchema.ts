@@ -5,6 +5,14 @@ import { isValidCnpj, isValidCpf } from '@/lib/validators';
 const UF_PATTERN =
   /^(?:AC|AL|AP|AM|BA|CE|DF|ES|GO|MA|MT|MS|MG|PA|PB|PR|PE|PI|RJ|RN|RS|RO|RR|SC|SP|SE|TO)$/;
 
+const CLIENTE_NOME_PATTERN = /^[a-zA-ZáàãâäéèêëíïóôõöúüçñÁÀÃÂÄÉÈÊËÍÏÓÔÕÖÚÜÇÑ\s\-']+$/;
+const BAIRRO_PATTERN = /^[a-zA-ZáàãâäéèêëíïóôõöúüçñÁÀÃÂÄÉÈÊËÍÏÓÔÕÖÚÜÇÑ0-9\s\-]+$/;
+const CIDADE_PATTERN = /^[a-zA-ZáàãâäéèêëíïóôõöúüçñÁÀÃÂÄÉÈÊËÍÏÓÔÕÖÚÜÇÑ\s\-]+$/;
+const LOGRADOURO_PATTERN = /^[a-zA-ZáàãâäéèêëíïóôõöúüçñÁÀÃÂÄÉÈÊËÍÏÓÔÕÖÚÜÇÑ0-9\s.,\-]+$/;
+const VEICULO_TEXTO_PATTERN = /^[a-zA-ZáàãâäéèêëïóôõöúüçñÁÀÃÂÄÉÈÊËÍÏÓÔÕÖÚÜÇÑ0-9\s.\-]+$/;
+const FABRICANTE_PATTERN = /^[a-zA-ZáàãâäéèêëíïóôõöúüçñÁÀÃÂÄÉÈÊËÍÏÓÔÕÖÚÜÇÑ\s\-]+$/;
+const COR_PATTERN = /^[a-zA-ZáàãâäéèêëíïóôõöúüçñÁÀÃÂÄÉÈÊËÍÏÓÔÕÖÚÜÇÑ\s]+$/;
+
 /**
  * Schema alinhado com backend CarWash.Application.DTOs.Clientes.CreateClienteRequest.
  * Endereço estruturado, celular obrigatório (RF003), data de nascimento com
@@ -88,6 +96,9 @@ export const clienteSchema = z.object({
     })
     .refine((val) => val.trim().length <= 100, {
       message: 'Nome deve ter no máximo 100 caracteres.',
+    })
+    .refine((val) => CLIENTE_NOME_PATTERN.test(val), {
+      message: 'Nome não deve conter números ou caracteres especiais.',
     }),
 
   // Celular OBRIGATÓRIO (RF003 — alinhamento com PR #15)
@@ -134,7 +145,10 @@ export const clienteSchema = z.object({
   logradouro: z
     .string()
     .min(1, 'Logradouro é obrigatório.')
-    .max(150, 'Logradouro deve ter no máximo 150 caracteres.'),
+    .max(150, 'Logradouro deve ter no máximo 150 caracteres.')
+    .refine((val) => LOGRADOURO_PATTERN.test(val), {
+      message: 'Logradouro não deve conter caracteres especiais.',
+    }),
 
   numero: z
     .string()
@@ -149,14 +163,17 @@ export const clienteSchema = z.object({
   bairro: z
     .string()
     .min(1, 'Bairro é obrigatório.')
-    .max(100, 'Bairro deve ter no máximo 100 caracteres.'),
+    .max(100, 'Bairro deve ter no máximo 100 caracteres.')
+    .refine((val) => BAIRRO_PATTERN.test(val), {
+      message: 'Bairro não deve conter caracteres especiais.',
+    }),
 
   cidade: z
     .string()
     .min(1, 'Cidade é obrigatória.')
     .max(100, 'Cidade deve ter no máximo 100 caracteres.')
-    .refine((val) => /^[a-zA-ZáàãâéèêíïóôõöúçñÁÀÃÂÉÈÊÍÏÓÔÕÖÚÇÑ\s-]+$/.test(val), {
-      message: 'Cidade deve conter apenas letras.',
+    .refine((val) => CIDADE_PATTERN.test(val), {
+      message: 'Cidade não deve conter números ou caracteres especiais.',
     }),
 
   uf: z
@@ -190,6 +207,9 @@ export const clienteSchema = z.object({
           .transform((val) => val.trim())
           .refine((val) => val.length >= 2 && val.length <= 80, {
             message: 'Modelo deve ter entre 2 e 80 caracteres.',
+          })
+          .refine((val) => VEICULO_TEXTO_PATTERN.test(val), {
+            message: 'Modelo não deve conter caracteres especiais.',
           }),
         fabricante: z
           .string()
@@ -197,6 +217,9 @@ export const clienteSchema = z.object({
           .transform((val) => val.trim())
           .refine((val) => val.length >= 2 && val.length <= 80, {
             message: 'Fabricante deve ter entre 2 e 80 caracteres.',
+          })
+          .refine((val) => FABRICANTE_PATTERN.test(val), {
+            message: 'Fabricante não deve conter números ou caracteres especiais.',
           }),
         cor: z
           .string()
@@ -204,6 +227,9 @@ export const clienteSchema = z.object({
           .transform((val) => val.trim())
           .refine((val) => val.length >= 2 && val.length <= 40, {
             message: 'Cor deve ter entre 2 e 40 caracteres.',
+          })
+          .refine((val) => COR_PATTERN.test(val), {
+            message: 'Cor não deve conter números ou caracteres especiais.',
           }),
       })
     )
