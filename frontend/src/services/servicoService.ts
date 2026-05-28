@@ -1,31 +1,51 @@
 import api from './api';
 
-import type { ListaServicos } from '@/types/servico';
+import type { ListaServicos, ServicoResumo } from '@/types/servico';
 
-/**
- * Service de serviços do catálogo (RF006).
- *
- * <p><strong>DEPENDÊNCIA PENDENTE (card 131):</strong> o endpoint
- * <code>GET /api/v1/servicos</code> ainda NÃO existe no backend. Alinhar com
- * `dev-dotnet-carwash` o contrato de listagem (campos `precoBase` e
- * `duracaoMin` são necessários para o resumo inline de totais estimados).</p>
- *
- * <p>A função está escrita no padrão de `clienteService` e funcionará assim
- * que o endpoint for entregue — sem mock silencioso; até lá a chamada retorna
- * 404 e a UI exibe o estado de erro.</p>
- */
-export const ENDPOINT_SERVICOS_PENDENTE = true as const;
+export interface CriarServicoRequest {
+  nome: string;
+  preco: number;
+  duracaoMin: number;
+}
+
+export interface AtualizarServicoRequest {
+  nome: string;
+  preco: number;
+  duracaoMin: number;
+}
 
 export const servicoService = {
   /**
-   * Lista os serviços ativos do catálogo.
-   *
-   * @remarks Depende de `GET /api/v1/servicos` (pendente — ver acima).
+   * Lista os serviços do catálogo (opcionalmente filtrando por ativo).
    */
-  async listar(): Promise<ListaServicos> {
+  async listar(params?: { ativo?: boolean }): Promise<ListaServicos> {
     const { data } = await api.get<ListaServicos>('/api/v1/servicos', {
-      params: { ativo: true },
+      params,
     });
+    return data;
+  },
+
+  /**
+   * Cadastra um novo serviço no catálogo.
+   */
+  async criar(payload: CriarServicoRequest): Promise<{ id: string; mensagem: string }> {
+    const { data } = await api.post<{ id: string; mensagem: string }>('/api/v1/servicos', payload);
+    return data;
+  },
+
+  /**
+   * Atualiza um serviço existente no catálogo.
+   */
+  async atualizar(id: string, payload: AtualizarServicoRequest): Promise<ServicoResumo> {
+    const { data } = await api.put<ServicoResumo>(`/api/v1/servicos/${id}`, payload);
+    return data;
+  },
+
+  /**
+   * Ativa ou desativa um serviço no catálogo.
+   */
+  async alterarStatus(id: string, ativo: boolean): Promise<ServicoResumo> {
+    const { data } = await api.patch<ServicoResumo>(`/api/v1/servicos/${id}/status`, { ativo });
     return data;
   },
 };

@@ -65,6 +65,29 @@ public sealed class Servico : IAuditable, IAuditableSetter
 
     public void Ativar() => Ativo = true;
 
+    public void Atualizar(string nome, decimal preco, int duracaoMin)
+    {
+        if (string.IsNullOrWhiteSpace(nome) || nome.Length > 120)
+        {
+            throw new DomainException("Nome do serviço é obrigatório e deve ter no máximo 120 caracteres.");
+        }
+
+        if (preco <= 0m)
+        {
+            throw new DomainException("Preço do serviço deve ser positivo.");
+        }
+
+        if (duracaoMin <= 0)
+        {
+            throw new DomainException("Duração do serviço deve ser positiva.");
+        }
+
+        Nome = nome;
+        Preco = preco;
+        DuracaoMin = duracaoMin;
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
     void IAuditableSetter.SetCriadoEm(DateTime valor) => CriadoEm = valor;
 
     void IAuditableSetter.SetAtualizadoEm(DateTime valor) => AtualizadoEm = valor;

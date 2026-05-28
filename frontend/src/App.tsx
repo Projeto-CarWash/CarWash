@@ -10,6 +10,7 @@ import { NovoVeiculoPage } from '@/pages/Clientes/NovoVeiculoPage';
 import Dashboard from '@/pages/Dashboard/Dashboard';
 import Login from '@/pages/Login/Login';
 import { NovoUsuarioPage } from '@/pages/Usuarios/NovoUsuarioPage';
+import { ServicosListaPage } from '@/pages/Servicos/ServicosListaPage';
 import { UsuarioDetalhePage } from '@/pages/Usuarios/UsuarioDetalhePage';
 import { UsuariosListaPage } from '@/pages/Usuarios/UsuariosListaPage';
 
@@ -100,6 +101,17 @@ function App() {
             <PrivateRoute>
               <DashboardLayout>
                 <UsuarioDetalhePage />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/servicos"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <ServicosListaPage />
               </DashboardLayout>
             </PrivateRoute>
           }

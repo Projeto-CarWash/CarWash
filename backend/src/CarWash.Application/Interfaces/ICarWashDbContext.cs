@@ -29,6 +29,11 @@ public interface ICarWashDbContext
     DbSet<Session> Sessions { get; }
 
     /// <summary>
+    /// Gets o DbSet de serviços.
+    /// </summary>
+    DbSet<Servico> Servicos { get; }
+
+    /// <summary>
     /// Salva as alterações no banco de dados.
     /// </summary>
     /// <param name="cancellationToken">Token de cancelamento.</param>

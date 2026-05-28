@@ -138,6 +138,71 @@ export const handlersPadrao = [
   http.post('/api/v1/agendamentos/confirmar', () =>
     HttpResponse.json(respostaCriacao, { status: 201 }),
   ),
+
+  http.get('/api/v1/agenda', ({ request }) => {
+    const url = new URL(request.url);
+    const formato = url.searchParams.get('formato');
+
+    if (formato === 'detalhado') {
+      return HttpResponse.json({
+        message: 'Agenda consultada com sucesso.',
+        data: [
+          {
+            agendamentoId: '99999999-9999-4999-8999-999999999999',
+            status: 'AGENDADO',
+            filialId: IDS.filial,
+            inicio: '2099-01-01T14:00:00.000Z',
+            fim: '2099-01-01T14:30:00.000Z',
+            duracaoTotalMin: 30,
+            valorTotal: 150.00,
+            cliente: {
+              id: IDS.cliente,
+              nome: 'Maria Souza',
+              cpfCnpj: '123.456.789-00',
+              telefone: null,
+              celular: '11999990000',
+            },
+            veiculo: {
+              id: IDS.veiculo,
+              placa: 'ABC1D23',
+              modelo: 'Uno',
+              fabricante: 'Honda',
+              cor: 'Prata',
+            },
+            servicos: [
+              {
+                id: IDS.servicoA,
+                nome: 'Lavagem Completa',
+                duracaoMin: 30,
+                preco: 50.00,
+              },
+            ],
+            observacoes: 'atenção ao porta-malas',
+            criadoEm: '2026-05-21T12:00:00.000Z',
+            atualizadoEm: '2026-05-21T12:00:00.000Z',
+          },
+        ],
+        traceId: 'trace-detalhado',
+      });
+    }
+
+    return HttpResponse.json({
+      message: 'Agenda consultada com sucesso.',
+      data: [
+        {
+          agendamentoId: '99999999-9999-4999-8999-999999999999',
+          inicio: '2099-01-01T14:00:00.000Z',
+          fim: '2099-01-01T14:30:00.000Z',
+          titulo: 'Lavagem Completa',
+          status: 'AGENDADO',
+          clienteNome: 'Maria Souza',
+          veiculoPlaca: 'ABC1D23',
+          servicosResumo: 'Lavagem Completa + 1',
+        },
+      ],
+      traceId: 'trace-simples',
+    });
+  }),
 ];
 
 /** Fixtures reaproveitáveis em asserções. */

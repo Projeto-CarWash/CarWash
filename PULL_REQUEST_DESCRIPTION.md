@@ -1,33 +1,38 @@
-# feat(shared): vinculação e exibição de veículos do cliente e restrição de caracteres especiais (RF004/RF005)
+# feat(catalog): catálogo de serviços com preço e duração (RF006)
 
 ## Por quê
-- Correção do fluxo onde os veículos vinculados aos clientes não apareciam após o salvamento, e o contador numérico de veículos na página de detalhes não era exibido.
-- Implementação de restrições para caracteres especiais e números em nomes de clientes, nomes de veículos, placas, logradouros, bairros e cidades, tanto no frontend quanto no backend.
+- Implementação do catálogo de serviços (RF006) com base nas telas do Figma, permitindo listar, buscar, cadastrar, atualizar e alterar status dos serviços.
+- Limpeza do e-mail do usuário no localStorage ao realizar logout para corrigir o comportamento de reter e-mail após deslogar.
+- Correção de falhas nos testes de integração da agenda devido à falta de mocks para o endpoint `GET /api/v1/agenda`.
 
 ## O que muda
 
 ### Backend:
-- **`ClienteResponse`**: Adicionada a propriedade `Veiculos` contendo `ClienteVeiculoResponse` (id, placa, modelo, fabricante, cor).
-- **`ObterClientePorIdHandler`**: Injeta `ICarWashDbContext` para consultar os veículos ativos associados ao cliente.
-- **`CriarClienteRequest` & `CriarClienteCommand` & `ClientesEndpoints`**: Atualizados para transitar a lista de veículos no fluxo de criação.
-- **`CriarClienteHandler`**: Injeta `IVeiculoService` e persiste os veículos vinculados logo após salvar o cliente no banco.
-- **`CriarClienteCommandValidator` & `AtualizarClienteCommandValidator`**: Incluem validações `Matches` de Regex para proibir números e caracteres especiais em nomes e campos de endereço (`Logradouro`, `Bairro`, `Cidade`).
-- **`VeiculoService`**: Adiciona expressões regulares compiladas na validação local (`Validate`) para impedir caracteres especiais e números em `Fabricante` e `Cor`, e caracteres especiais em `Modelo`.
+- **`ICarWashDbContext`**: Adicionada a propriedade `Servicos` para expor o DbSet de Serviços para a camada de aplicação.
+- **`Servico` (Entidade)**: Implementado método `Atualizar` encapsulando validações de regras de negócio (limite de 120 caracteres para nome, valores positivos para preço e duração).
+- **CQRS Handlers**:
+  - `ListarServicosQuery` / `ListarServicosHandler` / `ListaServicosResponse`: Busca de serviços ordenada e com filtros.
+  - `CriarServicoCommand` / `CriarServicoHandler` / `CriarServicoRequest` / `CriarServicoCommandValidator`: Cadastro de novos serviços com regex estrito e validação de unicidade de nome.
+  - `AtualizarServicoCommand` / `AtualizarServicoHandler` / `AtualizarServicoRequest` / `AtualizarServicoCommandValidator`: Edição de serviços existentes validando unicidade.
+  - `AlterarStatusServicoCommand` / `AlterarStatusServicoHandler` / `AlterarStatusServicoRequest`: Ativação e desativação sem exclusão lógica física no banco.
+- **API Endpoints**: `ServicosEndpoints` adiciona o mapeamento sob `/api/v1/servicos` integrado com FluentValidation e com autenticação obrigatória.
 
 ### Frontend:
-- **`clienteSchema.ts` & `veiculoSchema.ts`**: Atualizados com expressões regulares estritas (`CLIENTE_NOME_PATTERN`, `LOGRADOURO_PATTERN`, `BAIRRO_PATTERN`, `CIDADE_PATTERN`, `VEICULO_TEXTO_PATTERN`, `FABRICANTE_PATTERN` e `COR_PATTERN`) rejeitando caracteres especiais nos campos.
-
-### Testes:
-- **`TestDbSetHelper`**: Novo helper unitário criado para mockar DbSets assíncronos do EF Core.
-- **`ObterClientePorIdHandlerTests` & `CriarClienteHandlerTests`**: Atualizados e testados com cobertura para injeção de dependências e comportamentos de mapeamento.
+- **`servicoSchema.ts`**: Schema Zod contendo regras de validação estritas que bloqueiam caracteres especiais nos nomes de serviços.
+- **`servicoService.ts`**: Cliente API atualizado para cobrir a listagem, criação, atualização e toggle de status.
+- **`ServicosListaPage.tsx`**: Nova página do catálogo de serviços contendo barra de busca, tabela interativa, toggle de status inline e modal de formulário com manipulação completa de estados de erro (400, 401, 403, 409, 500).
+- **`App.tsx` & `Sidebar.tsx`**: Rota `/servicos` registrada e ativada no menu lateral.
+- **`AuthProvider.tsx`**: Remoção do `carwash_remember_email` do localStorage no callback de logout.
+- **`handlers.ts`**: Adicionado mock dinâmico para `GET /api/v1/agenda` no MSW, corrigindo 4 testes unitários quebrados de agenda.
 
 ## Como testei
-- [x] `dotnet test` passou (291/291 unit tests aprovados)
-- [x] Validação local do frontend validada via Zod.
+- [x] `dotnet build src/CarWash.Api/` passou com êxito (0 erros).
+- [x] `npm run typecheck` e `npm run build` do frontend compilaram com êxito.
+- [x] `npm run test` passou (45/45 testes do frontend aprovados).
 
 ## Rastreabilidade
-- **Requisitos (DRP §3):** RF004 / RF005
-- **Regras (DRP §4):** RN003
+- **Requisitos (DRP §3):** RF006, RF021, RF009
+- **Regras (DRP §4):** RN006
 
 ## Checklist de DoD
 - [x] Conventional Commits respeitado em todos os commits e no título do PR
@@ -36,7 +41,7 @@
 - [x] Sem `--no-verify` no caminho
 
 ## Riscos / impactos
-- Nenhum risco de quebra identificado. O fluxo existente foi estendido preservando as assinaturas dos endpoints e comportamento do banco de dados.
+- Nenhum risco identificado. As alterações estendem funcionalidades existentes e corrigem testes locais de integração.
 
 ## Notas para o reviewer
-- O helper `TestDbSetHelper` facilita muito o mock de consultas assíncronas do Entity Framework em testes unitários subsequentes.
+- A compatibilidade de inputs numéricos no formulário com Zod foi tratada utilizando validações de string com refinamento numérico, evitando bugs de tipagem no resolver de form do React Hook Form.
