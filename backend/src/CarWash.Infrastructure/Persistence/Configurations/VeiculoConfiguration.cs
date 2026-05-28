@@ -11,9 +11,18 @@ public sealed class VeiculoConfiguration : IEntityTypeConfiguration<Veiculo>
         ArgumentNullException.ThrowIfNull(builder);
 
         builder.ToTable("veiculos", t =>
+        {
             t.HasCheckConstraint(
                 "ck_veiculos_ano",
-                "ano IS NULL OR (ano BETWEEN 1900 AND 2100)"));
+                "ano IS NULL OR (ano BETWEEN 1900 AND 2100)");
+
+            // Defesa em profundidade do formato Mercosul/antigo da placa (RN003, RF005).
+            // O value object Placa aplica o mesmo regex no domínio; o CHECK abaixo é a
+            // última linha de defesa exigida pelo RAT03.
+            t.HasCheckConstraint(
+                "ck_veiculos_placa_formato",
+                "placa ~ '^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$'");
+        });
 
         builder.HasKey(x => x.Id).HasName("pk_veiculos");
         builder.Property(x => x.Id).ValueGeneratedNever();

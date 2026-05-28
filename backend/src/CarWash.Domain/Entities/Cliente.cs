@@ -227,4 +227,20 @@ public sealed class Cliente : IAuditable, IAuditableSetter
             throw new DomainException($"Cliente deve ter no máximo {IdadeMaxima} anos.");
         }
     }
+
+    private readonly List<Veiculo> veiculos = [];
+
+    public IReadOnlyCollection<Veiculo> Veiculos => veiculos;
+
+    public void AdicionarVeiculo(Veiculo veiculo)
+    {
+        ArgumentNullException.ThrowIfNull(veiculo);
+
+        if (!Ativo)
+        {
+            throw new DomainException("Cliente inativo não pode receber novos veículos.");
+        }
+
+        veiculos.Add(veiculo);
+    }
 }

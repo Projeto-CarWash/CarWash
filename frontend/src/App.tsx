@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 
+import { NovoAgendamentoPage } from '@/components/agendamentos/NovoAgendamentoPage';
 import { NovoClientePage } from '@/components/clientes/NovoClientePage';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import PrivateRoute from '@/components/PrivateRoute';
@@ -9,6 +10,8 @@ import { ClientesListaPage } from '@/pages/Clientes/ClientesListaPage';
 import { NovoVeiculoPage } from '@/pages/Clientes/NovoVeiculoPage';
 import Dashboard from '@/pages/Dashboard/Dashboard';
 import Login from '@/pages/Login/Login';
+import { ServicoFormPage } from '@/pages/Servicos/ServicoFormPage';
+import { ServicosListaPage } from '@/pages/Servicos/ServicosListaPage';
 import { NovoUsuarioPage } from '@/pages/Usuarios/NovoUsuarioPage';
 import { UsuarioDetalhePage } from '@/pages/Usuarios/UsuarioDetalhePage';
 import { UsuariosListaPage } from '@/pages/Usuarios/UsuariosListaPage';
@@ -100,6 +103,50 @@ function App() {
             <PrivateRoute>
               <DashboardLayout>
                 <UsuarioDetalhePage />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/servicos"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <ServicosListaPage />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/servicos/novo"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <ServicoFormPage />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/servicos/:id/editar"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <ServicoFormPage />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/agendamentos/novo"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <NovoAgendamentoPage />
               </DashboardLayout>
             </PrivateRoute>
           }

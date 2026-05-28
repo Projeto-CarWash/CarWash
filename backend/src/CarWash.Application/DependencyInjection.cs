@@ -31,9 +31,7 @@ public static class DependencyInjection
         services.AddScoped<CalculadoraResumoAgendamento>();
 
         // Registros manuais de serviços da aplicação
-        services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IVeiculoService, VeiculoService>();
-
         return services;
     }
 

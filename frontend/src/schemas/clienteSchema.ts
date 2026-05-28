@@ -9,7 +9,7 @@ const CLIENTE_NOME_PATTERN = /^[a-zA-ZáàãâäéèêëíïóôõöúüçñÁÀ
 const BAIRRO_PATTERN = /^[a-zA-ZáàãâäéèêëíïóôõöúüçñÁÀÃÂÄÉÈÊËÍÏÓÔÕÖÚÜÇÑ0-9\s\-]+$/;
 const CIDADE_PATTERN = /^[a-zA-ZáàãâäéèêëíïóôõöúüçñÁÀÃÂÄÉÈÊËÍÏÓÔÕÖÚÜÇÑ\s\-]+$/;
 const LOGRADOURO_PATTERN = /^[a-zA-ZáàãâäéèêëíïóôõöúüçñÁÀÃÂÄÉÈÊËÍÏÓÔÕÖÚÜÇÑ0-9\s.,\-]+$/;
-const VEICULO_TEXTO_PATTERN = /^[a-zA-ZáàãâäéèêëïóôõöúüçñÁÀÃÂÄÉÈÊËÍÏÓÔÕÖÚÜÇÑ0-9\s.\-]+$/;
+const VEICULO_TEXTO_PATTERN = /^[a-zA-ZáàãâäéèêëíïóôõöúüçñÁÀÃÂÄÉÈÊËÍÏÓÔÕÖÚÜÇÑ0-9\s.\-]+$/;
 const FABRICANTE_PATTERN = /^[a-zA-ZáàãâäéèêëíïóôõöúüçñÁÀÃÂÄÉÈÊËÍÏÓÔÕÖÚÜÇÑ\s\-]+$/;
 const COR_PATTERN = /^[a-zA-ZáàãâäéèêëíïóôõöúüçñÁÀÃÂÄÉÈÊËÍÏÓÔÕÖÚÜÇÑ\s]+$/;
 
@@ -119,7 +119,7 @@ export const clienteSchema = z.object({
         const len = val.replace(/\D/g, '').length;
         return len === 10 || len === 11;
       },
-      { message: 'Telefone deve conter 10 ou 11 dígitos.' },
+      { message: 'Telefone deve conter 10 or 11 dígitos.' },
     ),
 
   // E-mail opcional (DRP não exige)
@@ -181,7 +181,7 @@ export const clienteSchema = z.object({
     .min(1, 'UF é obrigatória.')
     .transform((v) => v.toUpperCase())
     .refine((v) => UF_PATTERN.test(v), { message: 'UF inválida (use sigla dos 27 estados).' }),
-  
+
   veiculos: z
     .array(
       z.object({
@@ -231,7 +231,7 @@ export const clienteSchema = z.object({
           .refine((val) => COR_PATTERN.test(val), {
             message: 'Cor não deve conter números ou caracteres especiais.',
           }),
-      })
+      }),
     )
     .min(1, 'Adicione ao menos um veículo para concluir o cadastro.'),
 });

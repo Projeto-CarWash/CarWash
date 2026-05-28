@@ -24,13 +24,13 @@ interface NavLinkItem {
 
 const operacaoLinks: NavLinkItem[] = [
   { icon: LayoutDashboard, label: 'Painel', to: '/dashboard' },
-  { icon: Wrench, label: 'Serviços' },
+  { icon: Wrench, label: 'Serviços', to: '/servicos' },
   { icon: Users, label: 'Clientes', to: '/clientes' },
   { icon: CarFront, label: 'Veículos' },
 ];
 
 const gestaoLinks: NavLinkItem[] = [
-  { icon: CalendarDays, label: 'Agendamentos', to: '/agendamentos/novo' },
+  { icon: CalendarDays, label: 'Agendamentos', to: '/agendamentos' },
   { icon: DollarSign, label: 'Financeiro' },
   { icon: BarChart3, label: 'Relatórios' },
   { icon: UserCog, label: 'Equipe', to: '/usuarios' },

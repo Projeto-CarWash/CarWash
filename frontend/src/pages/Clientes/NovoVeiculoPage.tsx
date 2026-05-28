@@ -21,6 +21,7 @@ const HTTP_ERROR_MESSAGES: Record<number, string> = {
   403: 'Você não possui permissão para cadastrar veículos.',
   404: 'Cliente não encontrado para vincular o veículo.',
   409: 'Já existe veículo cadastrado com esta placa.',
+  422: 'Não é possível cadastrar veículos para clientes inativos.',
   500: 'Não foi possível concluir o cadastro no momento. Tente novamente.',
 };
 
@@ -51,7 +52,6 @@ export function NovoVeiculoPage() {
       modelo: '',
       fabricante: '',
       cor: '',
-      observacoes: '',
     },
   });
 
@@ -138,7 +138,6 @@ export function NovoVeiculoPage() {
       modelo: 'modelo',
       fabricante: 'fabricante',
       cor: 'cor',
-      observacoes: 'observacoes',
     };
     return map[lower] ?? null;
   };
@@ -151,8 +150,6 @@ export function NovoVeiculoPage() {
 
       try {
         await veiculoService.cadastrar(data.clienteId, data);
-
-        // 201 — Confirma sucesso e atualiza fluxo do cliente
         setSuccessMsg('Veículo cadastrado com sucesso.');
         form.reset();
         setSelectedCliente(null);
@@ -166,7 +163,6 @@ export function NovoVeiculoPage() {
           const status = err.response?.status;
           const dataErr = err.response?.data as ProblemDetails | undefined;
 
-          // 409 — Destaca placa e mantém dados digitados
           if (status === 409) {
             setGlobalError(HTTP_ERROR_MESSAGES[409]!);
             form.setError('placa', {
@@ -177,7 +173,13 @@ export function NovoVeiculoPage() {
             return;
           }
 
-          // 400 — Mostra mensagens corretas por campo em cada erro local
+          if (status === 422) {
+            // Decisão do arquiteto (2026-05-25): cliente inativo retorna 422,
+            // não 409. 409 fica reservado para placa duplicada (RN011).
+            setGlobalError(HTTP_ERROR_MESSAGES[422]!);
+            return;
+          }
+
           if (status === 400 && dataErr?.errors) {
             setGlobalError(dataErr.title ?? HTTP_ERROR_MESSAGES[400]!);
             let firstFocused = false;
@@ -195,7 +197,6 @@ export function NovoVeiculoPage() {
             return;
           }
 
-          // 401 — Redireciona para login
           if (status === 401) {
             setGlobalError(HTTP_ERROR_MESSAGES[401]!);
             setTimeout(() => {
@@ -213,7 +214,6 @@ export function NovoVeiculoPage() {
             return;
           }
 
-          // 404 — Cliente não encontrado
           if (status === 404) {
             setGlobalError(HTTP_ERROR_MESSAGES[404]!);
             setSelectedCliente(null);
@@ -228,21 +228,17 @@ export function NovoVeiculoPage() {
             return;
           }
 
-          // Outros erros HTTP conhecidos
           const msg = status && status in HTTP_ERROR_MESSAGES ? HTTP_ERROR_MESSAGES[status]! : null;
           if (msg) {
             setGlobalError(msg);
             return;
           }
 
-          // Erros de rede/timeout
           if (err.code === 'ECONNABORTED' || err.code === 'ERR_NETWORK') {
             setGlobalError('Não foi possível contatar o servidor. Verifique sua conexão.');
             return;
           }
         }
-
-        // Fallback — mantém formulário e permite nova tentativa
         setGlobalError(HTTP_ERROR_MESSAGES[500]!);
       }
     },
@@ -266,13 +262,13 @@ export function NovoVeiculoPage() {
     : clientes;
 
   if (carregandoCliente && !selectedCliente && !globalError) {
-    return <div className="px-4 py-8 text-sm text-zinc-500 sm:px-8">Carregando…</div>;
+    return <div className="px-8 py-8 text-sm text-zinc-500">Carregando…</div>;
   }
 
   // Tela de bloqueio de permissão (403)
   if (permissaoBloqueada) {
     return (
-      <div className="px-4 py-8 sm:px-8">
+      <div className="px-8 py-8">
         <div className="mb-6 flex items-center gap-3">
           <Button
             type="button"
@@ -315,7 +311,7 @@ export function NovoVeiculoPage() {
   }
 
   return (
-    <div className="px-4 py-8 sm:px-8">
+    <div className="px-8 py-8">
       {/* Toast de Sucesso */}
       {successMsg && (
         <div
@@ -330,10 +326,10 @@ export function NovoVeiculoPage() {
         </div>
       )}
 
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-6 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <span
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-600/10 text-red-500"
+            className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-600/10 text-red-500"
             aria-hidden="true"
           >
             <Car className="h-5 w-5" />
@@ -356,7 +352,7 @@ export function NovoVeiculoPage() {
             }
           }}
           disabled={isSubmitting}
-          className="h-9 w-fit rounded-full border-zinc-700/60 bg-transparent px-4 text-sm text-zinc-300 hover:bg-zinc-800/50 hover:text-zinc-100"
+          className="h-9 rounded-full border-zinc-700/60 bg-transparent px-4 text-sm text-zinc-300 hover:bg-zinc-800/50 hover:text-zinc-100"
         >
           <ArrowLeft className="mr-1 h-4 w-4" aria-hidden="true" />
           Voltar
@@ -659,64 +655,8 @@ export function NovoVeiculoPage() {
               />
             </div>
 
-            {/* Observações */}
-            <div className="flex flex-col gap-2 md:col-span-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="veiculo-observacoes" className="text-zinc-300">
-                  Observações (Opcional)
-                </Label>
-                <Controller
-                  control={form.control}
-                  name="observacoes"
-                  render={({ field }) => (
-                    <span className="text-[11px] font-semibold text-zinc-500">
-                      {field.value ? field.value.length : 0}/500
-                    </span>
-                  )}
-                />
-              </div>
-              <Controller
-                control={form.control}
-                name="observacoes"
-                render={({ field, fieldState }) => (
-                  <>
-                    <textarea
-                      id="veiculo-observacoes"
-                      rows={3}
-                      maxLength={500}
-                      placeholder="Alguma observação sobre o veículo..."
-                      value={field.value}
-                      onChange={field.onChange}
-                      onBlur={(e) => {
-                        const val = e.target.value.trim();
-                        field.onChange(val);
-                        field.onBlur();
-                      }}
-                      ref={field.ref}
-                      aria-invalid={!!fieldState.error}
-                      aria-describedby={fieldState.error ? 'veiculo-observacoes-error' : undefined}
-                      className={`w-full rounded-lg border px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-0 resize-none ${
-                        fieldState.error
-                          ? 'border-red-500/60 bg-red-950/20 focus-visible:border-red-500'
-                          : 'border-zinc-700/60 bg-zinc-950/40 focus-visible:border-zinc-600'
-                      }`}
-                    />
-                    {fieldState.error && (
-                      <p
-                        id="veiculo-observacoes-error"
-                        role="alert"
-                        className="text-xs text-red-400"
-                      >
-                        {fieldState.error.message}
-                      </p>
-                    )}
-                  </>
-                )}
-              />
-            </div>
-
             {/* Ações */}
-            <div className="flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end md:col-span-2 mt-4">
+            <div className="flex items-center justify-end gap-3 md:col-span-2 mt-4">
               <Button
                 type="button"
                 variant="outline"

@@ -59,8 +59,6 @@ export const veiculoSchema = z.object({
     .refine((val) => COR_PATTERN.test(val), {
       message: 'Cor não deve conter números ou caracteres especiais.',
     }),
-
-  observacoes: z.string().max(500, 'Observações deve ter no máximo 500 caracteres.').optional(),
 });
 
 export type VeiculoFormData = z.infer<typeof veiculoSchema>;

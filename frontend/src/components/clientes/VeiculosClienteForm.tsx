@@ -16,7 +16,11 @@ import type { ClienteFormData } from '@/schemas/clienteSchema';
 const NOME_TEXTO_PATTERN = /^[a-zA-ZáàãâäéèêëíïóôõöúüçñÁÀÃÂÄÉÈÊËÍÏÓÔÕÖÚÜÇÑ\s\-.']+$/;
 
 export function VeiculosClienteForm() {
-  const { control, trigger, formState: { errors } } = useFormContext<ClienteFormData>();
+  const {
+    control,
+    trigger,
+    formState: { errors },
+  } = useFormContext<ClienteFormData>();
   const { fields, append, remove } = useFieldArray({
     control,
     name: 'veiculos',
@@ -34,13 +38,7 @@ export function VeiculosClienteForm() {
       placa: z
         .string()
         .min(1, 'Placa é obrigatória.')
-        .transform((val) =>
-          val
-            .trim()
-            .replace(/\s+/g, '')
-            .replace(/-/g, '')
-            .toUpperCase(),
-        )
+        .transform((val) => val.trim().replace(/\s+/g, '').replace(/-/g, '').toUpperCase())
         .refine((val) => val.length === 7, {
           message: 'Placa deve conter 7 caracteres válidos.',
         })
@@ -111,7 +109,7 @@ export function VeiculosClienteForm() {
     setModelo('');
     setFabricante('');
     setCor('');
-    
+
     // Trigger validation for the veiculos array so the min(1) error goes away if present
     await trigger('veiculos');
   };
@@ -121,10 +119,13 @@ export function VeiculosClienteForm() {
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-medium text-zinc-100">Veículos do Cliente</h3>
       </div>
-      
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-2">
-          <Label htmlFor="veiculo-placa" className={localErrors.placa ? 'text-red-400' : 'text-zinc-300'}>
+          <Label
+            htmlFor="veiculo-placa"
+            className={localErrors.placa ? 'text-red-400' : 'text-zinc-300'}
+          >
             Placa <span className="text-red-500">*</span>
           </Label>
           <Input
@@ -156,7 +157,10 @@ export function VeiculosClienteForm() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="veiculo-modelo" className={localErrors.modelo ? 'text-red-400' : 'text-zinc-300'}>
+          <Label
+            htmlFor="veiculo-modelo"
+            className={localErrors.modelo ? 'text-red-400' : 'text-zinc-300'}
+          >
             Modelo <span className="text-red-500">*</span>
           </Label>
           <Input
@@ -188,7 +192,10 @@ export function VeiculosClienteForm() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="veiculo-fabricante" className={localErrors.fabricante ? 'text-red-400' : 'text-zinc-300'}>
+          <Label
+            htmlFor="veiculo-fabricante"
+            className={localErrors.fabricante ? 'text-red-400' : 'text-zinc-300'}
+          >
             Fabricante <span className="text-red-500">*</span>
           </Label>
           <Input
@@ -220,7 +227,10 @@ export function VeiculosClienteForm() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="veiculo-cor" className={localErrors.cor ? 'text-red-400' : 'text-zinc-300'}>
+          <Label
+            htmlFor="veiculo-cor"
+            className={localErrors.cor ? 'text-red-400' : 'text-zinc-300'}
+          >
             Cor <span className="text-red-500">*</span>
           </Label>
           <div className="flex gap-2">
@@ -270,7 +280,7 @@ export function VeiculosClienteForm() {
             Veículos adicionados: {fields.length}
           </h4>
         </div>
-        
+
         {fields.length === 0 ? (
           <div className="px-4 py-8 text-center">
             <p className="text-sm text-zinc-500">
@@ -280,22 +290,33 @@ export function VeiculosClienteForm() {
         ) : (
           <ul className="divide-y divide-zinc-800">
             {fields.map((field, index) => (
-              <li key={field.id} className="flex items-center justify-between px-4 py-3 hover:bg-zinc-800/10 transition-colors">
+              <li
+                key={field.id}
+                className="flex items-center justify-between px-4 py-3 hover:bg-zinc-800/10 transition-colors"
+              >
                 <div className="grid flex-1 grid-cols-2 gap-4 sm:grid-cols-4">
                   <div>
-                    <span className="block text-[10px] uppercase tracking-wider text-zinc-500">Placa</span>
+                    <span className="block text-[10px] uppercase tracking-wider text-zinc-500">
+                      Placa
+                    </span>
                     <span className="font-medium text-zinc-200">{field.placa}</span>
                   </div>
                   <div>
-                    <span className="block text-[10px] uppercase tracking-wider text-zinc-500">Modelo</span>
+                    <span className="block text-[10px] uppercase tracking-wider text-zinc-500">
+                      Modelo
+                    </span>
                     <span className="text-zinc-300">{field.modelo}</span>
                   </div>
                   <div>
-                    <span className="block text-[10px] uppercase tracking-wider text-zinc-500">Fabricante</span>
+                    <span className="block text-[10px] uppercase tracking-wider text-zinc-500">
+                      Fabricante
+                    </span>
                     <span className="text-zinc-300">{field.fabricante}</span>
                   </div>
                   <div>
-                    <span className="block text-[10px] uppercase tracking-wider text-zinc-500">Cor</span>
+                    <span className="block text-[10px] uppercase tracking-wider text-zinc-500">
+                      Cor
+                    </span>
                     <span className="text-zinc-300">{field.cor}</span>
                   </div>
                 </div>
@@ -313,7 +334,7 @@ export function VeiculosClienteForm() {
           </ul>
         )}
       </div>
-      
+
       {errors.veiculos?.root?.message && (
         <p className="text-sm font-medium text-red-400">{errors.veiculos.root.message}</p>
       )}
