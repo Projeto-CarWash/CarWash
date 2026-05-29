@@ -100,16 +100,26 @@ export const veiculoItemSchema = z.object({
 export const filiadoSchema = z.object({
   cpf: z
     .string()
-    .min(1, 'CPF é obrigatório.')
-    .refine((val) => val.replace(/\D/g, '').length === 11, {
-      message: 'CPF deve conter 11 dígitos.',
-    })
+    .min(1, 'Documento é obrigatório.')
+    .refine(
+      (val) => {
+        const d = val.replace(/\D/g, '');
+        return d.length === 11 || d.length === 14;
+      },
+      { message: 'Informe um CPF (11 dígitos) ou CNPJ (14 dígitos).' },
+    )
     .superRefine((val, ctx) => {
       const d = val.replace(/\D/g, '');
       if (d.length === 11 && !isValidCpf(d)) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'CPF inválido.',
+          message: 'CPF inválido. Verifique os dígitos informados.',
+        });
+      }
+      if (d.length === 14 && !isValidCnpj(d)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'CNPJ inválido. Verifique os dígitos informados.',
         });
       }
     }),
