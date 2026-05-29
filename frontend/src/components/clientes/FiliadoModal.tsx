@@ -1,60 +1,13 @@
 import { X } from 'lucide-react';
 import { useCallback, useState } from 'react';
-import { z } from 'zod';
 
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { maskCpfCnpj, maskCelular } from '@/lib/masks';
-import { isValidCnpj, isValidCpf } from '@/lib/validators';
-
-import type { FiliadoFormData } from '@/schemas/clienteSchema';
-
-const modalFiliadoSchema = z.object({
-  cpf: z
-    .string()
-    .min(1, 'Documento é obrigatório.')
-    .refine(
-      (val) => {
-        const d = val.replace(/\D/g, '');
-        return d.length === 11 || d.length === 14;
-      },
-      { message: 'Informe um CPF (11 dígitos) ou CNPJ (14 dígitos).' },
-    )
-    .superRefine((val, ctx) => {
-      const d = val.replace(/\D/g, '');
-      if (d.length === 11 && !isValidCpf(d)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'CPF inválido. Verifique os dígitos informados.',
-        });
-      }
-      if (d.length === 14 && !isValidCnpj(d)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'CNPJ inválido. Verifique os dígitos informados.',
-        });
-      }
-    }),
-  nome: z
-    .string()
-    .min(1, 'Nome é obrigatório.')
-    .refine((val) => val.trim().length >= 3, {
-      message: 'Nome deve ter no mínimo 3 caracteres.',
-    }),
-  telefone: z.string().optional(),
-  email: z
-    .string()
-    .optional()
-    .refine(
-      (val) => {
-        if (!val || val.trim().length === 0) return true;
-        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
-      },
-      { message: 'E-mail inválido.' },
-    ),
-});
+import { isValidCpf, isValidCnpj } from '@/lib/validators';
+import { filiadoSchema, type FiliadoFormData } from '@/schemas/clienteSchema';
 
 interface FiliadoModalProps {
   open: boolean;
@@ -91,7 +44,7 @@ export function FiliadoModal({ open, onOpenChange, existingCpfs, onSave }: Filia
       email: email || undefined,
     };
 
-    const result = modalFiliadoSchema.safeParse(data);
+    const result = filiadoSchema.safeParse(data);
 
     if (!result.success) {
       const errMap: Record<string, string> = {};
