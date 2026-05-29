@@ -7,21 +7,34 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/compone
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { maskCpfCnpj, maskCelular } from '@/lib/masks';
-import { isValidCpf } from '@/lib/validators';
+import { isValidCnpj, isValidCpf } from '@/lib/validators';
 
 import type { FiliadoFormData } from '@/schemas/clienteSchema';
 
 const modalFiliadoSchema = z.object({
   cpf: z
     .string()
-    .min(1, 'CPF é obrigatório.')
-    .refine((val) => val.replace(/\D/g, '').length === 11, {
-      message: 'CPF deve conter 11 dígitos.',
-    })
+    .min(1, 'Documento é obrigatório.')
+    .refine(
+      (val) => {
+        const d = val.replace(/\D/g, '');
+        return d.length === 11 || d.length === 14;
+      },
+      { message: 'Informe um CPF (11 dígitos) ou CNPJ (14 dígitos).' },
+    )
     .superRefine((val, ctx) => {
       const d = val.replace(/\D/g, '');
       if (d.length === 11 && !isValidCpf(d)) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'CPF inválido.' });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'CPF inválido. Verifique os dígitos informados.',
+        });
+      }
+      if (d.length === 14 && !isValidCnpj(d)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'CNPJ inválido. Verifique os dígitos informados.',
+        });
       }
     }),
   nome: z
@@ -93,7 +106,7 @@ export function FiliadoModal({ open, onOpenChange, existingCpfs, onSave }: Filia
 
     const cpfDigits = cpf.replace(/\D/g, '');
     if (existingCpfs.includes(cpfDigits)) {
-      setErrors({ cpf: 'Este CPF já foi adicionado entre os filiados.' });
+      setErrors({ cpf: 'Este CPF/CNPJ já foi adicionado entre os filiados.' });
       return;
     }
 
@@ -108,9 +121,12 @@ export function FiliadoModal({ open, onOpenChange, existingCpfs, onSave }: Filia
     onOpenChange(false);
   }, [cpf, nome, telefone, email, existingCpfs, onSave, onOpenChange, resetForm]);
 
-  const cpfDigits = cpf.replace(/\D/g, '');
-  const cpfIsComplete = cpfDigits.length === 11;
-  const cpfIsUnique = !existingCpfs.includes(cpfDigits);
+  const docDigits = cpf.replace(/\D/g, '');
+  const docIsComplete = docDigits.length === 11 || docDigits.length === 14;
+  const docIsValid =
+    (docDigits.length === 11 && isValidCpf(docDigits)) ||
+    (docDigits.length === 14 && isValidCnpj(docDigits));
+  const docIsUnique = !existingCpfs.includes(docDigits);
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -129,7 +145,7 @@ export function FiliadoModal({ open, onOpenChange, existingCpfs, onSave }: Filia
             <div>
               <h3 className="text-base font-semibold text-zinc-100">Filiação</h3>
               <p className="mt-0.5 text-sm text-zinc-500">
-                Dados pessoais do filiado. O CPF é único por pessoa vinculada.
+                Dados pessoais do filiado. O CPF/CNPJ é único por pessoa vinculada.
               </p>
             </div>
             <button
@@ -143,15 +159,15 @@ export function FiliadoModal({ open, onOpenChange, existingCpfs, onSave }: Filia
 
           {/* CPF */}
           <div className="mt-5 space-y-1.5">
-            <Label className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">CPF</Label>
+            <Label className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">CPF/CNPJ</Label>
             <Input
               value={cpf}
               onChange={(e) => setCpf(maskCpfCnpj(e.target.value))}
-              placeholder="123.567.891-23"
+              placeholder="123.567.891-23 ou 12.345.678/0001-90"
               className={`h-10 rounded-xl text-sm text-zinc-200 placeholder:text-zinc-600 focus-visible:ring-0 ${
-                errors.cpf
+                errors.cpf || (docIsComplete && !docIsValid)
                   ? 'border-red-500/60 bg-red-950/20'
-                  : cpfIsComplete && cpfIsUnique && !errors.cpf
+                  : docIsComplete && docIsValid && docIsUnique && !errors.cpf
                     ? 'border-green-500/60 bg-green-950/20'
                     : 'border-zinc-700/60 bg-zinc-900/50'
               }`}
@@ -161,8 +177,13 @@ export function FiliadoModal({ open, onOpenChange, existingCpfs, onSave }: Filia
                 <X className="h-3 w-3" /> {errors.cpf}
               </p>
             )}
-            {cpfIsComplete && cpfIsUnique && !errors.cpf && (
-              <p className="text-xs text-green-500">✓ CPF válido</p>
+            {!errors.cpf && docIsComplete && !docIsValid && (
+              <p className="flex items-center gap-1 text-xs text-red-500">
+                <X className="h-3 w-3" /> Documento inválido.
+              </p>
+            )}
+            {docIsComplete && docIsValid && docIsUnique && !errors.cpf && (
+              <p className="text-xs text-green-500">✓ Documento válido</p>
             )}
           </div>
 

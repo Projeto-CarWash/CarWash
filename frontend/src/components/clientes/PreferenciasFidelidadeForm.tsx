@@ -3,6 +3,7 @@ import { useCallback, useState } from 'react';
 import { useFieldArray, useFormContext, useWatch } from 'react-hook-form';
 
 import { Button } from '@/components/ui/button';
+import { maskCpfCnpj } from '@/lib/masks';
 
 import { FiliadoModal } from './FiliadoModal';
 
@@ -179,30 +180,36 @@ export function PreferenciasFidelidadeForm({ isSubmitting }: PreferenciasFidelid
             </div>
           ) : (
             <div className="space-y-2">
-              {filiados.map((filiado, index) => (
-                <div
-                  key={filiado.id}
-                  className="flex items-center justify-between rounded-xl border border-zinc-800/60 bg-zinc-900/20 px-4 py-3 transition-colors hover:bg-zinc-800/20"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-zinc-200">{filiado.nome}</p>
-                    <p className="text-xs text-zinc-500">
-                      {filiado.cpf}
-                      {filiado.telefone && ` · ${filiado.telefone}`}
-                      {filiado.email && ` · ${filiado.email}`}
-                    </p>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeFiliado(index)}
-                    className="ml-3 h-8 w-8 shrink-0 text-zinc-400 hover:bg-red-500/10 hover:text-red-400"
+              {filiados.map((filiado, index) => {
+                const detalhes = [
+                  filiado.cpf ? maskCpfCnpj(filiado.cpf) : '',
+                  filiado.telefone,
+                  filiado.email,
+                ]
+                  .filter((item): item is string => Boolean(item && item.trim().length > 0))
+                  .join(' · ');
+
+                return (
+                  <div
+                    key={filiado.id}
+                    className="flex items-center justify-between rounded-xl border border-zinc-800/60 bg-zinc-900/20 px-4 py-3 transition-colors hover:bg-zinc-800/20"
                   >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-zinc-200">{filiado.nome}</p>
+                      <p className="text-xs text-zinc-500">{detalhes}</p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeFiliado(index)}
+                      className="ml-3 h-8 w-8 shrink-0 text-zinc-400 hover:bg-red-500/10 hover:text-red-400"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                );
+              })}
             </div>
           )}
 
