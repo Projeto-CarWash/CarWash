@@ -34,15 +34,15 @@ export const veiculoItemSchema = z.object({
     .string()
     .min(1, 'Marca é obrigatória.')
     .transform((val) => val.trim())
-    .refine((val) => val.length >= 2 && val.length <= 20, {
-      message: 'Marca deve ter entre 2 e 20 caracteres.',
+    .refine((val) => val.length >= 2 && val.length <= 80, {
+      message: 'Marca deve ter entre 2 e 80 caracteres.',
     }),
   modelo: z
     .string()
     .min(1, 'Modelo é obrigatório.')
     .transform((val) => val.trim())
-    .refine((val) => val.length >= 2 && val.length <= 20, {
-      message: 'Modelo deve ter entre 2 e 20 caracteres.',
+    .refine((val) => val.length >= 2 && val.length <= 80, {
+      message: 'Modelo deve ter entre 2 e 80 caracteres.',
     }),
   anoModelo: z
     .string()
