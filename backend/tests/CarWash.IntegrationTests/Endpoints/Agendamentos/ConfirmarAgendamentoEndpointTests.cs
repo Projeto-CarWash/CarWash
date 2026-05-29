@@ -518,7 +518,7 @@ public class ConfirmarAgendamentoEndpointTests : IAsyncDisposable
     {
         await using var db = NovoDbContext();
 
-        var filial = Filial.Criar(Guid.NewGuid(), $"Filial {Guid.NewGuid():N}"[..30], 4);
+        var filial = Filial.Criar(Guid.NewGuid(), $"Filial {Guid.NewGuid():N}"[..30], CodigoTeste(), 4);
         var cliente = ClienteValido();
         var veiculo = Veiculo.Criar(
             id: Guid.NewGuid(),
@@ -543,6 +543,8 @@ public class ConfirmarAgendamentoEndpointTests : IAsyncDisposable
 
         return (filial.Id, cliente.Id, veiculo.Id, servicoIds);
     }
+
+    private static string CodigoTeste() => $"F{Guid.NewGuid():N}"[..10].ToUpperInvariant();
 
     private CarWashDbContext NovoDbContext() => CarWashDbContextFactoryForTests.Create(_fixture);
 

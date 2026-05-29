@@ -106,7 +106,12 @@ public class SchemaShapeTests
         [
             "uk_usuarios_email", "idx_usuarios_ativo",
             "idx_sessoes_usuario_id", "idx_sessoes_expira_em", "idx_sessoes_revogado_em",
-            "uk_filiais_nome", "idx_filiais_ativa",
+
+            // uk_filiais_nome substituído por uk_filiais_nome_lower (índice
+            // funcional case-insensitive em LOWER(nome)) na migration
+            // AdicionaCadastroFilial (RF017 / ADR-0007 §3.2 / L1=b).
+            "uk_filiais_nome_lower", "idx_filiais_ativa",
+            "uk_filiais_codigo", "uk_filiais_cnpj", "idx_filiais_cidade_uf",
 
             // ux_clientes_email substituiu idx_clientes_email no commit 3989691
             // (migration AdicionaAuditoriaUsuarioCliente — índice parcial por ativo).

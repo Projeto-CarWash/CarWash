@@ -209,7 +209,7 @@ public class ConstraintViolationTests : IAsyncLifetime
     {
         var (filialId1, clienteId, veiculoId, criadoPor) = await SemearAgendamentoDependenciasAsync().ConfigureAwait(false);
         var filialId2 = Guid.NewGuid();
-        _db.Filiais.Add(Filial.Criar(filialId2, "Filial 2", 3));
+        _db.Filiais.Add(Filial.Criar(filialId2, "Filial 2", $"F{Guid.NewGuid():N}"[..10].ToUpperInvariant(), 3));
         await _db.SaveChangesAsync().ConfigureAwait(false);
 
         var inicio = DateTime.UtcNow.AddHours(2);
@@ -248,7 +248,7 @@ public class ConstraintViolationTests : IAsyncLifetime
 
     private async Task<(Guid filialId, Guid clienteId, Guid veiculoId, Guid criadoPor)> SemearAgendamentoDependenciasAsync()
     {
-        var filial = Filial.Criar(Guid.NewGuid(), $"Filial {Guid.NewGuid():N}".Substring(0, 30), 4);
+        var filial = Filial.Criar(Guid.NewGuid(), $"Filial {Guid.NewGuid():N}".Substring(0, 30), $"F{Guid.NewGuid():N}"[..10].ToUpperInvariant(), 4);
         var cliente = ClienteValido();
         var veiculo = Veiculo.Criar(
             id: Guid.NewGuid(),
