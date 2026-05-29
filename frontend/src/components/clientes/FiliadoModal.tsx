@@ -129,7 +129,12 @@ export function FiliadoModal({ open, onOpenChange, existingCpfs, onSave }: Filia
   const docIsUnique = !existingCpfs.includes(docDigits);
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) handleClose();
+      }}
+    >
       <DialogContent
         showCloseButton={false}
         className="!max-w-md overflow-y-auto max-h-[90vh] rounded-2xl border border-zinc-800/60 bg-zinc-900 p-0 text-zinc-100 shadow-2xl sm:!max-w-md"

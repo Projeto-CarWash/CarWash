@@ -205,7 +205,12 @@ export function VeiculoModal({
   const placaIsValid = /^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$/i.test(placa.replace(/[\s-]/g, ''));
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) handleClose();
+      }}
+    >
       <DialogContent
         showCloseButton={false}
         className="!max-w-lg overflow-y-auto max-h-[90vh] rounded-2xl border border-zinc-800/60 bg-zinc-900 p-0 text-zinc-100 shadow-2xl sm:!max-w-lg"
