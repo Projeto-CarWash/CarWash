@@ -3,6 +3,7 @@ using System;
 using CarWash.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace CarWash.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(CarWashDbContext))]
-    partial class CarWashDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260527032227_AdicionaCadastroFilial")]
+    partial class AdicionaCadastroFilial
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -404,11 +407,6 @@ namespace CarWash.Infrastructure.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
                         .HasColumnName("nome");
-
-                    b.Property<string>("Observacoes")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("observacoes");
 
                     b.Property<string>("Telefone")
                         .HasMaxLength(11)

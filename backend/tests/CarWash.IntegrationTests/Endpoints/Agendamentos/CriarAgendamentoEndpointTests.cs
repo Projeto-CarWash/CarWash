@@ -591,7 +591,7 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
     {
         await using var db = NovoDbContext();
 
-        var filial = Filial.Criar(Guid.NewGuid(), $"Filial {Guid.NewGuid():N}"[..30], 4);
+        var filial = Filial.Criar(Guid.NewGuid(), $"Filial {Guid.NewGuid():N}"[..30], CodigoTeste(), 4);
         var cliente = ClienteValido();
         var veiculo = Veiculo.Criar(
             id: Guid.NewGuid(),
@@ -620,7 +620,7 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
     private async Task<Guid> SemearFilialAsync(bool ativa = true)
     {
         await using var db = NovoDbContext();
-        var filial = Filial.Criar(Guid.NewGuid(), $"Filial {Guid.NewGuid():N}"[..30], 3);
+        var filial = Filial.Criar(Guid.NewGuid(), $"Filial {Guid.NewGuid():N}"[..30], CodigoTeste(), 3);
         if (!ativa)
         {
             filial.Inativar();
@@ -630,6 +630,8 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
         await db.SaveChangesAsync();
         return filial.Id;
     }
+
+    private static string CodigoTeste() => $"F{Guid.NewGuid():N}"[..10].ToUpperInvariant();
 
     private CarWashDbContext NovoDbContext() => CarWashDbContextFactoryForTests.Create(_fixture);
 
