@@ -9,7 +9,6 @@ import type { ClienteFormData } from '@/schemas/clienteSchema';
 
 export function IdentificacaoForm() {
   const {
-    watch,
     control,
     formState: { errors },
   } = useFormContext<ClienteFormData>();

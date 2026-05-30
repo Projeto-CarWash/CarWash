@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowLeft, Car, Plus, Power, RefreshCcw } from 'lucide-react';
+import { ArrowLeft, Car, Plus, Power } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AxiosError } from 'axios';
