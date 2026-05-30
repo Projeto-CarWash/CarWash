@@ -154,7 +154,8 @@ export function NovoVeiculoPage() {
         setBusca('');
 
         setTimeout(() => {
-          void navigate(`/clientes/${data.clienteId}`);
+          // Passa state para ClienteDetalhePage refazer o fetch de veículos (RF004/RF022)
+          void navigate(`/clientes/${data.clienteId}`, { state: { veiculoCriado: true } });
         }, 1000);
       } catch (err) {
         if (err instanceof AxiosError) {
@@ -229,9 +230,11 @@ export function NovoVeiculoPage() {
   );
 
   const isSubmitting = form.formState.isSubmitting;
+  const isSubmitted = form.formState.isSubmitCount > 0;
   const errors = form.formState.errors;
-  const hasErrors = Object.keys(errors).length > 0;
-  const isSubmitDisabled = isSubmitting || hasErrors || !form.formState.isValid;
+  // Só bloqueia o botão se: está enviando OU (já tentou enviar E tem erros)
+  // Isso evita que o botão fique desabilitado antes da primeira tentativa (modo onChange)
+  const isSubmitDisabled = isSubmitting || (isSubmitted && Object.keys(errors).length > 0);
 
   // Filtragem dos clientes para o autocomplete local
   const query = busca.trim().toLowerCase();
