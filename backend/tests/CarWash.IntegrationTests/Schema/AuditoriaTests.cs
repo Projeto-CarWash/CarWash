@@ -79,7 +79,7 @@ public class AuditoriaTests
         var (filialId, clienteId, veiculoId, criadoPor) = await SemearAsync(db).ConfigureAwait(false);
 
         var inicio = DateTime.UtcNow.AddHours(4);
-        var ag = Agendamento.Criar(Guid.NewGuid(), filialId, clienteId, veiculoId, criadoPor, inicio, inicio.AddHours(1));
+        var ag = Agendamento.Criar(Guid.NewGuid(), filialId, clienteId, veiculoId, criadoPor, inicio, inicio.AddHours(1), 30, 50m);
         db.Agendamentos.Add(ag);
         await db.SaveChangesAsync().ConfigureAwait(false);
 

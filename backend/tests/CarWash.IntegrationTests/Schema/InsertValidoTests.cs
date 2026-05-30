@@ -112,6 +112,8 @@ public class InsertValidoTests : IAsyncLifetime
             criadoPor: usuario.Id,
             inicio: inicio,
             fim: inicio.AddHours(1),
+            duracaoTotalMin: 30,
+            valorTotal: 50m,
             responsavelId: filiado.Id,
             observacoes: "teste");
         _db.Agendamentos.Add(ag);

@@ -1,4 +1,5 @@
 using CarWash.Application.Abstractions;
+using CarWash.Application.Agendamentos.Persistence;
 using CarWash.Application.Auth.Abstractions;
 using CarWash.Application.Auth.Persistence;
 using CarWash.Application.Clientes.Persistence;
@@ -56,6 +57,7 @@ public static class DependencyInjection
         services.AddScoped<IUsuarioRepository, UsuarioRepository>();
         services.AddScoped<IClienteRepository, ClienteRepository>();
         services.AddScoped<IServicoRepository, ServicoRepository>();
+    services.AddScoped<IAgendamentoRepository, AgendamentoRepository>();
 
         services.AddDbContext<CarWashDbContext>((sp, opt) =>
         {

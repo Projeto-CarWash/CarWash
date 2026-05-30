@@ -3,10 +3,6 @@ using CarWash.Domain.Enums;
 
 namespace CarWash.Domain.Entities;
 
-/// <summary>
-/// Agenda operacional. Carrega as regras críticas RN004/RN006/RN010/RN011.
-/// Concorrência otimista por <c>Versao</c> (decisão P15).
-/// </summary>
 public sealed class Agendamento : IAuditable, IAuditableSetter
 {
     private Agendamento()
@@ -36,6 +32,10 @@ public sealed class Agendamento : IAuditable, IAuditableSetter
 
     public string? Observacoes { get; private set; }
 
+    public int DuracaoTotalMin { get; private set; }
+
+    public decimal ValorTotal { get; private set; }
+
     public int Versao { get; private set; }
 
     public DateTime CriadoEm { get; private set; }
@@ -50,6 +50,8 @@ public sealed class Agendamento : IAuditable, IAuditableSetter
         Guid criadoPor,
         DateTime inicio,
         DateTime fim,
+        int duracaoTotalMin,
+        decimal valorTotal,
         Guid? responsavelId = null,
         string? observacoes = null)
     {
@@ -83,6 +85,16 @@ public sealed class Agendamento : IAuditable, IAuditableSetter
             throw new DomainException("Início do agendamento deve ser anterior ao fim.");
         }
 
+        if (duracaoTotalMin <= 0)
+        {
+            throw new DomainException("Duração total do agendamento deve ser positiva.");
+        }
+
+        if (valorTotal < 0m)
+        {
+            throw new DomainException("Valor total do agendamento não pode ser negativo.");
+        }
+
         var agora = DateTime.UtcNow;
         return new Agendamento
         {
@@ -96,10 +108,19 @@ public sealed class Agendamento : IAuditable, IAuditableSetter
             Inicio = DateTime.SpecifyKind(inicio, DateTimeKind.Utc),
             Fim = DateTime.SpecifyKind(fim, DateTimeKind.Utc),
             Observacoes = observacoes,
+            DuracaoTotalMin = duracaoTotalMin,
+            ValorTotal = valorTotal,
             Versao = 1,
             CriadoEm = agora,
             AtualizadoEm = agora,
         };
+    }
+
+    public void Iniciar()
+    {
+        GarantirEstadoEditavel();
+        StatusRaw = StatusAgendamento.EmAndamento.ToDbValue();
+        Versao++;
     }
 
     public void Cancelar()
