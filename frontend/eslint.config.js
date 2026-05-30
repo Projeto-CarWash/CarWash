@@ -138,4 +138,35 @@ export default defineConfig([
       'no-console': 'off',
     },
   },
+
+  // E2E (Playwright) — vivem fora de src/, rodam em Node, sem o programa TS do app.
+  // Usam projeto próprio (tsconfig.e2e.json) só no typecheck; aqui só regras base.
+  {
+    files: ['e2e/**/*.ts', 'playwright.config.ts'],
+    extends: [js.configs.recommended, importX.flatConfigs.recommended, prettierConfig],
+    languageOptions: {
+      ecmaVersion: 2023,
+      sourceType: 'module',
+      globals: { ...globals.node },
+      parser: tseslint.parser,
+      parserOptions: { project: null, projectService: false },
+    },
+    settings: {
+      'import-x/resolver-next': [
+        createTypeScriptImportResolver({ project: './tsconfig.e2e.json' }),
+        importX.createNodeResolver(),
+      ],
+    },
+    rules: {
+      'no-console': 'off',
+      'import-x/order': [
+        'error',
+        {
+          groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index', 'type'],
+          'newlines-between': 'always',
+          alphabetize: { order: 'asc', caseInsensitive: true },
+        },
+      ],
+    },
+  },
 ]);

@@ -57,8 +57,18 @@ jobs:
       - name: Format check
         run: npm run format:check
 
-      - name: Test (placeholder)
-        run: npm test --if-present -- --run
+      # Unit tests (Vitest) com cobertura + gate (thresholds em vitest.config.ts).
+      - name: Test (Vitest + coverage gate)
+        run: npm run test:coverage
+
+      - name: Upload frontend coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: frontend/coverage/**/*
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Build
         run: npm run build
@@ -104,20 +114,65 @@ jobs:
         if: steps.backend_exists.outputs.found == 'true'
         run: dotnet build --configuration Release --no-restore
 
-      - name: Test (with coverage)
+      # Unit + integration. IntegrationTests usa Testcontainers; o runner
+      # ubuntu-latest já tem Docker disponível, então o socket local basta —
+      # não é preciso DinD aqui. O coverlet.runsettings aplica o gate global (60%).
+      - name: Test (unit + integration, com coverage gate)
         if: steps.backend_exists.outputs.found == 'true'
         run: |
           dotnet test --configuration Release --no-build \
+            --settings coverlet.runsettings \
             --collect:"XPlat Code Coverage" \
             --results-directory ./TestResults \
             --logger "trx;LogFileName=test-results.trx"
+
+      # Gate por assembly (Domain >= 80%, Application >= 70%) a partir do
+      # relatório cobertura — complementa o gate global do coverlet.
+      - name: Coverage gate por assembly (Domain/Application)
+        if: steps.backend_exists.outputs.found == 'true'
+        run: |
+          dotnet tool install --global dotnet-reportgenerator-globaltool >/dev/null 2>&1 || true
+          export PATH="$PATH:$HOME/.dotnet/tools"
+          reportgenerator \
+            "-reports:TestResults/**/coverage.cobertura.xml" \
+            "-targetdir:TestResults/coverage-report" \
+            "-reporttypes:Cobertura;TextSummary"
+          python3 - <<'PY'
+          import sys, xml.etree.ElementTree as ET
+          tree = ET.parse("TestResults/coverage-report/Cobertura.xml")
+          root = tree.getroot()
+          # Gates calibrados na cobertura REAL medida (merge UnitTests+IntegrationTests):
+          # Domain 74.5% e Application 87.4% — mínimos abaixo disso com folga, para
+          # serem guardas de regressão, não vermelho permanente. Reavalie ao subir.
+          gates = {"CarWash.Domain": 0.70, "CarWash.Application": 0.80}
+          rates = {}
+          for pkg in root.iter("package"):
+              name = pkg.get("name", "")
+              for asm, _ in gates.items():
+                  if name == asm or name.startswith(asm):
+                      rates[asm] = float(pkg.get("line-rate", "0"))
+          failed = False
+          for asm, minimo in gates.items():
+              got = rates.get(asm)
+              if got is None:
+                  print(f"AVISO: assembly {asm} não encontrado no relatório (sem gate aplicado).")
+                  continue
+              status = "OK" if got >= minimo else "FALHOU"
+              print(f"{status}: {asm} cobertura {got:.1%} (mínimo {minimo:.0%})")
+              if got < minimo:
+                  failed = True
+          sys.exit(1 if failed else 0)
+          PY
 
       - name: Upload test results
         if: steps.backend_exists.outputs.found == 'true' && always()
         uses: actions/upload-artifact@v4
         with:
           name: backend-test-results
-          path: backend/TestResults/**/*
+          path: |
+            backend/TestResults/**/*.trx
+            backend/TestResults/**/coverage.cobertura.xml
+            backend/TestResults/coverage-report/**/*
           if-no-files-found: warn
           retention-days: 14
 
@@ -136,3 +191,30 @@ jobs:
           docker compose -f docker-compose.yml -f docker-compose.dev.yml  config --quiet
           docker compose -f docker-compose.yml -f docker-compose.hom.yml  config --quiet
           docker compose -f docker-compose.yml -f docker-compose.prod.yml config --quiet
+          docker compose -p carwash-test -f docker-compose.test.yml --profile e2e --profile unit config --quiet
+
+  # ─────────────── E2E (Playwright contra a stack dockerizada) ───────────────
+  e2e:
+    name: E2E (Playwright via proxy)
+    runs-on: ubuntu-latest
+    # Só roda se as suítes unitárias passarem — falha cedo é mais barata.
+    needs: [frontend, backend]
+    steps:
+      - uses: actions/checkout@v4
+
+      # `make test-e2e` é o MESMO alvo usado localmente: sobe a stack
+      # (postgres+migrator+backend+frontend+proxy), espera /health pelo proxy,
+      # roda o Playwright e derruba tudo (mesmo em falha).
+      - name: Run E2E (make test-e2e)
+        run: make test-e2e
+
+      - name: Upload Playwright report (trace/vídeo em falha)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            frontend/playwright-report/**/*
+            frontend/test-results/**/*
+          if-no-files-found: warn
+          retention-days: 14

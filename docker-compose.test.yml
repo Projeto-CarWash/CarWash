@@ -1,0 +1,221 @@
+# docker-compose.test.yml — execução dockerizada da suíte de testes (CA011)
+#
+# Stack autocontida e descartável: o MESMO arquivo roda local e no CI. Não
+# depende de .env real — define defaults de teste inline (segredos fixos de
+# teste, NUNCA usar em hom/prod). Use sempre com nome de projeto isolado para
+# não colidir com a stack de dev:
+#
+#   docker compose -p carwash-test -f docker-compose.test.yml ...
+#
+# Os alvos do Makefile (test, test-unit, test-back, test-front, test-e2e) são o
+# ponto de entrada — ver Makefile/make.ps1.
+#
+# Topologia espelha homologação (proxy nginx -> backend/frontend) porque o E2E
+# precisa do mesmo origin para `/` (SPA) e `/api/*` (backend). Apontar o E2E
+# direto para o frontend quebraria as chamadas de API.
+
+name: carwash-test
+
+networks:
+  test-internal:
+    driver: bridge
+    internal: true
+  test-public:
+    driver: bridge
+
+volumes:
+  # Volume efêmero e exclusivo — `make clean-test` o remove. Nunca toca no pgdata de dev.
+  pgdata-test:
+    name: carwash_pgdata_test
+
+# Segredos FIXOS de teste — válidos só para esta stack descartável.
+# DB chama-se "carwash" (não "carwash_test") porque o docker/postgres/init.sql
+# faz GRANT ... ON DATABASE carwash hardcoded; usar outro nome quebra o init
+# (postgres sai com código 3). O isolamento vem do volume próprio (pgdata-test)
+# e do nome de projeto carwash-test, não do nome do banco.
+x-test-secrets: &test-secrets
+  POSTGRES_DB: carwash
+  POSTGRES_USER: carwash_owner
+  POSTGRES_PASSWORD: test-only-password
+  CARWASH_SEED_ADMIN_PASSWORD: TestAdmin!2026
+  Jwt__Secret: test-only-jwt-secret-com-no-minimo-64-caracteres-para-hmac-sha256-ok
+  Jwt__ConfirmacaoSigningKey: test-only-confirmacao-key-distinta-com-64-caracteres-rf015-okok
+  Jwt__Issuer: carwash-api
+  Jwt__Audience: carwash-web
+
+services:
+  # ─────────── Runners de teste UNITÁRIO (não precisam da stack no ar) ───────────
+
+  # Backend: unit + integration. IntegrationTests usa Testcontainers, que sobe
+  # PostgreSQL efêmero falando com o Docker daemon do HOST via socket montado.
+  # Por isso este serviço monta /var/run/docker.sock e fica fora das redes do
+  # compose (Testcontainers cria a sua própria rede).
+  backend-tests:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: tests
+    image: carwash-backend-tests
+    profiles: ['unit']
+    environment:
+      CARWASH_SEED_ADMIN_PASSWORD: TestAdmin!2026
+      # Testcontainers fala com o daemon do HOST pelo socket montado e sobe o
+      # PostgreSQL como container IRMÃO (sibling) na máquina host. Como ESTE
+      # container não está na mesma rede do sibling, ele precisa alcançar a porta
+      # PUBLICADA no host: por isso forçamos o host reportado para
+      # host.docker.internal (mapeado para o gateway do host via extra_hosts).
+      # Sem isso, Testcontainers reporta 127.0.0.1/172.17.0.1 e a conexão é recusada.
+      TESTCONTAINERS_HOST_OVERRIDE: host.docker.internal
+      # Ryuk (container de limpeza do Testcontainers) também precisa do socket;
+      # desabilitamos para evitar dependência extra em CI efêmero — o `down`/`run --rm`
+      # já remove os containers.
+      TESTCONTAINERS_RYUK_DISABLED: 'true'
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./backend/TestResults:/src/TestResults
+    command:
+      - test
+      - CarWash.sln
+      - --configuration
+      - Release
+      - --settings
+      - coverlet.runsettings
+      - --collect:XPlat Code Coverage
+      - --results-directory
+      - /src/TestResults
+      - --logger
+      - trx;LogFileName=test-results.trx
+
+  # Frontend: testes unitários (Vitest) + cobertura. Não precisa da stack no ar
+  # (usa jsdom + MSW). Despeja cobertura num bind mount para o CI publicar.
+  frontend-tests:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.test
+    image: carwash-frontend-tests
+    profiles: ['unit']
+    volumes:
+      - ./frontend/coverage:/app/coverage
+    command: ['npm', 'run', 'test:coverage']
+
+  # ─────────── Stack para E2E (espelha hom) ───────────
+
+  postgres:
+    image: postgres:16-alpine
+    profiles: ['e2e']
+    environment:
+      <<: *test-secrets
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - pgdata-test:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U carwash_owner -d carwash']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - test-internal
+
+  migrator:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: migrator
+    profiles: ['e2e']
+    restart: 'no'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ConnectionStrings__Default: 'Host=postgres;Port=5432;Database=carwash;Username=carwash_owner;Password=test-only-password'
+      CARWASH_SEED_ADMIN_PASSWORD: TestAdmin!2026
+    networks:
+      - test-internal
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    profiles: ['e2e']
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
+    environment:
+      <<: *test-secrets
+      ASPNETCORE_ENVIRONMENT: Staging
+      ConnectionStrings__Default: 'Host=postgres;Port=5432;Database=carwash;Username=carwash_owner;Password=test-only-password'
+    networks:
+      - test-internal
+      - test-public
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # Vazio: o SPA usa caminhos absolutos /api/v1/... roteados pelo proxy.
+        VITE_API_URL: ''
+    profiles: ['e2e']
+    networks:
+      - test-public
+
+  proxy:
+    image: nginx:1.27-alpine
+    profiles: ['e2e']
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    volumes:
+      # Reaproveita a conf de hom (sem TLS, escuta na 80, roteia /api e /).
+      - ./docker/proxy/nginx.hom.conf:/etc/nginx/nginx.conf:ro
+    # O runner e2e fala com `proxy:80` pela rede interna do compose — a porta no
+    # host só serve para debug manual. Default 8088 (não 80) para não colidir com
+    # um nginx de dev/sistema já ocupando a 80. Sobrescreva com E2E_PROXY_PORT.
+    ports:
+      - '${E2E_PROXY_PORT:-8088}:80'
+    networks:
+      - test-public
+
+  # Runner Playwright: espera o /health pelo proxy e roda os specs contra ele.
+  e2e:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.test
+    image: carwash-frontend-tests
+    profiles: ['e2e']
+    depends_on:
+      proxy:
+        condition: service_started
+    environment:
+      CI: 'true'
+      # Dentro da rede compose o proxy é alcançável pelo nome de serviço na 80.
+      E2E_BASE_URL: http://proxy:80
+      CARWASH_SEED_ADMIN_PASSWORD: TestAdmin!2026
+    volumes:
+      - ./frontend/playwright-report:/app/playwright-report
+      - ./frontend/test-results:/app/test-results
+    networks:
+      - test-public
+    # Aguarda o backend ficar saudável pelo proxy antes de disparar o Playwright —
+    # espera ativa com timeout, sem sleep cego (anti-flakiness).
+    command:
+      - sh
+      - -c
+      - |
+        echo "Aguardando /health pelo proxy..."
+        for i in $$(seq 1 60); do
+          if wget -q -O- http://proxy:80/health >/dev/null 2>&1; then
+            echo "Stack saudável."; break
+          fi
+          if [ "$$i" = "60" ]; then echo "Timeout esperando /health"; exit 1; fi
+          sleep 2
+        done
+        npm run e2e
