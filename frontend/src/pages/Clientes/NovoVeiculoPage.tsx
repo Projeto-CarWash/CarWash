@@ -230,7 +230,7 @@ export function NovoVeiculoPage() {
   );
 
   const isSubmitting = form.formState.isSubmitting;
-  const isSubmitted = form.formState.isSubmitCount > 0;
+  const isSubmitted = form.formState.isSubmitted;
   const errors = form.formState.errors;
   // Só bloqueia o botão se: está enviando OU (já tentou enviar E tem erros)
   // Isso evita que o botão fique desabilitado antes da primeira tentativa (modo onChange)
