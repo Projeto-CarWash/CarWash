@@ -1,4 +1,5 @@
 using CarWash.Application.Abstractions;
+using CarWash.Application.Abstractions.Messaging;
 using CarWash.Application.Agenda.Persistence;
 using CarWash.Application.Agendamentos.Abstractions;
 using CarWash.Application.Agendamentos.Persistence;
@@ -6,6 +7,7 @@ using CarWash.Application.Auth.Abstractions;
 using CarWash.Application.Auth.Persistence;
 using CarWash.Application.Clientes.Persistence;
 using CarWash.Application.Common.Security;
+using CarWash.Application.Interfaces;
 using CarWash.Application.Servicos.Persistence;
 using CarWash.Application.Usuarios.Persistence;
 using CarWash.Application.Veiculos.Persistence;
@@ -16,14 +18,12 @@ using CarWash.Infrastructure.Persistence;
 using CarWash.Infrastructure.Persistence.Interceptors;
 using CarWash.Infrastructure.Persistence.Maintenance;
 using CarWash.Infrastructure.Persistence.Repositories;
+using CarWash.Infrastructure.Repositories;
 using CarWash.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using CarWash.Application.Interfaces;
-using CarWash.Infrastructure.Repositories;
-using CarWash.Application.Abstractions.Messaging;
 
 namespace CarWash.Infrastructure;
 
@@ -36,7 +36,7 @@ public static class DependencyInjection
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configuration);
 
-        var conn = configuration.GetConnectionString("Default")
+        string conn = configuration.GetConnectionString("Default")
             ?? throw new InvalidOperationException("ConnectionStrings:Default não configurada");
 
         services.AddSingleton<IPasswordHasher, Argon2idPasswordHasher>();

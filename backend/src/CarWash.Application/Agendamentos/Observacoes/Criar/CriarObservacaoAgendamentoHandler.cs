@@ -21,6 +21,7 @@ public sealed class CriarObservacaoAgendamentoHandler
         this.validator = validator;
     }
 
+    /// <inheritdoc/>
     public async Task<CriarObservacaoAgendamentoResponse> HandleAsync(
         CriarObservacaoAgendamentoCommand command,
         CancellationToken cancellationToken)
@@ -42,7 +43,7 @@ public sealed class CriarObservacaoAgendamentoHandler
 
         string texto = InputNormalizer.SanitizeTextOrNull(command.Texto)!;
 
-        AgendamentoObservacao observacao = AgendamentoObservacao.Criar(
+        var observacao = AgendamentoObservacao.Criar(
             command.AgendamentoId,
             texto,
             command.UsuarioId);

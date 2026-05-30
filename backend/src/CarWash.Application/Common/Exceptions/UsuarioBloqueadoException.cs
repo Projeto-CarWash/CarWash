@@ -44,6 +44,6 @@ public sealed class UsuarioBloqueadoException : Exception
         BloqueadoAte = bloqueadoAte;
     }
 
-    /// <summary>Instante (UTC) em que o bloqueio expira.</summary>
+    /// <summary>Gets instante (UTC) em que o bloqueio expira.</summary>
     public DateTime BloqueadoAte { get; }
 }

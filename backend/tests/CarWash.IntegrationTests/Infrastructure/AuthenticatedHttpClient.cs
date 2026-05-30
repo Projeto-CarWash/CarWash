@@ -31,7 +31,7 @@ public static class AuthenticatedHttpClient
         login.EnsureSuccessStatusCode();
 
         var body = await login.Content.ReadFromJsonAsync<JsonElement>(Json).ConfigureAwait(false);
-        var accessToken = body.GetProperty("accessToken").GetString()
+        string accessToken = body.GetProperty("accessToken").GetString()
             ?? throw new InvalidOperationException("Login não devolveu accessToken.");
 
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);

@@ -6,6 +6,7 @@ namespace CarWash.Infrastructure.Persistence.Configurations;
 
 public sealed class AgendamentoObservacaoConfiguration : IEntityTypeConfiguration<AgendamentoObservacao>
 {
+    /// <inheritdoc/>
     public void Configure(EntityTypeBuilder<AgendamentoObservacao> builder)
     {
         builder.ToTable("agendamento_observacoes");

@@ -137,7 +137,7 @@ public sealed class CriarClienteCommandValidator : AbstractValidator<CriarClient
             return false;
         }
 
-        var idade = hoje.Year - dataNascimento.Year;
+        int idade = hoje.Year - dataNascimento.Year;
         if (dataNascimento > hoje.AddYears(-idade))
         {
             idade--;

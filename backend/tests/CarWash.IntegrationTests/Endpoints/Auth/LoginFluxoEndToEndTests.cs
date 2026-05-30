@@ -29,7 +29,7 @@ public class LoginFluxoEndToEndTests : IAsyncDisposable
         var client = _factory.CreateClient();
         using var admin = await AuthenticatedHttpClient.CreateAsync(_factory);
 
-        var email = $"e2e-{Guid.NewGuid():N}@carwash.local";
+        string email = $"e2e-{Guid.NewGuid():N}@carwash.local";
         const string senha = "Senha1234";
 
         var cadastro = await admin.PostAsJsonAsync(RotaCriar, new
@@ -64,6 +64,7 @@ public class LoginFluxoEndToEndTests : IAsyncDisposable
         login3.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
+    /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
         await _factory.DisposeAsync();

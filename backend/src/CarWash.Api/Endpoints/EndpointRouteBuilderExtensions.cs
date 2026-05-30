@@ -1,11 +1,11 @@
 using CarWash.Api.Endpoints.Agenda;
 using CarWash.Api.Endpoints.Agendamentos;
+using CarWash.Api.Endpoints.Agendamentos;
 using CarWash.Api.Endpoints.Auth;
 using CarWash.Api.Endpoints.Clientes;
 using CarWash.Api.Endpoints.Servicos;
 using CarWash.Api.Endpoints.Usuarios;
 using CarWash.Api.Endpoints.Veiculos;
-using CarWash.Api.Endpoints.Agendamentos;
 
 namespace CarWash.Api.Endpoints;
 

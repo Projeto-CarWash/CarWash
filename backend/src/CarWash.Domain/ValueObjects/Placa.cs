@@ -21,7 +21,7 @@ public sealed partial record Placa
             throw new DomainException("Placa não pode ser vazia.");
         }
 
-        var normalizado = valor.Replace(" ", string.Empty, StringComparison.Ordinal)
+        string normalizado = valor.Replace(" ", string.Empty, StringComparison.Ordinal)
             .Replace("-", string.Empty, StringComparison.Ordinal)
             .ToUpperInvariant();
 
@@ -38,6 +38,7 @@ public sealed partial record Placa
         Valor = normalizado;
     }
 
+    /// <inheritdoc/>
     public override string ToString() => Valor;
 
     public static implicit operator string(Placa placa) =>

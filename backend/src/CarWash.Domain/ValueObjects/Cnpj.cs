@@ -19,7 +19,7 @@ public sealed record Cnpj
             throw new DomainException("CNPJ não pode ser vazio.");
         }
 
-        var apenasDigitos = new string([.. valor.Where(char.IsDigit)]);
+        string apenasDigitos = new string([.. valor.Where(char.IsDigit)]);
         if (apenasDigitos.Length != 14)
         {
             throw new DomainException("CNPJ deve possuir 14 dígitos.");
@@ -33,6 +33,7 @@ public sealed record Cnpj
         Valor = apenasDigitos;
     }
 
+    /// <inheritdoc/>
     public override string ToString() => Valor;
 
     public static implicit operator string(Cnpj cnpj) =>
@@ -45,21 +46,21 @@ public sealed record Cnpj
             return false;
         }
 
-        var digito1 = CalcularDigito(cnpj, PesosPrimeiroDigito);
-        var digito2 = CalcularDigito(cnpj, PesosSegundoDigito);
+        int digito1 = CalcularDigito(cnpj, PesosPrimeiroDigito);
+        int digito2 = CalcularDigito(cnpj, PesosSegundoDigito);
 
         return cnpj[12] - '0' == digito1 && cnpj[13] - '0' == digito2;
     }
 
     private static int CalcularDigito(string cnpj, int[] pesos)
     {
-        var soma = 0;
-        for (var i = 0; i < pesos.Length; i++)
+        int soma = 0;
+        for (int i = 0; i < pesos.Length; i++)
         {
             soma += (cnpj[i] - '0') * pesos[i];
         }
 
-        var resto = soma % 11;
+        int resto = soma % 11;
         return resto < 2 ? 0 : 11 - resto;
     }
 }

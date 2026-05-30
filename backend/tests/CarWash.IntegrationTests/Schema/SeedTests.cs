@@ -53,7 +53,7 @@ public class SeedTests
     {
         await using var db = CarWashDbContextFactoryForTests.Create(_fixture);
 
-        var total = await db.Servicos.CountAsync().ConfigureAwait(false);
+        int total = await db.Servicos.CountAsync().ConfigureAwait(false);
         total.Should().BeGreaterThanOrEqualTo(3);
     }
 

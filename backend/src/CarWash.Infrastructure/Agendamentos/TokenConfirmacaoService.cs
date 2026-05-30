@@ -36,7 +36,7 @@ public sealed class TokenConfirmacaoService : ITokenConfirmacaoService
     {
         ArgumentNullException.ThrowIfNull(opcoes);
 
-        var chave = opcoes.Value.ConfirmacaoSigningKey;
+        string chave = opcoes.Value.ConfirmacaoSigningKey;
         if (string.IsNullOrWhiteSpace(chave))
         {
             throw new InvalidOperationException(
@@ -44,7 +44,7 @@ public sealed class TokenConfirmacaoService : ITokenConfirmacaoService
                 + "para a assinatura do token de confirmação de agendamento (RF015).");
         }
 
-        var bytes = Encoding.UTF8.GetBytes(chave);
+        byte[] bytes = Encoding.UTF8.GetBytes(chave);
         if (bytes.Length < 32)
         {
             throw new InvalidOperationException(
@@ -54,6 +54,7 @@ public sealed class TokenConfirmacaoService : ITokenConfirmacaoService
         _chave = bytes;
     }
 
+    /// <inheritdoc/>
     public string Gerar(string hashResumo, Guid usuarioId, string traceId)
     {
         if (string.IsNullOrWhiteSpace(hashResumo))
@@ -67,8 +68,8 @@ public sealed class TokenConfirmacaoService : ITokenConfirmacaoService
         }
 
         var agora = DateTimeOffset.UtcNow;
-        var iat = agora.ToUnixTimeSeconds();
-        var exp = agora.Add(Validade).ToUnixTimeSeconds();
+        long iat = agora.ToUnixTimeSeconds();
+        long exp = agora.Add(Validade).ToUnixTimeSeconds();
 
         var payload = new PayloadInterno
         {
@@ -80,13 +81,14 @@ public sealed class TokenConfirmacaoService : ITokenConfirmacaoService
             Exp = exp,
         };
 
-        var payloadJson = JsonSerializer.Serialize(payload, PayloadJsonOptions);
-        var payloadEncoded = Base64UrlEncode(Encoding.UTF8.GetBytes(payloadJson));
-        var assinatura = Base64UrlEncode(AssinarUtf8(payloadEncoded));
+        string payloadJson = JsonSerializer.Serialize(payload, PayloadJsonOptions);
+        string payloadEncoded = Base64UrlEncode(Encoding.UTF8.GetBytes(payloadJson));
+        string assinatura = Base64UrlEncode(AssinarUtf8(payloadEncoded));
 
         return payloadEncoded + "." + assinatura;
     }
 
+    /// <inheritdoc/>
     public TokenConfirmacaoPayload Validar(string token, Guid usuarioAutenticadoId)
     {
         if (string.IsNullOrWhiteSpace(token))
@@ -95,7 +97,7 @@ public sealed class TokenConfirmacaoService : ITokenConfirmacaoService
         }
 
         // Formato: exatamente duas partes separadas por '.'.
-        var partes = token.Split('.');
+        string[] partes = token.Split('.');
         if (partes.Length != 2 || partes[0].Length == 0 || partes[1].Length == 0)
         {
             throw new TokenConfirmacaoInvalidoException();
@@ -114,7 +116,7 @@ public sealed class TokenConfirmacaoService : ITokenConfirmacaoService
         }
 
         // HMAC sobre a string base64url do payload — comparação de tempo fixo.
-        var assinaturaEsperada = AssinarUtf8(partes[0]);
+        byte[] assinaturaEsperada = AssinarUtf8(partes[0]);
         if (!CryptographicOperations.FixedTimeEquals(assinaturaInformada, assinaturaEsperada))
         {
             throw new TokenConfirmacaoInvalidoException();
@@ -166,7 +168,7 @@ public sealed class TokenConfirmacaoService : ITokenConfirmacaoService
 
     private static byte[] Base64UrlDecode(string value)
     {
-        var normalizado = value.Replace('-', '+').Replace('_', '/');
+        string normalizado = value.Replace('-', '+').Replace('_', '/');
         switch (normalizado.Length % 4)
         {
             case 2: normalizado += "=="; break;

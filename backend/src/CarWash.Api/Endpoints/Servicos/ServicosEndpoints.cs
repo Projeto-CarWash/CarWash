@@ -83,7 +83,7 @@ public static class ServicosEndpoints
                 "Corpo da requisição ausente ou malformado.");
         }
 
-        var traceId = http.TraceIdentifier;
+        string traceId = http.TraceIdentifier;
         var usuarioId = ObterUsuarioId(http);
 
         var command = new CriarServicoCommand(
@@ -169,7 +169,7 @@ public static class ServicosEndpoints
                 "Corpo da requisição ausente ou malformado.");
         }
 
-        var traceId = http.TraceIdentifier;
+        string traceId = http.TraceIdentifier;
         var usuarioId = ObterUsuarioId(http);
 
         var command = new AtualizarServicoCommand(
@@ -215,7 +215,7 @@ public static class ServicosEndpoints
                 });
         }
 
-        var traceId = http.TraceIdentifier;
+        string traceId = http.TraceIdentifier;
         var usuarioId = ObterUsuarioId(http);
 
         var command = new AlterarStatusServicoCommand(id, request.Ativo, traceId, usuarioId);
@@ -246,7 +246,7 @@ public static class ServicosEndpoints
 
     private static Guid? ObterUsuarioId(HttpContext http)
     {
-        var sub = http.User.FindFirst("sub")?.Value
+        string? sub = http.User.FindFirst("sub")?.Value
             ?? http.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         return Guid.TryParse(sub, out var id) ? id : null;
     }

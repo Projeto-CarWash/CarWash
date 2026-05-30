@@ -1,13 +1,13 @@
 using System.Reflection;
+using CarWash.Application.Abstractions;
 using CarWash.Application.Abstractions.Messaging;
 using CarWash.Application.Agendamentos.Common;
-using FluentValidation;
-using Microsoft.Extensions.DependencyInjection;
-using CarWash.Application.Abstractions;
 using CarWash.Application.Agendamentos.Observacoes.Atualizar;
 using CarWash.Application.Agendamentos.Observacoes.Criar;
 using CarWash.Application.Agendamentos.Observacoes.Excluir;
 using CarWash.Application.Agendamentos.Observacoes.Listar;
+using FluentValidation;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace CarWash.Application;
 

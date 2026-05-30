@@ -14,6 +14,7 @@ public sealed class ListarObservacoesAgendamentoHandler
         this.repository = repository;
     }
 
+    /// <inheritdoc/>
     public async Task<ListarObservacoesAgendamentoResponse> HandleAsync(
         ListarObservacoesAgendamentoQuery query,
         CancellationToken cancellationToken)

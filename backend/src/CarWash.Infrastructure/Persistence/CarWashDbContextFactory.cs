@@ -13,9 +13,10 @@ public sealed class CarWashDbContextFactory : IDesignTimeDbContextFactory<CarWas
     public const string ConnectionEnvVar = "CARWASH_DB_CONNECTION";
     public const string AspNetConnectionEnvVar = "ConnectionStrings__Default";
 
+    /// <inheritdoc/>
     public CarWashDbContext CreateDbContext(string[] args)
     {
-        var cs = Environment.GetEnvironmentVariable(ConnectionEnvVar)
+        string cs = Environment.GetEnvironmentVariable(ConnectionEnvVar)
             ?? Environment.GetEnvironmentVariable(AspNetConnectionEnvVar)
             ?? "Host=localhost;Port=5432;Database=carwash;Username=carwash_owner;Password=carwash123";
 

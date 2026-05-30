@@ -16,6 +16,7 @@ public sealed class ObterUsuarioPorIdHandler : IQueryHandler<ObterUsuarioPorIdQu
         _repositorio = repositorio;
     }
 
+    /// <inheritdoc/>
     public async Task<UsuarioResponse> HandleAsync(ObterUsuarioPorIdQuery query, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(query);

@@ -21,12 +21,13 @@ public sealed class Argon2idPasswordHasher : IPasswordHasher
     public const int HashLengthBytes = 32;
     private const int Argon2Version = 19;
 
+    /// <inheritdoc/>
     public string Hash(string senha)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(senha);
 
-        var salt = RandomNumberGenerator.GetBytes(SaltLengthBytes);
-        var hash = ComputeHash(senha, salt, MemoryKiB, Iterations, Parallelism, HashLengthBytes);
+        byte[] salt = RandomNumberGenerator.GetBytes(SaltLengthBytes);
+        byte[] hash = ComputeHash(senha, salt, MemoryKiB, Iterations, Parallelism, HashLengthBytes);
 
         return string.Format(
             CultureInfo.InvariantCulture,
@@ -39,6 +40,7 @@ public sealed class Argon2idPasswordHasher : IPasswordHasher
             Convert.ToBase64String(hash).TrimEnd('='));
     }
 
+    /// <inheritdoc/>
     public bool Verify(string senha, string hash)
     {
         if (string.IsNullOrWhiteSpace(senha) || string.IsNullOrWhiteSpace(hash))
@@ -51,7 +53,7 @@ public sealed class Argon2idPasswordHasher : IPasswordHasher
             return false;
         }
 
-        var calculado = ComputeHash(
+        byte[] calculado = ComputeHash(
             senha,
             parametros.Salt,
             parametros.MemoryKiB,
@@ -62,6 +64,7 @@ public sealed class Argon2idPasswordHasher : IPasswordHasher
         return CryptographicOperations.FixedTimeEquals(calculado, parametros.HashEsperado);
     }
 
+    /// <inheritdoc/>
     public bool NeedsRehash(string hash)
     {
         if (!TryParse(hash, out var parametros))
@@ -102,7 +105,7 @@ public sealed class Argon2idPasswordHasher : IPasswordHasher
             return false;
         }
 
-        var partes = hash.Split('$', StringSplitOptions.None);
+        string[] partes = hash.Split('$', StringSplitOptions.None);
 
         // formato: ["", "argon2id", "v=N", "m=N,t=N,p=N", "<salt>", "<hash>"]
         if (partes.Length != 6 || partes[1] != "argon2id")
@@ -111,7 +114,7 @@ public sealed class Argon2idPasswordHasher : IPasswordHasher
         }
 
         if (!partes[2].StartsWith("v=", StringComparison.Ordinal)
-            || !int.TryParse(partes[2][2..], NumberStyles.Integer, CultureInfo.InvariantCulture, out var versao))
+            || !int.TryParse(partes[2][2..], NumberStyles.Integer, CultureInfo.InvariantCulture, out int versao))
         {
             return false;
         }
@@ -121,21 +124,21 @@ public sealed class Argon2idPasswordHasher : IPasswordHasher
             return false;
         }
 
-        var paramsTokens = partes[3].Split(',', StringSplitOptions.None);
+        string[] paramsTokens = partes[3].Split(',', StringSplitOptions.None);
         if (paramsTokens.Length != 3)
         {
             return false;
         }
 
-        if (!TryParseTokenInt(paramsTokens[0], "m=", out var memoryKiB)
-            || !TryParseTokenInt(paramsTokens[1], "t=", out var iterations)
-            || !TryParseTokenInt(paramsTokens[2], "p=", out var parallelism))
+        if (!TryParseTokenInt(paramsTokens[0], "m=", out int memoryKiB)
+            || !TryParseTokenInt(paramsTokens[1], "t=", out int iterations)
+            || !TryParseTokenInt(paramsTokens[2], "p=", out int parallelism))
         {
             return false;
         }
 
-        if (!TryDecodeBase64(partes[4], out var salt)
-            || !TryDecodeBase64(partes[5], out var hashEsperado))
+        if (!TryDecodeBase64(partes[4], out byte[]? salt)
+            || !TryDecodeBase64(partes[5], out byte[]? hashEsperado))
         {
             return false;
         }
@@ -160,7 +163,7 @@ public sealed class Argon2idPasswordHasher : IPasswordHasher
         decoded = [];
         try
         {
-            var padded = raw + new string('=', (4 - (raw.Length % 4)) % 4);
+            string padded = raw + new string('=', (4 - (raw.Length % 4)) % 4);
             decoded = Convert.FromBase64String(padded);
             return true;
         }

@@ -14,6 +14,7 @@ public sealed class ExcluirObservacaoAgendamentoHandler
         this.repository = repository;
     }
 
+    /// <inheritdoc/>
     public async Task<ExcluirObservacaoAgendamentoResponse> HandleAsync(
         ExcluirObservacaoAgendamentoCommand command,
         CancellationToken cancellationToken)

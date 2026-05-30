@@ -1,10 +1,10 @@
+using CarWash.Api.Middleware;
 using CarWash.Application.Abstractions.Messaging;
 using CarWash.Application.Agendamentos.Observacoes.Atualizar;
 using CarWash.Application.Agendamentos.Observacoes.Common;
 using CarWash.Application.Agendamentos.Observacoes.Criar;
 using CarWash.Application.Agendamentos.Observacoes.Excluir;
 using CarWash.Application.Agendamentos.Observacoes.Listar;
-using CarWash.Api.Middleware;
 using FluentValidation;
 
 namespace CarWash.Api.Endpoints.Agendamentos;
@@ -13,7 +13,7 @@ public static class AgendamentoObservacoesEndpoints
 {
     public static IEndpointRouteBuilder MapAgendamentoObservacoes(this IEndpointRouteBuilder app)
     {
-        RouteGroupBuilder group = app
+        var group = app
             .MapGroup("/api/v1/agendamentos/{agendamentoId:guid}/observacoes")
             .WithTags("Agendamentos - Observações")
             .RequireAuthorization();
@@ -65,7 +65,7 @@ public static class AgendamentoObservacoesEndpoints
         CancellationToken cancellationToken)
     {
         string traceId = ObterTraceId(httpContext);
-        Guid usuarioId = ObterUsuarioId(httpContext);
+        var usuarioId = ObterUsuarioId(httpContext);
 
         var command = new CriarObservacaoAgendamentoCommand(
             agendamentoId,
@@ -75,7 +75,7 @@ public static class AgendamentoObservacoesEndpoints
 
         try
         {
-            CriarObservacaoAgendamentoResponse response =
+            var response =
                 await handler.HandleAsync(command, cancellationToken);
 
             return Results.Created(
@@ -117,7 +117,7 @@ public static class AgendamentoObservacoesEndpoints
         CancellationToken cancellationToken)
     {
         string traceId = ObterTraceId(httpContext);
-        Guid usuarioId = ObterUsuarioId(httpContext);
+        var usuarioId = ObterUsuarioId(httpContext);
 
         var command = new AtualizarObservacaoAgendamentoCommand(
             agendamentoId,
@@ -128,7 +128,7 @@ public static class AgendamentoObservacoesEndpoints
 
         try
         {
-            AtualizarObservacaoAgendamentoResponse response =
+            var response =
                 await handler.HandleAsync(command, cancellationToken);
 
             return Results.Ok(response);
@@ -187,7 +187,7 @@ public static class AgendamentoObservacoesEndpoints
         CancellationToken cancellationToken)
     {
         string traceId = ObterTraceId(httpContext);
-        Guid usuarioId = ObterUsuarioId(httpContext);
+        var usuarioId = ObterUsuarioId(httpContext);
 
         var command = new ExcluirObservacaoAgendamentoCommand(
             agendamentoId,
@@ -197,7 +197,7 @@ public static class AgendamentoObservacoesEndpoints
 
         try
         {
-            ExcluirObservacaoAgendamentoResponse response =
+            var response =
                 await handler.HandleAsync(command, cancellationToken);
 
             return Results.Ok(response);
@@ -250,7 +250,7 @@ public static class AgendamentoObservacoesEndpoints
 
         try
         {
-            ListarObservacoesAgendamentoResponse response =
+            var response =
                 await handler.HandleAsync(query, cancellationToken);
 
             return Results.Ok(response);
@@ -277,7 +277,7 @@ public static class AgendamentoObservacoesEndpoints
     {
         string? raw = httpContext.User.FindFirst("sub")?.Value;
 
-        if (Guid.TryParse(raw, out Guid usuarioId))
+        if (Guid.TryParse(raw, out var usuarioId))
         {
             return usuarioId;
         }

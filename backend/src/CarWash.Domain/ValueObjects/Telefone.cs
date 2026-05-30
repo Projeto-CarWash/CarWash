@@ -17,7 +17,7 @@ public sealed record Telefone
             throw new DomainException("Telefone não pode ser vazio.");
         }
 
-        var apenasDigitos = new string([.. valor.Where(char.IsDigit)]);
+        string apenasDigitos = new string([.. valor.Where(char.IsDigit)]);
         if (apenasDigitos.Length is < 10 or > 11)
         {
             throw new DomainException("Telefone deve possuir 10 ou 11 dígitos.");
@@ -26,6 +26,7 @@ public sealed record Telefone
         Valor = apenasDigitos;
     }
 
+    /// <inheritdoc/>
     public override string ToString() => Valor;
 
     public static implicit operator string(Telefone telefone) =>

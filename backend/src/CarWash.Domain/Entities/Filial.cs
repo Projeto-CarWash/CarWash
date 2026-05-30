@@ -27,8 +27,10 @@ public sealed class Filial : IAuditable, IAuditableSetter
 
     public string Timezone { get; private set; }
 
+    /// <inheritdoc/>
     public DateTime CriadoEm { get; private set; }
 
+    /// <inheritdoc/>
     public DateTime AtualizadoEm { get; private set; }
 
     public static Filial Criar(Guid id, string nome, int celulasAtivas, string? timezone = null)
@@ -77,7 +79,9 @@ public sealed class Filial : IAuditable, IAuditableSetter
 
     public void Ativar() => Ativa = true;
 
+    /// <inheritdoc/>
     void IAuditableSetter.SetCriadoEm(DateTime valor) => CriadoEm = valor;
 
+    /// <inheritdoc/>
     void IAuditableSetter.SetAtualizadoEm(DateTime valor) => AtualizadoEm = valor;
 }

@@ -20,6 +20,7 @@ public sealed class AtualizarObservacaoAgendamentoHandler
         this.validator = validator;
     }
 
+    /// <inheritdoc/>
     public async Task<AtualizarObservacaoAgendamentoResponse> HandleAsync(
         AtualizarObservacaoAgendamentoCommand command,
         CancellationToken cancellationToken)

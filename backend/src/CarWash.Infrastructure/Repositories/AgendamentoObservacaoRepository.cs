@@ -15,6 +15,7 @@ public sealed class AgendamentoObservacaoRepository : IAgendamentoObservacaoRepo
         this.context = context;
     }
 
+    /// <inheritdoc/>
     public Task<bool> AgendamentoExisteAsync(
         Guid agendamentoId,
         CancellationToken cancellationToken)
@@ -24,6 +25,7 @@ public sealed class AgendamentoObservacaoRepository : IAgendamentoObservacaoRepo
             .AnyAsync(x => x.Id == agendamentoId, cancellationToken);
     }
 
+    /// <inheritdoc/>
     public Task<AgendamentoObservacao?> ObterPorIdEAgendamentoAsync(
         Guid observacaoId,
         Guid agendamentoId,
@@ -35,12 +37,13 @@ public sealed class AgendamentoObservacaoRepository : IAgendamentoObservacaoRepo
                 cancellationToken);
     }
 
+    /// <inheritdoc/>
     public async Task<IReadOnlyCollection<AgendamentoObservacao>> ListarPorAgendamentoAsync(
         Guid agendamentoId,
         bool incluirInativas,
         CancellationToken cancellationToken)
     {
-        IQueryable<AgendamentoObservacao> query = context.AgendamentoObservacoes
+        var query = context.AgendamentoObservacoes
             .AsNoTracking()
             .Where(x => x.AgendamentoId == agendamentoId);
 
@@ -54,6 +57,7 @@ public sealed class AgendamentoObservacaoRepository : IAgendamentoObservacaoRepo
             .ToListAsync(cancellationToken);
     }
 
+    /// <inheritdoc/>
     public async Task AdicionarAsync(
         AgendamentoObservacao observacao,
         string traceId,
@@ -92,6 +96,7 @@ public sealed class AgendamentoObservacaoRepository : IAgendamentoObservacaoRepo
         await transaction.CommitAsync(cancellationToken);
     }
 
+    /// <inheritdoc/>
     public async Task AtualizarAsync(
         AgendamentoObservacao observacao,
         string textoAnterior,
@@ -131,6 +136,7 @@ public sealed class AgendamentoObservacaoRepository : IAgendamentoObservacaoRepo
         await transaction.CommitAsync(cancellationToken);
     }
 
+    /// <inheritdoc/>
     public async Task ExcluirAsync(
         AgendamentoObservacao observacao,
         string textoAnterior,
