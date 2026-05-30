@@ -150,7 +150,11 @@ export function VeiculosClienteForm() {
             }`}
           />
           {localErrors.placa && (
-            <p id="veiculo-local-placa-error" role="alert" className="text-xs font-medium text-red-400">
+            <p
+              id="veiculo-local-placa-error"
+              role="alert"
+              className="text-xs font-medium text-red-400"
+            >
               {localErrors.placa}
             </p>
           )}
@@ -185,7 +189,11 @@ export function VeiculosClienteForm() {
             }`}
           />
           {localErrors.modelo && (
-            <p id="veiculo-local-modelo-error" role="alert" className="text-xs font-medium text-red-400">
+            <p
+              id="veiculo-local-modelo-error"
+              role="alert"
+              className="text-xs font-medium text-red-400"
+            >
               {localErrors.modelo}
             </p>
           )}
@@ -220,7 +228,11 @@ export function VeiculosClienteForm() {
             }`}
           />
           {localErrors.fabricante && (
-            <p id="veiculo-local-fabricante-error" role="alert" className="text-xs font-medium text-red-400">
+            <p
+              id="veiculo-local-fabricante-error"
+              role="alert"
+              className="text-xs font-medium text-red-400"
+            >
               {localErrors.fabricante}
             </p>
           )}
@@ -267,7 +279,11 @@ export function VeiculosClienteForm() {
             </Button>
           </div>
           {localErrors.cor && (
-            <p id="veiculo-local-cor-error" role="alert" className="text-xs font-medium text-red-400">
+            <p
+              id="veiculo-local-cor-error"
+              role="alert"
+              className="text-xs font-medium text-red-400"
+            >
               {localErrors.cor}
             </p>
           )}

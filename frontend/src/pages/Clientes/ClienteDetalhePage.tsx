@@ -1,7 +1,7 @@
+import { AxiosError } from 'axios';
 import { ArrowLeft, Car, Plus, Power } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { AxiosError } from 'axios';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -182,7 +182,8 @@ export function ClienteDetalhePage() {
           <div>
             <CardTitle className="text-lg text-zinc-100 flex items-center gap-2 font-semibold">
               <Car className="h-5 w-5 text-red-500" />
-              Veículos do cliente <span className="text-sm font-normal text-zinc-400">({veiculos.length})</span>
+              Veículos do cliente{' '}
+              <span className="text-sm font-normal text-zinc-400">({veiculos.length})</span>
             </CardTitle>
             <p className="text-xs text-zinc-400 mt-1">
               Veículos associados a este cliente para ordens de serviço.
@@ -202,7 +203,10 @@ export function ClienteDetalhePage() {
           {carregandoVeiculos ? (
             <ul aria-busy="true" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {[1, 2, 3].map((skeleton) => (
-                <li key={skeleton} className="flex h-20 items-center justify-between rounded-xl border border-zinc-800/40 bg-zinc-900/20 p-4 animate-pulse">
+                <li
+                  key={skeleton}
+                  className="flex h-20 items-center justify-between rounded-xl border border-zinc-800/40 bg-zinc-900/20 p-4 animate-pulse"
+                >
                   <div className="flex items-center gap-3 w-full">
                     <div className="h-9 w-9 rounded-lg bg-zinc-800/50" />
                     <div className="space-y-2 w-full">
@@ -232,31 +236,27 @@ export function ClienteDetalhePage() {
             </div>
           ) : (
             <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {[...veiculos]
-                .reverse()
-                .map((veiculo) => (
-                  <li
-                    key={veiculo.id || veiculo.placa}
-                    className="flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-950/30 p-4 hover:border-zinc-700 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-800/60 text-zinc-400">
-                        <Car className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-semibold text-zinc-200">
-                          {veiculo.fabricante} {veiculo.modelo}
-                        </h4>
-                        <p className="text-xs text-zinc-500">
-                          {veiculo.cor}
-                        </p>
-                      </div>
+              {[...veiculos].reverse().map((veiculo) => (
+                <li
+                  key={veiculo.id || veiculo.placa}
+                  className="flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-950/30 p-4 hover:border-zinc-700 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-800/60 text-zinc-400">
+                      <Car className="h-5 w-5" />
                     </div>
-                    <div className="rounded-md border border-zinc-700 bg-zinc-900 px-2.5 py-1 text-xs font-mono font-bold tracking-wider text-zinc-200 uppercase shadow-inner">
-                      {formatarPlacaExibicao(veiculo.placa)}
+                    <div>
+                      <h4 className="text-sm font-semibold text-zinc-200">
+                        {veiculo.fabricante} {veiculo.modelo}
+                      </h4>
+                      <p className="text-xs text-zinc-500">{veiculo.cor}</p>
                     </div>
-                  </li>
-                ))}
+                  </div>
+                  <div className="rounded-md border border-zinc-700 bg-zinc-900 px-2.5 py-1 text-xs font-mono font-bold tracking-wider text-zinc-200 uppercase shadow-inner">
+                    {formatarPlacaExibicao(veiculo.placa)}
+                  </div>
+                </li>
+              ))}
             </ul>
           )}
         </CardContent>

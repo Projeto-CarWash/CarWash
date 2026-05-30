@@ -17,7 +17,6 @@ export function IdentificacaoForm() {
   const dateError = errors.dataNascimento;
   const nomeError = errors.nome;
 
-
   return (
     <div>
       <div className="mb-5">
