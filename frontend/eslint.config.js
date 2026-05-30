@@ -8,6 +8,7 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
 import importX from 'eslint-plugin-import-x';
+import { createTypeScriptImportResolver } from 'eslint-import-resolver-typescript';
 import prettierConfig from 'eslint-config-prettier';
 import { defineConfig, globalIgnores } from 'eslint/config';
 
@@ -20,11 +21,12 @@ export default defineConfig([
     'playwright-report',
     'test-results',
     '.vite',
+    'public/mockServiceWorker.js',
   ]),
 
   // Código de aplicação
   {
-    files: ['**/*.{ts,tsx}'],
+    files: ['src/**/*.{ts,tsx}'],
     extends: [
       js.configs.recommended,
       tseslint.configs.recommendedTypeChecked,
@@ -36,39 +38,54 @@ export default defineConfig([
       jsxA11y.flatConfigs.recommended,
       importX.flatConfigs.recommended,
       importX.flatConfigs.typescript,
-      prettierConfig, // SEMPRE por último — desliga regras que conflitam com Prettier
+      prettierConfig,
     ],
     languageOptions: {
       ecmaVersion: 2023,
       sourceType: 'module',
       globals: { ...globals.browser, ...globals.es2023 },
       parserOptions: {
-        projectService: true,
+        // `vitest.config.ts` não entra no build typado (clash de tipos upstream
+        // entre o Vite do app e o Vite embutido no Vitest) — usa programa default.
+        projectService: { allowDefaultProject: ['vitest.config.ts'] },
         tsconfigRootDir: import.meta.dirname,
       },
     },
     settings: {
       react: { version: 'detect' },
-      'import-x/resolver-next': [importX.createNodeResolver()],
+      'import-x/resolver-next': [
+        createTypeScriptImportResolver({ project: './tsconfig.app.json' }),
+        importX.createNodeResolver(),
+      ],
     },
     rules: {
       // TypeScript strict
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports' }],
-      '@typescript-eslint/no-misused-promises': ['error', { checksVoidReturn: { attributes: false } }],
+      '@typescript-eslint/no-misused-promises': [
+        'error',
+        { checksVoidReturn: { attributes: false } },
+      ],
       '@typescript-eslint/no-floating-promises': 'error',
 
       // React
-      'react/jsx-uses-react': 'off',          // React 17+ JSX transform
-      'react/react-in-jsx-scope': 'off',       // idem
-      'react/prop-types': 'off',               // usamos TS
+      'react/jsx-uses-react': 'off', // React 17+ JSX transform
+      'react/react-in-jsx-scope': 'off', // idem
+      'react/prop-types': 'off', // usamos TS
       'react/self-closing-comp': 'error',
       'react/jsx-curly-brace-presence': ['warn', { props: 'never', children: 'never' }],
 
       // Hooks
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'error',
+      'react-refresh/only-export-components': [
+        'warn',
+        { allowConstantExport: true, allowExportNames: ['badgeVariants', 'buttonVariants'] },
+      ],
 
       // Acessibilidade — RNF008
       'jsx-a11y/anchor-is-valid': 'error',
@@ -96,10 +113,14 @@ export default defineConfig([
 
   // Arquivos de config (vite.config, eslint.config, etc.) — relaxar regras que exigem TS project
   {
-    files: ['*.config.{js,ts,mjs,cjs}', 'vite.config.ts'],
+    files: ['*.config.{js,ts,mjs,cjs}', 'vite.config.ts', 'vitest.config.ts'],
     languageOptions: {
       globals: { ...globals.node },
-      parserOptions: { project: null },
+      parser: tseslint.parser,
+      parserOptions: {
+        project: null,
+        projectService: false,
+      },
     },
     rules: {
       '@typescript-eslint/no-unsafe-assignment': 'off',

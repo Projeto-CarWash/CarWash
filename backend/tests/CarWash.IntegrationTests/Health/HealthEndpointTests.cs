@@ -31,7 +31,6 @@ public class HealthEndpointTests : IAsyncDisposable
     [Fact]
     public async Task GET_health_ready_returns_200_when_postgres_is_up()
     {
-        await _factory.EnsureDatabaseCreatedAsync();
         var client = _factory.CreateClient();
 
         var response = await client.GetAsync(new Uri("/health/ready", UriKind.Relative));
@@ -39,7 +38,55 @@ public class HealthEndpointTests : IAsyncDisposable
         response.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
     }
 
-    /// <inheritdoc/>
+    [Fact]
+    public async Task GET_health_with_valid_correlation_id_echoes_header()
+    {
+        var client = _factory.CreateClient();
+        using var request = new HttpRequestMessage(HttpMethod.Get, new Uri("/health", UriKind.Relative));
+        request.Headers.Add("X-Correlation-Id", "req-123_ABC.xyz");
+
+        var response = await client.SendAsync(request);
+
+        response.Headers.TryGetValues("X-Correlation-Id", out var values).Should().BeTrue();
+        values.Should().ContainSingle().Which.Should().Be("req-123_ABC.xyz");
+    }
+
+    [Theory]
+    [InlineData("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")]
+    [InlineData("@@@@")]
+    [InlineData("invalid value with spaces")]
+    public async Task GET_health_with_invalid_correlation_id_generates_new_value(string invalidCorrelationId)
+    {
+        var client = _factory.CreateClient();
+        using var request = new HttpRequestMessage(HttpMethod.Get, new Uri("/health", UriKind.Relative));
+        request.Headers.Add("X-Correlation-Id", invalidCorrelationId);
+
+        var response = await client.SendAsync(request);
+
+        response.Headers.TryGetValues("X-Correlation-Id", out var values).Should().BeTrue();
+        var correlationId = values.Should().ContainSingle().Which;
+        correlationId.Should().NotBe(invalidCorrelationId);
+        IsValidCorrelationId(correlationId).Should().BeTrue();
+    }
+
+    private static bool IsValidCorrelationId(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value) || value.Length > 64)
+        {
+            return false;
+        }
+
+        foreach (var c in value)
+        {
+            if (!char.IsAsciiLetterOrDigit(c) && c is not '-' and not '_' and not '.')
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public async ValueTask DisposeAsync()
     {
         await _factory.DisposeAsync();

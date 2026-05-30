@@ -10,3 +10,8 @@ test-results
 package-lock.json
 pnpm-lock.yaml
 yarn.lock
+
+# MSW regenera este arquivo automaticamente no postinstall (msw.workerDirectory
+# em package.json), e o resultado não passa pelo prettier. Sem este ignore, o
+# CI quebra em format:check toda vez que `npm ci` roda.
+public/mockServiceWorker.js

@@ -138,7 +138,7 @@ public class VeiculoService : IVeiculoService
             throw new ApiException(
                 500,
                 "VEICULO_CADASTRO_FALHA",
-                "Não foi possível concluir o cadastro do veículo no momento. Tente novamente.");
+                "Não foi possível concluir a operação no momento. Tente novamente.");
         }
     }
 
