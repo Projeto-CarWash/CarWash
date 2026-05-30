@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AxiosError } from 'axios';
-import { AlertCircle, ArrowLeft, Car, Check, ChevronDown, Loader2, Search, ShieldX, X } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Car, Check, ChevronDown, Loader2, Search, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -33,7 +33,6 @@ export function NovoVeiculoPage() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [carregandoCliente, setCarregandoCliente] = useState(false);
   const [clientes, setClientes] = useState<ClienteResumo[]>([]);
-  const [permissaoBloqueada, setPermissaoBloqueada] = useState(false);
 
   // Autocomplete state
   const [busca, setBusca] = useState('');
@@ -146,7 +145,6 @@ export function NovoVeiculoPage() {
     async (data: VeiculoFormData) => {
       setGlobalError(null);
       setSuccessMsg(null);
-      setPermissaoBloqueada(false);
 
       try {
         await veiculoService.cadastrar(data.clienteId, data);
@@ -156,7 +154,8 @@ export function NovoVeiculoPage() {
         setBusca('');
 
         setTimeout(() => {
-          void navigate(`/clientes/${data.clienteId}`);
+          // Passa state para ClienteDetalhePage refazer o fetch de veículos (RF004/RF022)
+          void navigate(`/clientes/${data.clienteId}`, { state: { veiculoCriado: true } });
         }, 1000);
       } catch (err) {
         if (err instanceof AxiosError) {
@@ -181,7 +180,7 @@ export function NovoVeiculoPage() {
           }
 
           if (status === 400 && dataErr?.errors) {
-            setGlobalError(dataErr.title ?? HTTP_ERROR_MESSAGES[400]!);
+            setGlobalError(HTTP_ERROR_MESSAGES[400]!);
             let firstFocused = false;
 
             for (const [field, messages] of Object.entries(dataErr.errors)) {
@@ -205,26 +204,11 @@ export function NovoVeiculoPage() {
             return;
           }
 
-          // 403 — Exibe bloqueio de permissão
-          if (status === 403) {
-            setPermissaoBloqueada(true);
-            setGlobalError(
-              dataErr?.title ?? HTTP_ERROR_MESSAGES[403]!,
-            );
-            return;
-          }
-
           if (status === 404) {
             setGlobalError(HTTP_ERROR_MESSAGES[404]!);
             setSelectedCliente(null);
             setBusca('');
             form.setValue('clienteId', '', { shouldValidate: true });
-            return;
-          }
-
-          // 500 — Mantém formulário e permite nova tentativa
-          if (status === 500) {
-            setGlobalError(HTTP_ERROR_MESSAGES[500]!);
             return;
           }
 
@@ -246,9 +230,11 @@ export function NovoVeiculoPage() {
   );
 
   const isSubmitting = form.formState.isSubmitting;
+  const isSubmitted = form.formState.isSubmitted;
   const errors = form.formState.errors;
-  const hasErrors = Object.keys(errors).length > 0;
-  const isSubmitDisabled = isSubmitting || hasErrors || !form.formState.isValid || permissaoBloqueada;
+  // Só bloqueia o botão se: está enviando OU (já tentou enviar E tem erros)
+  // Isso evita que o botão fique desabilitado antes da primeira tentativa (modo onChange)
+  const isSubmitDisabled = isSubmitting || (isSubmitted && Object.keys(errors).length > 0);
 
   // Filtragem dos clientes para o autocomplete local
   const query = busca.trim().toLowerCase();
@@ -263,51 +249,6 @@ export function NovoVeiculoPage() {
 
   if (carregandoCliente && !selectedCliente && !globalError) {
     return <div className="px-8 py-8 text-sm text-zinc-500">Carregando…</div>;
-  }
-
-  // Tela de bloqueio de permissão (403)
-  if (permissaoBloqueada) {
-    return (
-      <div className="px-8 py-8">
-        <div className="mb-6 flex items-center gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => {
-              if (selectedCliente) {
-                void navigate(`/clientes/${selectedCliente.id}`);
-              } else {
-                void navigate('/clientes');
-              }
-            }}
-            className="h-9 rounded-full border-zinc-700/60 bg-transparent px-4 text-sm text-zinc-300 hover:bg-zinc-800/50 hover:text-zinc-100"
-          >
-            <ArrowLeft className="mr-1 h-4 w-4" aria-hidden="true" />
-            Voltar
-          </Button>
-        </div>
-
-        <Card className="border border-red-500/20 bg-red-950/10">
-          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-500/10">
-              <ShieldX className="h-7 w-7 text-red-500" />
-            </div>
-            <h2 className="text-lg font-bold text-red-400">Acesso negado</h2>
-            <p className="mt-2 max-w-md text-sm text-zinc-400">
-              {globalError ?? HTTP_ERROR_MESSAGES[403]}
-            </p>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => void navigate('/clientes')}
-              className="mt-6 h-9 rounded-full border-zinc-700/60 bg-transparent px-5 text-sm text-zinc-300 hover:bg-zinc-800/50"
-            >
-              Voltar para clientes
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
   }
 
   return (
@@ -407,7 +348,6 @@ export function NovoVeiculoPage() {
                   onChange={(e) => {
                     setBusca(e.target.value);
                     setIsOpen(true);
-                    setGlobalError(null);
                     if (selectedCliente && e.target.value !== selectedCliente.nome) {
                       setSelectedCliente(null);
                       form.setValue('clienteId', '', { shouldValidate: true });
@@ -429,7 +369,6 @@ export function NovoVeiculoPage() {
                       setSelectedCliente(null);
                       setBusca('');
                       form.setValue('clienteId', '', { shouldValidate: true });
-                      setGlobalError(null);
                     }}
                     className="absolute right-3 top-3 text-zinc-400 hover:text-zinc-200"
                     aria-label="Limpar cliente selecionado"
@@ -460,7 +399,6 @@ export function NovoVeiculoPage() {
                           setBusca(c.nome);
                           form.setValue('clienteId', c.id, { shouldValidate: true });
                           setIsOpen(false);
-                          setGlobalError(null);
                         }}
                         className="flex w-full items-center justify-between px-4 py-2.5 text-left text-sm text-zinc-300 hover:bg-zinc-900 transition-colors"
                       >
@@ -543,7 +481,6 @@ export function NovoVeiculoPage() {
                       type="text"
                       placeholder="Ex: Volkswagen"
                       value={field.value}
-                      maxLength={80}
                       onChange={field.onChange}
                       onBlur={(e) => {
                         const val = e.target.value.trim();
@@ -588,7 +525,6 @@ export function NovoVeiculoPage() {
                       type="text"
                       placeholder="Ex: Gol 1.0"
                       value={field.value}
-                      maxLength={80}
                       onChange={field.onChange}
                       onBlur={(e) => {
                         const val = e.target.value.trim();
@@ -629,7 +565,6 @@ export function NovoVeiculoPage() {
                       type="text"
                       placeholder="Ex: Preto"
                       value={field.value}
-                      maxLength={40}
                       onChange={field.onChange}
                       onBlur={(e) => {
                         const val = e.target.value.trim();
