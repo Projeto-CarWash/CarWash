@@ -55,9 +55,7 @@ describe('ServicosListaPage (RF006)', () => {
 
   it('exibe preço formatado em BRL e duração em minutos', async () => {
     server.use(
-      http.get('/api/v1/servicos', () =>
-        HttpResponse.json({ itens: [SERVICOS[0]], total: 1 }),
-      ),
+      http.get('/api/v1/servicos', () => HttpResponse.json({ itens: [SERVICOS[0]], total: 1 })),
     );
 
     renderComProviders(<ServicosListaPage />);
@@ -87,9 +85,7 @@ describe('ServicosListaPage (RF006)', () => {
   });
 
   it('exibe mensagem de erro quando GET /api/v1/servicos falha (500)', async () => {
-    server.use(
-      http.get('/api/v1/servicos', () => HttpResponse.json({}, { status: 500 })),
-    );
+    server.use(http.get('/api/v1/servicos', () => HttpResponse.json({}, { status: 500 })));
 
     renderComProviders(<ServicosListaPage />);
 
@@ -99,9 +95,7 @@ describe('ServicosListaPage (RF006)', () => {
   });
 
   it('exibe mensagem quando a lista está vazia', async () => {
-    server.use(
-      http.get('/api/v1/servicos', () => HttpResponse.json({ itens: [], total: 0 })),
-    );
+    server.use(http.get('/api/v1/servicos', () => HttpResponse.json({ itens: [], total: 0 })));
 
     renderComProviders(<ServicosListaPage />);
 
@@ -110,9 +104,7 @@ describe('ServicosListaPage (RF006)', () => {
 
   it('altera o status do serviço via PATCH /api/v1/servicos/:id/status ao confirmar no modal', async () => {
     server.use(
-      http.get('/api/v1/servicos', () =>
-        HttpResponse.json({ itens: [SERVICOS[0]], total: 1 }),
-      ),
+      http.get('/api/v1/servicos', () => HttpResponse.json({ itens: [SERVICOS[0]], total: 1 })),
       http.patch('/api/v1/servicos/:id/status', ({ params }) => {
         const servico = SERVICOS.find((s) => s.id === params.id);
         if (!servico) return HttpResponse.json({}, { status: 404 });

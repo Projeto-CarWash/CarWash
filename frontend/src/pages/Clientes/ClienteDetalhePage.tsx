@@ -29,6 +29,7 @@ export function ClienteDetalhePage() {
   const veiculoCriado = (location.state as { veiculoCriado?: boolean } | null)?.veiculoCriado;
 
   // ─── Reset imediato ao trocar de cliente (evita flash de dados antigos) ───
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     setCliente(null);
     setVeiculos([]);
@@ -119,7 +120,7 @@ export function ClienteDetalhePage() {
   useEffect(() => {
     if (veiculoCriado) {
       // Limpa o state para não reprocessar em navegações futuras
-      navigate(location.pathname, { replace: true, state: {} });
+      void navigate(location.pathname, { replace: true, state: {} });
       void carregarVeiculos();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

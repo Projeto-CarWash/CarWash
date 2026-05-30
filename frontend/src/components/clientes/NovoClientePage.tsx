@@ -109,7 +109,9 @@ export function NovoClientePage() {
             detail.toLowerCase().includes('veículo') ||
             detail.toLowerCase().includes('veiculo');
           if (isPlaca) {
-            setGlobalError('Já existe veículo cadastrado com esta placa. Verifique a lista de veículos.');
+            setGlobalError(
+              'Já existe veículo cadastrado com esta placa. Verifique a lista de veículos.',
+            );
           } else {
             setGlobalError(API_MESSAGES[409]!);
             form.setError('cpfCnpj', {
