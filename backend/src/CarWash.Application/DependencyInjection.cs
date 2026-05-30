@@ -8,6 +8,9 @@ using CarWash.Application.Agendamentos.Observacoes.Excluir;
 using CarWash.Application.Agendamentos.Observacoes.Listar;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
+using CarWash.Application.Abstractions.Messaging;
+using CarWash.Application.Clientes.HistoricoAtendimentos.Common;
+using CarWash.Application.Clientes.HistoricoAtendimentos.Consultar;
 
 namespace CarWash.Application;
 
@@ -30,6 +33,10 @@ public static class DependencyInjection
         services.AddScoped<
             IQueryHandler<ListarObservacoesAgendamentoQuery, ListarObservacoesAgendamentoResponse>,
             ListarObservacoesAgendamentoHandler>();
+
+        services.AddScoped<
+            IQueryHandler<ConsultarHistoricoAtendimentosClienteQuery, HistoricoAtendimentosResponse>,
+            ConsultarHistoricoAtendimentosClienteHandler>();
 
         ArgumentNullException.ThrowIfNull(services);
 

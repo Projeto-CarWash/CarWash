@@ -24,6 +24,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using CarWash.Application.Interfaces;
+using CarWash.Infrastructure.Repositories;
 
 namespace CarWash.Infrastructure;
 
@@ -89,6 +91,8 @@ public static class DependencyInjection
                     sp.GetRequiredService<AuditableEntitiesInterceptor>(),
                     sp.GetRequiredService<AuditLogInterceptor>());
         });
+
+        services.AddScoped<IHistoricoAtendimentosClienteRepository, HistoricoAtendimentosClienteRepository>();
 
         // IDbContextFactory para casos que precisam de um DbContext fora do escopo
         // da request (ex.: AuditLogger). Construímos as options manualmente — sem
