@@ -17,7 +17,7 @@ public sealed class CarWashDbContextFactory : IDesignTimeDbContextFactory<CarWas
     {
         var cs = Environment.GetEnvironmentVariable(ConnectionEnvVar)
             ?? Environment.GetEnvironmentVariable(AspNetConnectionEnvVar)
-            ?? "Host=localhost;Port=5432;Database=carwash;Username=carwash_owner;Password=carwash";
+            ?? "Host=localhost;Port=5432;Database=carwash;Username=carwash_owner;Password=carwash123";
 
         var options = new DbContextOptionsBuilder<CarWashDbContext>()
             .UseNpgsql(cs, npg => npg

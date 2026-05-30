@@ -21,6 +21,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using CarWash.Application.Interfaces;
+using CarWash.Infrastructure.Repositories;
+using CarWash.Application.Abstractions.Messaging;
 
 namespace CarWash.Infrastructure;
 
@@ -67,6 +70,7 @@ public static class DependencyInjection
         services.AddScoped<IServicoRepository, ServicoRepository>();
         services.AddScoped<IAgendaRepository, AgendaRepository>();
         services.AddScoped<IVeiculoRepository, VeiculoRepository>();
+        services.AddScoped<IAgendamentoObservacaoRepository, AgendamentoObservacaoRepository>();
 
         // RF015 — confirmação de agendamento em duas etapas (ADR 0004).
         // Token de confirmação: singleton (sem estado mutável; só lê a chave HMAC).
