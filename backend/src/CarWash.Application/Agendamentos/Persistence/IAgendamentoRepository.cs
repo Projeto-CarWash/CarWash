@@ -23,6 +23,22 @@ public interface IAgendamentoRepository
         CancellationToken cancellationToken);
 
     /// <summary>
+    /// Verifica se a filial já atingiu sua capacidade de atendimentos simultâneos
+    /// (RF008/RN009): retorna <c>true</c> quando a quantidade de agendamentos ativos
+    /// (status <c>agendado</c>) cuja janela <c>[inicio, fim)</c> se sobrepõe à
+    /// informada é maior ou igual a <c>celulas_ativas</c> da filial. Permite
+    /// múltiplos agendamentos no mesmo horário até o teto de células. Pré-check
+    /// (sem garantia anti-corrida no banco — ver nota nos handlers). Retorna
+    /// <c>false</c> para filial inexistente (a existência é validada antes pela
+    /// <c>CalculadoraResumoAgendamento</c>).
+    /// </summary>
+    Task<bool> CapacidadeAtingidaAsync(
+        Guid filialId,
+        DateTime inicio,
+        DateTime fim,
+        CancellationToken cancellationToken);
+
+    /// <summary>
     /// Persiste o agendamento, seus itens e o evento <c>CRIADO</c> do histórico
     /// numa única transação. Em violação da EXCLUDE <c>ex_ag_veiculo_janela</c>
     /// (race condition), lança <see cref="Common.AgendamentoConflitanteException"/>.

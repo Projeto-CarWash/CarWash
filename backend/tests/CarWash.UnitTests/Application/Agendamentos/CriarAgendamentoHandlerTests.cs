@@ -100,6 +100,29 @@ public class CriarAgendamentoHandlerTests
     }
 
     [Fact]
+    public async Task Capacidade_da_filial_atingida_lanca_CapacidadeFilialAtingidaException()
+    {
+        // RF008/RN009: sem conflito de veículo, porém a filial já está no teto de
+        // células ativas para a janela → rejeita com 409 (capacidade-filial).
+        _agendamentos.CapacidadeAtingidaAsync(
+            FilialId, Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+            .Returns(true);
+
+        var handler = NovoHandler();
+        var act = () => handler.HandleAsync(NovoComando(), CancellationToken.None);
+
+        var ex = await act.Should().ThrowAsync<CapacidadeFilialAtingidaException>();
+        ex.Which.Slug.Should().Be("capacidade-filial");
+
+        await _agendamentos.DidNotReceive().AdicionarAsync(
+            Arg.Any<Agendamento>(),
+            Arg.Any<IReadOnlyCollection<AgendamentoItem>>(),
+            Arg.Any<AgendamentoHistorico>(),
+            Arg.Any<string>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task Filial_inexistente_lanca_NotFound_e_audita_motivo_filial_inexistente()
     {
         _catalogo.ObterFilialResumoAsync(FilialId, Arg.Any<CancellationToken>())

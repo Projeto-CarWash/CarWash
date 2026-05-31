@@ -64,6 +64,43 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
     }
 
     /// <inheritdoc/>
+    public async Task<bool> CapacidadeAtingidaAsync(
+        Guid filialId,
+        DateTime inicio,
+        DateTime fim,
+        CancellationToken cancellationToken)
+    {
+        // RF008/RN009: a filial aceita atendimentos simultâneos até o número de
+        // células ativas. Lê o teto e conta a ocupação da janela [inicio, fim)
+        // (apenas status 'agendado', mesma semântica de sobreposição do conflito
+        // de veículo). Filial inexistente → false (existência validada antes pela
+        // CalculadoraResumoAgendamento).
+        var celulasAtivas = await _db.Filiais
+            .AsNoTracking()
+            .Where(f => f.Id == filialId)
+            .Select(f => (int?)f.CelulasAtivas)
+            .FirstOrDefaultAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        if (celulasAtivas is not { } teto)
+        {
+            return false;
+        }
+
+        var ocupacao = await _db.Agendamentos
+            .AsNoTracking()
+            .CountAsync(
+                a => a.FilialId == filialId
+                    && a.StatusRaw == "agendado"
+                    && a.Inicio < fim
+                    && a.Fim > inicio,
+                cancellationToken)
+            .ConfigureAwait(false);
+
+        return ocupacao >= teto;
+    }
+
+    /// <inheritdoc/>
     public async Task AdicionarAsync(
         Agendamento agendamento,
         IReadOnlyCollection<AgendamentoItem> itens,
