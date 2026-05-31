@@ -87,7 +87,7 @@ public static class AuthEndpoints
         // por RFC 6265 e CA011 (não cachear tokens de sessão).
         http.Response.Headers[HeaderNames.CacheControl] = "no-store";
 
-        var refreshToken = AuthCookies.LerRefreshCookie(http)
+        string refreshToken = AuthCookies.LerRefreshCookie(http)
             ?? throw new RefreshTokenInvalidoException();
 
         var resultado = await handler.HandleAsync(new RefreshCommand(refreshToken), cancellationToken).ConfigureAwait(false);
@@ -105,7 +105,7 @@ public static class AuthEndpoints
     {
         http.Response.Headers[HeaderNames.CacheControl] = "no-store";
 
-        var refreshToken = AuthCookies.LerRefreshCookie(http);
+        string? refreshToken = AuthCookies.LerRefreshCookie(http);
 
         await handler.HandleAsync(new LogoutCommand(refreshToken), cancellationToken).ConfigureAwait(false);
 

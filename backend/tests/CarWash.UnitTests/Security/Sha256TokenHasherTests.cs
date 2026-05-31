@@ -11,7 +11,7 @@ public class Sha256TokenHasherTests
     [Fact]
     public void Hash_e_estavel_para_o_mesmo_token()
     {
-        var token = "refresh-token-XYZ-123";
+        string token = "refresh-token-XYZ-123";
         _hasher.Hash(token).Should().Be(_hasher.Hash(token));
     }
 
@@ -24,15 +24,15 @@ public class Sha256TokenHasherTests
     [Fact]
     public void Verify_retorna_true_para_token_correto()
     {
-        var token = "qualquer-token-aqui";
-        var hash = _hasher.Hash(token);
+        string token = "qualquer-token-aqui";
+        string hash = _hasher.Hash(token);
         _hasher.Verify(token, hash).Should().BeTrue();
     }
 
     [Fact]
     public void Verify_retorna_false_para_token_invertido()
     {
-        var hash = _hasher.Hash("certo");
+        string hash = _hasher.Hash("certo");
         _hasher.Verify("errado", hash).Should().BeFalse();
     }
 }

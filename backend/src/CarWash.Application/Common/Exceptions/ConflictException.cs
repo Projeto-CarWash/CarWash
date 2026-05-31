@@ -37,7 +37,7 @@ public class ConflictException : Exception
     }
 
     /// <summary>
-    /// Identificador curto do conflito, usado no campo <c>type</c> do ProblemDetails.
+    /// Gets identificador curto do conflito, usado no campo <c>type</c> do ProblemDetails.
     /// </summary>
     public string Slug { get; }
 }

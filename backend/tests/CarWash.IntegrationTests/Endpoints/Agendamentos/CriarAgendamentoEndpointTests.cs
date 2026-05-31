@@ -284,11 +284,11 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
         // fim = inicio + soma das durações; totais coerentes com os serviços semeados.
         var inicioResp = corpo.GetProperty("inicio").GetDateTime();
         var fimResp = corpo.GetProperty("fim").GetDateTime();
-        var duracaoTotal = corpo.GetProperty("duracaoTotalMin").GetInt32();
+        int duracaoTotal = corpo.GetProperty("duracaoTotalMin").GetInt32();
         fimResp.Should().Be(inicioResp.AddMinutes(duracaoTotal));
         corpo.GetProperty("itens").GetArrayLength().Should().Be(servicoIds.Count);
 
-        var soma = corpo.GetProperty("itens").EnumerateArray()
+        int soma = corpo.GetProperty("itens").EnumerateArray()
             .Sum(s => s.GetProperty("duracaoAplicada").GetInt32());
         duracaoTotal.Should().Be(soma);
     }
@@ -462,7 +462,7 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
         // de vazamento — qualquer 5xx deve trazer corpo neutro.
         if ((int)response.StatusCode >= 500)
         {
-            var corpo = await response.Content.ReadAsStringAsync();
+            string corpo = await response.Content.ReadAsStringAsync();
             corpo.Should().NotContain("at CarWash.");
             corpo.Should().NotContain("Exception:");
         }
@@ -497,8 +497,8 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
 
         var respostas = await Task.WhenAll(t1, t2);
 
-        var codigos = respostas.Select(r => (int)r.StatusCode).ToArray();
-        var resumo = string.Join(", ", codigos);
+        int[] codigos = respostas.Select(r => (int)r.StatusCode).ToArray();
+        string resumo = string.Join(", ", codigos);
 
         // O banco deve ter exatamente 1 agendamento para o veículo na janela —
         // invariante de dados garantida pela constraint EXCLUDE ex_ag_veiculo_janela.
@@ -591,7 +591,7 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
     {
         await using var db = NovoDbContext();
 
-        var filial = Filial.Criar(Guid.NewGuid(), $"Filial {Guid.NewGuid():N}"[..30], 4);
+        var filial = Filial.Criar(Guid.NewGuid(), $"Filial {Guid.NewGuid():N}"[..30], CodigoTeste(), 4);
         var cliente = ClienteValido();
         var veiculo = Veiculo.Criar(
             id: Guid.NewGuid(),
@@ -620,7 +620,7 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
     private async Task<Guid> SemearFilialAsync(bool ativa = true)
     {
         await using var db = NovoDbContext();
-        var filial = Filial.Criar(Guid.NewGuid(), $"Filial {Guid.NewGuid():N}"[..30], 3);
+        var filial = Filial.Criar(Guid.NewGuid(), $"Filial {Guid.NewGuid():N}"[..30], CodigoTeste(), 3);
         if (!ativa)
         {
             filial.Inativar();
@@ -630,6 +630,8 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
         await db.SaveChangesAsync();
         return filial.Id;
     }
+
+    private static string CodigoTeste() => $"F{Guid.NewGuid():N}"[..10].ToUpperInvariant();
 
     private CarWashDbContext NovoDbContext() => CarWashDbContextFactoryForTests.Create(_fixture);
 
@@ -659,15 +661,15 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
     {
         Span<int> d = stackalloc int[11];
         var rng = Random.Shared;
-        for (var i = 0; i < 9; i++)
+        for (int i = 0; i < 9; i++)
         {
             d[i] = rng.Next(0, 10);
         }
 
         d[9] = Dv(d[..9], 10);
         d[10] = Dv(d[..10], 11);
-        var chars = new char[11];
-        for (var i = 0; i < 11; i++)
+        char[] chars = new char[11];
+        for (int i = 0; i < 11; i++)
         {
             chars[i] = (char)('0' + d[i]);
         }
@@ -676,17 +678,18 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
 
         static int Dv(ReadOnlySpan<int> parcial, int pesoInicial)
         {
-            var soma = 0;
-            for (var i = 0; i < parcial.Length; i++)
+            int soma = 0;
+            for (int i = 0; i < parcial.Length; i++)
             {
                 soma += parcial[i] * (pesoInicial - i);
             }
 
-            var resto = soma % 11;
+            int resto = soma % 11;
             return resto < 2 ? 0 : 11 - resto;
         }
     }
 
+    /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
         await _factory.DisposeAsync();

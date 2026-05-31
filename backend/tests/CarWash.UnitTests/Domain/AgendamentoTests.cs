@@ -46,19 +46,19 @@ public class AgendamentoTests
 		act.Should().Throw<DomainException>().WithMessage("*não pode ser cancelado*");
 	}
 
-	[Fact]
-	public void Cancelar_incrementa_versao_e_registra_campos()
-	{
-		var ag = NovoAgendamento();
-		var versaoOriginal = ag.Versao;
-		var canceladoPor = Guid.NewGuid();
-		ag.Cancelar("Cliente desistiu do serviço", canceladoPor);
-		ag.Versao.Should().Be(versaoOriginal + 1);
-		ag.Status.Should().Be(StatusAgendamento.Cancelado);
-		ag.CanceladoPor.Should().Be(canceladoPor);
-		ag.MotivoCancelamento.Should().Be("Cliente desistiu do serviço");
-		ag.CanceladoEm.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
-	}
+    [Fact]
+    public void Cancelar_incrementa_versao_e_registra_campos()
+    {
+        var ag = NovoAgendamento();
+        var versaoOriginal = ag.Versao;
+        var canceladoPor = Guid.NewGuid();
+        ag.Cancelar("Cliente desistiu do serviço", canceladoPor);
+        ag.Versao.Should().Be(versaoOriginal + 1);
+        ag.Status.Should().Be(StatusAgendamento.Cancelado);
+        ag.CanceladoPor.Should().Be(canceladoPor);
+        ag.MotivoCancelamento.Should().Be("Cliente desistiu do serviço");
+        ag.CanceladoEm.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
+    }
 
     [Fact]
     public void Criar_persiste_totais_informados()

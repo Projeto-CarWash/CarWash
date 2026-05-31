@@ -12,10 +12,12 @@ namespace CarWash.Application.Agendamentos.Confirmar;
 public sealed record ConfirmarAgendamentoResultado(AgendamentoResponse Agendamento, bool EhReplay)
 {
     /// <summary>Confirmação persistida agora.</summary>
+    /// <returns></returns>
     public static ConfirmarAgendamentoResultado Novo(AgendamentoResponse agendamento) =>
         new(agendamento, false);
 
     /// <summary>Replay idempotente — resposta original devolvida.</summary>
+    /// <returns></returns>
     public static ConfirmarAgendamentoResultado Replay(AgendamentoResponse agendamento) =>
         new(agendamento, true);
 }

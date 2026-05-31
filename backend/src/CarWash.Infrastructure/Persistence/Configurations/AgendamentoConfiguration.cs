@@ -6,6 +6,7 @@ namespace CarWash.Infrastructure.Persistence.Configurations;
 
 public sealed class AgendamentoConfiguration : IEntityTypeConfiguration<Agendamento>
 {
+    /// <inheritdoc/>
     public void Configure(EntityTypeBuilder<Agendamento> builder)
     {
         ArgumentNullException.ThrowIfNull(builder);

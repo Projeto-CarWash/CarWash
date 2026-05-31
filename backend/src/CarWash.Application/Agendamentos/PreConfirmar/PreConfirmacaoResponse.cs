@@ -9,13 +9,13 @@ namespace CarWash.Application.Agendamentos.PreConfirmar;
 /// </summary>
 public sealed class PreConfirmacaoResponse
 {
-    /// <summary>Token assinado a ser reenviado na confirmação.</summary>
+    /// <summary>Gets token assinado a ser reenviado na confirmação.</summary>
     public string TokenConfirmacao { get; init; } = string.Empty;
 
-    /// <summary>Instante (UTC) a partir do qual o token deixa de ser aceito.</summary>
+    /// <summary>Gets instante (UTC) a partir do qual o token deixa de ser aceito.</summary>
     public DateTime ExpiraEm { get; init; }
 
-    /// <summary>Resumo de negócio para revisão pelo usuário.</summary>
+    /// <summary>Gets resumo de negócio para revisão pelo usuário.</summary>
     public ResumoConfirmacaoResponse Resumo { get; init; } = new();
 
     public string TraceId { get; init; } = string.Empty;

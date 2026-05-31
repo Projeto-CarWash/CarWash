@@ -25,7 +25,7 @@ public sealed class CorrelationIdMiddleware
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        var correlationId = ResolveCorrelationId(context);
+        string correlationId = ResolveCorrelationId(context);
         context.Items[ItemKey] = correlationId;
         context.Response.Headers[HeaderName] = correlationId;
 
@@ -41,7 +41,7 @@ public sealed class CorrelationIdMiddleware
     {
         if (context.Request.Headers.TryGetValue(HeaderName, out var valor))
         {
-            var candidate = valor.ToString().Trim();
+            string candidate = valor.ToString().Trim();
             if (IsValidCorrelationId(candidate))
             {
                 return candidate;
@@ -58,7 +58,7 @@ public sealed class CorrelationIdMiddleware
             return false;
         }
 
-        foreach (var c in value)
+        foreach (char c in value)
         {
             if (!char.IsAsciiLetterOrDigit(c) && c is not '-' and not '_' and not '.')
             {

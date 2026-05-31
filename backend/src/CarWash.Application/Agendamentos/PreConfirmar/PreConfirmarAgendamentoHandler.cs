@@ -33,6 +33,7 @@ public sealed class PreConfirmarAgendamentoHandler
         _logger = logger;
     }
 
+    /// <inheritdoc/>
     public async Task<PreConfirmacaoResponse> HandleAsync(
         PreConfirmarAgendamentoCommand command,
         CancellationToken cancellationToken)
@@ -86,7 +87,7 @@ public sealed class PreConfirmarAgendamentoHandler
             throw new AgendamentoConflitanteException();
         }
 
-        var token = _tokens.Gerar(calculado.HashResumo, usuarioId, command.TraceId);
+        string token = _tokens.Gerar(calculado.HashResumo, usuarioId, command.TraceId);
         var validado = _tokens.Validar(token, usuarioId);
 
         _logger.LogInformation(

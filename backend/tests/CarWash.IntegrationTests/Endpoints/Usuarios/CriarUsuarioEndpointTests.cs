@@ -31,7 +31,7 @@ public class CriarUsuarioEndpointTests : IAsyncDisposable
     public async Task POST_valido_retorna_201_com_Location_e_GET_retorna_200_sem_senha_hash()
     {
         var client = await AuthenticatedHttpClient.CreateAsync(_factory);
-        var email = EmailUnico();
+        string email = EmailUnico();
 
         var payload = new
         {
@@ -81,7 +81,7 @@ public class CriarUsuarioEndpointTests : IAsyncDisposable
     public async Task POST_email_duplicado_case_insensitive_retorna_409()
     {
         var client = await AuthenticatedHttpClient.CreateAsync(_factory);
-        var email = EmailUnico();
+        string email = EmailUnico();
 
         var primeiro = await client.PostAsJsonAsync(RotaCriar, new
         {
@@ -181,7 +181,7 @@ public class CriarUsuarioEndpointTests : IAsyncDisposable
     public async Task POST_grava_audit_log_UsuarioCadastrado_referenciando_o_id()
     {
         var client = await AuthenticatedHttpClient.CreateAsync(_factory);
-        var email = EmailUnico();
+        string email = EmailUnico();
 
         var response = await client.PostAsJsonAsync(RotaCriar, new
         {
@@ -213,6 +213,7 @@ public class CriarUsuarioEndpointTests : IAsyncDisposable
     private static string EmailUnico() =>
         $"alice-{Guid.NewGuid():N}@carwash.local";
 
+    /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
         await _factory.DisposeAsync();

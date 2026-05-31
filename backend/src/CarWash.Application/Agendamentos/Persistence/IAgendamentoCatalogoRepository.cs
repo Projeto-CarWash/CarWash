@@ -13,9 +13,11 @@ public sealed record ServicoSnapshot(Guid Id, string Nome, decimal Preco, int Du
 public interface IAgendamentoCatalogoRepository
 {
     /// <summary>Retorna <c>true</c> se a filial existe e está ativa (RF019/RN010).</summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task<bool> FilialAtivaAsync(Guid filialId, CancellationToken cancellationToken);
 
     /// <summary>Retorna <c>true</c> se a filial existe (independente de estar ativa).</summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task<bool> FilialExisteAsync(Guid filialId, CancellationToken cancellationToken);
 
     /// <summary>
@@ -23,24 +25,29 @@ public interface IAgendamentoCatalogoRepository
     /// ativo; <c>null</c> caso não exista; e o id com <c>Ativo=false</c> quando
     /// existe porém inativo.
     /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task<VeiculoSnapshot?> ObterVeiculoAsync(Guid veiculoId, CancellationToken cancellationToken);
 
     /// <summary>Retorna <c>true</c> se o cliente existe e está ativo.</summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task<bool> ClienteAtivoAsync(Guid clienteId, CancellationToken cancellationToken);
 
     /// <summary>Retorna <c>true</c> se o cliente existe (independente de estar ativo).</summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task<bool> ClienteExisteAsync(Guid clienteId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Retorna <c>true</c> se o responsável existe, está ativo e pertence ao
     /// cliente informado (CA009 — responsável só agenda em nome do seu titular).
     /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task<ResponsavelSnapshot?> ObterResponsavelAsync(Guid responsavelId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Carrega os serviços pedidos. Itens ausentes do retorno indicam serviço
     /// inexistente; o flag <c>Ativo</c> indica serviço fora de catálogo.
     /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task<IReadOnlyList<ServicoSnapshot>> ObterServicosAsync(
         IReadOnlyCollection<Guid> servicoIds,
         CancellationToken cancellationToken);
@@ -49,18 +56,21 @@ public interface IAgendamentoCatalogoRepository
     /// Snapshot rico da filial (nome + estado) para montar o resumo de
     /// confirmação (RF015). <c>null</c> quando a filial não existe.
     /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task<FilialResumoSnapshot?> ObterFilialResumoAsync(Guid filialId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Snapshot rico do cliente (nome + documento + estado) para o resumo de
     /// confirmação (RF015). <c>null</c> quando o cliente não existe.
     /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task<ClienteResumoSnapshot?> ObterClienteResumoAsync(Guid clienteId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Snapshot rico do veículo (placa + modelo + cor + titular + estado) para o
     /// resumo de confirmação (RF015). <c>null</c> quando o veículo não existe.
     /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task<VeiculoResumoSnapshot?> ObterVeiculoResumoAsync(Guid veiculoId, CancellationToken cancellationToken);
 }
 
