@@ -3,6 +3,7 @@ using System;
 using CarWash.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace CarWash.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(CarWashDbContext))]
-    partial class CarWashDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260526191140_AddObservacoesCliente")]
+    partial class AddObservacoesCliente
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -589,61 +592,11 @@ namespace CarWash.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("celulas_ativas");
 
-                    b.Property<string>("Cnpj")
-                        .HasMaxLength(14)
-                        .HasColumnType("character varying(14)")
-                        .HasColumnName("cnpj");
-
-                    b.Property<string>("Codigo")
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)")
-                        .HasColumnName("codigo");
-
                     b.Property<DateTime>("CriadoEm")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamptz")
                         .HasColumnName("criado_em")
                         .HasDefaultValueSql("now()");
-
-                    b.Property<Guid?>("CriadoPorUsuarioId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("criado_por_usuario_id");
-
-                    b.Property<string>("EnderecoBairro")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("endereco_bairro");
-
-                    b.Property<string>("EnderecoCep")
-                        .HasMaxLength(8)
-                        .HasColumnType("character varying(8)")
-                        .HasColumnName("endereco_cep");
-
-                    b.Property<string>("EnderecoCidade")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("endereco_cidade");
-
-                    b.Property<string>("EnderecoComplemento")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("endereco_complemento");
-
-                    b.Property<string>("EnderecoLogradouro")
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)")
-                        .HasColumnName("endereco_logradouro");
-
-                    b.Property<string>("EnderecoNumero")
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)")
-                        .HasColumnName("endereco_numero");
-
-                    b.Property<string>("EnderecoUf")
-                        .HasMaxLength(2)
-                        .HasColumnType("character(2)")
-                        .HasColumnName("endereco_uf")
-                        .IsFixedLength();
 
                     b.Property<string>("Nome")
                         .IsRequired()
@@ -666,25 +619,13 @@ namespace CarWash.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("idx_filiais_ativa")
                         .HasFilter("ativa = true");
 
-                    b.HasIndex("Cnpj")
+                    b.HasIndex("Nome")
                         .IsUnique()
-                        .HasDatabaseName("uk_filiais_cnpj")
-                        .HasFilter("cnpj IS NOT NULL");
-
-                    b.HasIndex("Codigo")
-                        .IsUnique()
-                        .HasDatabaseName("uk_filiais_codigo")
-                        .HasFilter("codigo IS NOT NULL");
-
-                    b.HasIndex("EnderecoCidade", "EnderecoUf")
-                        .HasDatabaseName("idx_filiais_cidade_uf")
-                        .HasFilter("endereco_cidade IS NOT NULL");
+                        .HasDatabaseName("uk_filiais_nome");
 
                     b.ToTable("filiais", "public", t =>
                         {
                             t.HasCheckConstraint("ck_filiais_celulas_faixa", "celulas_ativas BETWEEN 1 AND 100");
-
-                            t.HasCheckConstraint("ck_filiais_codigo_formato", "codigo IS NULL OR codigo ~ '^[A-Z0-9]{2,20}$'");
                         });
                 });
 

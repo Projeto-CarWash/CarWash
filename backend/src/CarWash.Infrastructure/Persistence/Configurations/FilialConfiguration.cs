@@ -12,6 +12,7 @@ namespace CarWash.Infrastructure.Persistence.Configurations;
 /// </summary>
 public sealed class FilialConfiguration : IEntityTypeConfiguration<Filial>
 {
+    /// <inheritdoc/>
     public void Configure(EntityTypeBuilder<Filial> builder)
     {
         ArgumentNullException.ThrowIfNull(builder);

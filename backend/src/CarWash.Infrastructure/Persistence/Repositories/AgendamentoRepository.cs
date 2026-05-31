@@ -43,6 +43,7 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
         _db = db;
     }
 
+    /// <inheritdoc/>
     public Task<bool> ExisteConflitoVeiculoAsync(
         Guid veiculoId,
         DateTime inicio,
@@ -62,6 +63,7 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
                 cancellationToken);
     }
 
+    /// <inheritdoc/>
     public async Task<bool> CapacidadeAtingidaAsync(
         Guid filialId,
         DateTime inicio,
@@ -98,6 +100,7 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
         return ocupacao >= teto;
     }
 
+    /// <inheritdoc/>
     public async Task AdicionarAsync(
         Agendamento agendamento,
         IReadOnlyCollection<AgendamentoItem> itens,
@@ -196,6 +199,7 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
         }
     }
 
+    /// <inheritdoc/>
     public async Task<ResultadoConfirmacaoIdempotente> AdicionarComIdempotenciaAsync(
         Agendamento agendamento,
         IReadOnlyCollection<AgendamentoItem> itens,
@@ -322,15 +326,15 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
             return false;
         }
 
-        var ehExclusionViolation = string.Equals(
+        bool ehExclusionViolation = string.Equals(
             pg.SqlState,
             ExclusionViolationSqlState,
             StringComparison.Ordinal);
 
-        var ehConstraintDeVeiculo = pg.ConstraintName is { } nome
+        bool ehConstraintDeVeiculo = pg.ConstraintName is { } nome
             && nome.Contains(ConstraintConflitoVeiculoPrefixo, StringComparison.OrdinalIgnoreCase);
 
-        var ehConcorrencia = Array.Exists(
+        bool ehConcorrencia = Array.Exists(
             ConcorrenciaSqlStates,
             estado => string.Equals(pg.SqlState, estado, StringComparison.Ordinal));
 
@@ -348,12 +352,12 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
             return false;
         }
 
-        var ehUniqueViolation = string.Equals(
+        bool ehUniqueViolation = string.Equals(
             pg.SqlState,
             UniqueViolationSqlState,
             StringComparison.Ordinal);
 
-        var ehConstraintDeIdempotencia = pg.ConstraintName is { } nome
+        bool ehConstraintDeIdempotencia = pg.ConstraintName is { } nome
             && nome.Contains(ConstraintIdempotenciaKeyEscopo, StringComparison.OrdinalIgnoreCase);
 
         return ehUniqueViolation && ehConstraintDeIdempotencia;

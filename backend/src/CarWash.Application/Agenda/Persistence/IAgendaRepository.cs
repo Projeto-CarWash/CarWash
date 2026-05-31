@@ -22,6 +22,7 @@ public interface IAgendaRepository
     /// <param name="responsavelId">Filtro opcional por responsável de execução.</param>
     /// <param name="statusDb">Filtro opcional por status persistido no banco.</param>
     /// <param name="cancellationToken">Token de cancelamento.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task<IReadOnlyList<AgendaProjecao>> ConsultarAsync(
         Guid filialId,
         DateTime inicioUtc,

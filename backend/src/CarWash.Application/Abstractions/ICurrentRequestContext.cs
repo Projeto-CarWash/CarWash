@@ -8,18 +8,18 @@ namespace CarWash.Application.Abstractions;
 public interface ICurrentRequestContext
 {
     /// <summary>
-    /// Identificador único da request — propagado pelo <c>CorrelationIdMiddleware</c>.
+    /// Gets identificador único da request — propagado pelo <c>CorrelationIdMiddleware</c>.
     /// Em background jobs/tests, recebe um Guid recém-gerado.
     /// </summary>
     string CorrelationId { get; }
 
     /// <summary>
-    /// Usuário autenticado (claims). Null quando anônimo (ex.: login mal-sucedido).
+    /// Gets usuário autenticado (claims). Null quando anônimo (ex.: login mal-sucedido).
     /// </summary>
     Guid? UsuarioId { get; }
 
     /// <summary>
-    /// Evento de aplicação atualmente em curso (ex.: <c>"AgendamentoCriado"</c>).
+    /// Gets evento de aplicação atualmente em curso (ex.: <c>"AgendamentoCriado"</c>).
     /// Usado pelo <c>AuditLogInterceptor</c> para preencher <c>audit_logs.evento</c>.
     /// </summary>
     string? EventoAtual { get; }
@@ -31,14 +31,14 @@ public interface ICurrentRequestContext
     void DefinirEvento(string evento);
 
     /// <summary>
-    /// IP de origem da request (lido de <c>HttpContext.Connection.RemoteIpAddress</c>,
+    /// Gets iP de origem da request (lido de <c>HttpContext.Connection.RemoteIpAddress</c>,
     /// considerando <c>X-Forwarded-For</c> se houver proxy reverso configurado).
     /// Persistido em <c>usuario_sessoes.ip_origem</c> no login para rastreabilidade.
     /// </summary>
     string? IpOrigem { get; }
 
     /// <summary>
-    /// User-Agent da request (lido do header HTTP). Persistido em
+    /// Gets user-Agent da request (lido do header HTTP). Persistido em
     /// <c>usuario_sessoes.user_agent</c> no login para rastreabilidade.
     /// </summary>
     string? UserAgent { get; }

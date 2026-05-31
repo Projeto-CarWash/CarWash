@@ -49,7 +49,7 @@ public class AgendamentoTests
     public void Cancelar_incrementa_versao_para_concorrencia_otimista()
     {
         var ag = NovoAgendamento();
-        var versaoOriginal = ag.Versao;
+        int versaoOriginal = ag.Versao;
         ag.Cancelar();
         ag.Versao.Should().Be(versaoOriginal + 1);
         ag.Status.Should().Be(StatusAgendamento.Cancelado);

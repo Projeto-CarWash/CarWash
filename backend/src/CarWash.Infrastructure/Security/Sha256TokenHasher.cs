@@ -10,15 +10,17 @@ namespace CarWash.Infrastructure.Security;
 /// </summary>
 public sealed class Sha256TokenHasher : ITokenHasher
 {
+    /// <inheritdoc/>
     public string Hash(string tokenBruto)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(tokenBruto);
 
-        var bytes = Encoding.UTF8.GetBytes(tokenBruto);
-        var hash = SHA256.HashData(bytes);
+        byte[] bytes = Encoding.UTF8.GetBytes(tokenBruto);
+        byte[] hash = SHA256.HashData(bytes);
         return Convert.ToHexString(hash).ToLowerInvariant();
     }
 
+    /// <inheritdoc/>
     public bool Verify(string tokenBruto, string hashArmazenado)
     {
         if (string.IsNullOrWhiteSpace(tokenBruto) || string.IsNullOrWhiteSpace(hashArmazenado))
@@ -26,9 +28,9 @@ public sealed class Sha256TokenHasher : ITokenHasher
             return false;
         }
 
-        var calculadoHex = Hash(tokenBruto);
-        var calculado = Encoding.ASCII.GetBytes(calculadoHex);
-        var armazenado = Encoding.ASCII.GetBytes(hashArmazenado.ToLowerInvariant());
+        string calculadoHex = Hash(tokenBruto);
+        byte[] calculado = Encoding.ASCII.GetBytes(calculadoHex);
+        byte[] armazenado = Encoding.ASCII.GetBytes(hashArmazenado.ToLowerInvariant());
 
         if (calculado.Length != armazenado.Length)
         {

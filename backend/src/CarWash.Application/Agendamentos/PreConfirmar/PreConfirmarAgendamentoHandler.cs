@@ -33,6 +33,7 @@ public sealed class PreConfirmarAgendamentoHandler
         _logger = logger;
     }
 
+    /// <inheritdoc/>
     public async Task<PreConfirmacaoResponse> HandleAsync(
         PreConfirmarAgendamentoCommand command,
         CancellationToken cancellationToken)

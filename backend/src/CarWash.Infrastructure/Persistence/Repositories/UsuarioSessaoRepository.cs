@@ -18,6 +18,7 @@ public sealed class UsuarioSessaoRepository : IUsuarioSessaoRepository
         _contexto = contexto;
     }
 
+    /// <inheritdoc/>
     public Task<UsuarioSessao?> ObterPorHashAsync(string refreshTokenHash, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(refreshTokenHash))
@@ -29,6 +30,7 @@ public sealed class UsuarioSessaoRepository : IUsuarioSessaoRepository
             .FirstOrDefaultAsync(s => s.RefreshTokenHash == refreshTokenHash, cancellationToken);
     }
 
+    /// <inheritdoc/>
     public async Task<UsuarioSessao?> ObterPorHashParaAtualizacaoAsync(
         string refreshTokenHash,
         CancellationToken cancellationToken)
@@ -63,6 +65,7 @@ public sealed class UsuarioSessaoRepository : IUsuarioSessaoRepository
         return sessoes.FirstOrDefault();
     }
 
+    /// <inheritdoc/>
     public async Task<IUsuarioSessaoTransacao> IniciarTransacaoAsync(CancellationToken cancellationToken)
     {
         // Quando já existir uma transação ambiente (ex.: testes de integração que
@@ -80,12 +83,14 @@ public sealed class UsuarioSessaoRepository : IUsuarioSessaoRepository
         return new UsuarioSessaoTransacaoEf(transacao);
     }
 
+    /// <inheritdoc/>
     public async Task AdicionarAsync(UsuarioSessao sessao, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(sessao);
         await _contexto.UsuarioSessoes.AddAsync(sessao, cancellationToken).ConfigureAwait(false);
     }
 
+    /// <inheritdoc/>
     public async Task<int> RevogarTodasAtivasDoUsuarioAsync(
         Guid usuarioId,
         DateTime quandoUtc,
@@ -112,6 +117,7 @@ public sealed class UsuarioSessaoRepository : IUsuarioSessaoRepository
         return sessoes.Count;
     }
 
+    /// <inheritdoc/>
     public Task SalvarAsync(CancellationToken cancellationToken)
         => _contexto.SaveChangesAsync(cancellationToken);
 
