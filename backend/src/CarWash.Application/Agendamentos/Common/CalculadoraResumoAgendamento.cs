@@ -1,9 +1,11 @@
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
+using CarWash.Application.Abstractions;
 using CarWash.Application.Agendamentos.Persistence;
 using CarWash.Application.Common;
 using CarWash.Application.Common.Exceptions;
+using Microsoft.Extensions.Logging;
 
 namespace CarWash.Application.Agendamentos.Common;
 
@@ -20,11 +22,26 @@ public sealed class CalculadoraResumoAgendamento
     private const string MensagemPayloadInvalido =
         "Dados do agendamento inválidos. Verifique os campos e tente novamente.";
 
-    private readonly IAgendamentoCatalogoRepository _catalogo;
+    /// <summary>
+    /// Evento de auditoria das falhas de filial (RF019). entidadeId = null (ainda
+    /// não há agendamento), dados = { motivo, filialId }.
+    /// </summary>
+    public const string EventoFilialRejeitada = "AgendamentoFilialRejeitada";
 
-    public CalculadoraResumoAgendamento(IAgendamentoCatalogoRepository catalogo)
+    public const string EntidadeAuditoria = "Agendamento";
+
+    private readonly IAgendamentoCatalogoRepository _catalogo;
+    private readonly IAuditLogger _audit;
+    private readonly ILogger<CalculadoraResumoAgendamento> _log;
+
+    public CalculadoraResumoAgendamento(
+        IAgendamentoCatalogoRepository catalogo,
+        IAuditLogger audit,
+        ILogger<CalculadoraResumoAgendamento> log)
     {
         _catalogo = catalogo;
+        _audit = audit;
+        _log = log;
     }
 
     /// <summary>
@@ -194,15 +211,49 @@ public sealed class CalculadoraResumoAgendamento
 
     private async Task<FilialResumoSnapshot> GarantirFilialAsync(Guid filialId, CancellationToken cancellationToken)
     {
-        var filial = await _catalogo.ObterFilialResumoAsync(filialId, cancellationToken).ConfigureAwait(false)
-            ?? throw new NotFoundException("Filial informada não foi encontrada.");
+        // RF019: a filial é a única dependência cujo card pede 409 (inativa) — as
+        // demais (veículo/cliente/serviço/responsável) seguem 422 via
+        // RecursoInativoException. 404 e 409 têm mensagens próprias do card.
+        var filial = await _catalogo.ObterFilialResumoAsync(filialId, cancellationToken).ConfigureAwait(false);
+
+        if (filial is null)
+        {
+            await AuditarFalhaFilialAsync(filialId, MotivosFalhaFilial.Inexistente, cancellationToken)
+                .ConfigureAwait(false);
+            throw new NotFoundException(MensagensFilialAgendamento.NaoEncontrada);
+        }
 
         if (!filial.Ativa)
         {
-            throw new RecursoInativoException("A filial selecionada está inativa e não aceita agendamentos.");
+            await AuditarFalhaFilialAsync(filialId, MotivosFalhaFilial.Inativa, cancellationToken)
+                .ConfigureAwait(false);
+            throw new FilialInativaException();
         }
 
         return filial;
+    }
+
+    /// <summary>
+    /// RF019/DAT §9.1: audita a rejeição de filial no ponto único compartilhado
+    /// pelos três fluxos (criação/pré-confirmação/confirmação), imediatamente
+    /// antes de lançar a exceção. O <c>motivo</c> vai apenas para
+    /// <c>audit_logs</c>/log de aplicação — nunca para a resposta HTTP.
+    /// CorrelationId/UsuarioId são preenchidos automaticamente pelo
+    /// <see cref="IAuditLogger"/> via <c>ICurrentRequestContext</c>.
+    /// </summary>
+    private async Task AuditarFalhaFilialAsync(Guid filialId, string motivo, CancellationToken cancellationToken)
+    {
+        await _audit.LogAsync(
+            evento: EventoFilialRejeitada,
+            entidade: EntidadeAuditoria,
+            entidadeId: null,
+            dados: new { motivo, filialId },
+            cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        _log.LogWarning(
+            "Agendamento rejeitado por falha de filial. FilialId={FilialId}, Motivo={Motivo}",
+            filialId,
+            motivo);
     }
 
     private async Task<VeiculoResumoSnapshot> GarantirVeiculoAsync(Guid veiculoId, CancellationToken cancellationToken)
