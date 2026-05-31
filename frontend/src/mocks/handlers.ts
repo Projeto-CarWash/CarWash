@@ -37,7 +37,7 @@ interface ServicoBody {
 }
 
 export const handlers = [
-  http.get('*/servicos', ({ request }) => {
+  http.get('*/api/v1/servicos', ({ request }) => {
     const url = new URL(request.url);
     const ativoStr = url.searchParams.get('ativo');
     let filtrados = [...servicosData];
@@ -53,7 +53,7 @@ export const handlers = [
     });
   }),
 
-  http.post('*/servicos', async ({ request }) => {
+  http.post('*/api/v1/servicos', async ({ request }) => {
     const body = (await request.json()) as ServicoBody;
 
     if (!body.nome || !body.preco || !body.duracaoMin) {
@@ -90,7 +90,7 @@ export const handlers = [
     return HttpResponse.json(novo, { status: 201 });
   }),
 
-  http.patch('*/servicos/:id', async ({ request, params }) => {
+  http.patch('*/api/v1/servicos/:id', async ({ request, params }) => {
     const { id } = params;
     const body = (await request.json()) as ServicoBody;
 
@@ -131,7 +131,7 @@ export const handlers = [
     return HttpResponse.json(servicosData[servicoIndex], { status: 200 });
   }),
 
-  http.patch('*/servicos/:id/status', async ({ request, params }) => {
+  http.patch('*/api/v1/servicos/:id/status', async ({ request, params }) => {
     const { id } = params;
     const body = (await request.json()) as { ativo?: boolean };
 
