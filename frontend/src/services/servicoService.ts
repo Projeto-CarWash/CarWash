@@ -17,12 +17,12 @@ export interface ListaServicosResponse {
 
 export const servicoService = {
   async listar(params?: { ativo?: boolean; query?: string }): Promise<ListaServicosResponse> {
-    const response = await api.get<ListaServicosResponse>('/servicos', { params });
+    const response = await api.get<ListaServicosResponse>('/api/v1/servicos', { params });
     return response.data;
   },
 
   async cadastrar(data: { nome: string; preco: number; duracaoMin: number }): Promise<Servico> {
-    const response = await api.post<Servico>('/servicos', data);
+    const response = await api.post<Servico>('/api/v1/servicos', data);
     return response.data;
   },
 
@@ -30,12 +30,12 @@ export const servicoService = {
     id: string,
     data: { nome: string; preco: number; duracaoMin: number },
   ): Promise<Servico> {
-    const response = await api.patch<Servico>(`/servicos/${id}`, data);
+    const response = await api.patch<Servico>(`/api/v1/servicos/${id}`, data);
     return response.data;
   },
 
   async alterarStatus(id: string, ativo: boolean): Promise<Servico> {
-    const response = await api.patch<Servico>(`/servicos/${id}/status`, { ativo });
+    const response = await api.patch<Servico>(`/api/v1/servicos/${id}/status`, { ativo });
     return response.data;
   },
 };

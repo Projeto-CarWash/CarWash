@@ -162,8 +162,8 @@ internal static class SwaggerExtensions
     private static void IncludeXmlCommentsIfPresent(SwaggerGenOptions options)
     {
         var assembly = Assembly.GetExecutingAssembly();
-        var xmlFile = $"{assembly.GetName().Name}.xml";
-        var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+        string xmlFile = $"{assembly.GetName().Name}.xml";
+        string xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
 
         if (File.Exists(xmlPath))
         {

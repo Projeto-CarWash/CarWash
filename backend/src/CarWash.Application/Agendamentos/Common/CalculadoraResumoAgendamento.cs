@@ -50,6 +50,7 @@ public sealed class CalculadoraResumoAgendamento
     /// <see cref="RecursoInativoException"/> (recurso inativo) ou
     /// <see cref="ValidationException"/> (vínculo inconsistente — RN002/CA009).
     /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     public async Task<ResumoAgendamentoCalculado> CalcularAsync(
         Guid filialId,
         Guid clienteId,
@@ -73,7 +74,7 @@ public sealed class CalculadoraResumoAgendamento
         }
 
         var inicioUtc = DateTime.SpecifyKind(inicio.ToUniversalTime(), DateTimeKind.Utc);
-        var observacoesNormalizadas = InputNormalizer.SanitizeTextOrNull(observacoes);
+        string? observacoesNormalizadas = InputNormalizer.SanitizeTextOrNull(observacoes);
 
         var filial = await GarantirFilialAsync(filialId, cancellationToken).ConfigureAwait(false);
         var veiculo = await GarantirVeiculoAsync(veiculoId, cancellationToken).ConfigureAwait(false);
@@ -83,8 +84,8 @@ public sealed class CalculadoraResumoAgendamento
 
         var servicos = await GarantirServicosAsync(servicoIds, cancellationToken).ConfigureAwait(false);
 
-        var duracaoTotal = servicos.Sum(s => s.DuracaoMin);
-        var valorTotal = servicos.Sum(s => s.Preco);
+        int duracaoTotal = servicos.Sum(s => s.DuracaoMin);
+        decimal valorTotal = servicos.Sum(s => s.Preco);
         var fim = inicioUtc.AddMinutes(duracaoTotal);
 
         // RF008/RF018: a filial deve ter células livres na janela [inicio, fim).
@@ -92,7 +93,7 @@ public sealed class CalculadoraResumoAgendamento
         // duplicação entre CriarAgendamentoHandler e ConfirmarAgendamentoHandler.
         await GarantirCapacidadeFilialAsync(filialId, inicioUtc, fim, cancellationToken).ConfigureAwait(false);
 
-        var hashResumo = CalcularHashResumo(
+        string hashResumo = CalcularHashResumo(
             filialId,
             clienteId,
             veiculoId,
@@ -152,6 +153,7 @@ public sealed class CalculadoraResumoAgendamento
     /// derivado de <c>inicio</c> + duração total. Determinístico e independente
     /// de cultura/ordenação de entrada.
     /// </summary>
+    /// <returns></returns>
     public static string CalcularHashResumo(
         Guid filialId,
         Guid clienteId,
@@ -165,19 +167,19 @@ public sealed class CalculadoraResumoAgendamento
     {
         ArgumentNullException.ThrowIfNull(servicoIds);
 
-        var inicioCanonico = DateTime
+        string inicioCanonico = DateTime
             .SpecifyKind(inicioUtc.ToUniversalTime(), DateTimeKind.Utc)
             .ToString("yyyy-MM-ddTHH:mm:ss.fffZ", CultureInfo.InvariantCulture);
 
-        var servicosCanonicos = string.Join(
+        string servicosCanonicos = string.Join(
             ',',
             servicoIds
                 .Select(id => id.ToString("D", CultureInfo.InvariantCulture))
                 .OrderBy(s => s, StringComparer.Ordinal));
 
-        var observacoesCanonicas = InputNormalizer.SanitizeTextOrNull(observacoes) ?? "null";
+        string observacoesCanonicas = InputNormalizer.SanitizeTextOrNull(observacoes) ?? "null";
 
-        var canonico = string.Join(
+        string canonico = string.Join(
             '|',
             filialId.ToString("D", CultureInfo.InvariantCulture),
             clienteId.ToString("D", CultureInfo.InvariantCulture),
@@ -189,7 +191,7 @@ public sealed class CalculadoraResumoAgendamento
             valorTotal.ToString("F2", CultureInfo.InvariantCulture),
             observacoesCanonicas);
 
-        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(canonico));
+        byte[] bytes = SHA256.HashData(Encoding.UTF8.GetBytes(canonico));
         return Convert.ToHexString(bytes).ToLowerInvariant();
     }
 

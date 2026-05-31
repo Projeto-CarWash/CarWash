@@ -17,6 +17,7 @@ public class ServicoRepository : IServicoRepository
         this.context = context;
     }
 
+    /// <inheritdoc/>
     public Task<bool> ExisteNomeAsync(string nome, Guid? ignoreServicoId, CancellationToken cancellationToken)
     {
         return context.Servicos
@@ -27,12 +28,14 @@ public class ServicoRepository : IServicoRepository
                 cancellationToken);
     }
 
+    /// <inheritdoc/>
     public Task<Servico?> ObterPorIdAsync(Guid id, CancellationToken cancellationToken)
     {
         return context.Servicos
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     }
 
+    /// <inheritdoc/>
     public async Task AdicionarAsync(Servico servico, string correlationId, Guid? usuarioId, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(servico);
@@ -70,6 +73,7 @@ public class ServicoRepository : IServicoRepository
         }
     }
 
+    /// <inheritdoc/>
     public async Task SalvarAsync(CancellationToken cancellationToken)
     {
         try
@@ -82,6 +86,7 @@ public class ServicoRepository : IServicoRepository
         }
     }
 
+    /// <inheritdoc/>
     public async Task RegistrarAuditoriaAsync(
         string evento,
         Guid entidadeId,
@@ -103,6 +108,7 @@ public class ServicoRepository : IServicoRepository
         await context.SaveChangesAsync(cancellationToken);
     }
 
+    /// <inheritdoc/>
     public async Task<(IReadOnlyList<Servico> Itens, int Total)> ListarAsync(
         string? busca,
         bool? ativo,
@@ -134,12 +140,12 @@ public class ServicoRepository : IServicoRepository
 
         if (!string.IsNullOrWhiteSpace(busca))
         {
-            var termoNormalizado = $"%{busca.Trim()}%";
+            string termoNormalizado = $"%{busca.Trim()}%";
             query = query.Where(x =>
                 EF.Functions.ILike(x.Nome, termoNormalizado));
         }
 
-        var total = await query.CountAsync(cancellationToken);
+        int total = await query.CountAsync(cancellationToken);
 
         var itens = await query
             .OrderBy(x => x.Nome)

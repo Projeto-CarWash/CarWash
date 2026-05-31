@@ -25,5 +25,6 @@ internal sealed class CarWashRuntimeDbContextFactory : IDbContextFactory<CarWash
         _options = options;
     }
 
+    /// <inheritdoc/>
     public CarWashDbContext CreateDbContext() => new(_options);
 }

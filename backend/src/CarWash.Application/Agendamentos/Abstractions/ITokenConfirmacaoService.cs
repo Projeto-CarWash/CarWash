@@ -13,6 +13,7 @@ public interface ITokenConfirmacaoService
     /// Gera um token assinado para o resumo informado. A expiração é fixada em
     /// 15 minutos a partir de agora (UTC).
     /// </summary>
+    /// <returns></returns>
     string Gerar(string hashResumo, Guid usuarioId, string traceId);
 
     /// <summary>
@@ -22,6 +23,7 @@ public interface ITokenConfirmacaoService
     /// <see cref="SessaoConfirmacaoExpiradaException"/> (410). A expiração só é
     /// avaliada após a assinatura conferir.
     /// </summary>
+    /// <returns></returns>
     TokenConfirmacaoPayload Validar(string token, Guid usuarioAutenticadoId);
 }
 

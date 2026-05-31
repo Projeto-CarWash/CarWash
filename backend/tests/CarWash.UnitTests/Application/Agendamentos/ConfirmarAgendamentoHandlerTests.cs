@@ -128,7 +128,7 @@ public class ConfirmarAgendamentoHandlerTests
     {
         // Token assina um hash; o payload da confirmação calcula outro (início diferente).
         var handler = NovoHandler();
-        var tokenComOutroHash = TokenValido(hashResumo: new string('f', 64));
+        string tokenComOutroHash = TokenValido(hashResumo: new string('f', 64));
 
         var act = () => handler.HandleAsync(
             NovoComando() with { TokenConfirmacao = tokenComOutroHash },
@@ -144,7 +144,7 @@ public class ConfirmarAgendamentoHandlerTests
         // O token foi emitido para o início original; a confirmação chega com
         // início deslocado em 1h → hash recalculado difere → 409.
         var handler = NovoHandler();
-        var tokenDaPrevia = TokenValido(HashOriginal());
+        string tokenDaPrevia = TokenValido(HashOriginal());
 
         var act = () => handler.HandleAsync(
             NovoComando() with { TokenConfirmacao = tokenDaPrevia, Inicio = Inicio.AddHours(1) },
@@ -335,14 +335,14 @@ public class ConfirmarAgendamentoHandlerTests
 
     private static string TokenExpirado()
     {
-        var ontem = DateTimeOffset.UtcNow.AddDays(-1).ToUnixTimeSeconds();
-        var payloadJson =
+        long ontem = DateTimeOffset.UtcNow.AddDays(-1).ToUnixTimeSeconds();
+        string payloadJson =
             $"{{\"v\":1,\"hashResumo\":\"{HashOriginal()}\",\"usuarioId\":\"{UsuarioId}\","
             + $"\"traceId\":\"trace-old\",\"iat\":{ontem},\"exp\":{ontem + 900}}}";
-        var payloadEncoded = Base64UrlEncode(System.Text.Encoding.UTF8.GetBytes(payloadJson));
+        string payloadEncoded = Base64UrlEncode(System.Text.Encoding.UTF8.GetBytes(payloadJson));
         using var hmac = new System.Security.Cryptography.HMACSHA256(
             System.Text.Encoding.UTF8.GetBytes("chave-de-confirmacao-rf015-com-mais-de-32-bytes-aqui"));
-        var assinatura = Base64UrlEncode(hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(payloadEncoded)));
+        string assinatura = Base64UrlEncode(hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(payloadEncoded)));
         return payloadEncoded + "." + assinatura;
     }
 

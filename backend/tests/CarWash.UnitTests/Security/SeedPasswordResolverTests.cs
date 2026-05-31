@@ -9,7 +9,7 @@ public class SeedPasswordResolverTests
     [Fact]
     public void Lanca_InvalidOperationException_quando_env_ausente()
     {
-        var anterior = Environment.GetEnvironmentVariable(SeedPasswordResolver.EnvironmentVariableName);
+        string? anterior = Environment.GetEnvironmentVariable(SeedPasswordResolver.EnvironmentVariableName);
         try
         {
             Environment.SetEnvironmentVariable(SeedPasswordResolver.EnvironmentVariableName, null);
@@ -26,7 +26,7 @@ public class SeedPasswordResolverTests
     [Fact]
     public void Lanca_InvalidOperationException_quando_env_vazia()
     {
-        var anterior = Environment.GetEnvironmentVariable(SeedPasswordResolver.EnvironmentVariableName);
+        string? anterior = Environment.GetEnvironmentVariable(SeedPasswordResolver.EnvironmentVariableName);
         try
         {
             Environment.SetEnvironmentVariable(SeedPasswordResolver.EnvironmentVariableName, "   ");
@@ -42,11 +42,11 @@ public class SeedPasswordResolverTests
     [Fact]
     public void Gera_hash_argon2id_PHC_quando_env_definida()
     {
-        var anterior = Environment.GetEnvironmentVariable(SeedPasswordResolver.EnvironmentVariableName);
+        string? anterior = Environment.GetEnvironmentVariable(SeedPasswordResolver.EnvironmentVariableName);
         try
         {
             Environment.SetEnvironmentVariable(SeedPasswordResolver.EnvironmentVariableName, "SenhaTeste!2026");
-            var hash = SeedPasswordResolver.ResolveAdminArgon2idHash();
+            string hash = SeedPasswordResolver.ResolveAdminArgon2idHash();
             hash.Should().StartWith("$argon2id$v=19$m=65536,t=3,p=1$");
         }
         finally

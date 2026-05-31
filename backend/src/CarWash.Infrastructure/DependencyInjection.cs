@@ -34,7 +34,7 @@ public static class DependencyInjection
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configuration);
 
-        var conn = configuration.GetConnectionString("Default")
+        string conn = configuration.GetConnectionString("Default")
             ?? throw new InvalidOperationException("ConnectionStrings:Default não configurada");
 
         services.AddSingleton<IPasswordHasher, Argon2idPasswordHasher>();

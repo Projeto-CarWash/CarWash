@@ -23,7 +23,7 @@ public class AtualizarClienteRequest
     public EnderecoRequest? Endereco { get; set; }
 
     /// <summary>
-    /// Campos não mapeados do JSON (Opção B do GAP-CW-CLI-PUT-CPF em .NET 8).
+    /// Gets or sets campos não mapeados do JSON (Opção B do GAP-CW-CLI-PUT-CPF em .NET 8).
     /// O System.Text.Json popula este dicionário com qualquer propriedade extra
     /// presente no body (ex.: <c>cpf</c>, <c>cnpj</c>) — o handler usa para emitir
     /// warning, sinalizando ao cliente que CPF/CNPJ não são editáveis via PUT.

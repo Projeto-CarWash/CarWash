@@ -286,7 +286,7 @@ public class ConfirmarAgendamentoEndpointTests : IAsyncDisposable
 
         if ((int)response.StatusCode >= 500)
         {
-            var corpo = await response.Content.ReadAsStringAsync();
+            string corpo = await response.Content.ReadAsStringAsync();
             corpo.Should().NotContain("at CarWash.");
             corpo.Should().NotContain("Exception:");
             corpo.Should().NotContainEquivalentOf("npgsql");
@@ -374,6 +374,7 @@ public class ConfirmarAgendamentoEndpointTests : IAsyncDisposable
     /// no ProblemDetails — base para o frontend discriminar pelo <c>type</c> em
     /// vez de regex de texto.
     /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task POST_os_tres_409_tem_type_distintos_no_problem_details()
     {
@@ -385,7 +386,7 @@ public class ConfirmarAgendamentoEndpointTests : IAsyncDisposable
         payloadDivergente["tokenConfirmacao"] =
             TokenConfirmacaoTestHelper.GerarComHashDivergente(ctxDivergente.Token);
         var respDivergente = await client.PostAsJsonAsync(RotaConfirmar, payloadDivergente, _json);
-        var typeDivergente = (await respDivergente.Content.ReadFromJsonAsync<JsonElement>(_json))
+        string? typeDivergente = (await respDivergente.Content.ReadFromJsonAsync<JsonElement>(_json))
             .GetProperty("type").GetString();
 
         // 409 (b) — conflito de idempotência.
@@ -396,7 +397,7 @@ public class ConfirmarAgendamentoEndpointTests : IAsyncDisposable
         var payloadIdem = outro.PayloadConfirmacao();
         payloadIdem["idempotencyKey"] = ctxIdem.IdempotencyKey;
         var respIdem = await client.PostAsJsonAsync(RotaConfirmar, payloadIdem, _json);
-        var typeIdem = (await respIdem.Content.ReadFromJsonAsync<JsonElement>(_json))
+        string? typeIdem = (await respIdem.Content.ReadFromJsonAsync<JsonElement>(_json))
             .GetProperty("type").GetString();
 
         // 409 (c) — conflito de veículo (RN011).
@@ -413,7 +414,7 @@ public class ConfirmarAgendamentoEndpointTests : IAsyncDisposable
             },
             _json)).StatusCode.Should().Be(HttpStatusCode.Created);
         var respConflito = await client.PostAsJsonAsync(RotaConfirmar, ctxConflito.PayloadConfirmacao(), _json);
-        var typeConflito = (await respConflito.Content.ReadFromJsonAsync<JsonElement>(_json))
+        string? typeConflito = (await respConflito.Content.ReadFromJsonAsync<JsonElement>(_json))
             .GetProperty("type").GetString();
 
         typeDivergente.Should().EndWith("agendamento-resumo-divergente");
@@ -523,7 +524,7 @@ public class ConfirmarAgendamentoEndpointTests : IAsyncDisposable
         pre.StatusCode.Should().Be(HttpStatusCode.OK, "a pré-confirmação é pré-requisito da confirmação");
 
         var corpo = await pre.Content.ReadFromJsonAsync<JsonElement>(_json);
-        var token = corpo.GetProperty("tokenConfirmacao").GetString()!;
+        string token = corpo.GetProperty("tokenConfirmacao").GetString()!;
 
         return new ContextoConfirmacao(
             filialId,
@@ -636,15 +637,15 @@ public class ConfirmarAgendamentoEndpointTests : IAsyncDisposable
     {
         Span<int> d = stackalloc int[11];
         var rng = Random.Shared;
-        for (var i = 0; i < 9; i++)
+        for (int i = 0; i < 9; i++)
         {
             d[i] = rng.Next(0, 10);
         }
 
         d[9] = Dv(d[..9], 10);
         d[10] = Dv(d[..10], 11);
-        var chars = new char[11];
-        for (var i = 0; i < 11; i++)
+        char[] chars = new char[11];
+        for (int i = 0; i < 11; i++)
         {
             chars[i] = (char)('0' + d[i]);
         }
@@ -653,17 +654,18 @@ public class ConfirmarAgendamentoEndpointTests : IAsyncDisposable
 
         static int Dv(ReadOnlySpan<int> parcial, int pesoInicial)
         {
-            var soma = 0;
-            for (var i = 0; i < parcial.Length; i++)
+            int soma = 0;
+            for (int i = 0; i < parcial.Length; i++)
             {
                 soma += parcial[i] * (pesoInicial - i);
             }
 
-            var resto = soma % 11;
+            int resto = soma % 11;
             return resto < 2 ? 0 : 11 - resto;
         }
     }
 
+    /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
         await _factory.DisposeAsync();

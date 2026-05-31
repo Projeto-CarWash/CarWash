@@ -405,6 +405,11 @@ namespace CarWash.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("nome");
 
+                    b.Property<string>("Observacoes")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("observacoes");
+
                     b.Property<string>("Telefone")
                         .HasMaxLength(11)
                         .HasColumnType("character varying(11)")
