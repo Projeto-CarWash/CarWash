@@ -299,6 +299,52 @@ public class ConfirmarAgendamentoEndpointTests : IAsyncDisposable
     }
 
     // ---------------------------------------------------------------------
+    // RF019/card 142 — filial desativada entre a prévia e a confirmação → 409.
+    // Cobre o terceiro fluxo (confirmar), não exercitado antes. O hash do resumo
+    // depende só do filialId (não do estado ativo), então o token continua válido;
+    // a re-validação server-side de GarantirFilialAsync barra a confirmação com
+    // 409 + slug filial-inativa — defesa em profundidade dos três caminhos.
+    // ---------------------------------------------------------------------
+    [Fact]
+    public async Task POST_filial_inativada_entre_previa_e_confirmacao_retorna_409_filial_inativa()
+    {
+        var client = await AuthenticatedHttpClient.CreateAsync(_factory);
+        var ctx = await PrepararConfirmacaoAsync(client);
+
+        // A filial é desativada DEPOIS de emitir o token (entre prévia e confirmação).
+        await InativarFilialAsync(ctx.FilialId);
+
+        var response = await client.PostAsJsonAsync(RotaConfirmar, ctx.PayloadConfirmacao(), _json);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        var corpo = await response.Content.ReadFromJsonAsync<JsonElement>(_json);
+        corpo.GetProperty("type").GetString().Should().Contain("filial-inativa");
+        corpo.GetProperty("title").GetString().Should()
+            .Be("A filial selecionada está inativa e não pode receber novos agendamentos.");
+
+        // Nada persistido após o 409.
+        await using var db = NovoDbContext();
+        (await db.Agendamentos.CountAsync(a => a.VeiculoId == ctx.VeiculoId)).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task POST_filial_inexistente_na_confirmacao_retorna_404_com_mensagem_do_card()
+    {
+        var client = await AuthenticatedHttpClient.CreateAsync(_factory);
+        var ctx = await PrepararConfirmacaoAsync(client);
+
+        // A filial é removida entre a prévia e a confirmação — o token (que só
+        // carrega o filialId no hash) continua válido, mas a re-validação acha 404.
+        await RemoverFilialAsync(ctx.FilialId);
+
+        var response = await client.PostAsJsonAsync(RotaConfirmar, ctx.PayloadConfirmacao(), _json);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        var corpo = await response.Content.ReadFromJsonAsync<JsonElement>(_json);
+        corpo.GetProperty("title").GetString().Should().Be("Filial não encontrada.");
+    }
+
+    // ---------------------------------------------------------------------
     // Extra — divergência de resumo (hash do payload ≠ hash do token) → 409.
     // ---------------------------------------------------------------------
     [Fact]
@@ -328,7 +374,7 @@ public class ConfirmarAgendamentoEndpointTests : IAsyncDisposable
     /// no ProblemDetails — base para o frontend discriminar pelo <c>type</c> em
     /// vez de regex de texto.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task POST_os_tres_409_tem_type_distintos_no_problem_details()
     {
@@ -543,6 +589,22 @@ public class ConfirmarAgendamentoEndpointTests : IAsyncDisposable
             .ToListAsync();
 
         return (filial.Id, cliente.Id, veiculo.Id, servicoIds);
+    }
+
+    private async Task InativarFilialAsync(Guid filialId)
+    {
+        await using var db = NovoDbContext();
+        var filial = await db.Filiais.FirstAsync(f => f.Id == filialId);
+        filial.Inativar();
+        await db.SaveChangesAsync();
+    }
+
+    private async Task RemoverFilialAsync(Guid filialId)
+    {
+        await using var db = NovoDbContext();
+        var filial = await db.Filiais.FirstAsync(f => f.Id == filialId);
+        db.Filiais.Remove(filial);
+        await db.SaveChangesAsync();
     }
 
     private static string CodigoTeste() => $"F{Guid.NewGuid():N}"[..10].ToUpperInvariant();

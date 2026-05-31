@@ -98,6 +98,7 @@ public static class ClientesEndpoints
             Celular: request.Celular,
             Email: request.Email,
             Endereco: request.Endereco,
+            Observacoes: request.Observacoes,
             TraceId: traceId,
             UsuarioId: usuarioId);
 

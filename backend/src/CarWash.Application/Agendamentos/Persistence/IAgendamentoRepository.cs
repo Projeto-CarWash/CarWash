@@ -15,9 +15,25 @@ public interface IAgendamentoRepository
     /// Pré-check da RN011/RF020 — independente de filial. A defesa final é a
     /// constraint EXCLUDE <c>ex_ag_veiculo_janela</c> no banco.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task<bool> ExisteConflitoVeiculoAsync(
         Guid veiculoId,
+        DateTime inicio,
+        DateTime fim,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Verifica se a filial já atingiu sua capacidade de atendimentos simultâneos
+    /// (RF008/RN009): retorna <c>true</c> quando a quantidade de agendamentos ativos
+    /// (status <c>agendado</c>) cuja janela <c>[inicio, fim)</c> se sobrepõe à
+    /// informada é maior ou igual a <c>celulas_ativas</c> da filial. Permite
+    /// múltiplos agendamentos no mesmo horário até o teto de células. Pré-check
+    /// (sem garantia anti-corrida no banco — ver nota nos handlers). Retorna
+    /// <c>false</c> para filial inexistente (a existência é validada antes pela
+    /// <c>CalculadoraResumoAgendamento</c>).
+    /// </summary>
+    Task<bool> CapacidadeAtingidaAsync(
+        Guid filialId,
         DateTime inicio,
         DateTime fim,
         CancellationToken cancellationToken);
@@ -27,7 +43,7 @@ public interface IAgendamentoRepository
     /// numa única transação. Em violação da EXCLUDE <c>ex_ag_veiculo_janela</c>
     /// (race condition), lança <see cref="Common.AgendamentoConflitanteException"/>.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task AdicionarAsync(
         Agendamento agendamento,
         IReadOnlyCollection<AgendamentoItem> itens,
@@ -44,12 +60,34 @@ public interface IAgendamentoRepository
     /// (replay) ou lança <see cref="Common.IdempotenciaConflitanteException"/> se
     /// o payload diverge.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task<ResultadoConfirmacaoIdempotente> AdicionarComIdempotenciaAsync(
         Agendamento agendamento,
         IReadOnlyCollection<AgendamentoItem> itens,
         AgendamentoHistorico historico,
         IdempotenciaRequisicao idempotencia,
+        string correlationId,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Obtém o agendamento por <paramref name="id"/>, rastreado pelo change tracker
+    /// do EF Core, para permitir alterações posteriores via <see cref="SalvarAsync"/>.
+    /// Retorna <c>null</c> se não existir.
+    /// </summary>
+    Task<Agendamento?> ObterPorIdRastreadoAsync(
+        Guid id,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Persiste alterações num agendamento já rastreado (cancelamento, etc.),
+    /// incluindo o evento de histórico e o log de auditoria, numa única transação.
+    /// A concorrência otimista usa <c>Versao</c> (concurrency token) — se o
+    /// agendamento foi modificado por outra transação, lança
+    /// <see cref="DbUpdateConcurrencyException"/>.
+    /// </summary>
+    Task SalvarAsync(
+        Agendamento agendamento,
+        AgendamentoHistorico historico,
         string correlationId,
         CancellationToken cancellationToken);
 }

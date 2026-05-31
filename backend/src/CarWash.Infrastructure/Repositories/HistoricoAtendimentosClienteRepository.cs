@@ -255,8 +255,8 @@ public sealed class HistoricoAtendimentosClienteRepository : IHistoricoAtendimen
             linhas.Add(new HistoricoAtendimentoLinha
             {
                 AgendamentoId = reader.GetGuid(reader.GetOrdinal("agendamento_id")),
-                Inicio = reader.GetFieldValue<DateTimeOffset>(reader.GetOrdinal("inicio")),
-                Fim = reader.GetFieldValue<DateTimeOffset>(reader.GetOrdinal("fim")),
+                Inicio = await reader.GetFieldValueAsync<DateTimeOffset>(reader.GetOrdinal("inicio"), cancellationToken),
+                Fim = await reader.GetFieldValueAsync<DateTimeOffset>(reader.GetOrdinal("fim"), cancellationToken),
                 Status = reader.GetString(reader.GetOrdinal("status")),
                 DuracaoTotalMin = reader.GetInt32(reader.GetOrdinal("duracao_total_min")),
                 ValorTotal = reader.GetDecimal(reader.GetOrdinal("valor_total")),
@@ -266,19 +266,19 @@ public sealed class HistoricoAtendimentosClienteRepository : IHistoricoAtendimen
                 Modelo = reader.GetString(reader.GetOrdinal("modelo")),
                 ResponsavelId = reader.GetGuid(reader.GetOrdinal("responsavel_id")),
                 ResponsavelNome = reader.GetString(reader.GetOrdinal("responsavel_nome")),
-                ServicoId = reader.IsDBNull(reader.GetOrdinal("servico_id"))
+                ServicoId = await reader.IsDBNullAsync(reader.GetOrdinal("servico_id"), cancellationToken)
                     ? null
                     : reader.GetGuid(reader.GetOrdinal("servico_id")),
-                ServicoNome = reader.IsDBNull(reader.GetOrdinal("servico_nome"))
+                ServicoNome = await reader.IsDBNullAsync(reader.GetOrdinal("servico_nome"), cancellationToken)
                     ? null
                     : reader.GetString(reader.GetOrdinal("servico_nome")),
-                DuracaoAplicada = reader.IsDBNull(reader.GetOrdinal("duracao_aplicada"))
+                DuracaoAplicada = await reader.IsDBNullAsync(reader.GetOrdinal("duracao_aplicada"), cancellationToken)
                     ? null
                     : reader.GetInt32(reader.GetOrdinal("duracao_aplicada")),
-                PrecoAplicado = reader.IsDBNull(reader.GetOrdinal("preco_aplicado"))
+                PrecoAplicado = await reader.IsDBNullAsync(reader.GetOrdinal("preco_aplicado"), cancellationToken)
                     ? null
                     : reader.GetDecimal(reader.GetOrdinal("preco_aplicado")),
-                ObservacoesLogisticas = reader.IsDBNull(reader.GetOrdinal("observacoes_logisticas"))
+                ObservacoesLogisticas = await reader.IsDBNullAsync(reader.GetOrdinal("observacoes_logisticas"), cancellationToken)
                     ? null
                     : reader.GetString(reader.GetOrdinal("observacoes_logisticas")),
             });

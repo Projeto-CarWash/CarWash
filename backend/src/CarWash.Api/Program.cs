@@ -51,6 +51,9 @@ builder.Services.ConfigureHttpJsonOptions(opt =>
 // — registra ValidationFilter<T> fechado para cada Command/Query com IValidator<T>.
 builder.Services.AddValidationFilters(typeof(CarWash.Application.DependencyInjection).Assembly);
 
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
 // ---------- Auth: JWT Bearer ----------
 var jwtConfig = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
     ?? throw new InvalidOperationException(

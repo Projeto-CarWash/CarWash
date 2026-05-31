@@ -37,16 +37,19 @@ public static class AgendamentoResponseFactory
             ValorTotal = agendamento.ValorTotal,
             Observacoes = agendamento.Observacoes,
             Versao = agendamento.Versao,
+            CanceladoEm = agendamento.CanceladoEm,
+            CanceladoPor = agendamento.CanceladoPor,
+            MotivoCancelamento = agendamento.MotivoCancelamento,
             Itens = itens
-                .Select(item => new AgendamentoServicoResponse
-                {
-                    Id = item.Id,
-                    ServicoId = item.ServicoId,
-                    NomeServico = servicos.First(s => s.Id == item.ServicoId).Nome,
-                    PrecoAplicado = item.PrecoAplicado,
-                    DuracaoAplicada = item.DuracaoAplicada,
-                })
-                .ToList(),
+                    .Select(item => new AgendamentoServicoResponse
+                    {
+                        Id = item.Id,
+                        ServicoId = item.ServicoId,
+                        NomeServico = servicos.First(s => s.Id == item.ServicoId).Nome,
+                        PrecoAplicado = item.PrecoAplicado,
+                        DuracaoAplicada = item.DuracaoAplicada,
+                    })
+                    .ToList(),
             CriadoEm = agendamento.CriadoEm,
             Mensagem = MensagemSucesso,
             TraceId = traceId,

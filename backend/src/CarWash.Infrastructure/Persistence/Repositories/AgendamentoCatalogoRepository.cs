@@ -80,6 +80,7 @@ public sealed class AgendamentoCatalogoRepository : IAgendamentoCatalogoReposito
 
     // O cliente é PF (CPF) ou PJ (CNPJ) — CHECK ck_clientes_cpf_ou_cnpj garante
     // exatamente um preenchido. O coalesce expõe o documento de negócio.
+
     /// <inheritdoc/>
     public Task<ClienteResumoSnapshot?> ObterClienteResumoAsync(Guid clienteId, CancellationToken cancellationToken) =>
         _db.Clientes
@@ -105,4 +106,24 @@ public sealed class AgendamentoCatalogoRepository : IAgendamentoCatalogoReposito
                 v.Cor,
                 v.Ativo))
             .FirstOrDefaultAsync(cancellationToken);
+
+    public Task<int?> ObterCelulasAtivasFilialAsync(Guid filialId, CancellationToken cancellationToken) =>
+        _db.Filiais
+            .AsNoTracking()
+            .Where(f => f.Id == filialId)
+            .Select(f => (int?)f.CelulasAtivas)
+            .FirstOrDefaultAsync(cancellationToken);
+
+    public Task<int> ContarSobreposicoesNaFilialAsync(
+        Guid filialId,
+        DateTime inicio,
+        DateTime fim,
+        CancellationToken cancellationToken) =>
+        _db.Agendamentos
+            .AsNoTracking()
+            .Where(a => a.FilialId == filialId
+                     && a.StatusRaw == "agendado"
+                     && a.Inicio < fim
+                     && a.Fim > inicio)
+            .CountAsync(cancellationToken);
 }

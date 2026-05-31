@@ -708,7 +708,7 @@ public class ConsultarAgendaEndpointTests : IAsyncDisposable
 
         if (cancelar)
         {
-            agendamento.Cancelar();
+            agendamento.Cancelar("Cancelado para fins de teste", Guid.NewGuid());
         }
 
         db.Agendamentos.Add(agendamento);

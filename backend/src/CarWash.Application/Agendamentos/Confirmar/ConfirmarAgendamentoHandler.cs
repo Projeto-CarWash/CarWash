@@ -130,6 +130,24 @@ public sealed class ConfirmarAgendamentoHandler
             throw new AgendamentoConflitanteException(AgendamentoConflitanteException.MensagemConfirmacao);
         }
 
+        // RF008/RN009: revalida o teto de células ativas da filial — entre a prévia
+        // e a confirmação outras requisições podem ter ocupado as células livres.
+        // Atendimentos simultâneos são permitidos até o limite (409 ao exceder).
+        if (await _agendamentos.CapacidadeAtingidaAsync(
+            command.FilialId,
+            calculado.Inicio,
+            calculado.Fim,
+            cancellationToken).ConfigureAwait(false))
+        {
+            _logger.LogWarning(
+                "Confirmação rejeitada por capacidade da filial atingida (RF008) — filial {FilialId} na janela [{Inicio:o}, {Fim:o}). TraceId: {TraceId}",
+                command.FilialId,
+                calculado.Inicio,
+                calculado.Fim,
+                command.TraceId);
+            throw new CapacidadeFilialAtingidaException();
+        }
+
         // Etapa 6 do L7 — persistência: agendamento + itens + histórico +
         // idempotência na mesma transação. A UNIQUE da idempotência e a EXCLUDE
         // da RN011 fecham a race condition de requisições concorrentes.

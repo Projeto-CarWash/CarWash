@@ -55,6 +55,8 @@ public sealed class Cliente : IAuditable, IAuditableSetter
 
     public string EnderecoUf { get; private set; }
 
+    public string? Observacoes { get; private set; }
+
     public bool Ativo { get; private set; }
 
     /// <inheritdoc/>
@@ -94,7 +96,8 @@ public sealed class Cliente : IAuditable, IAuditableSetter
         Cpf? cpf = null,
         Cnpj? cnpj = null,
         Telefone? telefone = null,
-        Email? email = null)
+        Email? email = null,
+        string? observacoes = null)
     {
         if (id == Guid.Empty)
         {
@@ -142,6 +145,7 @@ public sealed class Cliente : IAuditable, IAuditableSetter
             Ativo = true,
             CriadoEm = agora,
             AtualizadoEm = agora,
+            Observacoes = observacoes,
         };
     }
 

@@ -24,6 +24,12 @@ public interface IFilialRepository
     /// </summary>
     Task<bool> ExisteNomeAsync(string nome, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Recupera a filial por id com tracking habilitado (sem AsNoTracking) —
+    /// permite que o use case de RF018 mute o agregado (<c>AjustarCelulas</c>)
+    /// e persista via <see cref="SalvarAsync"/>. O GET por id também reusa
+    /// este método (leitura simples).
+    /// </summary>
     Task<Filial?> ObterPorIdAsync(Guid id, CancellationToken cancellationToken);
 
     /// <summary>
@@ -33,6 +39,13 @@ public interface IFilialRepository
     /// <c>AuditLogInterceptor</c> a partir do evento definido no handler.
     /// </summary>
     Task AdicionarAsync(Filial filial, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Persiste mudanças pendentes do agregado já rastreado (RF018 —
+    /// ajuste de <c>celulas_ativas</c>). Encapsula <c>SaveChangesAsync</c>
+    /// para manter a Application desacoplada do EF Core.
+    /// </summary>
+    Task SalvarAsync(CancellationToken cancellationToken);
 
     /// <summary>
     /// Lista filiais paginadas com filtro opcional por <c>ativo</c> e por

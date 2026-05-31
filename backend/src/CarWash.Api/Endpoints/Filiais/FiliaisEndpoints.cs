@@ -1,7 +1,10 @@
 using CarWash.Api.Filters;
 using CarWash.Application.Abstractions.Messaging;
+using CarWash.Application.Filiais.AlterarCelulasAtivas;
+using CarWash.Application.Filiais.Common;
 using CarWash.Application.Filiais.Criar;
 using CarWash.Application.Filiais.Listar;
+using CarWash.Application.Filiais.ObterFilialPorId;
 using FluentValidation;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -10,10 +13,12 @@ using ValidationException = CarWash.Application.Common.Exceptions.ValidationExce
 namespace CarWash.Api.Endpoints.Filiais;
 
 /// <summary>
-/// Endpoints de cadastro e listagem de filiais (RF017 + RF018). Aplicam o
-/// contrato HTTP do ADR-0007 §4: envelope {id, mensagem, traceId} no POST,
-/// listagem paginada compatível com <c>frontend/src/types/filial.ts</c>. Grupo
-/// inteiro requer autenticação (L5=a — RequireAuthorization() puro).
+/// Endpoints de filiais (RF017 + RF018). Aplicam o contrato HTTP do ADR-0007
+/// §4: envelope {id, mensagem, traceId} no POST, listagem paginada compatível
+/// com <c>frontend/src/types/filial.ts</c>, leitura por id e ajuste de células
+/// ativas (RF018). Grupo inteiro requer autenticação simples
+/// (<c>RequireAuthorization()</c> puro — sem policy Admin; 403 fica para
+/// RF-FUT003).
 /// </summary>
 public static class FiliaisEndpoints
 {
@@ -44,6 +49,24 @@ public static class FiliaisEndpoints
             .Produces<ListaFiliaisResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status401Unauthorized);
+
+        // GET /api/v1/filiais/{id} — leitura por id (RF017/RF018). Autenticação simples.
+        grupo.MapGet("/{id:guid}", ObterPorIdAsync)
+            .WithName("ObterFilialPorId")
+            .Produces<FilialResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
+        // PATCH /api/v1/filiais/{id}/celulas-ativas — ajuste de capacidade (RF018).
+        // Autenticação simples (sem policy Admin; 403 fica para RF-FUT003).
+        grupo.MapPatch("/{id:guid}/celulas-ativas", AlterarCelulasAtivasAsync)
+            .WithName("AlterarCelulasAtivasFilial")
+            .Produces<FilialResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
 
         return app;
     }
@@ -127,6 +150,44 @@ public static class FiliaisEndpoints
             new ListarFiliaisQuery(busca, ativo, pagina, tamanhoPagina),
             cancellationToken).ConfigureAwait(false);
 
+        return TypedResults.Ok(resposta);
+    }
+
+    private static async Task<Ok<FilialResponse>> ObterPorIdAsync(
+        Guid id,
+        [FromServices] IQueryHandler<ObterFilialPorIdQuery, FilialResponse> handler,
+        CancellationToken cancellationToken)
+    {
+        var resposta = await handler.HandleAsync(new ObterFilialPorIdQuery(id), cancellationToken).ConfigureAwait(false);
+        return TypedResults.Ok(resposta);
+    }
+
+    /// <summary>
+    /// <c>PATCH /api/v1/filiais/{id}/celulas-ativas</c> (RF018). O <c>id</c> vem
+    /// da rota; o body carrega apenas <c>celulasAtivas</c>. Como o command mescla
+    /// id (rota) + request (body), o <see cref="ValidationFilter{T}"/> não é
+    /// aplicável e validamos inline — mesmo padrão de <c>AlterarStatusUsuarioAsync</c>.
+    /// </summary>
+    private static async Task<Ok<FilialResponse>> AlterarCelulasAtivasAsync(
+        Guid id,
+        [FromBody] AlterarCelulasAtivasRequest? request,
+        [FromServices] ICommandHandler<AlterarCelulasAtivasCommand, FilialResponse> handler,
+        [FromServices] IValidator<AlterarCelulasAtivasCommand> validator,
+        CancellationToken cancellationToken)
+    {
+        if (request is null)
+        {
+            throw ValidationProblems.BodyAusente(
+                MensagemPayloadInvalido,
+                "Corpo da requisição ausente ou malformado.");
+        }
+
+        var command = new AlterarCelulasAtivasCommand(id, request.CelulasAtivas);
+
+        var resultado = await validator.ValidateAsync(command, cancellationToken).ConfigureAwait(false);
+        ValidationProblems.EnsureValid(resultado, MensagemPayloadInvalido);
+
+        var resposta = await handler.HandleAsync(command, cancellationToken).ConfigureAwait(false);
         return TypedResults.Ok(resposta);
     }
 

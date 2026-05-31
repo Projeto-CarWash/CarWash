@@ -18,7 +18,7 @@ public interface IClienteRepository
     /// <paramref name="ignoreClienteId"/> é informado, ignora o próprio cliente
     /// (usado no PUT para permitir manter o mesmo e-mail).
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task<bool> ExisteEmailAsync(string email, Guid? ignoreClienteId, CancellationToken cancellationToken);
 
     Task<Cliente?> ObterPorIdAsync(Guid id, CancellationToken cancellationToken);
@@ -26,14 +26,14 @@ public interface IClienteRepository
     Task AdicionarAsync(Cliente cliente, string correlationId, Guid? usuarioId, CancellationToken cancellationToken);
 
     /// <summary>Persiste alterações pendentes (Update).</summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task SalvarAsync(CancellationToken cancellationToken);
 
     /// <summary>
     /// Lista clientes paginados com filtro opcional por nome / documento (cpf/cnpj
     /// dígitos) / email / cidade. Ordenação por <c>nome ASC</c>.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task<(IReadOnlyList<Cliente> Itens, int Total)> ListarAsync(
         string? busca,
         bool? ativo,

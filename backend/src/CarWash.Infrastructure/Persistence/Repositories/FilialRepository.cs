@@ -90,6 +90,16 @@ public class FilialRepository : IFilialRepository
         }
     }
 
+    /// <summary>
+    /// Persiste mudanças pendentes do agregado rastreado (RF018 — ajuste de
+    /// <c>celulas_ativas</c>). O ajuste de células não toca nenhuma UK, então
+    /// não há tradução de <c>DbUpdateException</c> aqui.
+    /// </summary>
+    public Task SalvarAsync(CancellationToken cancellationToken)
+    {
+        return context.SaveChangesAsync(cancellationToken);
+    }
+
     public async Task<(IReadOnlyList<Filial> Itens, int Total)> ListarAsync(
         string? busca,
         bool? ativo,
