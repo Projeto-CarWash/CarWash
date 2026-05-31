@@ -308,7 +308,7 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
     /// Detecta a violação da UNIQUE <c>uq_idempotencia_key_escopo</c> (RF015):
     /// SQLSTATE <c>23505</c> (unique_violation) com a constraint da idempotência.
     /// </summary>
-	private static bool IsIdempotenciaViolation(DbUpdateException exception)
+    private static bool IsIdempotenciaViolation(DbUpdateException exception)
     {
         if (exception.InnerException is not PostgresException pg)
         {

@@ -62,8 +62,8 @@ public sealed class CancelarAgendamentoHandler
         catch (DomainException ex) when (IsStatusTransitionBlock(ex))
         {
             _logger.LogWarning(
-                "Cancelamento rejeitado — status {StatusAtual} não permite cancelamento. " +
-                "AgendamentoId: {AgendamentoId}. UsuarioId: {UsuarioId}. TraceId: {TraceId}",
+                ex,
+                "Cancelamento rejeitado — status {StatusAtual} não permite cancelamento. AgendamentoId: {AgendamentoId}. UsuarioId: {UsuarioId}. TraceId: {TraceId}",
                 statusAnterior.ToDbValue(),
                 command.AgendamentoId,
                 usuarioId,
@@ -115,7 +115,7 @@ public sealed class CancelarAgendamentoHandler
     private static bool IsStatusTransitionBlock(DomainException ex) =>
         ex.Message.Contains("não pode ser cancelado", StringComparison.OrdinalIgnoreCase);
 
-    private static ConflictException MapDomainExceptionToConflict(
+    private static CancelamentoStatusException MapDomainExceptionToConflict(
         DomainException ex, StatusAgendamento statusAtual) => statusAtual switch
         {
             StatusAgendamento.Finalizado => new CancelamentoStatusException(

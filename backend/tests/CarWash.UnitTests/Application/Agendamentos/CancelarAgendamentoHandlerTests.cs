@@ -20,10 +20,10 @@ public class CancelarAgendamentoHandlerTests
 
     private CancelarAgendamentoHandler NovoHandler() => new(_agendamentos, NullLogger<CancelarAgendamentoHandler>.Instance);
 
-    private CancelarAgendamentoCommand NovoComando(string motivo = "Cliente solicitou cancelamento") =>
+    private static CancelarAgendamentoCommand NovoComando(string motivo = "Cliente solicitou cancelamento") =>
         new(AgendamentoId, motivo, "USUARIO_INTERNO", "trace-1", UsuarioId);
 
-    private Agendamento NovoAgendamento()
+    private static Agendamento NovoAgendamento()
     {
         var ag = Agendamento.Criar(
             id: AgendamentoId,

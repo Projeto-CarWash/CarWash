@@ -34,7 +34,7 @@ public class CancelarAgendamentoEndpointTests : IAsyncDisposable
         _factory = new CarWashWebApplicationFactory(fixture);
     }
 
-    private Uri RotaCancelar(Guid id) => new($"/api/v1/agendamentos/{id}/cancelar", UriKind.Relative);
+    private static Uri RotaCancelar(Guid id) => new($"/api/v1/agendamentos/{id}/cancelar", UriKind.Relative);
 
     [Fact]
     public async Task PATCH_cancelar_agendado_retorna_200_com_campos_do_contrato()
@@ -94,7 +94,7 @@ public class CancelarAgendamentoEndpointTests : IAsyncDisposable
 
         var response = await client.PatchAsJsonAsync(
             RotaCancelar(agendamentoId),
-            new { motivoCancelamento = "", origem = "TESTE" },
+            new { motivoCancelamento = string.Empty, origem = "TESTE" },
             _json);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
