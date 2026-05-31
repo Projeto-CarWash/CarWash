@@ -10,19 +10,19 @@ namespace CarWash.Application.Agendamentos.Common;
 /// </summary>
 public sealed class CancelamentoStatusException : ConflictException
 {
-	public const string SlugPadrao = "agendamento-cancelamento-status";
+    public const string SlugPadrao = "agendamento-cancelamento-status";
 
-	public const string MensagemFinalizado =
-		"Agendamento finalizado não pode ser cancelado.";
+    public const string MensagemFinalizado =
+        "Agendamento finalizado não pode ser cancelado.";
 
-	public const string MensagemCancelado =
-		"Agendamento já cancelado não pode ser cancelado novamente.";
+    public const string MensagemCancelado =
+        "Agendamento já cancelado não pode ser cancelado novamente.";
 
-	public const string MensagemEmAndamento =
-		"Agendamento em andamento não pode ser cancelado.";
+    public const string MensagemEmAndamento =
+        "Agendamento em andamento não pode ser cancelado.";
 
-	public CancelamentoStatusException(string mensagem)
-		: base(mensagem, SlugPadrao)
-	{
-	}
+    public CancelamentoStatusException(string mensagem)
+        : base(mensagem, SlugPadrao)
+    {
+    }
 }

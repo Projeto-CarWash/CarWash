@@ -11,9 +11,9 @@ public sealed class AgendamentoConfiguration : IEntityTypeConfiguration<Agendame
     {
         ArgumentNullException.ThrowIfNull(builder);
 
-	builder.ToTable("agendamentos", t =>
-	{
-		t.HasCheckConstraint("ck_ag_status", "status IN ('agendado','em_andamento','cancelado','finalizado')");
+        builder.ToTable("agendamentos", t =>
+        {
+            t.HasCheckConstraint("ck_ag_status", "status IN ('agendado','em_andamento','cancelado','finalizado')");
             t.HasCheckConstraint("ck_ag_inicio_menor_fim", "inicio < fim");
             t.HasCheckConstraint("ck_ag_duracao_total", "duracao_total_min >= 0");
             t.HasCheckConstraint("ck_ag_valor_total", "valor_total >= 0");
@@ -49,10 +49,10 @@ public sealed class AgendamentoConfiguration : IEntityTypeConfiguration<Agendame
             .HasDefaultValue(1)
             .IsConcurrencyToken();
         builder.Property(x => x.CriadoEm).IsRequired().HasColumnType("timestamptz").HasDefaultValueSql("now()");
-	builder.Property(x => x.AtualizadoEm).IsRequired().HasColumnType("timestamptz").HasDefaultValueSql("now()");
-	builder.Property(x => x.CanceladoEm).HasColumnType("timestamptz");
-	builder.Property(x => x.CanceladoPor);
-	builder.Property(x => x.MotivoCancelamento).HasColumnType("text");
+        builder.Property(x => x.AtualizadoEm).IsRequired().HasColumnType("timestamptz").HasDefaultValueSql("now()");
+        builder.Property(x => x.CanceladoEm).HasColumnType("timestamptz");
+        builder.Property(x => x.CanceladoPor);
+        builder.Property(x => x.MotivoCancelamento).HasColumnType("text");
 
         builder.Ignore(x => x.Status);
 

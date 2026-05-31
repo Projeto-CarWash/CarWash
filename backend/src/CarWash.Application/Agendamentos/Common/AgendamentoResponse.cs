@@ -7,42 +7,42 @@ namespace CarWash.Application.Agendamentos.Common;
 /// </summary>
 public sealed class AgendamentoResponse
 {
-	public Guid Id { get; init; }
+    public Guid Id { get; init; }
 
-	public Guid FilialId { get; init; }
+    public Guid FilialId { get; init; }
 
-	public Guid ClienteId { get; init; }
+    public Guid ClienteId { get; init; }
 
-	public Guid VeiculoId { get; init; }
+    public Guid VeiculoId { get; init; }
 
-	public Guid? ResponsavelId { get; init; }
+    public Guid? ResponsavelId { get; init; }
 
-	public string Status { get; init; } = string.Empty;
+    public string Status { get; init; } = string.Empty;
 
-	public DateTime Inicio { get; init; }
+    public DateTime Inicio { get; init; }
 
-	public DateTime Fim { get; init; }
+    public DateTime Fim { get; init; }
 
-	public int DuracaoTotalMin { get; init; }
+    public int DuracaoTotalMin { get; init; }
 
-	public decimal ValorTotal { get; init; }
+    public decimal ValorTotal { get; init; }
 
-	public string? Observacoes { get; init; }
+    public string? Observacoes { get; init; }
 
-	public int Versao { get; init; }
+    public int Versao { get; init; }
 
-	public DateTime? CanceladoEm { get; init; }
+    public DateTime? CanceladoEm { get; init; }
 
-	public Guid? CanceladoPor { get; init; }
+    public Guid? CanceladoPor { get; init; }
 
-	public string? MotivoCancelamento { get; init; }
+    public string? MotivoCancelamento { get; init; }
 
-	public IReadOnlyList<AgendamentoServicoResponse> Itens { get; init; } =
-		Array.Empty<AgendamentoServicoResponse>();
+    public IReadOnlyList<AgendamentoServicoResponse> Itens { get; init; } =
+        Array.Empty<AgendamentoServicoResponse>();
 
-	public DateTime CriadoEm { get; init; }
+    public DateTime CriadoEm { get; init; }
 
-	public string Mensagem { get; init; } = string.Empty;
+    public string Mensagem { get; init; } = string.Empty;
 
-	public string TraceId { get; init; } = string.Empty;
+    public string TraceId { get; init; } = string.Empty;
 }

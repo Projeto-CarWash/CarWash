@@ -23,33 +23,33 @@ public static class AgendamentoResponseFactory
         ArgumentNullException.ThrowIfNull(itens);
         ArgumentNullException.ThrowIfNull(servicos);
 
-	return new AgendamentoResponse
-	{
-		Id = agendamento.Id,
-		FilialId = agendamento.FilialId,
-		ClienteId = agendamento.ClienteId,
-		VeiculoId = agendamento.VeiculoId,
-		ResponsavelId = agendamento.ResponsavelId,
-		Status = agendamento.Status.ToDbValue(),
-		Inicio = agendamento.Inicio,
-		Fim = agendamento.Fim,
-		DuracaoTotalMin = agendamento.DuracaoTotalMin,
-		ValorTotal = agendamento.ValorTotal,
-		Observacoes = agendamento.Observacoes,
-		Versao = agendamento.Versao,
-		CanceladoEm = agendamento.CanceladoEm,
-		CanceladoPor = agendamento.CanceladoPor,
-		MotivoCancelamento = agendamento.MotivoCancelamento,
-		Itens = itens
-                .Select(item => new AgendamentoServicoResponse
-                {
-                    Id = item.Id,
-                    ServicoId = item.ServicoId,
-                    NomeServico = servicos.First(s => s.Id == item.ServicoId).Nome,
-                    PrecoAplicado = item.PrecoAplicado,
-                    DuracaoAplicada = item.DuracaoAplicada,
-                })
-                .ToList(),
+        return new AgendamentoResponse
+        {
+            Id = agendamento.Id,
+            FilialId = agendamento.FilialId,
+            ClienteId = agendamento.ClienteId,
+            VeiculoId = agendamento.VeiculoId,
+            ResponsavelId = agendamento.ResponsavelId,
+            Status = agendamento.Status.ToDbValue(),
+            Inicio = agendamento.Inicio,
+            Fim = agendamento.Fim,
+            DuracaoTotalMin = agendamento.DuracaoTotalMin,
+            ValorTotal = agendamento.ValorTotal,
+            Observacoes = agendamento.Observacoes,
+            Versao = agendamento.Versao,
+            CanceladoEm = agendamento.CanceladoEm,
+            CanceladoPor = agendamento.CanceladoPor,
+            MotivoCancelamento = agendamento.MotivoCancelamento,
+            Itens = itens
+                    .Select(item => new AgendamentoServicoResponse
+                    {
+                        Id = item.Id,
+                        ServicoId = item.ServicoId,
+                        NomeServico = servicos.First(s => s.Id == item.ServicoId).Nome,
+                        PrecoAplicado = item.PrecoAplicado,
+                        DuracaoAplicada = item.DuracaoAplicada,
+                    })
+                    .ToList(),
             CriadoEm = agendamento.CriadoEm,
             Mensagem = MensagemSucesso,
             TraceId = traceId,

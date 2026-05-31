@@ -50,7 +50,7 @@ public sealed class Agendamento : IAuditable, IAuditableSetter
     /// </summary>
     public decimal ValorTotal { get; private set; }
 
-	public int Versao { get; private set; }
+    public int Versao { get; private set; }
 
     /// <inheritdoc/>
     public DateTime CriadoEm { get; private set; }
@@ -158,99 +158,99 @@ public sealed class Agendamento : IAuditable, IAuditableSetter
         ValorTotal = valorTotal;
     }
 
-	public void Cancelar(string motivoCancelamento, Guid canceladoPor)
-	{
-		if (Status is StatusAgendamento.Finalizado)
-		{
-			throw new DomainException("Agendamento finalizado não pode ser cancelado.");
-		}
+    public void Cancelar(string motivoCancelamento, Guid canceladoPor)
+    {
+        if (Status is StatusAgendamento.Finalizado)
+        {
+            throw new DomainException("Agendamento finalizado não pode ser cancelado.");
+        }
 
-		if (Status is StatusAgendamento.Cancelado)
-		{
-			throw new DomainException("Agendamento já cancelado não pode ser cancelado novamente.");
-		}
+        if (Status is StatusAgendamento.Cancelado)
+        {
+            throw new DomainException("Agendamento já cancelado não pode ser cancelado novamente.");
+        }
 
-		if (Status is StatusAgendamento.EmAndamento)
-		{
-			throw new DomainException("Agendamento em andamento não pode ser cancelado.");
-		}
+        if (Status is StatusAgendamento.EmAndamento)
+        {
+            throw new DomainException("Agendamento em andamento não pode ser cancelado.");
+        }
 
-		if (string.IsNullOrWhiteSpace(motivoCancelamento))
-		{
-			throw new DomainException("Motivo do cancelamento é obrigatório.");
-		}
+        if (string.IsNullOrWhiteSpace(motivoCancelamento))
+        {
+            throw new DomainException("Motivo do cancelamento é obrigatório.");
+        }
 
-		motivoCancelamento = motivoCancelamento.Trim();
-		if (motivoCancelamento.Length is < 5 or > 500)
-		{
-			throw new DomainException("Motivo do cancelamento deve ter entre 5 e 500 caracteres.");
-		}
+        motivoCancelamento = motivoCancelamento.Trim();
+        if (motivoCancelamento.Length is < 5 or > 500)
+        {
+            throw new DomainException("Motivo do cancelamento deve ter entre 5 e 500 caracteres.");
+        }
 
-		if (canceladoPor == Guid.Empty)
-		{
-			throw new DomainException("Usuário responsável pelo cancelamento é obrigatório.");
-		}
+        if (canceladoPor == Guid.Empty)
+        {
+            throw new DomainException("Usuário responsável pelo cancelamento é obrigatório.");
+        }
 
-		StatusRaw = StatusAgendamento.Cancelado.ToDbValue();
-		MotivoCancelamento = motivoCancelamento;
-		CanceladoPor = canceladoPor;
-		CanceladoEm = DateTime.UtcNow;
-		Versao++;
-	}
+        StatusRaw = StatusAgendamento.Cancelado.ToDbValue();
+        MotivoCancelamento = motivoCancelamento;
+        CanceladoPor = canceladoPor;
+        CanceladoEm = DateTime.UtcNow;
+        Versao++;
+    }
 
-	public void Finalizar()
-	{
-		if (Status is not StatusAgendamento.EmAndamento)
-		{
-			throw new DomainException("Apenas agendamentos com status 'em_andamento' podem ser finalizados.");
-		}
+    public void Finalizar()
+    {
+        if (Status is not StatusAgendamento.EmAndamento)
+        {
+            throw new DomainException("Apenas agendamentos com status 'em_andamento' podem ser finalizados.");
+        }
 
-		StatusRaw = StatusAgendamento.Finalizado.ToDbValue();
-		Versao++;
-	}
+        StatusRaw = StatusAgendamento.Finalizado.ToDbValue();
+        Versao++;
+    }
 
-	public void Iniciar()
-	{
-		if (Status is not StatusAgendamento.Agendado)
-		{
-			throw new DomainException("Apenas agendamentos com status 'agendado' podem ser iniciados.");
-		}
+    public void Iniciar()
+    {
+        if (Status is not StatusAgendamento.Agendado)
+        {
+            throw new DomainException("Apenas agendamentos com status 'agendado' podem ser iniciados.");
+        }
 
-		StatusRaw = StatusAgendamento.EmAndamento.ToDbValue();
-		Versao++;
-	}
+        StatusRaw = StatusAgendamento.EmAndamento.ToDbValue();
+        Versao++;
+    }
 
-	public void Reagendar(DateTime inicio, DateTime fim)
-	{
-		GarantirEstadoEditavel();
+    public void Reagendar(DateTime inicio, DateTime fim)
+    {
+        GarantirEstadoEditavel();
 
-		if (inicio >= fim)
-		{
-			throw new DomainException("Início do agendamento deve ser anterior ao fim.");
-		}
+        if (inicio >= fim)
+        {
+            throw new DomainException("Início do agendamento deve ser anterior ao fim.");
+        }
 
-		Inicio = DateTime.SpecifyKind(inicio, DateTimeKind.Utc);
-		Fim = DateTime.SpecifyKind(fim, DateTimeKind.Utc);
-		Versao++;
-	}
+        Inicio = DateTime.SpecifyKind(inicio, DateTimeKind.Utc);
+        Fim = DateTime.SpecifyKind(fim, DateTimeKind.Utc);
+        Versao++;
+    }
 
-	private void GarantirEstadoEditavel()
-	{
-		if (Status is StatusAgendamento.Finalizado)
-		{
-			throw new DomainException("Agendamento finalizado não pode ser editado.");
-		}
+    private void GarantirEstadoEditavel()
+    {
+        if (Status is StatusAgendamento.Finalizado)
+        {
+            throw new DomainException("Agendamento finalizado não pode ser editado.");
+        }
 
-		if (Status is StatusAgendamento.Cancelado)
-		{
-			throw new DomainException("Agendamento cancelado não pode ser editado.");
-		}
+        if (Status is StatusAgendamento.Cancelado)
+        {
+            throw new DomainException("Agendamento cancelado não pode ser editado.");
+        }
 
-		if (Status is StatusAgendamento.EmAndamento)
-		{
-			throw new DomainException("Agendamento no status atual não permite edição.");
-		}
-	}
+        if (Status is StatusAgendamento.EmAndamento)
+        {
+            throw new DomainException("Agendamento no status atual não permite edição.");
+        }
+    }
 
     /// <inheritdoc/>
     void IAuditableSetter.SetCriadoEm(DateTime valor) => CriadoEm = valor;

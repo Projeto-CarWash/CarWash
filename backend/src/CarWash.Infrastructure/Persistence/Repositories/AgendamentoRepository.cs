@@ -309,11 +309,11 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
     /// SQLSTATE <c>23505</c> (unique_violation) com a constraint da idempotência.
     /// </summary>
 	private static bool IsIdempotenciaViolation(DbUpdateException exception)
-	{
-		if (exception.InnerException is not PostgresException pg)
-		{
-			return false;
-		}
+    {
+        if (exception.InnerException is not PostgresException pg)
+        {
+            return false;
+        }
 
         bool ehUniqueViolation = string.Equals(
             pg.SqlState,
@@ -323,69 +323,69 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
         bool ehConstraintDeIdempotencia = pg.ConstraintName is { } nome
             && nome.Contains(ConstraintIdempotenciaKeyEscopo, StringComparison.OrdinalIgnoreCase);
 
-		return ehUniqueViolation && ehConstraintDeIdempotencia;
-	}
+        return ehUniqueViolation && ehConstraintDeIdempotencia;
+    }
 
-	public async Task<Agendamento?> ObterPorIdRastreadoAsync(
-		Guid id,
-		CancellationToken cancellationToken)
-	{
-		return await _db.Agendamentos
-			.FirstOrDefaultAsync(a => a.Id == id, cancellationToken)
-			.ConfigureAwait(false);
-	}
+    public async Task<Agendamento?> ObterPorIdRastreadoAsync(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        return await _db.Agendamentos
+            .FirstOrDefaultAsync(a => a.Id == id, cancellationToken)
+            .ConfigureAwait(false);
+    }
 
-	public async Task SalvarAsync(
-		Agendamento agendamento,
-		AgendamentoHistorico historico,
-		string correlationId,
-		CancellationToken cancellationToken)
-	{
-		ArgumentNullException.ThrowIfNull(agendamento);
-		ArgumentNullException.ThrowIfNull(historico);
+    public async Task SalvarAsync(
+        Agendamento agendamento,
+        AgendamentoHistorico historico,
+        string correlationId,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(agendamento);
+        ArgumentNullException.ThrowIfNull(historico);
 
-		await using var transaction = await _db.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+        await using var transaction = await _db.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
 
-		_db.AgendamentoHistoricos.Add(historico);
+        _db.AgendamentoHistoricos.Add(historico);
 
-		var audit = AuditLog.Registrar(
-			id: Guid.NewGuid(),
-			evento: "AGENDAMENTO_CANCELADO",
-			entidade: "agendamentos",
-			correlationId: correlationId,
-			entidadeId: agendamento.Id,
-			usuarioId: agendamento.CanceladoPor,
-			dados: JsonSerializer.Serialize(new
-			{
-				agendamento.Id,
-				StatusNovo = agendamento.StatusRaw,
-				agendamento.CanceladoPor,
-				agendamento.MotivoCancelamento,
-				agendamento.CanceladoEm,
-			}));
-		await _db.AuditLogs.AddAsync(audit, cancellationToken).ConfigureAwait(false);
+        var audit = AuditLog.Registrar(
+            id: Guid.NewGuid(),
+            evento: "AGENDAMENTO_CANCELADO",
+            entidade: "agendamentos",
+            correlationId: correlationId,
+            entidadeId: agendamento.Id,
+            usuarioId: agendamento.CanceladoPor,
+            dados: JsonSerializer.Serialize(new
+            {
+                agendamento.Id,
+                StatusNovo = agendamento.StatusRaw,
+                agendamento.CanceladoPor,
+                agendamento.MotivoCancelamento,
+                agendamento.CanceladoEm,
+            }));
+        await _db.AuditLogs.AddAsync(audit, cancellationToken).ConfigureAwait(false);
 
-		try
-		{
-			await _db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-			await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
-		}
-		catch (DbUpdateConcurrencyException)
-		{
-			await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
-			throw;
-		}
+        try
+        {
+            await _db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
+            throw;
+        }
 #pragma warning disable CA1031
-		catch (Exception ex)
+        catch (Exception ex)
 #pragma warning restore CA1031
-		{
-			if (ex is OperationCanceledException)
-			{
-				throw;
-			}
+        {
+            if (ex is OperationCanceledException)
+            {
+                throw;
+            }
 
-			await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
-			throw;
-		}
-	}
+            await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
+            throw;
+        }
+    }
 }
