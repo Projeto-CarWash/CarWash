@@ -351,11 +351,18 @@ export function VeiculosClienteForm() {
         )}
       </div>
 
-      {errors.veiculos?.root?.message && (
-        <p className="text-sm font-medium text-red-400">{errors.veiculos.root.message}</p>
-      )}
-      {errors.veiculos?.message && (
-        <p className="text-sm font-medium text-red-400">{errors.veiculos.message}</p>
+      {(errors.veiculos?.root?.message ?? errors.veiculos?.message) && (
+        <div
+          role="alert"
+          className="flex items-start gap-3 rounded-xl border border-red-500/40 bg-red-950/20 px-4 py-3 animate-in fade-in duration-200"
+        >
+          <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-red-500/20 text-red-500">
+            !
+          </span>
+          <p className="text-sm font-medium text-red-400">
+            {errors.veiculos?.root?.message ?? errors.veiculos?.message}
+          </p>
+        </div>
       )}
     </div>
   );

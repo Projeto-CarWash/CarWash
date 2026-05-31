@@ -1,7 +1,7 @@
 import { AxiosError } from 'axios';
-import { ArrowLeft, Car, Plus, Power } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft, Car, Loader2, Plus, Power, RefreshCw, ShieldOff } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,70 +11,120 @@ import { veiculoService, type Veiculo } from '@/services/veiculoService';
 export function ClienteDetalhePage() {
   const { id = '' } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+
   const [cliente, setCliente] = useState<ClienteDetalhe | null>(null);
   const [veiculos, setVeiculos] = useState<Veiculo[]>([]);
   const [erro, setErro] = useState<string | null>(null);
   const [erroHttp, setErroHttp] = useState<number | null>(null);
+  const [erroVeiculos, setErroVeiculos] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [carregandoVeiculos, setCarregandoVeiculos] = useState(true);
   const [salvando, setSalvando] = useState(false);
 
-  const carregarCliente = useCallback(async () => {
-    setCarregando(true);
+  // Ref para forçar refetch de veículos de fora do useEffect
+  const refetchVeiculosRef = useRef<(() => void) | null>(null);
+
+  // Detecta se voltamos de um cadastro de veículo bem-sucedido (RF004 / RF022)
+  const veiculoCriado = (location.state as { veiculoCriado?: boolean } | null)?.veiculoCriado;
+
+  // ─── Reset imediato ao trocar de cliente (evita flash de dados antigos) ───
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    setCliente(null);
+    setVeiculos([]);
     setErro(null);
     setErroHttp(null);
-    try {
-      const c = await clienteService.obterPorId(id);
-      setCliente(c);
-    } catch (error) {
-      if (error instanceof AxiosError && error.response) {
-        const status = error.response.status;
-        setErroHttp(status);
-        if (status === 401) {
-          void navigate('/login', { replace: true });
-        } else if (status === 403) {
-          setErro('Você não possui permissão para consultar clientes.');
-        } else if (status === 404) {
-          setErro('Cliente não encontrado.');
+    setErroVeiculos(null);
+    setCarregando(true);
+    setCarregandoVeiculos(true);
+  }, [id]);
+
+  // ─── Fetch do cliente ───
+  useEffect(() => {
+    if (!id) return;
+    let cancelado = false;
+
+    const carregarCliente = async () => {
+      setCarregando(true);
+      setErro(null);
+      setErroHttp(null);
+      try {
+        const c = await clienteService.obterPorId(id);
+        if (!cancelado) setCliente(c);
+      } catch (error) {
+        if (cancelado) return;
+        if (error instanceof AxiosError && error.response) {
+          const status = error.response.status;
+          setErroHttp(status);
+          if (status === 401) {
+            void navigate('/login', { replace: true });
+          } else if (status === 403) {
+            setErro('Você não possui permissão para consultar clientes.');
+          } else if (status === 404) {
+            setErro('Cliente não encontrado.');
+          } else {
+            setErro('Não foi possível concluir a consulta no momento. Tente novamente.');
+          }
         } else {
           setErro('Não foi possível concluir a consulta no momento. Tente novamente.');
+          setErroHttp(500);
         }
-      } else {
-        setErro('Não foi possível concluir a consulta no momento. Tente novamente.');
-        setErroHttp(500);
+      } finally {
+        if (!cancelado) setCarregando(false);
       }
-    } finally {
-      setCarregando(false);
-    }
+    };
+
+    void carregarCliente();
+    return () => {
+      cancelado = true;
+    };
   }, [id, navigate]);
 
+  // ─── Fetch dos veículos (isolado, com tratamento HTTP granular) ───
   const carregarVeiculos = useCallback(async () => {
+    if (!id) return;
     setCarregandoVeiculos(true);
+    setErroVeiculos(null);
     try {
       const v = await veiculoService.listarPorCliente(id);
       setVeiculos(v);
     } catch (err) {
-      console.error('Erro ao buscar veículos do cliente:', err);
+      if (err instanceof AxiosError && err.response) {
+        const status = err.response.status;
+        if (status === 401) {
+          void navigate('/login', { replace: true });
+        } else if (status === 403) {
+          setErroVeiculos('Você não possui permissão para visualizar os veículos deste cliente.');
+        } else if (status === 404) {
+          // Cliente não encontrado na sub-rota de veículos — erro já tratado acima
+          setErroVeiculos(null);
+        } else {
+          setErroVeiculos('Não foi possível carregar os veículos. Verifique sua conexão.');
+        }
+      } else {
+        setErroVeiculos('Erro de rede ao carregar veículos. Verifique sua conexão.');
+      }
     } finally {
       setCarregandoVeiculos(false);
     }
-  }, [id]);
+  }, [id, navigate]);
 
   useEffect(() => {
-    let cancelado = false;
+    void carregarVeiculos();
+    // Expõe a função para o refetch manual
+    refetchVeiculosRef.current = () => void carregarVeiculos();
+  }, [carregarVeiculos]);
 
-    const inicializar = async () => {
-      if (cancelado) return;
-      await carregarCliente();
-      await carregarVeiculos();
-    };
-
-    void inicializar();
-
-    return () => {
-      cancelado = true;
-    };
-  }, [carregarCliente, carregarVeiculos]);
+  // ─── Refetch automático quando voltamos de cadastro de veículo (RF004 / RF022) ───
+  useEffect(() => {
+    if (veiculoCriado) {
+      // Limpa o state para não reprocessar em navegações futuras
+      void navigate(location.pathname, { replace: true, state: {} });
+      void carregarVeiculos();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [veiculoCriado]);
 
   const toggleStatus = useCallback(async () => {
     if (!cliente) return;
@@ -90,7 +140,8 @@ export function ClienteDetalhePage() {
     }
   }, [cliente]);
 
-  if (erro && !cliente && erroHttp === 404) {
+  // ─── 404 / 403 global: exibe tela simplificada ───
+  if (erro && !cliente && (erroHttp === 404 || erroHttp === 403)) {
     return (
       <div className="px-8 py-8">
         <Button
@@ -101,9 +152,12 @@ export function ClienteDetalhePage() {
         >
           <ArrowLeft className="mr-1 h-4 w-4" /> Voltar
         </Button>
-        <p role="alert" className="text-sm text-red-400">
-          {erro}
-        </p>
+        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-zinc-800 bg-zinc-950/20 py-12 text-center">
+          <ShieldOff className="mb-3 h-10 w-10 text-zinc-600" />
+          <p role="alert" className="text-sm text-red-400">
+            {erro}
+          </p>
+        </div>
       </div>
     );
   }
@@ -126,7 +180,11 @@ export function ClienteDetalhePage() {
           onClick={toggleStatus}
           className="h-9 rounded-full border-zinc-700/60 bg-transparent px-4 text-sm hover:bg-zinc-800/50 hover:text-zinc-200 text-zinc-400"
         >
-          <Power className="mr-1 h-4 w-4" />
+          {salvando ? (
+            <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+          ) : (
+            <Power className="mr-1 h-4 w-4" />
+          )}
           {cliente?.ativo ? 'Inativar cliente' : 'Reativar cliente'}
         </Button>
       </div>
@@ -177,6 +235,7 @@ export function ClienteDetalhePage() {
         </CardContent>
       </Card>
 
+      {/* ─── Seção de Veículos ─────────────────────────────────────────────── */}
       <Card className="border-zinc-800/60 bg-zinc-900/30">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <div>
@@ -189,7 +248,7 @@ export function ClienteDetalhePage() {
               Veículos associados a este cliente para ordens de serviço.
             </p>
           </div>
-          {veiculos.length > 0 && (
+          {!erroVeiculos && veiculos.length > 0 && (
             <Button
               type="button"
               onClick={() => void navigate(`/clientes/${id}/veiculos/novo`)}
@@ -217,7 +276,24 @@ export function ClienteDetalhePage() {
                 </li>
               ))}
             </ul>
+          ) : erroVeiculos ? (
+            /* ── Erro isolado na seção de veículos ── */
+            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-red-900/40 bg-red-950/10 py-8 text-center">
+              <p role="alert" className="text-sm text-red-400 max-w-[300px]">
+                {erroVeiculos}
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => void carregarVeiculos()}
+                className="mt-4 h-8 rounded-full border-zinc-700/60 bg-transparent px-4 text-xs text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200"
+              >
+                <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                Tentar novamente
+              </Button>
+            </div>
           ) : veiculos.length === 0 ? (
+            /* ── Empty State ── */
             <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-zinc-800 bg-zinc-950/20 py-8 text-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-800/40 text-zinc-500 mb-3">
                 <Car className="h-6 w-6" />
@@ -235,6 +311,7 @@ export function ClienteDetalhePage() {
               </Button>
             </div>
           ) : (
+            /* ── Lista de Veículos ── */
             <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {[...veiculos].reverse().map((veiculo) => (
                 <li
@@ -249,7 +326,10 @@ export function ClienteDetalhePage() {
                       <h4 className="text-sm font-semibold text-zinc-200">
                         {veiculo.fabricante} {veiculo.modelo}
                       </h4>
-                      <p className="text-xs text-zinc-500">{veiculo.cor}</p>
+                      <p className="text-xs text-zinc-500">
+                        {veiculo.cor}
+                        {veiculo.ano ? ` • ${veiculo.ano}` : ''}
+                      </p>
                     </div>
                   </div>
                   <div className="rounded-md border border-zinc-700 bg-zinc-900 px-2.5 py-1 text-xs font-mono font-bold tracking-wider text-zinc-200 uppercase shadow-inner">
@@ -262,7 +342,7 @@ export function ClienteDetalhePage() {
         </CardContent>
       </Card>
 
-      {erro && erroHttp !== 404 && (
+      {erro && erroHttp !== 404 && erroHttp !== 403 && (
         <p role="alert" className="text-sm text-red-400">
           {erro}
         </p>
