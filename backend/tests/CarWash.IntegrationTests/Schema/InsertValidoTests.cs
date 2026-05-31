@@ -40,7 +40,7 @@ public class InsertValidoTests : IAsyncLifetime
     public async Task Insere_uma_linha_em_cada_uma_das_15_tabelas()
     {
         // Filial
-        var filial = Filial.Criar(Guid.NewGuid(), $"F{Guid.NewGuid():N}".Substring(0, 30), 5);
+        var filial = Filial.Criar(Guid.NewGuid(), $"F{Guid.NewGuid():N}".Substring(0, 30), $"F{Guid.NewGuid():N}"[..10].ToUpperInvariant(), 5);
         _db.Filiais.Add(filial);
 
         // Usuario

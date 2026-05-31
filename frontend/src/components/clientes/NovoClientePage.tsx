@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AxiosError } from 'axios';
-import { AlertCircle, Check, ChevronRight, X } from 'lucide-react';
+import { AlertCircle, Check, ChevronRight, Loader2, X } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
@@ -93,11 +93,31 @@ export function NovoClientePage() {
         const status = error.response.status;
         const problem = error.response.data as ProblemDetails | undefined;
 
+        if (status === 401) {
+          setGlobalError(API_MESSAGES[401]!);
+          setTimeout(() => {
+            void navigate('/login', { replace: true });
+          }, 800);
+          return;
+        }
+
         if (status === 409) {
-          setGlobalError(API_MESSAGES[409]!);
-          form.setError('cpfCnpj', {
-            message: 'Já existe cliente cadastrado com este documento.',
-          });
+          // 409 pode vir de documento duplicado ou placa duplicada
+          const detail = problem?.detail ?? '';
+          const isPlaca =
+            detail.toLowerCase().includes('placa') ||
+            detail.toLowerCase().includes('veículo') ||
+            detail.toLowerCase().includes('veiculo');
+          if (isPlaca) {
+            setGlobalError(
+              'Já existe veículo cadastrado com esta placa. Verifique a lista de veículos.',
+            );
+          } else {
+            setGlobalError(API_MESSAGES[409]!);
+            form.setError('cpfCnpj', {
+              message: 'Já existe cliente cadastrado com este documento.',
+            });
+          }
           return;
         }
 
@@ -219,7 +239,10 @@ export function NovoClientePage() {
                 className="h-10 rounded-full bg-red-600 px-6 text-sm font-semibold text-white shadow-lg shadow-red-600/25 hover:bg-red-700 disabled:opacity-50"
               >
                 {isSubmitting ? (
-                  'Salvando...'
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Salvando...
+                  </>
                 ) : (
                   <>
                     Salvar cliente
