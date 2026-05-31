@@ -36,6 +36,11 @@ public sealed class ClienteConfiguration : IEntityTypeConfiguration<Cliente>
 
         builder.Ignore(x => x.Endereco);
 
+        // Veiculos é uma coleção de domínio exposta no agregado Cliente para invariantes
+        // (RF005, RN011), mas a persistência segue via DbSet<Veiculo> dedicado (CQRS por
+        // slice). Sem este Ignore, o EF Core cria um shadow FK Veiculo.ClienteId1.
+        builder.Ignore(x => x.Veiculos);
+
         builder.Property(x => x.Ativo).IsRequired().HasDefaultValue(true);
         builder.Property(x => x.CriadoEm).IsRequired().HasColumnType("timestamptz").HasDefaultValueSql("now()");
         builder.Property(x => x.AtualizadoEm).IsRequired().HasColumnType("timestamptz").HasDefaultValueSql("now()");

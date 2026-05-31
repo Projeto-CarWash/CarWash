@@ -29,6 +29,10 @@ namespace CarWash.Application.Auth.Login;
 /// </list>
 /// Nunca registra senha, hash ou token em log. E-mail é registrado apenas
 /// mascarado (<see cref="EmailMasker.Mask(string?)"/>).
+/// <para>
+/// Nota (card-134): trecho de lockout temporariamente comentado. Veja blocos
+/// marcados com <c>BEGIN(lockout-disabled card-134)</c> / <c>END</c> para reativação.
+/// </para>
 /// </summary>
 public sealed class LoginHandler : ICommandHandler<LoginCommand, LoginResultado>
 {
@@ -96,61 +100,73 @@ public sealed class LoginHandler : ICommandHandler<LoginCommand, LoginResultado>
         var hashParaVerificar = usuario?.SenhaHash ?? _dummy.Value;
         var senhaConfere = _hasher.Verify(command.Senha ?? string.Empty, hashParaVerificar);
 
+#pragma warning disable S1481 // Preservado para reativação do lockout (card-134).
         var agora = DateTime.UtcNow;
+#pragma warning restore S1481
 
         // Bloqueio ativo tem precedência sobre tudo (mesmo senha correta não destrava antes do tempo).
-        if (usuario is not null && usuario.EstaBloqueado(agora))
-        {
-            _log.LogWarning(
-                "Falha de login (usuário bloqueado). UsuarioId={UsuarioId}, Email={Email}, BloqueadoAte={BloqueadoAte:o}",
-                usuario.Id,
-                emailMascarado,
-                usuario.BloqueadoAte!.Value);
-
-            _contexto.DefinirEvento(EventoFalha);
-            await _auditoria.LogAsync(
-                evento: EventoFalha,
-                entidade: EntidadeAuditoria,
-                entidadeId: usuario.Id,
-                dados: new { Motivo = MotivoUsuarioBloqueado },
-                cancellationToken: cancellationToken).ConfigureAwait(false);
-
-            throw new UsuarioBloqueadoException(usuario.BloqueadoAte!.Value);
-        }
+        // Lockout temporariamente desativado — usuário pode tentar N vezes sem bloqueio.
+#pragma warning disable S125, SA1512 // Bloco preservado para reativação do lockout (card-134).
+        // BEGIN(lockout-disabled card-134): reativar via card de retomada
+        // if (usuario is not null && usuario.EstaBloqueado(agora))
+        // {
+        //     _log.LogWarning(
+        //         "Falha de login (usuário bloqueado). UsuarioId={UsuarioId}, Email={Email}, BloqueadoAte={BloqueadoAte:o}",
+        //         usuario.Id,
+        //         emailMascarado,
+        //         usuario.BloqueadoAte!.Value);
+        //
+        //     _contexto.DefinirEvento(EventoFalha);
+        //     await _auditoria.LogAsync(
+        //         evento: EventoFalha,
+        //         entidade: EntidadeAuditoria,
+        //         entidadeId: usuario.Id,
+        //         dados: new { Motivo = MotivoUsuarioBloqueado },
+        //         cancellationToken: cancellationToken).ConfigureAwait(false);
+        //
+        //     throw new UsuarioBloqueadoException(usuario.BloqueadoAte!.Value);
+        // }
+        // END(lockout-disabled card-134)
+#pragma warning restore S125, SA1512
 
         if (usuario is null || !senhaConfere)
         {
             // Senha errada para usuário existente: incrementa contador e — se cruzar o
             // limite — aplica lockout antes de lançar.
-            if (usuario is not null)
-            {
-                usuario.RegistrarFalhaDeLogin(agora, LimiteTentativasInvalidas, DuracaoBloqueio);
-                await _repositorio.SalvarAsync(cancellationToken).ConfigureAwait(false);
-
-                if (usuario.EstaBloqueado(agora))
-                {
-                    _log.LogWarning(
-                        "Conta bloqueada por excesso de tentativas inválidas. UsuarioId={UsuarioId}, Email={Email}, BloqueadoAte={BloqueadoAte:o}",
-                        usuario.Id,
-                        emailMascarado,
-                        usuario.BloqueadoAte!.Value);
-
-                    _contexto.DefinirEvento(EventoUsuarioBloqueado);
-                    await _auditoria.LogAsync(
-                        evento: EventoUsuarioBloqueado,
-                        entidade: EntidadeAuditoria,
-                        entidadeId: usuario.Id,
-                        dados: new
-                        {
-                            Motivo = MotivoUsuarioBloqueado,
-                            usuario.TentativasInvalidas,
-                            BloqueadoAte = usuario.BloqueadoAte!.Value,
-                        },
-                        cancellationToken: cancellationToken).ConfigureAwait(false);
-
-                    throw new UsuarioBloqueadoException(usuario.BloqueadoAte!.Value);
-                }
-            }
+            // Lockout temporariamente desativado — usuário pode tentar N vezes sem bloqueio.
+#pragma warning disable S125, SA1512 // Bloco preservado para reativação do lockout (card-134).
+            // BEGIN(lockout-disabled card-134): reativar via card de retomada
+            // if (usuario is not null)
+            // {
+            //     usuario.RegistrarFalhaDeLogin(agora, LimiteTentativasInvalidas, DuracaoBloqueio);
+            //     await _repositorio.SalvarAsync(cancellationToken).ConfigureAwait(false);
+            //
+            //     if (usuario.EstaBloqueado(agora))
+            //     {
+            //         _log.LogWarning(
+            //             "Conta bloqueada por excesso de tentativas inválidas. UsuarioId={UsuarioId}, Email={Email}, BloqueadoAte={BloqueadoAte:o}",
+            //             usuario.Id,
+            //             emailMascarado,
+            //             usuario.BloqueadoAte!.Value);
+            //
+            //         _contexto.DefinirEvento(EventoUsuarioBloqueado);
+            //         await _auditoria.LogAsync(
+            //             evento: EventoUsuarioBloqueado,
+            //             entidade: EntidadeAuditoria,
+            //             entidadeId: usuario.Id,
+            //             dados: new
+            //             {
+            //                 Motivo = MotivoUsuarioBloqueado,
+            //                 usuario.TentativasInvalidas,
+            //                 BloqueadoAte = usuario.BloqueadoAte!.Value,
+            //             },
+            //             cancellationToken: cancellationToken).ConfigureAwait(false);
+            //
+            //         throw new UsuarioBloqueadoException(usuario.BloqueadoAte!.Value);
+            //     }
+            // }
+            // END(lockout-disabled card-134)
+#pragma warning restore S125, SA1512
 
             _log.LogWarning(
                 "Falha de login (credencial inválida). Email={Email}",

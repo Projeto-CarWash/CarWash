@@ -168,9 +168,7 @@ public class ConstraintViolationTests : IAsyncLifetime
             veiculoId: veiculoId,
             criadoPor: criadoPor,
             inicio: inicio,
-            fim: inicio.AddHours(1),
-            duracaoTotalMin: 30,
-            valorTotal: 50m);
+            fim: inicio.AddHours(1));
         _db.Agendamentos.Add(agendamento);
         await _db.SaveChangesAsync().ConfigureAwait(false);
 
@@ -194,8 +192,8 @@ public class ConstraintViolationTests : IAsyncLifetime
         var (filialId, clienteId, veiculoId, criadoPor) = await SemearAgendamentoDependenciasAsync().ConfigureAwait(false);
 
         var inicio = DateTime.UtcNow.AddHours(1);
-    var a1 = Agendamento.Criar(Guid.NewGuid(), filialId, clienteId, veiculoId, criadoPor, inicio, inicio.AddHours(1), 30, 50m);
-    var a2 = Agendamento.Criar(Guid.NewGuid(), filialId, clienteId, veiculoId, criadoPor, inicio.AddMinutes(30), inicio.AddMinutes(90), 30, 50m);
+        var a1 = Agendamento.Criar(Guid.NewGuid(), filialId, clienteId, veiculoId, criadoPor, inicio, inicio.AddHours(1));
+        var a2 = Agendamento.Criar(Guid.NewGuid(), filialId, clienteId, veiculoId, criadoPor, inicio.AddMinutes(30), inicio.AddMinutes(90));
 
         _db.Agendamentos.Add(a1);
         await _db.SaveChangesAsync().ConfigureAwait(false);
@@ -211,12 +209,12 @@ public class ConstraintViolationTests : IAsyncLifetime
     {
         var (filialId1, clienteId, veiculoId, criadoPor) = await SemearAgendamentoDependenciasAsync().ConfigureAwait(false);
         var filialId2 = Guid.NewGuid();
-        _db.Filiais.Add(Filial.Criar(filialId2, "Filial 2", 3));
+        _db.Filiais.Add(Filial.Criar(filialId2, "Filial 2", $"F{Guid.NewGuid():N}"[..10].ToUpperInvariant(), 3));
         await _db.SaveChangesAsync().ConfigureAwait(false);
 
         var inicio = DateTime.UtcNow.AddHours(2);
-    var a1 = Agendamento.Criar(Guid.NewGuid(), filialId1, clienteId, veiculoId, criadoPor, inicio, inicio.AddHours(1), 30, 50m);
-    var a2 = Agendamento.Criar(Guid.NewGuid(), filialId2, clienteId, veiculoId, criadoPor, inicio.AddMinutes(15), inicio.AddMinutes(75), 30, 50m);
+        var a1 = Agendamento.Criar(Guid.NewGuid(), filialId1, clienteId, veiculoId, criadoPor, inicio, inicio.AddHours(1));
+        var a2 = Agendamento.Criar(Guid.NewGuid(), filialId2, clienteId, veiculoId, criadoPor, inicio.AddMinutes(15), inicio.AddMinutes(75));
 
         _db.Agendamentos.Add(a1);
         await _db.SaveChangesAsync().ConfigureAwait(false);
@@ -233,8 +231,8 @@ public class ConstraintViolationTests : IAsyncLifetime
         var (filialId, clienteId, veiculoId, criadoPor) = await SemearAgendamentoDependenciasAsync().ConfigureAwait(false);
 
         var inicio = DateTime.UtcNow.AddHours(3);
-    var a1 = Agendamento.Criar(Guid.NewGuid(), filialId, clienteId, veiculoId, criadoPor, inicio, inicio.AddHours(1), 30, 50m);
-    var a2 = Agendamento.Criar(Guid.NewGuid(), filialId, clienteId, veiculoId, criadoPor, inicio.AddHours(1), inicio.AddHours(2), 30, 50m);
+        var a1 = Agendamento.Criar(Guid.NewGuid(), filialId, clienteId, veiculoId, criadoPor, inicio, inicio.AddHours(1));
+        var a2 = Agendamento.Criar(Guid.NewGuid(), filialId, clienteId, veiculoId, criadoPor, inicio.AddHours(1), inicio.AddHours(2));
 
         _db.Agendamentos.Add(a1);
         await _db.SaveChangesAsync().ConfigureAwait(false);
@@ -250,7 +248,7 @@ public class ConstraintViolationTests : IAsyncLifetime
 
     private async Task<(Guid filialId, Guid clienteId, Guid veiculoId, Guid criadoPor)> SemearAgendamentoDependenciasAsync()
     {
-        var filial = Filial.Criar(Guid.NewGuid(), $"Filial {Guid.NewGuid():N}".Substring(0, 30), 4);
+        var filial = Filial.Criar(Guid.NewGuid(), $"Filial {Guid.NewGuid():N}".Substring(0, 30), $"F{Guid.NewGuid():N}"[..10].ToUpperInvariant(), 4);
         var cliente = ClienteValido();
         var veiculo = Veiculo.Criar(
             id: Guid.NewGuid(),

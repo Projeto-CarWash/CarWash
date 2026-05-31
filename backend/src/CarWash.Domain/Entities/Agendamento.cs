@@ -3,6 +3,10 @@ using CarWash.Domain.Enums;
 
 namespace CarWash.Domain.Entities;
 
+/// <summary>
+/// Agenda operacional. Carrega as regras críticas RN004/RN006/RN010/RN011.
+/// Concorrência otimista por <c>Versao</c> (decisão P15).
+/// </summary>
 public sealed class Agendamento : IAuditable, IAuditableSetter
 {
     private Agendamento()
@@ -32,8 +36,16 @@ public sealed class Agendamento : IAuditable, IAuditableSetter
 
     public string? Observacoes { get; private set; }
 
+    /// <summary>
+    /// Soma das durações dos serviços do agendamento, em minutos. Total denormalizado
+    /// para consulta de agenda sem N+1 (CHECK <c>ck_ag_duracao_total</c> &gt;= 0).
+    /// </summary>
     public int DuracaoTotalMin { get; private set; }
 
+    /// <summary>
+    /// Soma dos preços aplicados dos serviços do agendamento. Total denormalizado
+    /// (CHECK <c>ck_ag_valor_total</c> &gt;= 0).
+    /// </summary>
     public decimal ValorTotal { get; private set; }
 
     public int Versao { get; private set; }
@@ -50,10 +62,10 @@ public sealed class Agendamento : IAuditable, IAuditableSetter
         Guid criadoPor,
         DateTime inicio,
         DateTime fim,
-        int duracaoTotalMin,
-        decimal valorTotal,
         Guid? responsavelId = null,
-        string? observacoes = null)
+        string? observacoes = null,
+        int duracaoTotalMin = 0,
+        decimal valorTotal = 0m)
     {
         if (id == Guid.Empty)
         {
@@ -85,9 +97,9 @@ public sealed class Agendamento : IAuditable, IAuditableSetter
             throw new DomainException("Início do agendamento deve ser anterior ao fim.");
         }
 
-        if (duracaoTotalMin <= 0)
+        if (duracaoTotalMin < 0)
         {
-            throw new DomainException("Duração total do agendamento deve ser positiva.");
+            throw new DomainException("Duração total do agendamento não pode ser negativa.");
         }
 
         if (valorTotal < 0m)
@@ -116,11 +128,24 @@ public sealed class Agendamento : IAuditable, IAuditableSetter
         };
     }
 
-    public void Iniciar()
+    /// <summary>
+    /// Define os totais denormalizados (RN006) a partir dos serviços agregados.
+    /// Mantém o agregado consistente após a montagem dos <see cref="AgendamentoItem"/>.
+    /// </summary>
+    public void DefinirTotais(int duracaoTotalMin, decimal valorTotal)
     {
-        GarantirEstadoEditavel();
-        StatusRaw = StatusAgendamento.EmAndamento.ToDbValue();
-        Versao++;
+        if (duracaoTotalMin < 0)
+        {
+            throw new DomainException("Duração total do agendamento não pode ser negativa.");
+        }
+
+        if (valorTotal < 0m)
+        {
+            throw new DomainException("Valor total do agendamento não pode ser negativo.");
+        }
+
+        DuracaoTotalMin = duracaoTotalMin;
+        ValorTotal = valorTotal;
     }
 
     public void Cancelar()

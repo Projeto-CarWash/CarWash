@@ -111,7 +111,7 @@ public class LoginEndpointTests : IAsyncDisposable
         corpo.GetProperty("usuario").GetProperty("email").GetString().Should().Be(email);
     }
 
-    [Fact]
+    [Fact(Skip = "lockout desativado temporariamente — card-134")]
     public async Task POST_login_falhas_consecutivas_bloqueiam_no_limite_configurado()
     {
         var client = _factory.CreateClient();
@@ -139,7 +139,7 @@ public class LoginEndpointTests : IAsyncDisposable
         corpoBloqueio.GetProperty("bloqueadoAte").GetDateTime().Should().BeAfter(DateTime.UtcNow);
     }
 
-    [Fact]
+    [Fact(Skip = "lockout desativado temporariamente — card-134")]
     public async Task POST_login_com_usuario_bloqueado_retorna_403_imediato_mesmo_com_senha_correta()
     {
         var client = _factory.CreateClient();

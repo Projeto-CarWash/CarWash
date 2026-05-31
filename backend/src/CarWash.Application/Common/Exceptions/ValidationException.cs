@@ -5,8 +5,10 @@ namespace CarWash.Application.Common.Exceptions;
 /// <summary>
 /// Falha de validação de entrada (FluentValidation ou regra de aplicação).
 /// Mapeada para HTTP 400 + <c>ProblemDetails</c> no middleware global.
+/// Não-selada para permitir especializações com 400 (ex.:
+/// <c>TokenConfirmacaoInvalidoException</c>) sem novo <c>catch</c> no middleware.
 /// </summary>
-public sealed class ValidationException : Exception
+public class ValidationException : Exception
 {
     public ValidationException(string mensagem, IReadOnlyDictionary<string, string[]> erros)
         : base(mensagem)

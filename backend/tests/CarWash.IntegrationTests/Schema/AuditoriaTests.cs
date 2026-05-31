@@ -79,7 +79,7 @@ public class AuditoriaTests
         var (filialId, clienteId, veiculoId, criadoPor) = await SemearAsync(db).ConfigureAwait(false);
 
         var inicio = DateTime.UtcNow.AddHours(4);
-        var ag = Agendamento.Criar(Guid.NewGuid(), filialId, clienteId, veiculoId, criadoPor, inicio, inicio.AddHours(1), 30, 50m);
+        var ag = Agendamento.Criar(Guid.NewGuid(), filialId, clienteId, veiculoId, criadoPor, inicio, inicio.AddHours(1));
         db.Agendamentos.Add(ag);
         await db.SaveChangesAsync().ConfigureAwait(false);
 
@@ -144,7 +144,7 @@ public class AuditoriaTests
 
     private static async Task<(Guid, Guid, Guid, Guid)> SemearAsync(CarWashDbContext db)
     {
-        var filial = Filial.Criar(Guid.NewGuid(), $"FAud{Guid.NewGuid():N}".Substring(0, 30), 4);
+        var filial = Filial.Criar(Guid.NewGuid(), $"FAud{Guid.NewGuid():N}".Substring(0, 30), $"F{Guid.NewGuid():N}"[..10].ToUpperInvariant(), 4);
         var cliente = Cliente.Criar(
             id: Guid.NewGuid(),
             nome: "Cliente Aud",

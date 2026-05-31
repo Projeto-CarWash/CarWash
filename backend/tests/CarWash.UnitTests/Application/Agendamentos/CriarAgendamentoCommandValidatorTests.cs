@@ -1,98 +1,149 @@
 using CarWash.Application.Agendamentos.Criar;
 using FluentAssertions;
-using FluentValidation;
-using FluentValidation.Results;
 using Xunit;
 
 namespace CarWash.UnitTests.Application.Agendamentos;
 
 public class CriarAgendamentoCommandValidatorTests
 {
-    private readonly IValidator<CriarAgendamentoCommand> _sut = new CriarAgendamentoCommandValidator();
+    private readonly CriarAgendamentoCommandValidator _validator = new();
 
     [Fact]
-    public async Task Command_valido_passa()
+    public void Comando_valido_passa()
     {
-        var resultado = await _sut.ValidateAsync(CommandValido(), CancellationToken.None);
+        var resultado = _validator.Validate(ComandoValido());
         resultado.IsValid.Should().BeTrue();
     }
 
     [Fact]
-    public async Task FilialId_vazio_falha()
+    public void Filial_vazia_falha_RF019()
     {
-        var cmd = CommandValido() with { FilialId = Guid.Empty };
-        var resultado = await _sut.ValidateAsync(cmd, CancellationToken.None);
+        var resultado = _validator.Validate(ComandoValido() with { FilialId = Guid.Empty });
+
         resultado.IsValid.Should().BeFalse();
-        resultado.Errors.Should().ContainSingle(e => e.PropertyName == "FilialId");
+        resultado.Errors.Should().Contain(e => e.PropertyName == nameof(CriarAgendamentoCommand.FilialId));
+        resultado.Errors.Should().Contain(e => e.ErrorMessage.Contains("RF019", StringComparison.Ordinal));
     }
 
     [Fact]
-    public async Task ClienteId_vazio_falha()
+    public void Cliente_vazio_falha()
     {
-        var cmd = CommandValido() with { ClienteId = Guid.Empty };
-        var resultado = await _sut.ValidateAsync(cmd, CancellationToken.None);
+        var resultado = _validator.Validate(ComandoValido() with { ClienteId = Guid.Empty });
+
         resultado.IsValid.Should().BeFalse();
-        resultado.Errors.Should().ContainSingle(e => e.PropertyName == "ClienteId");
+        resultado.Errors.Should().Contain(e => e.PropertyName == nameof(CriarAgendamentoCommand.ClienteId));
     }
 
     [Fact]
-    public async Task VeiculoId_vazio_falha()
+    public void Veiculo_vazio_falha()
     {
-        var cmd = CommandValido() with { VeiculoId = Guid.Empty };
-        var resultado = await _sut.ValidateAsync(cmd, CancellationToken.None);
+        var resultado = _validator.Validate(ComandoValido() with { VeiculoId = Guid.Empty });
         resultado.IsValid.Should().BeFalse();
-        resultado.Errors.Should().ContainSingle(e => e.PropertyName == "VeiculoId");
+        resultado.Errors.Should().Contain(e => e.PropertyName == nameof(CriarAgendamentoCommand.VeiculoId));
     }
 
     [Fact]
-    public async Task Inicio_default_falha()
+    public void Inicio_nulo_falha()
     {
-        var cmd = CommandValido() with { Inicio = default };
-        var resultado = await _sut.ValidateAsync(cmd, CancellationToken.None);
-        resultado.IsValid.Should().BeFalse();
-        resultado.Errors.Should().ContainSingle(e => e.PropertyName == "Inicio");
-    }
-
-    [Fact]
-    public async Task ServicoIds_vazio_falha()
-    {
-        var cmd = CommandValido() with { ServicoIds = [] };
-        var resultado = await _sut.ValidateAsync(cmd, CancellationToken.None);
+        var resultado = _validator.Validate(ComandoValido() with { Inicio = null });
         resultado.IsValid.Should().BeFalse();
     }
 
     [Fact]
-    public async Task ServicoIds_duplicado_falha()
+    public void Inicio_no_passado_falha()
     {
-        var id = Guid.NewGuid();
-        var cmd = CommandValido() with { ServicoIds = [id, id] };
-        var resultado = await _sut.ValidateAsync(cmd, CancellationToken.None);
+        var resultado = _validator.Validate(ComandoValido() with { Inicio = DateTime.UtcNow.AddHours(-1) });
+        resultado.IsValid.Should().BeFalse();
+        resultado.Errors.Should().Contain(e => e.ErrorMessage.Contains("futura", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Lista_de_servicos_vazia_falha()
+    {
+        var resultado = _validator.Validate(ComandoValido() with { ServicoIds = Array.Empty<Guid>() });
         resultado.IsValid.Should().BeFalse();
     }
 
     [Fact]
-    public async Task ServicoId_vazio_falha()
+    public void Lista_de_servicos_nula_falha()
     {
-        var cmd = CommandValido() with { ServicoIds = [Guid.NewGuid(), Guid.Empty] };
-        var resultado = await _sut.ValidateAsync(cmd, CancellationToken.None);
+        var resultado = _validator.Validate(ComandoValido() with { ServicoIds = null });
         resultado.IsValid.Should().BeFalse();
     }
 
     [Fact]
-    public async Task Observacoes_maior_que_1000_falha()
+    public void Servico_duplicado_falha_CA007()
     {
-        var cmd = CommandValido() with { Observacoes = new string('a', 1001) };
-        var resultado = await _sut.ValidateAsync(cmd, CancellationToken.None);
+        var servico = Guid.NewGuid();
+        var resultado = _validator.Validate(ComandoValido() with { ServicoIds = new[] { servico, servico } });
+
+        resultado.IsValid.Should().BeFalse();
+        resultado.Errors.Should().Contain(e => e.ErrorMessage.Contains("CA007", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Servico_id_vazio_falha()
+    {
+        var resultado = _validator.Validate(ComandoValido() with { ServicoIds = new[] { Guid.Empty } });
         resultado.IsValid.Should().BeFalse();
     }
 
-    private static CriarAgendamentoCommand CommandValido() => new(
+    [Fact]
+    public void Observacoes_muito_longas_falha()
+    {
+        var resultado = _validator.Validate(ComandoValido() with { Observacoes = new string('x', 501) });
+        resultado.IsValid.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Observacoes_com_exatamente_500_caracteres_passa()
+    {
+        // Boundary do limite máximo (500) — valor no limite deve ser aceito.
+        var resultado = _validator.Validate(ComandoValido() with { Observacoes = new string('x', 500) });
+        resultado.IsValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Observacoes_nulas_passam()
+    {
+        var resultado = _validator.Validate(ComandoValido() with { Observacoes = null });
+        resultado.IsValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Multiplos_servicos_distintos_passam()
+    {
+        var resultado = _validator.Validate(ComandoValido() with
+        {
+            ServicoIds = new[] { Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid() },
+        });
+        resultado.IsValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Responsavel_id_vazio_falha()
+    {
+        var resultado = _validator.Validate(ComandoValido() with { ResponsavelId = Guid.Empty });
+        resultado.IsValid.Should().BeFalse();
+        resultado.Errors.Should().Contain(e => e.PropertyName == nameof(CriarAgendamentoCommand.ResponsavelId));
+    }
+
+    [Fact]
+    public void Inicio_no_passado_distante_falha()
+    {
+        var resultado = _validator.Validate(ComandoValido() with { Inicio = DateTime.UtcNow.AddYears(-1) });
+        resultado.IsValid.Should().BeFalse();
+        resultado.Errors.Should().Contain(e => e.ErrorMessage.Contains("futura", StringComparison.Ordinal));
+    }
+
+    private static CriarAgendamentoCommand ComandoValido() => new(
         FilialId: Guid.NewGuid(),
         ClienteId: Guid.NewGuid(),
         VeiculoId: Guid.NewGuid(),
-        Inicio: DateTime.UtcNow.AddHours(1),
-        ServicoIds: [Guid.NewGuid()],
+        ResponsavelId: null,
+        Inicio: DateTime.UtcNow.AddDays(1),
+        ServicoIds: new[] { Guid.NewGuid() },
         Observacoes: null,
-        TraceId: "trace-test",
+        TraceId: "trace-1",
         UsuarioId: Guid.NewGuid());
 }

@@ -1,298 +1,439 @@
-using CarWash.Application.Abstractions;
 using CarWash.Application.Agendamentos.Common;
 using CarWash.Application.Agendamentos.Criar;
 using CarWash.Application.Agendamentos.Persistence;
 using CarWash.Application.Common.Exceptions;
 using CarWash.Domain.Entities;
-using CarWash.Domain.ValueObjects;
 using FluentAssertions;
-using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using Xunit;
 
 namespace CarWash.UnitTests.Application.Agendamentos;
 
+#pragma warning disable CS0618 // RF007 mantido obsoleto por decisão do ADR 0004 — os testes do caminho legado continuam.
 public class CriarAgendamentoHandlerTests
 {
-    private readonly IAgendamentoRepository _repo = Substitute.For<IAgendamentoRepository>();
-    private readonly IAuditLogger _auditLogger = Substitute.For<IAuditLogger>();
-    private readonly ILogger<CriarAgendamentoHandler> _logger = Substitute.For<ILogger<CriarAgendamentoHandler>>();
+    private static readonly Guid FilialId = Guid.NewGuid();
+    private static readonly Guid VeiculoId = Guid.NewGuid();
+    private static readonly Guid ClienteId = Guid.NewGuid();
+    private static readonly Guid ResponsavelId = Guid.NewGuid();
+    private static readonly Guid ServicoA = Guid.NewGuid();
+    private static readonly Guid ServicoB = Guid.NewGuid();
+    private static readonly Guid UsuarioId = Guid.NewGuid();
 
-    private readonly Guid _filialId = Guid.Parse("10000000-0000-0000-0000-000000000001");
-    private readonly Guid _clienteId = Guid.Parse("20000000-0000-0000-0000-000000000002");
-    private readonly Guid _veiculoId = Guid.Parse("30000000-0000-0000-0000-000000000003");
-    private readonly Guid _servicoId = Guid.Parse("40000000-0000-0000-0000-000000000004");
-    private readonly Guid _usuarioId = Guid.Parse("50000000-0000-0000-0000-000000000005");
+    private readonly IAgendamentoRepository _agendamentos = Substitute.For<IAgendamentoRepository>();
+    private readonly IAgendamentoCatalogoRepository _catalogo = Substitute.For<IAgendamentoCatalogoRepository>();
+
+    public CriarAgendamentoHandlerTests()
+    {
+        _catalogo.ObterFilialResumoAsync(FilialId, Arg.Any<CancellationToken>())
+            .Returns(new FilialResumoSnapshot(FilialId, "Filial Centro", true));
+        _catalogo.ObterVeiculoResumoAsync(VeiculoId, Arg.Any<CancellationToken>())
+            .Returns(new VeiculoResumoSnapshot(VeiculoId, ClienteId, "ABC1D23", "Civic", "Preto", true));
+        _catalogo.ObterClienteResumoAsync(ClienteId, Arg.Any<CancellationToken>())
+            .Returns(new ClienteResumoSnapshot(ClienteId, "Cliente Teste", "12345678901", true));
+        _catalogo.ObterServicosAsync(Arg.Any<IReadOnlyCollection<Guid>>(), Arg.Any<CancellationToken>())
+            .Returns(new List<ServicoSnapshot>
+            {
+                new(ServicoA, "Lavagem Simples", 30m, 30, true),
+                new(ServicoB, "Enceramento", 45m, 45, true),
+            });
+        _agendamentos.ExisteConflitoVeiculoAsync(
+            Arg.Any<Guid>(), Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+            .Returns(false);
+    }
 
     [Fact]
-    public async Task Caminho_feliz_retorna_response_com_dados()
+    public async Task Caminho_feliz_calcula_totais_e_persiste()
     {
-        SetupEntidadesValidas();
-
         var handler = NovoHandler();
-        var cmd = CommandValido();
 
-        var resposta = await handler.HandleAsync(cmd, CancellationToken.None);
+        var resposta = await handler.HandleAsync(NovoComando(), CancellationToken.None);
 
-        resposta.Message.Should().Be("Agendamento criado com sucesso.");
-        resposta.Data.FilialId.Should().Be(_filialId);
-        resposta.Data.ClienteId.Should().Be(_clienteId);
-        resposta.Data.VeiculoId.Should().Be(_veiculoId);
-        resposta.Data.Status.Should().Be("AGENDADO");
-        resposta.Data.DuracaoTotalMin.Should().Be(30);
-        resposta.Data.ValorTotal.Should().Be(50m);
-        resposta.TraceId.Should().Be("trace-1");
+        resposta.Id.Should().NotBeEmpty();
+        resposta.ClienteId.Should().Be(ClienteId);
+        resposta.DuracaoTotalMin.Should().Be(75);
+        resposta.ValorTotal.Should().Be(75m);
+        resposta.Status.Should().Be("agendado");
+        resposta.Itens.Should().HaveCount(2);
+        resposta.Fim.Should().Be(resposta.Inicio.AddMinutes(75));
 
-        await _repo.Received(1).CriarAsync(
-            Arg.Any<Agendamento>(),
-            Arg.Any<List<AgendamentoItem>>(),
-            Arg.Any<AgendamentoHistorico>(),
+        await _agendamentos.Received(1).AdicionarAsync(
+            Arg.Is<Agendamento>(a => a.DuracaoTotalMin == 75 && a.ValorTotal == 75m && a.VeiculoId == VeiculoId),
+            Arg.Is<IReadOnlyCollection<AgendamentoItem>>(itens => itens.Count == 2),
+            Arg.Is<AgendamentoHistorico>(h => h.AgendamentoId != Guid.Empty),
             "trace-1",
-            _usuarioId,
             Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task Filial_nao_encontrada_lanca_NotFoundException()
+    public async Task Conflito_RN011_no_precheck_lanca_AgendamentoConflitanteException()
     {
-        _repo.ObterFilialPorIdAsync(_filialId, Arg.Any<CancellationToken>())
-            .Returns((Filial?)null);
-
-        var handler = NovoHandler();
-        var act = () => handler.HandleAsync(CommandValido(), CancellationToken.None);
-
-        await act.Should().ThrowAsync<NotFoundException>().WithMessage("*Filial*");
-    }
-
-    [Fact]
-    public async Task Filial_inativa_lanca_NotFoundException()
-    {
-        var filial = FilialAtiva();
-        filial.Inativar();
-        _repo.ObterFilialPorIdAsync(_filialId, Arg.Any<CancellationToken>()).Returns(filial);
-
-        var handler = NovoHandler();
-        var act = () => handler.HandleAsync(CommandValido(), CancellationToken.None);
-
-        await act.Should().ThrowAsync<NotFoundException>().WithMessage("*Filial*");
-    }
-
-    [Fact]
-    public async Task Cliente_nao_encontrado_lanca_NotFoundException()
-    {
-        SetupFilialAtiva();
-        _repo.ObterClientePorIdAsync(_clienteId, Arg.Any<CancellationToken>())
-            .Returns((Cliente?)null);
-
-        var handler = NovoHandler();
-        var act = () => handler.HandleAsync(CommandValido(), CancellationToken.None);
-
-        await act.Should().ThrowAsync<NotFoundException>().WithMessage("*Cliente*");
-    }
-
-    [Fact]
-    public async Task Veiculo_nao_encontrado_lanca_NotFoundException()
-    {
-        SetupFilialAtiva();
-        SetupClienteAtivo();
-        _repo.ObterVeiculoPorIdAsync(_veiculoId, Arg.Any<CancellationToken>())
-            .Returns((Veiculo?)null);
-
-        var handler = NovoHandler();
-        var act = () => handler.HandleAsync(CommandValido(), CancellationToken.None);
-
-        await act.Should().ThrowAsync<NotFoundException>().WithMessage("*Veículo*");
-    }
-
-    [Fact]
-    public async Task Veiculo_de_outro_cliente_lanca_ValidationException()
-    {
-        SetupFilialAtiva();
-        SetupClienteAtivo();
-
-        var veiculoOutroCliente = VeiculoAtivo(Guid.Parse("90000000-0000-0000-0000-000000000009"));
-        _repo.ObterVeiculoPorIdAsync(_veiculoId, Arg.Any<CancellationToken>())
-            .Returns(veiculoOutroCliente);
-
-        var handler = NovoHandler();
-        var act = () => handler.HandleAsync(CommandValido(), CancellationToken.None);
-
-        var ex = await act.Should().ThrowAsync<ValidationException>();
-        ex.Which.Erros.Should().ContainKey("veiculoId");
-    }
-
-    [Fact]
-    public async Task Servico_nao_encontrado_lanca_ValidationException()
-    {
-        SetupFilialAtiva();
-        SetupClienteAtivo();
-        SetupVeiculoAtivo();
-        _repo.ObterServicosPorIdsAsync(Arg.Any<IReadOnlyList<Guid>>(), Arg.Any<CancellationToken>())
-            .Returns(new List<Servico>());
-
-        var handler = NovoHandler();
-        var act = () => handler.HandleAsync(CommandValido(), CancellationToken.None);
-
-        var ex = await act.Should().ThrowAsync<ValidationException>();
-        ex.Which.Erros.Should().ContainKey("servicoIds");
-    }
-
-    [Fact]
-    public async Task Servico_inativo_lanca_ValidationException()
-    {
-        SetupFilialAtiva();
-        SetupClienteAtivo();
-        SetupVeiculoAtivo();
-
-        var servico = ServicoAtivo();
-        servico.Inativar();
-        _repo.ObterServicosPorIdsAsync(Arg.Any<IReadOnlyList<Guid>>(), Arg.Any<CancellationToken>())
-            .Returns(new List<Servico> { servico });
-
-        var handler = NovoHandler();
-        var act = () => handler.HandleAsync(CommandValido(), CancellationToken.None);
-
-        var ex = await act.Should().ThrowAsync<ValidationException>();
-        ex.Which.Erros.Should().ContainKey("servicoIds");
-    }
-
-    [Fact]
-    public async Task Conflito_veiculo_lanca_VeiculoConflitoException_e_loga_auditoria()
-    {
-        SetupEntidadesValidas();
-        _repo.ExisteConflitoVeiculoAsync(_veiculoId, Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+        _agendamentos.ExisteConflitoVeiculoAsync(
+            VeiculoId, Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
             .Returns(true);
 
         var handler = NovoHandler();
-        var act = () => handler.HandleAsync(CommandValido(), CancellationToken.None);
+        var act = () => handler.HandleAsync(NovoComando(), CancellationToken.None);
 
-        await act.Should().ThrowAsync<VeiculoConflitoException>();
-        await _auditLogger.Received(1).LogAsync(
-            "AGENDAMENTO_REJEITADO",
-            "agendamentos",
-            null,
-            Arg.Any<object>(),
+        var ex = await act.Should().ThrowAsync<AgendamentoConflitanteException>();
+        ex.Which.Slug.Should().Be("agendamento-conflito-veiculo");
+
+        await _agendamentos.DidNotReceive().AdicionarAsync(
+            Arg.Any<Agendamento>(),
+            Arg.Any<IReadOnlyCollection<AgendamentoItem>>(),
+            Arg.Any<AgendamentoHistorico>(),
+            Arg.Any<string>(),
             Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task Capacidade_atingida_lanca_CapacidadeFilialAtingidaException_e_loga_auditoria()
+    public async Task Capacidade_da_filial_atingida_lanca_CapacidadeFilialAtingidaException()
     {
-        SetupEntidadesValidas();
-        _repo.ExisteConflitoVeiculoAsync(_veiculoId, Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
-            .Returns(false);
-        _repo.ContarOcupacaoAsync(_filialId, Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
-            .Returns(4);
+        // RF008/RN009: sem conflito de veículo, porém a filial já está no teto de
+        // células ativas para a janela → rejeita com 409 (capacidade-filial).
+        _agendamentos.CapacidadeAtingidaAsync(
+            FilialId, Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+            .Returns(true);
 
         var handler = NovoHandler();
-        var act = () => handler.HandleAsync(CommandValido(), CancellationToken.None);
+        var act = () => handler.HandleAsync(NovoComando(), CancellationToken.None);
 
-        await act.Should().ThrowAsync<CapacidadeFilialAtingidaException>();
-        await _auditLogger.Received(1).LogAsync(
-            "AGENDAMENTO_REJEITADO",
-            "agendamentos",
-            null,
-            Arg.Any<object>(),
+        var ex = await act.Should().ThrowAsync<CapacidadeFilialAtingidaException>();
+        ex.Which.Slug.Should().Be("capacidade-filial");
+
+        await _agendamentos.DidNotReceive().AdicionarAsync(
+            Arg.Any<Agendamento>(),
+            Arg.Any<IReadOnlyCollection<AgendamentoItem>>(),
+            Arg.Any<AgendamentoHistorico>(),
+            Arg.Any<string>(),
             Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task Capacidade_nao_atingida_sucesso()
+    public async Task Filial_inexistente_lanca_NotFound()
     {
-        SetupEntidadesValidas();
-        _repo.ExisteConflitoVeiculoAsync(_veiculoId, Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
-            .Returns(false);
-        _repo.ContarOcupacaoAsync(_filialId, Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
-            .Returns(3);
+        _catalogo.ObterFilialResumoAsync(FilialId, Arg.Any<CancellationToken>())
+            .Returns((FilialResumoSnapshot?)null);
 
         var handler = NovoHandler();
-        var resposta = await handler.HandleAsync(CommandValido(), CancellationToken.None);
+        var act = () => handler.HandleAsync(NovoComando(), CancellationToken.None);
 
-        resposta.Message.Should().Be("Agendamento criado com sucesso.");
+        await act.Should().ThrowAsync<NotFoundException>();
     }
 
     [Fact]
-    public async Task Command_null_lanca_ArgumentNullException()
+    public async Task Filial_inativa_lanca_RecursoInativo()
     {
-        var handler = NovoHandler();
-        var act = () => handler.HandleAsync(null!, CancellationToken.None);
+        _catalogo.ObterFilialResumoAsync(FilialId, Arg.Any<CancellationToken>())
+            .Returns(new FilialResumoSnapshot(FilialId, "Filial Centro", false));
 
-        await act.Should().ThrowAsync<ArgumentNullException>();
+        var handler = NovoHandler();
+        var act = () => handler.HandleAsync(NovoComando(), CancellationToken.None);
+
+        await act.Should().ThrowAsync<RecursoInativoException>();
     }
 
-    private CriarAgendamentoHandler NovoHandler() => new(_repo, _auditLogger, _logger);
+    [Fact]
+    public async Task Veiculo_inativo_lanca_RecursoInativo()
+    {
+        _catalogo.ObterVeiculoResumoAsync(VeiculoId, Arg.Any<CancellationToken>())
+            .Returns(new VeiculoResumoSnapshot(VeiculoId, ClienteId, "ABC1D23", "Civic", "Preto", false));
 
-    private CriarAgendamentoCommand CommandValido() => new(
-        FilialId: _filialId,
-        ClienteId: _clienteId,
-        VeiculoId: _veiculoId,
-        Inicio: DateTime.UtcNow.AddHours(1),
-        ServicoIds: [_servicoId],
-        Observacoes: null,
+        var handler = NovoHandler();
+        var act = () => handler.HandleAsync(NovoComando(), CancellationToken.None);
+
+        await act.Should().ThrowAsync<RecursoInativoException>();
+    }
+
+    [Fact]
+    public async Task Servico_inativo_lanca_RecursoInativo()
+    {
+        _catalogo.ObterServicosAsync(Arg.Any<IReadOnlyCollection<Guid>>(), Arg.Any<CancellationToken>())
+            .Returns(new List<ServicoSnapshot>
+            {
+                new(ServicoA, "Lavagem Simples", 30m, 30, true),
+                new(ServicoB, "Enceramento", 45m, 45, false),
+            });
+
+        var handler = NovoHandler();
+        var act = () => handler.HandleAsync(NovoComando(), CancellationToken.None);
+
+        await act.Should().ThrowAsync<RecursoInativoException>();
+    }
+
+    [Fact]
+    public async Task Servico_inexistente_lanca_NotFound()
+    {
+        _catalogo.ObterServicosAsync(Arg.Any<IReadOnlyCollection<Guid>>(), Arg.Any<CancellationToken>())
+            .Returns(new List<ServicoSnapshot>
+            {
+                new(ServicoA, "Lavagem Simples", 30m, 30, true),
+            });
+
+        var handler = NovoHandler();
+        var act = () => handler.HandleAsync(NovoComando(), CancellationToken.None);
+
+        await act.Should().ThrowAsync<NotFoundException>();
+    }
+
+    [Fact]
+    public async Task Responsavel_de_outro_titular_lanca_ValidationException_CA009()
+    {
+        _catalogo.ObterResponsavelAsync(ResponsavelId, Arg.Any<CancellationToken>())
+            .Returns(new ResponsavelSnapshot(ResponsavelId, Guid.NewGuid(), true));
+
+        var handler = NovoHandler();
+        var act = () => handler.HandleAsync(
+            NovoComando() with { ResponsavelId = ResponsavelId },
+            CancellationToken.None);
+
+        await act.Should().ThrowAsync<ValidationException>();
+    }
+
+    [Fact]
+    public async Task Responsavel_inativo_lanca_RecursoInativo()
+    {
+        _catalogo.ObterResponsavelAsync(ResponsavelId, Arg.Any<CancellationToken>())
+            .Returns(new ResponsavelSnapshot(ResponsavelId, ClienteId, false));
+
+        var handler = NovoHandler();
+        var act = () => handler.HandleAsync(
+            NovoComando() with { ResponsavelId = ResponsavelId },
+            CancellationToken.None);
+
+        await act.Should().ThrowAsync<RecursoInativoException>();
+    }
+
+    [Fact]
+    public async Task Responsavel_do_titular_persiste_no_agendamento_CA009()
+    {
+        _catalogo.ObterResponsavelAsync(ResponsavelId, Arg.Any<CancellationToken>())
+            .Returns(new ResponsavelSnapshot(ResponsavelId, ClienteId, true));
+
+        var handler = NovoHandler();
+        var resposta = await handler.HandleAsync(
+            NovoComando() with { ResponsavelId = ResponsavelId },
+            CancellationToken.None);
+
+        resposta.ResponsavelId.Should().Be(ResponsavelId);
+        await _agendamentos.Received(1).AdicionarAsync(
+            Arg.Is<Agendamento>(a => a.ResponsavelId == ResponsavelId),
+            Arg.Any<IReadOnlyCollection<AgendamentoItem>>(),
+            Arg.Any<AgendamentoHistorico>(),
+            Arg.Any<string>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Sem_usuario_autenticado_lanca_ValidationException()
+    {
+        var handler = NovoHandler();
+        var act = () => handler.HandleAsync(NovoComando() with { UsuarioId = null }, CancellationToken.None);
+
+        await act.Should().ThrowAsync<ValidationException>();
+    }
+
+    [Fact]
+    public async Task Cliente_do_veiculo_inexistente_lanca_NotFound()
+    {
+        _catalogo.ObterClienteResumoAsync(ClienteId, Arg.Any<CancellationToken>())
+            .Returns((ClienteResumoSnapshot?)null);
+
+        var handler = NovoHandler();
+        var act = () => handler.HandleAsync(NovoComando(), CancellationToken.None);
+
+        await act.Should().ThrowAsync<NotFoundException>();
+    }
+
+    [Fact]
+    public async Task Cliente_do_veiculo_inativo_lanca_RecursoInativo()
+    {
+        _catalogo.ObterClienteResumoAsync(ClienteId, Arg.Any<CancellationToken>())
+            .Returns(new ClienteResumoSnapshot(ClienteId, "Cliente Teste", "12345678901", false));
+
+        var handler = NovoHandler();
+        var act = () => handler.HandleAsync(NovoComando(), CancellationToken.None);
+
+        await act.Should().ThrowAsync<RecursoInativoException>();
+    }
+
+    [Fact]
+    public async Task Veiculo_de_outro_cliente_lanca_ValidationException_RN002()
+    {
+        // RN002: o veículo informado pertence a outro titular, não ao ClienteId do payload.
+        _catalogo.ObterVeiculoResumoAsync(VeiculoId, Arg.Any<CancellationToken>())
+            .Returns(new VeiculoResumoSnapshot(VeiculoId, Guid.NewGuid(), "ABC1D23", "Civic", "Preto", true));
+
+        var handler = NovoHandler();
+        var act = () => handler.HandleAsync(NovoComando(), CancellationToken.None);
+
+        await act.Should().ThrowAsync<ValidationException>();
+
+        await _agendamentos.DidNotReceive().AdicionarAsync(
+            Arg.Any<Agendamento>(),
+            Arg.Any<IReadOnlyCollection<AgendamentoItem>>(),
+            Arg.Any<AgendamentoHistorico>(),
+            Arg.Any<string>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Veiculo_inexistente_lanca_NotFound()
+    {
+        _catalogo.ObterVeiculoResumoAsync(VeiculoId, Arg.Any<CancellationToken>())
+            .Returns((VeiculoResumoSnapshot?)null);
+
+        var handler = NovoHandler();
+        var act = () => handler.HandleAsync(NovoComando(), CancellationToken.None);
+
+        await act.Should().ThrowAsync<NotFoundException>();
+    }
+
+    [Fact]
+    public async Task Responsavel_inexistente_lanca_NotFound()
+    {
+        _catalogo.ObterResponsavelAsync(ResponsavelId, Arg.Any<CancellationToken>())
+            .Returns((ResponsavelSnapshot?)null);
+
+        var handler = NovoHandler();
+        var act = () => handler.HandleAsync(
+            NovoComando() with { ResponsavelId = ResponsavelId },
+            CancellationToken.None);
+
+        await act.Should().ThrowAsync<NotFoundException>();
+    }
+
+    [Fact]
+    public async Task Um_unico_servico_calcula_fim_corretamente()
+    {
+        var inicio = DateTime.UtcNow.AddDays(1);
+        var handler = NovoHandler();
+
+        var resposta = await handler.HandleAsync(
+            NovoComando() with { Inicio = inicio, ServicoIds = new[] { ServicoA } },
+            CancellationToken.None);
+
+        // ServicoA: 30 min / R$ 30.
+        resposta.DuracaoTotalMin.Should().Be(30);
+        resposta.ValorTotal.Should().Be(30m);
+        resposta.Itens.Should().HaveCount(1);
+        resposta.Fim.Should().Be(resposta.Inicio.AddMinutes(30));
+    }
+
+    [Fact]
+    public async Task Servicos_preservam_a_ordem_informada_pelo_cliente()
+    {
+        var handler = NovoHandler();
+
+        // Informa B antes de A — a resposta deve respeitar essa ordem.
+        var resposta = await handler.HandleAsync(
+            NovoComando() with { ServicoIds = new[] { ServicoB, ServicoA } },
+            CancellationToken.None);
+
+        resposta.Itens.Should().HaveCount(2);
+        resposta.Itens[0].ServicoId.Should().Be(ServicoB);
+        resposta.Itens[1].ServicoId.Should().Be(ServicoA);
+    }
+
+    [Fact]
+    public async Task Status_inicial_do_agendamento_e_agendado()
+    {
+        var handler = NovoHandler();
+
+        await handler.HandleAsync(NovoComando(), CancellationToken.None);
+
+        await _agendamentos.Received(1).AdicionarAsync(
+            Arg.Is<Agendamento>(a => a.Status == global::CarWash.Domain.Enums.StatusAgendamento.Agendado),
+            Arg.Any<IReadOnlyCollection<AgendamentoItem>>(),
+            Arg.Any<AgendamentoHistorico>(),
+            Arg.Any<string>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Persiste_evento_de_historico_CRIADO()
+    {
+        var handler = NovoHandler();
+
+        await handler.HandleAsync(NovoComando(), CancellationToken.None);
+
+        await _agendamentos.Received(1).AdicionarAsync(
+            Arg.Any<Agendamento>(),
+            Arg.Any<IReadOnlyCollection<AgendamentoItem>>(),
+            Arg.Is<AgendamentoHistorico>(h => h.Evento == global::CarWash.Domain.Enums.EventoHistorico.Criado),
+            Arg.Any<string>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Itens_congelam_preco_e_duracao_do_catalogo()
+    {
+        var handler = NovoHandler();
+
+        await handler.HandleAsync(
+            NovoComando() with { ServicoIds = new[] { ServicoA, ServicoB } },
+            CancellationToken.None);
+
+        await _agendamentos.Received(1).AdicionarAsync(
+            Arg.Any<Agendamento>(),
+            Arg.Is<IReadOnlyCollection<AgendamentoItem>>(itens =>
+                itens.Any(i => i.ServicoId == ServicoA && i.PrecoAplicado == 30m && i.DuracaoAplicada == 30)
+                && itens.Any(i => i.ServicoId == ServicoB && i.PrecoAplicado == 45m && i.DuracaoAplicada == 45)),
+            Arg.Any<AgendamentoHistorico>(),
+            Arg.Any<string>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Inicio_em_horario_local_e_normalizado_para_UTC()
+    {
+        var inicioLocal = new DateTime(2099, 6, 1, 14, 0, 0, DateTimeKind.Local);
+        var handler = NovoHandler();
+
+        var resposta = await handler.HandleAsync(
+            NovoComando() with { Inicio = inicioLocal },
+            CancellationToken.None);
+
+        resposta.Inicio.Kind.Should().Be(DateTimeKind.Utc);
+        resposta.Fim.Kind.Should().Be(DateTimeKind.Utc);
+        resposta.Inicio.Should().Be(inicioLocal.ToUniversalTime());
+    }
+
+    [Fact]
+    public async Task Pre_check_de_conflito_RN011_usa_a_janela_calculada()
+    {
+        var inicio = DateTime.SpecifyKind(DateTime.UtcNow.AddDays(1), DateTimeKind.Utc);
+        var fimEsperado = inicio.AddMinutes(75);
+        var handler = NovoHandler();
+
+        await handler.HandleAsync(
+            NovoComando() with { Inicio = inicio, ServicoIds = new[] { ServicoA, ServicoB } },
+            CancellationToken.None);
+
+        // Janela = [inicio, inicio + 75min) — soma das durações de A (30) e B (45).
+        await _agendamentos.Received(1).ExisteConflitoVeiculoAsync(
+            VeiculoId,
+            Arg.Is<DateTime>(d => d == inicio),
+            Arg.Is<DateTime>(d => d == fimEsperado),
+            Arg.Any<CancellationToken>());
+    }
+
+    private CriarAgendamentoHandler NovoHandler() =>
+        new(
+            _agendamentos,
+            new CalculadoraResumoAgendamento(_catalogo),
+            NullLogger<CriarAgendamentoHandler>.Instance);
+
+    private static CriarAgendamentoCommand NovoComando() => new(
+        FilialId: FilialId,
+        ClienteId: ClienteId,
+        VeiculoId: VeiculoId,
+        ResponsavelId: null,
+        Inicio: DateTime.UtcNow.AddDays(1),
+        ServicoIds: new[] { ServicoA, ServicoB },
+        Observacoes: "Cliente vai aguardar.",
         TraceId: "trace-1",
-        UsuarioId: _usuarioId);
-
-    private void SetupEntidadesValidas()
-    {
-        SetupFilialAtiva();
-        SetupClienteAtivo();
-        SetupVeiculoAtivo();
-        SetupServicosAtivos();
-        _repo.ExisteConflitoVeiculoAsync(Arg.Any<Guid>(), Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
-            .Returns(false);
-        _repo.ContarOcupacaoAsync(Arg.Any<Guid>(), Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
-            .Returns(0);
-    }
-
-    private void SetupFilialAtiva()
-    {
-        _repo.ObterFilialPorIdAsync(_filialId, Arg.Any<CancellationToken>())
-            .Returns(FilialAtiva());
-    }
-
-    private void SetupClienteAtivo()
-    {
-        _repo.ObterClientePorIdAsync(_clienteId, Arg.Any<CancellationToken>())
-            .Returns(ClienteAtivo());
-    }
-
-    private void SetupVeiculoAtivo()
-    {
-        _repo.ObterVeiculoPorIdAsync(_veiculoId, Arg.Any<CancellationToken>())
-            .Returns(VeiculoAtivo(_clienteId));
-    }
-
-    private void SetupServicosAtivos()
-    {
-        _repo.ObterServicosPorIdsAsync(Arg.Any<IReadOnlyList<Guid>>(), Arg.Any<CancellationToken>())
-            .Returns(new List<Servico> { ServicoAtivo() });
-    }
-
-    private Filial FilialAtiva() => Filial.Criar(
-        id: _filialId,
-        nome: "Matriz Teste",
-        celulasAtivas: 4);
-
-    private Cliente ClienteAtivo() => Cliente.Criar(
-        id: _clienteId,
-        nome: "João Silva",
-        dataNascimento: new DateOnly(1990, 1, 1),
-        celular: new Telefone("11999999999"),
-        endereco: new Endereco(
-            "12345678", "Rua Teste", "100", null, "Centro", "São Paulo", "SP"),
-        cpf: new Cpf("52998224725"));
-
-    private Veiculo VeiculoAtivo(Guid clienteId) => Veiculo.Criar(
-        id: _veiculoId,
-        clienteId: clienteId,
-        placa: new Placa("ABC1D23"),
-        modelo: "Civic",
-        fabricante: "Honda",
-        cor: "Preto");
-
-    private Servico ServicoAtivo() => Servico.Criar(
-        id: _servicoId,
-        nome: "Lavagem Simples",
-        preco: 50m,
-        duracaoMin: 30);
+        UsuarioId: UsuarioId);
 }
+#pragma warning restore CS0618
