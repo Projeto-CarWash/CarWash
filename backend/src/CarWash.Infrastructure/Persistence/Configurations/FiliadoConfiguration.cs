@@ -6,6 +6,7 @@ namespace CarWash.Infrastructure.Persistence.Configurations;
 
 public sealed class FiliadoConfiguration : IEntityTypeConfiguration<Filiado>
 {
+    /// <inheritdoc/>
     public void Configure(EntityTypeBuilder<Filiado> builder)
     {
         ArgumentNullException.ThrowIfNull(builder);

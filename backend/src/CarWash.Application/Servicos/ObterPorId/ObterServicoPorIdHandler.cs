@@ -16,6 +16,7 @@ public sealed class ObterServicoPorIdHandler : IQueryHandler<ObterServicoPorIdQu
         _repositorio = repositorio;
     }
 
+    /// <inheritdoc/>
     public async Task<ServicoResponse> HandleAsync(ObterServicoPorIdQuery query, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(query);

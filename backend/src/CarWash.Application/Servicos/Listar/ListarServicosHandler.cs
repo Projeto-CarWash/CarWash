@@ -13,6 +13,7 @@ public sealed class ListarServicosHandler : IQueryHandler<ListarServicosQuery, L
         _repositorio = repositorio;
     }
 
+    /// <inheritdoc/>
     public async Task<ListaServicosResponse> HandleAsync(ListarServicosQuery query, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(query);
@@ -27,7 +28,7 @@ public sealed class ListarServicosHandler : IQueryHandler<ListarServicosQuery, L
         // GAP-CLAMP: reflete o tamanho efetivo (clamp aplicado no repositório),
         // não o valor pedido pelo cliente. O endpoint já rejeita fora da faixa,
         // mas se algum chamador interno bypassar a validação, o JSON ainda é honesto.
-        var paginaEfetiva = query.Pagina < 1 ? 1 : query.Pagina;
+        int paginaEfetiva = query.Pagina < 1 ? 1 : query.Pagina;
         int tamanhoEfetivo;
         if (query.TamanhoPagina < 1)
         {

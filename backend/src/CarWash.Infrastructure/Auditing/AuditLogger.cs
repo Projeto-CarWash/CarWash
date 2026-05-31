@@ -22,6 +22,7 @@ public sealed class AuditLogger : IAuditLogger
         _contexto = contexto;
     }
 
+    /// <inheritdoc/>
     public async Task LogAsync(
         string evento,
         string entidade,
@@ -29,7 +30,7 @@ public sealed class AuditLogger : IAuditLogger
         object? dados = null,
         CancellationToken cancellationToken = default)
     {
-        var json = dados is null ? null : AuditDataMasker.Mask(dados);
+        string? json = dados is null ? null : AuditDataMasker.Mask(dados);
 
         var log = AuditLog.Registrar(
             id: Guid.NewGuid(),

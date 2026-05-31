@@ -16,9 +16,10 @@ public static class SeedPasswordResolver
     /// Lê a senha em texto puro da env e devolve o hash Argon2id PHC.
     /// Lança <see cref="InvalidOperationException"/> se a variável estiver ausente.
     /// </summary>
+    /// <returns></returns>
     public static string ResolveAdminArgon2idHash()
     {
-        var senha = Environment.GetEnvironmentVariable(EnvironmentVariableName);
+        string? senha = Environment.GetEnvironmentVariable(EnvironmentVariableName);
         if (string.IsNullOrWhiteSpace(senha))
         {
             throw new InvalidOperationException(

@@ -94,6 +94,7 @@ public class AtualizarServicoEndpointTests : IAsyncDisposable
         return corpo.GetProperty("id").GetGuid();
     }
 
+    /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
         await _factory.DisposeAsync();

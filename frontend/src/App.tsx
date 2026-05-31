@@ -5,6 +5,8 @@ import { NovoClientePage } from '@/components/clientes/NovoClientePage';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import PrivateRoute from '@/components/PrivateRoute';
 import { AuthProvider } from '@/contexts/AuthProvider';
+import { AgendamentosCalendarioPage } from '@/pages/Agendamentos/AgendamentosCalendarioPage';
+import { AgendamentosDashboardPage } from '@/pages/Agendamentos/AgendamentosDashboardPage';
 import { ClienteDetalhePage } from '@/pages/Clientes/ClienteDetalhePage';
 import { ClientesListaPage } from '@/pages/Clientes/ClientesListaPage';
 import { NovoVeiculoPage } from '@/pages/Clientes/NovoVeiculoPage';
@@ -136,6 +138,28 @@ function App() {
             <PrivateRoute>
               <DashboardLayout>
                 <ServicoFormPage />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/agendamentos"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <AgendamentosDashboardPage />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/agendamentos/calendario"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <AgendamentosCalendarioPage />
               </DashboardLayout>
             </PrivateRoute>
           }

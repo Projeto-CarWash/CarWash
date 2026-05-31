@@ -41,6 +41,7 @@ public sealed class LogoutHandler : ICommandHandler<LogoutCommand, LogoutResulta
         _log = log;
     }
 
+    /// <inheritdoc/>
     public async Task<LogoutResultado> HandleAsync(LogoutCommand command, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(command);
@@ -56,7 +57,7 @@ public sealed class LogoutHandler : ICommandHandler<LogoutCommand, LogoutResulta
         // Resolver a sessão ANTES de revogar — assim conseguimos UsuarioId/SessaoId
         // mesmo que o endpoint seja anônimo (sem JWT). Se a sessão não existe
         // (token forjado/já apagado), tratamos como idempotente: sem log de sucesso.
-        var hash = _hasher.Hash(command.RefreshToken);
+        string hash = _hasher.Hash(command.RefreshToken);
         var sessao = await _sessoes.ObterPorHashAsync(hash, cancellationToken).ConfigureAwait(false);
 
         if (sessao is null)

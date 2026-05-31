@@ -33,7 +33,7 @@ public static class StatusAgendaMapper
         };
 
     /// <summary>
-    /// Os 4 valores aceitos como filtro de <c>status</c> na query da agenda.
+    /// Gets os 4 valores aceitos como filtro de <c>status</c> na query da agenda.
     /// </summary>
     public static IReadOnlyCollection<string> StatusValidosApi { get; } =
         new[] { "AGENDADO", EmAndamento, "CONCLUIDO", "CANCELADO" };
@@ -42,6 +42,7 @@ public static class StatusAgendaMapper
     /// Indica se <paramref name="statusApi"/> é um dos 4 valores aceitos no
     /// contrato (case-insensitive). Usado pelo validator.
     /// </summary>
+    /// <returns></returns>
     public static bool EhStatusApiValido(string? statusApi)
     {
         if (string.IsNullOrWhiteSpace(statusApi))
@@ -56,6 +57,7 @@ public static class StatusAgendaMapper
     /// Indica se <paramref name="statusApi"/> é o valor <c>EM_ANDAMENTO</c>, que
     /// curto-circuita a consulta para uma lista vazia (ADR 0004 — L1).
     /// </summary>
+    /// <returns></returns>
     public static bool EhEmAndamento(string? statusApi) =>
         !string.IsNullOrWhiteSpace(statusApi)
         && string.Equals(statusApi.Trim(), EmAndamento, StringComparison.OrdinalIgnoreCase);
@@ -65,6 +67,7 @@ public static class StatusAgendaMapper
     /// Retorna <c>null</c> para <c>EM_ANDAMENTO</c> (curto-circuito) ou para
     /// valores fora do contrato.
     /// </summary>
+    /// <returns></returns>
     public static string? ParaDb(string? statusApi)
     {
         if (string.IsNullOrWhiteSpace(statusApi))
@@ -72,18 +75,19 @@ public static class StatusAgendaMapper
             return null;
         }
 
-        return ApiParaDb.TryGetValue(statusApi.Trim(), out var db) ? db : null;
+        return ApiParaDb.TryGetValue(statusApi.Trim(), out string? db) ? db : null;
     }
 
     /// <summary>
     /// Converte um status persistido no banco para o valor uppercase do contrato
     /// da API. Sempre serializado dessa forma na resposta (ADR 0004).
     /// </summary>
+    /// <returns></returns>
     public static string ParaApi(string statusDb)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(statusDb);
 
-        return DbParaApi.TryGetValue(statusDb, out var api)
+        return DbParaApi.TryGetValue(statusDb, out string? api)
             ? api
             : throw new ArgumentOutOfRangeException(nameof(statusDb), statusDb, "Status persistido inválido.");
     }

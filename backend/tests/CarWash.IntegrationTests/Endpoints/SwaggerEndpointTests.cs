@@ -44,6 +44,7 @@ public class SwaggerEndpointTests : IAsyncDisposable
         paths.TryGetProperty("/api/v1/auth/logout", out _).Should().BeTrue();
     }
 
+    /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
         await _factory.DisposeAsync();

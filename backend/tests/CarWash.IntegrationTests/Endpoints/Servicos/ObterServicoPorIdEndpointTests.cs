@@ -57,6 +57,7 @@ public class ObterServicoPorIdEndpointTests : IAsyncDisposable
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
+    /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
         await _factory.DisposeAsync();

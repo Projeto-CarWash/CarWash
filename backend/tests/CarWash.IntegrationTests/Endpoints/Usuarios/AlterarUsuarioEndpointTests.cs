@@ -28,7 +28,7 @@ public class AlterarUsuarioEndpointTests : IAsyncDisposable
         var client = await AuthenticatedHttpClient.CreateAsync(_factory);
         var id = await CadastrarAsync(client);
 
-        var novoEmail = $"alterado-{Guid.NewGuid():N}@carwash.local";
+        string novoEmail = $"alterado-{Guid.NewGuid():N}@carwash.local";
         var response = await client.PutAsJsonAsync(
             new Uri($"/api/v1/usuarios/{id}", UriKind.Relative),
             new
@@ -83,7 +83,7 @@ public class AlterarUsuarioEndpointTests : IAsyncDisposable
     public async Task PUT_email_em_uso_por_outro_usuario_retorna_409()
     {
         var client = await AuthenticatedHttpClient.CreateAsync(_factory);
-        var emailOutro = $"outro-{Guid.NewGuid():N}@carwash.local";
+        string emailOutro = $"outro-{Guid.NewGuid():N}@carwash.local";
         await CadastrarAsync(client, emailOutro);
         var id = await CadastrarAsync(client);
 
@@ -115,7 +115,7 @@ public class AlterarUsuarioEndpointTests : IAsyncDisposable
 
     private async Task<Guid> CadastrarAsync(HttpClient client, string? emailForcado = null)
     {
-        var email = emailForcado ?? $"alice-{Guid.NewGuid():N}@carwash.local";
+        string email = emailForcado ?? $"alice-{Guid.NewGuid():N}@carwash.local";
         var resp = await client.PostAsJsonAsync(RotaCriar, new
         {
             nome = "Alice",
@@ -128,6 +128,7 @@ public class AlterarUsuarioEndpointTests : IAsyncDisposable
         return corpo.GetProperty("id").GetGuid();
     }
 
+    /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
         await _factory.DisposeAsync();

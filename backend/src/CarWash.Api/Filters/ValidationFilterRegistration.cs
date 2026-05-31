@@ -34,7 +34,7 @@ public static class ValidationFilterRegistration
         var marcadores = new[] { typeof(ICommand<>), typeof(IQuery<>) };
         foreach (var alvo in alvosValidados)
         {
-            var implementaMarcador = alvo.GetInterfaces()
+            bool implementaMarcador = alvo.GetInterfaces()
                 .Any(i => i.IsGenericType && marcadores.Contains(i.GetGenericTypeDefinition()));
             if (!implementaMarcador)
             {

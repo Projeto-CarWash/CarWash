@@ -6,6 +6,7 @@ namespace CarWash.Infrastructure.Persistence.Configurations;
 
 public sealed class FeatureFlagConfiguration : IEntityTypeConfiguration<FeatureFlag>
 {
+    /// <inheritdoc/>
     public void Configure(EntityTypeBuilder<FeatureFlag> builder)
     {
         ArgumentNullException.ThrowIfNull(builder);

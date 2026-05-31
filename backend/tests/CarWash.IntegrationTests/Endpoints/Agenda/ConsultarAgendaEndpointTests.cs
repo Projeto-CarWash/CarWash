@@ -56,7 +56,7 @@ public class ConsultarAgendaEndpointTests : IAsyncDisposable
         data.GetArrayLength().Should().Be(1);
 
         var item = data[0];
-        var campos = item.EnumerateObject().Select(p => p.Name).OrderBy(n => n).ToArray();
+        string[] campos = item.EnumerateObject().Select(p => p.Name).OrderBy(n => n).ToArray();
         campos.Should().BeEquivalentTo(
             "agendamentoId", "inicio", "fim", "titulo", "status",
             "clienteNome", "veiculoPlaca", "servicosResumo");
@@ -87,7 +87,7 @@ public class ConsultarAgendaEndpointTests : IAsyncDisposable
         var corpo = await response.Content.ReadFromJsonAsync<JsonElement>(_json);
         var item = corpo.GetProperty("data")[0];
 
-        var campos = item.EnumerateObject().Select(p => p.Name).OrderBy(n => n).ToArray();
+        string[] campos = item.EnumerateObject().Select(p => p.Name).OrderBy(n => n).ToArray();
         campos.Should().BeEquivalentTo(
             "agendamentoId", "status", "filialId", "inicio", "fim",
             "duracaoTotalMin", "valorTotal", "cliente", "veiculo", "servicos",
@@ -377,7 +377,7 @@ public class ConsultarAgendaEndpointTests : IAsyncDisposable
 
         if ((int)response.StatusCode >= 500)
         {
-            var corpo = await response.Content.ReadAsStringAsync();
+            string corpo = await response.Content.ReadAsStringAsync();
             corpo.Should().NotContain("at CarWash.");
             corpo.Should().NotContain("Exception:");
             corpo.Should().NotContain("StackTrace");
@@ -742,18 +742,18 @@ public class ConsultarAgendaEndpointTests : IAsyncDisposable
         var itensServico = new List<(Servico Servico, AgendamentoItem Item)>();
 
         var agendamentoId = Guid.NewGuid();
-        var duracaoTotal = 0;
-        var valorTotal = 0m;
+        int duracaoTotal = 0;
+        decimal valorTotal = 0m;
 
-        for (var i = 0; i < servicos; i++)
+        for (int i = 0; i < servicos; i++)
         {
-            var nome = $"Servico {Guid.NewGuid():N}"[..20];
-            var duracao = 30 + (i * 10);
-            var precoCatalogo = 50m + (i * 5m);
+            string nome = $"Servico {Guid.NewGuid():N}"[..20];
+            int duracao = 30 + (i * 10);
+            decimal precoCatalogo = 50m + (i * 5m);
 
             // Snapshot RN006: o preço/duração aplicados diferem do catálogo de propósito.
-            var duracaoAplicada = duracao + 1;
-            var precoAplicado = precoCatalogo + 7m;
+            int duracaoAplicada = duracao + 1;
+            decimal precoAplicado = precoCatalogo + 7m;
 
             var servico = Servico.Criar(Guid.NewGuid(), nome, precoCatalogo, duracao);
             var item = AgendamentoItem.Criar(
@@ -841,15 +841,15 @@ public class ConsultarAgendaEndpointTests : IAsyncDisposable
     {
         Span<int> d = stackalloc int[11];
         var rng = Random.Shared;
-        for (var i = 0; i < 9; i++)
+        for (int i = 0; i < 9; i++)
         {
             d[i] = rng.Next(0, 10);
         }
 
         d[9] = Dv(d[..9], 10);
         d[10] = Dv(d[..10], 11);
-        var chars = new char[11];
-        for (var i = 0; i < 11; i++)
+        char[] chars = new char[11];
+        for (int i = 0; i < 11; i++)
         {
             chars[i] = (char)('0' + d[i]);
         }
@@ -858,17 +858,18 @@ public class ConsultarAgendaEndpointTests : IAsyncDisposable
 
         static int Dv(ReadOnlySpan<int> parcial, int pesoInicial)
         {
-            var soma = 0;
-            for (var i = 0; i < parcial.Length; i++)
+            int soma = 0;
+            for (int i = 0; i < parcial.Length; i++)
             {
                 soma += parcial[i] * (pesoInicial - i);
             }
 
-            var resto = soma % 11;
+            int resto = soma % 11;
             return resto < 2 ? 0 : 11 - resto;
         }
     }
 
+    /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
         await _factory.DisposeAsync();

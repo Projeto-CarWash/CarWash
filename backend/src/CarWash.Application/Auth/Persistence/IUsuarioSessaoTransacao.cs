@@ -10,8 +10,10 @@ namespace CarWash.Application.Auth.Persistence;
 public interface IUsuarioSessaoTransacao : IAsyncDisposable
 {
     /// <summary>Confirma a transação (COMMIT). Idempotente em handles no-op.</summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task CommitAsync(CancellationToken cancellationToken);
 
     /// <summary>Desfaz a transação (ROLLBACK). Idempotente em handles no-op.</summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task RollbackAsync(CancellationToken cancellationToken);
 }

@@ -25,6 +25,7 @@ public sealed class AtualizarClienteHandler : ICommandHandler<AtualizarClienteCo
         _log = log;
     }
 
+    /// <inheritdoc/>
     public async Task<ClienteResponse> HandleAsync(AtualizarClienteCommand command, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(command);
@@ -40,7 +41,7 @@ public sealed class AtualizarClienteHandler : ICommandHandler<AtualizarClienteCo
                     || string.Equals(k, "cnpj", StringComparison.OrdinalIgnoreCase)
                     || string.Equals(k, "ativo", StringComparison.OrdinalIgnoreCase));
 
-            foreach (var campo in camposNaoEditaveis)
+            foreach (string? campo in camposNaoEditaveis)
             {
                 _log.LogWarning(
                     "PUT /clientes/{ClienteId} recebeu campo não editável '{Campo}' — ignorado. UsuarioId={UsuarioId}",
@@ -65,10 +66,10 @@ public sealed class AtualizarClienteHandler : ICommandHandler<AtualizarClienteCo
         var cliente = await _repositorio.ObterPorIdAsync(command.Id, cancellationToken).ConfigureAwait(false)
             ?? throw new NotFoundException("Cliente não encontrado.");
 
-        var nome = InputNormalizer.SanitizeTextOrNull(command.Nome)!;
-        var telefoneDigits = InputNormalizer.OnlyDigitsOrNull(command.Telefone);
-        var celularDigits = InputNormalizer.OnlyDigitsOrNull(command.Celular)!;
-        var emailNormalizado = InputNormalizer.EmailOrNull(command.Email);
+        string nome = InputNormalizer.SanitizeTextOrNull(command.Nome)!;
+        string? telefoneDigits = InputNormalizer.OnlyDigitsOrNull(command.Telefone);
+        string celularDigits = InputNormalizer.OnlyDigitsOrNull(command.Celular)!;
+        string? emailNormalizado = InputNormalizer.EmailOrNull(command.Email);
         var endereco = new Endereco(
             cep: InputNormalizer.OnlyDigitsOrNull(command.Endereco!.Cep) ?? string.Empty,
             logradouro: command.Endereco.Logradouro ?? string.Empty,

@@ -44,7 +44,7 @@ public class LoginValidatorTests
     [Fact]
     public void Email_muito_longo_falha()
     {
-        var email = new string('a', 145) + "@x.com"; // > 150
+        string email = new string('a', 145) + "@x.com"; // > 150
         var result = _validator.TestValidate(new LoginCommand(email, "Senha1234"));
         result.ShouldHaveValidationErrorFor(x => x.Email);
     }
@@ -52,7 +52,7 @@ public class LoginValidatorTests
     [Fact]
     public void Senha_muito_longa_falha()
     {
-        var senha = new string('a', 257);
+        string senha = new string('a', 257);
         var result = _validator.TestValidate(new LoginCommand("alice@carwash.local", senha));
         result.ShouldHaveValidationErrorFor(x => x.Senha);
     }

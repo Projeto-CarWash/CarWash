@@ -122,7 +122,7 @@ public class LoginEndpointTests : IAsyncDisposable
         // (limite legado) — atualizado para refletir a constante atual.
         const int limite = CarWash.Application.Auth.Login.LoginHandler.LimiteTentativasInvalidas;
 
-        for (var i = 0; i < limite - 1; i++)
+        for (int i = 0; i < limite - 1; i++)
         {
             var falha = await client.PostAsJsonAsync(RotaLogin, new { email, senha = "Errada9999" }, _json);
             falha.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -147,7 +147,7 @@ public class LoginEndpointTests : IAsyncDisposable
 
         // Provoca o bloqueio: limite tentativas inválidas configurado no handler.
         const int limite = CarWash.Application.Auth.Login.LoginHandler.LimiteTentativasInvalidas;
-        for (var i = 0; i < limite; i++)
+        for (int i = 0; i < limite; i++)
         {
             await client.PostAsJsonAsync(RotaLogin, new { email, senha = "Errada9999" }, _json);
         }
@@ -172,7 +172,7 @@ public class LoginEndpointTests : IAsyncDisposable
     private async Task<(string Email, string Senha)> CadastrarUsuarioAsync(HttpClient client)
 #pragma warning restore S1172
     {
-        var email = $"alice-{Guid.NewGuid():N}@carwash.local";
+        string email = $"alice-{Guid.NewGuid():N}@carwash.local";
         const string senha = "Senha1234";
 
         // Cadastro de usuário interno exige Authorization (RF014). Usamos um client
@@ -199,6 +199,7 @@ public class LoginEndpointTests : IAsyncDisposable
         return corpo.GetProperty("usuario").GetProperty("id").GetGuid();
     }
 
+    /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
         await _factory.DisposeAsync();
