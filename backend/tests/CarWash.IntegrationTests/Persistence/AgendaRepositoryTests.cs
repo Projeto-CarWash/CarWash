@@ -181,7 +181,7 @@ public class AgendaRepositoryTests : IAsyncDisposable
 
         if (cancelar)
         {
-            agendamento.Cancelar();
+            agendamento.Cancelar("Cancelado para fins de teste", Guid.NewGuid());
         }
 
         db.Clientes.Add(cliente);

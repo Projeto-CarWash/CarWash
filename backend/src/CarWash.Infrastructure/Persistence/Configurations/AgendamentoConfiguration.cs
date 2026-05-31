@@ -52,6 +52,9 @@ public sealed class AgendamentoConfiguration : IEntityTypeConfiguration<Agendame
             .IsConcurrencyToken();
         builder.Property(x => x.CriadoEm).IsRequired().HasColumnType("timestamptz").HasDefaultValueSql("now()");
         builder.Property(x => x.AtualizadoEm).IsRequired().HasColumnType("timestamptz").HasDefaultValueSql("now()");
+        builder.Property(x => x.CanceladoEm).HasColumnType("timestamptz");
+        builder.Property(x => x.CanceladoPor);
+        builder.Property(x => x.MotivoCancelamento).HasColumnType("text");
 
         builder.Ignore(x => x.Status);
 

@@ -362,4 +362,67 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
 
         return ehUniqueViolation && ehConstraintDeIdempotencia;
     }
+
+    public async Task<Agendamento?> ObterPorIdRastreadoAsync(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        return await _db.Agendamentos
+            .FirstOrDefaultAsync(a => a.Id == id, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    public async Task SalvarAsync(
+        Agendamento agendamento,
+        AgendamentoHistorico historico,
+        string correlationId,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(agendamento);
+        ArgumentNullException.ThrowIfNull(historico);
+
+        await using var transaction = await _db.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+
+        _db.AgendamentoHistoricos.Add(historico);
+
+        var audit = AuditLog.Registrar(
+            id: Guid.NewGuid(),
+            evento: "AGENDAMENTO_CANCELADO",
+            entidade: "agendamentos",
+            correlationId: correlationId,
+            entidadeId: agendamento.Id,
+            usuarioId: agendamento.CanceladoPor,
+            dados: JsonSerializer.Serialize(new
+            {
+                agendamento.Id,
+                StatusNovo = agendamento.StatusRaw,
+                agendamento.CanceladoPor,
+                agendamento.MotivoCancelamento,
+                agendamento.CanceladoEm,
+            }));
+        await _db.AuditLogs.AddAsync(audit, cancellationToken).ConfigureAwait(false);
+
+        try
+        {
+            await _db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
+            throw;
+        }
+#pragma warning disable CA1031
+        catch (Exception ex)
+#pragma warning restore CA1031
+        {
+            if (ex is OperationCanceledException)
+            {
+                throw;
+            }
+
+            await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
+            throw;
+        }
+    }
 }
