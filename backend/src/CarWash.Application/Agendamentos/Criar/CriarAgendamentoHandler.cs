@@ -90,6 +90,23 @@ public sealed class CriarAgendamentoHandler : ICommandHandler<CriarAgendamentoCo
             throw new AgendamentoConflitanteException();
         }
 
+        // RF008/RN009: agendamentos simultâneos permitidos até o limite de células
+        // ativas da filial; ao exceder o teto, rejeita com 409.
+        if (await _agendamentos.CapacidadeAtingidaAsync(
+            command.FilialId,
+            calculado.Inicio,
+            calculado.Fim,
+            cancellationToken).ConfigureAwait(false))
+        {
+            _logger.LogWarning(
+                "Criação rejeitada por capacidade da filial atingida (RF008) — filial {FilialId} na janela [{Inicio:o}, {Fim:o}). TraceId: {TraceId}",
+                command.FilialId,
+                calculado.Inicio,
+                calculado.Fim,
+                command.TraceId);
+            throw new CapacidadeFilialAtingidaException();
+        }
+
         var agendamentoId = Guid.NewGuid();
 
         // RN011 camada 3: a fábrica do domínio reforça as invariantes (filial,

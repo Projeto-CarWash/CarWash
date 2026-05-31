@@ -13,7 +13,7 @@ public sealed class AgendamentoConfiguration : IEntityTypeConfiguration<Agendame
 
         builder.ToTable("agendamentos", t =>
         {
-            t.HasCheckConstraint("ck_ag_status", "status IN ('agendado','cancelado','finalizado')");
+            t.HasCheckConstraint("ck_ag_status", "status IN ('agendado','em_andamento','cancelado','finalizado')");
             t.HasCheckConstraint("ck_ag_inicio_menor_fim", "inicio < fim");
             t.HasCheckConstraint("ck_ag_duracao_total", "duracao_total_min >= 0");
             t.HasCheckConstraint("ck_ag_valor_total", "valor_total >= 0");
@@ -34,6 +34,8 @@ public sealed class AgendamentoConfiguration : IEntityTypeConfiguration<Agendame
             .HasDefaultValue("agendado");
         builder.Property(x => x.Inicio).IsRequired().HasColumnType("timestamptz");
         builder.Property(x => x.Fim).IsRequired().HasColumnType("timestamptz");
+        builder.Property(x => x.DuracaoTotalMin).IsRequired();
+        builder.Property(x => x.ValorTotal).IsRequired().HasColumnType("numeric(10,2)");
         builder.Property(x => x.Observacoes).HasColumnType("text");
         builder.Property(x => x.DuracaoTotalMin)
             .IsRequired()
