@@ -198,7 +198,11 @@ public sealed class Agendamento : IAuditable, IAuditableSetter
 
 	public void Finalizar()
 	{
-		GarantirEstadoEditavel();
+		if (Status is not StatusAgendamento.EmAndamento)
+		{
+			throw new DomainException("Apenas agendamentos com status 'em_andamento' podem ser finalizados.");
+		}
+
 		StatusRaw = StatusAgendamento.Finalizado.ToDbValue();
 		Versao++;
 	}

@@ -40,6 +40,7 @@ public class AgendamentoTests
 	public void Finalizado_nao_pode_voltar_ao_estado_anterior()
 	{
 		var ag = NovoAgendamento();
+		ag.Iniciar();
 		ag.Finalizar();
 		var act = () => ag.Cancelar("Motivo de cancelamento teste", Guid.NewGuid());
 		act.Should().Throw<DomainException>().WithMessage("*não pode ser cancelado*");
@@ -204,6 +205,7 @@ public class AgendamentoTests
 	public void Finalizado_nao_pode_ser_editado()
 	{
 		var ag = NovoAgendamento();
+		ag.Iniciar();
 		ag.Finalizar();
 		var act = () => ag.Reagendar(DateTime.UtcNow.AddHours(3), DateTime.UtcNow.AddHours(4));
 		act.Should().Throw<DomainException>().WithMessage("*finalizado*");
@@ -250,6 +252,7 @@ public class AgendamentoTests
 	public void Iniciar_rejeita_se_finalizado()
 	{
 		var ag = NovoAgendamento();
+		ag.Iniciar();
 		ag.Finalizar();
 		var act = () => ag.Iniciar();
 		act.Should().Throw<DomainException>().WithMessage("*agendado*");
