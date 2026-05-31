@@ -130,7 +130,7 @@ public class AgendamentoRepositoryTests : IAsyncLifetime
 
     private async Task<(Guid FilialId, Guid ClienteId, Guid VeiculoId, Guid CriadoPor, Guid ServicoId)> SemearAsync()
     {
-        var filial = Filial.Criar(Guid.NewGuid(), $"Filial {Guid.NewGuid():N}"[..30], 4);
+        var filial = Filial.Criar(Guid.NewGuid(), $"Filial {Guid.NewGuid():N}"[..30], $"F{Guid.NewGuid():N}"[..10].ToUpperInvariant(), 4);
         var cliente = Cliente.Criar(
             id: Guid.NewGuid(),
             nome: "Cliente Teste",

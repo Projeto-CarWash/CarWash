@@ -3,6 +3,7 @@ using System;
 using CarWash.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace CarWash.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(CarWashDbContext))]
-    partial class CarWashDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260527032227_AdicionaCadastroFilial")]
+    partial class AdicionaCadastroFilial
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -233,64 +236,6 @@ namespace CarWash.Infrastructure.Persistence.Migrations
 
                             t.HasCheckConstraint("ck_item_preco", "preco_aplicado >= 0");
                         });
-                });
-
-            modelBuilder.Entity("CarWash.Domain.Entities.AgendamentoObservacao", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<Guid>("AgendamentoId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("agendamento_id");
-
-                    b.Property<bool>("Ativo")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("ativo");
-
-                    b.Property<DateTimeOffset?>("AtualizadoEm")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("atualizado_em");
-
-                    b.Property<Guid?>("AtualizadoPor")
-                        .HasColumnType("uuid")
-                        .HasColumnName("atualizado_por");
-
-                    b.Property<DateTimeOffset>("CriadoEm")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("criado_em");
-
-                    b.Property<Guid>("CriadoPor")
-                        .HasColumnType("uuid")
-                        .HasColumnName("criado_por");
-
-                    b.Property<DateTimeOffset?>("ExcluidoEm")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("excluido_em");
-
-                    b.Property<Guid?>("ExcluidoPor")
-                        .HasColumnType("uuid")
-                        .HasColumnName("excluido_por");
-
-                    b.Property<string>("Texto")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("texto");
-
-                    b.HasKey("Id")
-                        .HasName("pk_agendamento_observacoes");
-
-                    b.HasIndex("AgendamentoId")
-                        .HasDatabaseName("idx_obs_agendamento_id");
-
-                    b.HasIndex("AgendamentoId", "Ativo")
-                        .HasDatabaseName("idx_obs_agendamento_ativo");
-
-                    b.ToTable("agendamento_observacoes", "public");
                 });
 
             modelBuilder.Entity("CarWash.Domain.Entities.AuditLog", b =>
