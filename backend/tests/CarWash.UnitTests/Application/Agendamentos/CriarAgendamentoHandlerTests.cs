@@ -41,6 +41,16 @@ public class CriarAgendamentoHandlerTests
         _agendamentos.ExisteConflitoVeiculoAsync(
             Arg.Any<Guid>(), Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
             .Returns(false);
+
+        // RF018/RF008: a CalculadoraResumoAgendamento agora valida capacidade da
+        // filial (RN009). Sem stub, o mock retorna celulas_ativas=null/0 e a
+        // verificação lançaria CapacidadeFilialEsgotadaException nos caminhos
+        // felizes. Capacidade ampla + 0 sobreposições deixa o caminho livre.
+        _catalogo.ObterCelulasAtivasFilialAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(50);
+        _catalogo.ContarSobreposicoesNaFilialAsync(
+            Arg.Any<Guid>(), Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+            .Returns(0);
     }
 
     [Fact]

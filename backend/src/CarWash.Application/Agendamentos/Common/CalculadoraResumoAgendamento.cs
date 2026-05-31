@@ -71,6 +71,11 @@ public sealed class CalculadoraResumoAgendamento
         decimal valorTotal = servicos.Sum(s => s.Preco);
         var fim = inicioUtc.AddMinutes(duracaoTotal);
 
+        // RF008/RF018: a filial deve ter células livres na janela [inicio, fim).
+        // Defesa server-side compartilhada por criação e confirmação — evita
+        // duplicação entre CriarAgendamentoHandler e ConfirmarAgendamentoHandler.
+        await GarantirCapacidadeFilialAsync(filialId, inicioUtc, fim, cancellationToken).ConfigureAwait(false);
+
         string hashResumo = CalcularHashResumo(
             filialId,
             clienteId,
@@ -250,6 +255,43 @@ public sealed class CalculadoraResumoAgendamento
                 {
                     ["responsavelId"] = ["O responsável não pertence ao titular do veículo."],
                 });
+        }
+    }
+
+    private async Task GarantirCapacidadeFilialAsync(
+        Guid filialId,
+        DateTime inicioUtc,
+        DateTime fimUtc,
+        CancellationToken cancellationToken)
+    {
+        // RN009 — celulas_ativas é o teto de agendamentos simultâneos de uma
+        // filial (RF008/RF018). Estratégia best-effort no MVP: contamos
+        // sobreposições com status 'agendado' na mesma filial e na mesma janela
+        // [inicio, fim) e comparamos com celulas_ativas. A race condition
+        // residual entre o pré-check e o INSERT é aceita no MVP — o impacto
+        // máximo é simultaneidade igual a celulas_ativas + 1 por poucos ms
+        // (sem perda de dado, sem corrupção). A versão "hard" (advisory lock
+        // por filial ou EXCLUDE com count) está mapeada como evolução pós-MVP.
+        // Mais detalhes em docs/adrs/rf018-celulas-ativas-filial.md §9.4.
+        var celulasAtivas = await _catalogo
+            .ObterCelulasAtivasFilialAsync(filialId, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (celulasAtivas is null or 0)
+        {
+            // 0 não deveria existir (CHECK 1..100) — defesa em profundidade.
+            // null já foi coberto pelo GarantirFilialAsync, mas mantemos a
+            // verificação por segurança.
+            throw new CapacidadeFilialEsgotadaException();
+        }
+
+        var simultaneos = await _catalogo
+            .ContarSobreposicoesNaFilialAsync(filialId, inicioUtc, fimUtc, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (simultaneos >= celulasAtivas.Value)
+        {
+            throw new CapacidadeFilialEsgotadaException();
         }
     }
 

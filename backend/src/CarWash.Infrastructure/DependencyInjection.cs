@@ -69,6 +69,7 @@ public static class DependencyInjection
         services.AddScoped<IServicoRepository, ServicoRepository>();
         services.AddScoped<IAgendaRepository, AgendaRepository>();
         services.AddScoped<IVeiculoRepository, VeiculoRepository>();
+        services.AddScoped<IFilialRepository, FilialRepository>();
 
         // RF015 — confirmação de agendamento em duas etapas (ADR 0004).
         // Token de confirmação: singleton (sem estado mutável; só lê a chave HMAC).
