@@ -52,6 +52,7 @@ public sealed class CriarUsuarioHandler : ICommandHandler<CriarUsuarioCommand, U
         _log = log;
     }
 
+    /// <inheritdoc/>
     public async Task<UsuarioResponse> HandleAsync(CriarUsuarioCommand command, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(command);
@@ -81,7 +82,7 @@ public sealed class CriarUsuarioHandler : ICommandHandler<CriarUsuarioCommand, U
             throw new EmailJaExisteException();
         }
 
-        var senhaHash = _hasher.Hash(command.Senha);
+        string senhaHash = _hasher.Hash(command.Senha);
 
         // Perfil é nullable no command para diferenciar "ausente" de "Admin (0)".
         // O validator garante NotNull antes deste ponto — `.Value` é seguro.

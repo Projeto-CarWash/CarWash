@@ -15,6 +15,7 @@ public interface IAgendamentoRepository
     /// Pré-check da RN011/RF020 — independente de filial. A defesa final é a
     /// constraint EXCLUDE <c>ex_ag_veiculo_janela</c> no banco.
     /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task<bool> ExisteConflitoVeiculoAsync(
         Guid veiculoId,
         DateTime inicio,
@@ -26,6 +27,7 @@ public interface IAgendamentoRepository
     /// numa única transação. Em violação da EXCLUDE <c>ex_ag_veiculo_janela</c>
     /// (race condition), lança <see cref="Common.AgendamentoConflitanteException"/>.
     /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task AdicionarAsync(
         Agendamento agendamento,
         IReadOnlyCollection<AgendamentoItem> itens,
@@ -42,6 +44,7 @@ public interface IAgendamentoRepository
     /// (replay) ou lança <see cref="Common.IdempotenciaConflitanteException"/> se
     /// o payload diverge.
     /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task<ResultadoConfirmacaoIdempotente> AdicionarComIdempotenciaAsync(
         Agendamento agendamento,
         IReadOnlyCollection<AgendamentoItem> itens,
@@ -60,9 +63,11 @@ public interface IAgendamentoRepository
 public sealed record ResultadoConfirmacaoIdempotente(bool EhReplay, string? RespostaJsonOriginal)
 {
     /// <summary>Confirmação persistida agora (sem replay).</summary>
+    /// <returns></returns>
     public static ResultadoConfirmacaoIdempotente Persistido() => new(false, null);
 
     /// <summary>Replay: a chave já existia com o mesmo payload — devolve a resposta original.</summary>
+    /// <returns></returns>
     public static ResultadoConfirmacaoIdempotente Replay(string respostaJsonOriginal) =>
         new(true, respostaJsonOriginal);
 }

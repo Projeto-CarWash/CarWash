@@ -39,6 +39,7 @@ public sealed class CriarAgendamentoHandler : ICommandHandler<CriarAgendamentoCo
         _logger = logger;
     }
 
+    /// <inheritdoc/>
     public async Task<AgendamentoResponse> HandleAsync(CriarAgendamentoCommand command, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(command);

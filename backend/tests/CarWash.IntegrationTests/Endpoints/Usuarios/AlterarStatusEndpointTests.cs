@@ -144,7 +144,7 @@ public class AlterarStatusEndpointTests : IAsyncDisposable
 
     private async Task<Guid> CadastrarUsuarioAsync(HttpClient client)
     {
-        var email = $"alice-{Guid.NewGuid():N}@carwash.local";
+        string email = $"alice-{Guid.NewGuid():N}@carwash.local";
         var response = await client.PostAsJsonAsync(RotaCriar, new
         {
             nome = "Alice",
@@ -160,6 +160,7 @@ public class AlterarStatusEndpointTests : IAsyncDisposable
     private static Uri RotaStatus(Guid id) =>
         new($"/api/v1/usuarios/{id}/status", UriKind.Relative);
 
+    /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
         await _factory.DisposeAsync();

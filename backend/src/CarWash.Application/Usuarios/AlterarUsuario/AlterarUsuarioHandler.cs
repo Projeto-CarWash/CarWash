@@ -37,6 +37,7 @@ public sealed class AlterarUsuarioHandler : ICommandHandler<AlterarUsuarioComman
         _log = log;
     }
 
+    /// <inheritdoc/>
     public async Task<UsuarioResponse> HandleAsync(AlterarUsuarioCommand command, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(command);
@@ -44,11 +45,11 @@ public sealed class AlterarUsuarioHandler : ICommandHandler<AlterarUsuarioComman
         var usuario = await _repo.ObterPorIdRastreadoAsync(command.Id, cancellationToken).ConfigureAwait(false)
             ?? throw new NotFoundException("Usuário não encontrado.");
 
-        var emailNormalizado = command.Email.Trim().ToLowerInvariant();
+        string emailNormalizado = command.Email.Trim().ToLowerInvariant();
 
         if (!string.Equals(usuario.EmailValor, emailNormalizado, StringComparison.Ordinal))
         {
-            var emailEmUso = await _repo.ExisteComEmailAsync(emailNormalizado, cancellationToken).ConfigureAwait(false);
+            bool emailEmUso = await _repo.ExisteComEmailAsync(emailNormalizado, cancellationToken).ConfigureAwait(false);
             if (emailEmUso)
             {
                 throw new ConflictException(

@@ -37,21 +37,23 @@ public sealed class Agendamento : IAuditable, IAuditableSetter
     public string? Observacoes { get; private set; }
 
     /// <summary>
-    /// Soma das durações dos serviços do agendamento, em minutos. Total denormalizado
+    /// Gets soma das durações dos serviços do agendamento, em minutos. Total denormalizado
     /// para consulta de agenda sem N+1 (CHECK <c>ck_ag_duracao_total</c> &gt;= 0).
     /// </summary>
     public int DuracaoTotalMin { get; private set; }
 
     /// <summary>
-    /// Soma dos preços aplicados dos serviços do agendamento. Total denormalizado
+    /// Gets soma dos preços aplicados dos serviços do agendamento. Total denormalizado
     /// (CHECK <c>ck_ag_valor_total</c> &gt;= 0).
     /// </summary>
     public decimal ValorTotal { get; private set; }
 
     public int Versao { get; private set; }
 
+    /// <inheritdoc/>
     public DateTime CriadoEm { get; private set; }
 
+    /// <inheritdoc/>
     public DateTime AtualizadoEm { get; private set; }
 
     public static Agendamento Criar(
@@ -189,7 +191,9 @@ public sealed class Agendamento : IAuditable, IAuditableSetter
         }
     }
 
+    /// <inheritdoc/>
     void IAuditableSetter.SetCriadoEm(DateTime valor) => CriadoEm = valor;
 
+    /// <inheritdoc/>
     void IAuditableSetter.SetAtualizadoEm(DateTime valor) => AtualizadoEm = valor;
 }

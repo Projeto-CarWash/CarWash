@@ -20,7 +20,7 @@ public sealed partial record Email
             throw new DomainException("Email não pode ser vazio.");
         }
 
-        var normalizado = valor.Trim().ToLowerInvariant();
+        string normalizado = valor.Trim().ToLowerInvariant();
         if (normalizado.Length > TamanhoMaximo)
         {
             throw new DomainException($"Email excede {TamanhoMaximo} caracteres.");
@@ -34,6 +34,7 @@ public sealed partial record Email
         Valor = normalizado;
     }
 
+    /// <inheritdoc/>
     public override string ToString() => Valor;
 
     public static implicit operator string(Email email) =>
