@@ -40,3 +40,6 @@ TestResults/
 # Artefatos avulsos
 *.patch
 mintty.*.png
+
+# Claude Code local runtime artifacts
+.claude/scheduled_tasks.lock

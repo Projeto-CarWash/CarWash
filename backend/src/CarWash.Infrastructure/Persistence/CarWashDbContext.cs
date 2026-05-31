@@ -47,6 +47,8 @@ public class CarWashDbContext : DbContext
 
     public DbSet<Notificacao> Notificacoes => Set<Notificacao>();
 
+    public DbSet<AgendamentoObservacao> AgendamentoObservacoes => Set<AgendamentoObservacao>();
+
     /// <summary>
     /// Stub C# mapeado para a função PostgreSQL <c>public.unaccent(text)</c>
     /// (extensão <c>unaccent</c>, instalada via migration <c>AdicionaAuditoriaUsuarioCliente</c>).

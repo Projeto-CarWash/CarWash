@@ -1,6 +1,13 @@
 using System.Reflection;
+using CarWash.Application.Abstractions;
 using CarWash.Application.Abstractions.Messaging;
 using CarWash.Application.Agendamentos.Common;
+using CarWash.Application.Agendamentos.Observacoes.Atualizar;
+using CarWash.Application.Agendamentos.Observacoes.Criar;
+using CarWash.Application.Agendamentos.Observacoes.Excluir;
+using CarWash.Application.Agendamentos.Observacoes.Listar;
+using CarWash.Application.Clientes.HistoricoAtendimentos.Common;
+using CarWash.Application.Clientes.HistoricoAtendimentos.Consultar;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -10,6 +17,26 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
+        services.AddScoped<
+            ICommandHandler<CriarObservacaoAgendamentoCommand, CriarObservacaoAgendamentoResponse>,
+            CriarObservacaoAgendamentoHandler>();
+
+        services.AddScoped<
+            ICommandHandler<AtualizarObservacaoAgendamentoCommand, AtualizarObservacaoAgendamentoResponse>,
+            AtualizarObservacaoAgendamentoHandler>();
+
+        services.AddScoped<
+            ICommandHandler<ExcluirObservacaoAgendamentoCommand, ExcluirObservacaoAgendamentoResponse>,
+            ExcluirObservacaoAgendamentoHandler>();
+
+        services.AddScoped<
+            IQueryHandler<ListarObservacoesAgendamentoQuery, ListarObservacoesAgendamentoResponse>,
+            ListarObservacoesAgendamentoHandler>();
+
+        services.AddScoped<
+            IQueryHandler<ConsultarHistoricoAtendimentosClienteQuery, HistoricoAtendimentosResponse>,
+            ConsultarHistoricoAtendimentosClienteHandler>();
+
         ArgumentNullException.ThrowIfNull(services);
 
         var assembly = typeof(DependencyInjection).Assembly;

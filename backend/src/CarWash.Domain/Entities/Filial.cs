@@ -69,6 +69,7 @@ public sealed class Filial : IAuditable, IAuditableSetter
 
     public string? EnderecoUf { get; private set; }
 
+    /// <inheritdoc/>
     public DateTime CriadoEm { get; private set; }
 
     /// <inheritdoc/>
@@ -201,6 +202,7 @@ public sealed class Filial : IAuditable, IAuditableSetter
         CriadoPorUsuarioId = usuarioId;
     }
 
+    /// <inheritdoc/>
     void IAuditableSetter.SetCriadoEm(DateTime valor) => CriadoEm = valor;
 
     /// <inheritdoc/>
