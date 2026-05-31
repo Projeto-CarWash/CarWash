@@ -42,13 +42,35 @@ public interface IAgendamentoRepository
     /// (replay) ou lança <see cref="Common.IdempotenciaConflitanteException"/> se
     /// o payload diverge.
     /// </summary>
-    Task<ResultadoConfirmacaoIdempotente> AdicionarComIdempotenciaAsync(
-        Agendamento agendamento,
-        IReadOnlyCollection<AgendamentoItem> itens,
-        AgendamentoHistorico historico,
-        IdempotenciaRequisicao idempotencia,
-        string correlationId,
-        CancellationToken cancellationToken);
+	Task<ResultadoConfirmacaoIdempotente> AdicionarComIdempotenciaAsync(
+	Agendamento agendamento,
+	IReadOnlyCollection<AgendamentoItem> itens,
+	AgendamentoHistorico historico,
+	IdempotenciaRequisicao idempotencia,
+	string correlationId,
+	CancellationToken cancellationToken);
+
+	/// <summary>
+	/// Obtém o agendamento por <paramref name="id"/>, rastreado pelo change tracker
+	/// do EF Core, para permitir alterações posteriores via <see cref="SalvarAsync"/>.
+	/// Retorna <c>null</c> se não existir.
+	/// </summary>
+	Task<Agendamento?> ObterPorIdRastreadoAsync(
+		Guid id,
+		CancellationToken cancellationToken);
+
+	/// <summary>
+	/// Persiste alterações num agendamento já rastreado (cancelamento, etc.),
+	/// incluindo o evento de histórico e o log de auditoria, numa única transação.
+	/// A concorrência otimista usa <c>Versao</c> (concurrency token) — se o
+	/// agendamento foi modificado por outra transação, lança
+	/// <see cref="DbUpdateConcurrencyException"/>.
+	/// </summary>
+	Task SalvarAsync(
+		Agendamento agendamento,
+		AgendamentoHistorico historico,
+		string correlationId,
+		CancellationToken cancellationToken);
 }
 
 /// <summary>
