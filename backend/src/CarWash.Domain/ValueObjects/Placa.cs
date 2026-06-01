@@ -6,11 +6,12 @@ namespace CarWash.Domain.ValueObjects;
 /// <summary>
 /// Value object de placa veicular — sempre armazenada em uppercase, sem espaços.
 /// Aceita formato Mercosul (<c>AAA9A99</c>) e formato antigo (<c>AAA9999</c>).
-/// Normalização exigida pelo unique <c>uk_veiculos_placa</c> (RN003, DB001 §02).
+/// Normalização (trim + uppercase) aplicada antes da validação (RF005).
+/// Caracteres especiais (hifens, símbolos) NÃO são removidos — rejeitam a placa.
 /// </summary>
 public sealed partial record Placa
 {
-    private const int TamanhoMaximo = 10;
+    private const int TamanhoEsperado = 7;
 
     public string Valor { get; }
 
@@ -18,21 +19,19 @@ public sealed partial record Placa
     {
         if (string.IsNullOrWhiteSpace(valor))
         {
-            throw new DomainException("Placa não pode ser vazia.");
+            throw new DomainException("O campo placa é obrigatório.");
         }
 
-        var normalizado = valor.Replace(" ", string.Empty, StringComparison.Ordinal)
-            .Replace("-", string.Empty, StringComparison.Ordinal)
-            .ToUpperInvariant();
+        var normalizado = valor.Trim().ToUpperInvariant();
 
-        if (normalizado.Length > TamanhoMaximo)
+        if (normalizado.Length != TamanhoEsperado)
         {
-            throw new DomainException($"Placa excede {TamanhoMaximo} caracteres.");
+            throw new DomainException("A placa informada não está em um formato válido.");
         }
 
         if (!FormatoRegex().IsMatch(normalizado))
         {
-            throw new DomainException("Placa inválida: utilize letras e números (formato antigo AAA9999 ou Mercosul AAA9A99).");
+            throw new DomainException("A placa informada não está em um formato válido.");
         }
 
         Valor = normalizado;

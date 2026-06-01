@@ -8,7 +8,7 @@ namespace CarWash.UnitTests.Domain;
 public class ValueObjectsTests
 {
     [Theory]
-    [InlineData("  ADM@CarWash.local  ", "adm@carwash.local")]
+    [InlineData(" ADM@CarWash.local ", "adm@carwash.local")]
     [InlineData("teste@dominio.com.br", "teste@dominio.com.br")]
     public void Email_normaliza_para_lowercase_e_trim(string entrada, string esperado)
     {
@@ -28,22 +28,76 @@ public class ValueObjectsTests
     }
 
     [Theory]
-    [InlineData("abc-1234", "ABC1234")]
     [InlineData(" ABC1D23 ", "ABC1D23")]
-    public void Placa_normaliza_para_uppercase_sem_espacos(string entrada, string esperado)
+    [InlineData("abc1d23", "ABC1D23")]
+    [InlineData("ABC1234", "ABC1234")]
+    [InlineData("ABC1D23", "ABC1D23")]
+    public void Placa_normaliza_para_uppercase_com_trim(string entrada, string esperado)
     {
         var placa = new Placa(entrada);
         placa.Valor.Should().Be(esperado);
     }
 
     [Theory]
-    [InlineData("")]
-    [InlineData("12345")]
-    [InlineData("AB12345")]
-    public void Placa_invalida_lanca_DomainException(string entrada)
+    [InlineData("ABC-123", "A placa informada não está em um formato válido.")]
+    [InlineData("AB@1234", "A placa informada não está em um formato válido.")]
+    [InlineData("1234567", "A placa informada não está em um formato válido.")]
+    [InlineData("ABCDEFG", "A placa informada não está em um formato válido.")]
+    [InlineData("AB12345", "A placa informada não está em um formato válido.")]
+    [InlineData("", "O campo placa é obrigatório.")]
+    public void Placa_invalida_lanca_DomainException_com_mensagem_padronizada(string entrada, string mensagemEsperada)
     {
         var act = () => new Placa(entrada);
-        act.Should().Throw<DomainException>();
+        act.Should().Throw<DomainException>().WithMessage(mensagemEsperada);
+    }
+
+    [Fact]
+    public void Placa_menos_de_7_caracteres_lanca_DomainException()
+    {
+        var act = () => new Placa("ABC12");
+        act.Should().Throw<DomainException>().WithMessage("A placa informada não está em um formato válido.");
+    }
+
+    [Fact]
+    public void Placa_mais_de_7_caracteres_lanca_DomainException()
+    {
+        var act = () => new Placa("ABC12345");
+        act.Should().Throw<DomainException>().WithMessage("A placa informada não está em um formato válido.");
+    }
+
+    [Fact]
+    public void Placa_com_caractere_especial_lanca_DomainException()
+    {
+        var act = () => new Placa("ABC-123");
+        act.Should().Throw<DomainException>().WithMessage("A placa informada não está em um formato válido.");
+    }
+
+    [Fact]
+    public void Placa_somente_numeros_lanca_DomainException()
+    {
+        var act = () => new Placa("1234567");
+        act.Should().Throw<DomainException>().WithMessage("A placa informada não está em um formato válido.");
+    }
+
+    [Fact]
+    public void Placa_somente_letras_lanca_DomainException()
+    {
+        var act = () => new Placa("ABCDEFG");
+        act.Should().Throw<DomainException>().WithMessage("A placa informada não está em um formato válido.");
+    }
+
+    [Fact]
+    public void Placa_nula_lanca_DomainException()
+    {
+        var act = () => new Placa(null!);
+        act.Should().Throw<DomainException>().WithMessage("O campo placa é obrigatório.");
+    }
+
+    [Fact]
+    public void Placa_vazia_lanca_DomainException()
+    {
+        var act = () => new Placa("");
+        act.Should().Throw<DomainException>().WithMessage("O campo placa é obrigatório.");
     }
 
     [Theory]

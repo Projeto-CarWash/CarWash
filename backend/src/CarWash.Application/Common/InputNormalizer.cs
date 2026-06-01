@@ -66,8 +66,6 @@ public static class InputNormalizer
 
         return value
             .Trim()
-            .Replace(" ", string.Empty)
-            .Replace("-", string.Empty)
             .ToUpperInvariant();
     }
 }

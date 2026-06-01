@@ -28,7 +28,7 @@ public sealed class VeiculoConfiguration : IEntityTypeConfiguration<Veiculo>
         builder.Property(x => x.Id).ValueGeneratedNever();
 
         builder.Property(x => x.ClienteId).IsRequired();
-        builder.Property(x => x.Placa).IsRequired().HasMaxLength(10);
+        builder.Property(x => x.Placa).IsRequired().HasMaxLength(7);
         builder.Property(x => x.Modelo).IsRequired().HasMaxLength(80);
         builder.Property(x => x.Fabricante).IsRequired().HasMaxLength(80);
         builder.Property(x => x.Cor).IsRequired().HasMaxLength(40);

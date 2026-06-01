@@ -1124,11 +1124,11 @@ namespace CarWash.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(80)")
                         .HasColumnName("modelo");
 
-                    b.Property<string>("Placa")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("character varying(10)")
-                        .HasColumnName("placa");
+            b.Property<string>("Placa")
+                    .IsRequired()
+                    .HasMaxLength(7)
+                    .HasColumnType("character varying(7)")
+                    .HasColumnName("placa");
 
                     b.HasKey("Id")
                         .HasName("pk_veiculos");
