@@ -14,6 +14,7 @@ public interface IIdempotenciaRepository
     /// Localiza um registro de idempotência pela chave + escopo. Retorna
     /// <c>null</c> quando a chave nunca foi usada nesse escopo.
     /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task<IdempotenciaRequisicao?> ObterAsync(
         Guid idempotencyKey,
         string escopo,

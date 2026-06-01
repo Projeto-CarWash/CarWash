@@ -81,7 +81,7 @@ public static class UsuariosEndpoints
         CancellationToken cancellationToken)
     {
         var resposta = await handler.HandleAsync(command, cancellationToken).ConfigureAwait(false);
-        var location = $"/api/v1/usuarios/{resposta.Id}";
+        string location = $"/api/v1/usuarios/{resposta.Id}";
         return TypedResults.Created(location, resposta);
     }
 

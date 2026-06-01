@@ -66,6 +66,7 @@ public sealed class ConsultarAgendaQueryValidator : AbstractValidator<ConsultarA
     /// Centralizado aqui para que o handler reaproveite o mesmo parse após a
     /// validação ter garantido o sucesso.
     /// </summary>
+    /// <returns></returns>
     public static bool TentarParsearData(string? valor, out DateTime utc)
     {
         utc = default;
@@ -94,7 +95,7 @@ public sealed class ConsultarAgendaQueryValidator : AbstractValidator<ConsultarA
             return false;
         }
 
-        var normalizado = formato.Trim().ToLowerInvariant();
+        string normalizado = formato.Trim().ToLowerInvariant();
         return normalizado is "simples" or "detalhado";
     }
 

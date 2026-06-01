@@ -18,7 +18,7 @@ public class CorrelationIdMiddlewareTests
         var middleware = new CorrelationIdMiddleware(_ => Task.CompletedTask);
         await middleware.InvokeAsync(contexto).ConfigureAwait(false);
 
-        var correlationId = contexto.Response.Headers[CorrelationIdMiddleware.HeaderName].ToString();
+        string correlationId = contexto.Response.Headers[CorrelationIdMiddleware.HeaderName].ToString();
         correlationId.Should().Be("corr-123_ABC");
         contexto.Items[CorrelationIdMiddleware.ItemKey].Should().Be("corr-123_ABC");
     }
@@ -33,7 +33,7 @@ public class CorrelationIdMiddlewareTests
         var middleware = new CorrelationIdMiddleware(_ => Task.CompletedTask);
         await middleware.InvokeAsync(contexto).ConfigureAwait(false);
 
-        var correlationId = contexto.Response.Headers[CorrelationIdMiddleware.HeaderName].ToString();
+        string correlationId = contexto.Response.Headers[CorrelationIdMiddleware.HeaderName].ToString();
         correlationId.Length.Should().Be(32);
         Guid.TryParseExact(correlationId, "N", out _).Should().BeTrue();
     }
@@ -48,7 +48,7 @@ public class CorrelationIdMiddlewareTests
         var middleware = new CorrelationIdMiddleware(_ => Task.CompletedTask);
         await middleware.InvokeAsync(contexto).ConfigureAwait(false);
 
-        var correlationId = contexto.Response.Headers[CorrelationIdMiddleware.HeaderName].ToString();
+        string correlationId = contexto.Response.Headers[CorrelationIdMiddleware.HeaderName].ToString();
         correlationId.Length.Should().Be(32);
         Guid.TryParseExact(correlationId, "N", out _).Should().BeTrue();
     }

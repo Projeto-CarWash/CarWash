@@ -18,12 +18,13 @@ public sealed class AlterarStatusClienteHandler
         _repositorio = repositorio;
     }
 
+    /// <inheritdoc/>
     public async Task<ClienteResponse> HandleAsync(AlterarStatusClienteCommand command, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(command);
 
         // Validator garante NotNull antes de chegar aqui. `.Value` é seguro.
-        var ativo = command.Ativo!.Value;
+        bool ativo = command.Ativo!.Value;
 
         var cliente = await _repositorio.ObterPorIdAsync(command.ClienteId, cancellationToken).ConfigureAwait(false)
             ?? throw new NotFoundException("Cliente não encontrado.");

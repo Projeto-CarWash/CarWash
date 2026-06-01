@@ -235,6 +235,64 @@ namespace CarWash.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("CarWash.Domain.Entities.AgendamentoObservacao", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AgendamentoId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("agendamento_id");
+
+                    b.Property<bool>("Ativo")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("ativo");
+
+                    b.Property<DateTimeOffset?>("AtualizadoEm")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("atualizado_em");
+
+                    b.Property<Guid?>("AtualizadoPor")
+                        .HasColumnType("uuid")
+                        .HasColumnName("atualizado_por");
+
+                    b.Property<DateTimeOffset>("CriadoEm")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("criado_em");
+
+                    b.Property<Guid>("CriadoPor")
+                        .HasColumnType("uuid")
+                        .HasColumnName("criado_por");
+
+                    b.Property<DateTimeOffset?>("ExcluidoEm")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("excluido_em");
+
+                    b.Property<Guid?>("ExcluidoPor")
+                        .HasColumnType("uuid")
+                        .HasColumnName("excluido_por");
+
+                    b.Property<string>("Texto")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("texto");
+
+                    b.HasKey("Id")
+                        .HasName("pk_agendamento_observacoes");
+
+                    b.HasIndex("AgendamentoId")
+                        .HasDatabaseName("idx_obs_agendamento_id");
+
+                    b.HasIndex("AgendamentoId", "Ativo")
+                        .HasDatabaseName("idx_obs_agendamento_ativo");
+
+                    b.ToTable("agendamento_observacoes", "public");
+                });
+
             modelBuilder.Entity("CarWash.Domain.Entities.AuditLog", b =>
                 {
                     b.Property<Guid>("Id")
@@ -404,6 +462,11 @@ namespace CarWash.Infrastructure.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
                         .HasColumnName("nome");
+
+                    b.Property<string>("Observacoes")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("observacoes");
 
                     b.Property<string>("Telefone")
                         .HasMaxLength(11)
@@ -584,11 +647,61 @@ namespace CarWash.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("celulas_ativas");
 
+                    b.Property<string>("Cnpj")
+                        .HasMaxLength(14)
+                        .HasColumnType("character varying(14)")
+                        .HasColumnName("cnpj");
+
+                    b.Property<string>("Codigo")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("codigo");
+
                     b.Property<DateTime>("CriadoEm")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamptz")
                         .HasColumnName("criado_em")
                         .HasDefaultValueSql("now()");
+
+                    b.Property<Guid?>("CriadoPorUsuarioId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("criado_por_usuario_id");
+
+                    b.Property<string>("EnderecoBairro")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("endereco_bairro");
+
+                    b.Property<string>("EnderecoCep")
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)")
+                        .HasColumnName("endereco_cep");
+
+                    b.Property<string>("EnderecoCidade")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("endereco_cidade");
+
+                    b.Property<string>("EnderecoComplemento")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("endereco_complemento");
+
+                    b.Property<string>("EnderecoLogradouro")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("endereco_logradouro");
+
+                    b.Property<string>("EnderecoNumero")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("endereco_numero");
+
+                    b.Property<string>("EnderecoUf")
+                        .HasMaxLength(2)
+                        .HasColumnType("character(2)")
+                        .HasColumnName("endereco_uf")
+                        .IsFixedLength();
 
                     b.Property<string>("Nome")
                         .IsRequired()
@@ -611,13 +724,25 @@ namespace CarWash.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("idx_filiais_ativa")
                         .HasFilter("ativa = true");
 
-                    b.HasIndex("Nome")
+                    b.HasIndex("Cnpj")
                         .IsUnique()
-                        .HasDatabaseName("uk_filiais_nome");
+                        .HasDatabaseName("uk_filiais_cnpj")
+                        .HasFilter("cnpj IS NOT NULL");
+
+                    b.HasIndex("Codigo")
+                        .IsUnique()
+                        .HasDatabaseName("uk_filiais_codigo")
+                        .HasFilter("codigo IS NOT NULL");
+
+                    b.HasIndex("EnderecoCidade", "EnderecoUf")
+                        .HasDatabaseName("idx_filiais_cidade_uf")
+                        .HasFilter("endereco_cidade IS NOT NULL");
 
                     b.ToTable("filiais", "public", t =>
                         {
                             t.HasCheckConstraint("ck_filiais_celulas_faixa", "celulas_ativas BETWEEN 1 AND 100");
+
+                            t.HasCheckConstraint("ck_filiais_codigo_formato", "codigo IS NULL OR codigo ~ '^[A-Z0-9]{2,20}$'");
                         });
                 });
 

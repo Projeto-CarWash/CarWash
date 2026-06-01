@@ -75,7 +75,7 @@ public class ConsultarAgendaQueryValidatorTests
     [Fact]
     public void Inicio_igual_ao_fim_falha()
     {
-        var instante = Iso(Base);
+        string instante = Iso(Base);
         var resultado = _validator.Validate(QueryValida() with { Inicio = instante, Fim = instante });
 
         resultado.IsValid.Should().BeFalse();

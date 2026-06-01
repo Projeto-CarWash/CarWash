@@ -17,6 +17,7 @@ public class ClienteRepository : IClienteRepository
         this.context = context;
     }
 
+    /// <inheritdoc/>
     public Task<bool> ExisteCpfAsync(string cpf, CancellationToken cancellationToken)
     {
         return context.Clientes
@@ -24,6 +25,7 @@ public class ClienteRepository : IClienteRepository
             .AnyAsync(x => x.Cpf == cpf, cancellationToken);
     }
 
+    /// <inheritdoc/>
     public Task<bool> ExisteCnpjAsync(string cnpj, CancellationToken cancellationToken)
     {
         return context.Clientes
@@ -31,12 +33,13 @@ public class ClienteRepository : IClienteRepository
             .AnyAsync(x => x.Cnpj == cnpj, cancellationToken);
     }
 
+    /// <inheritdoc/>
     public Task<bool> ExisteEmailAsync(string email, Guid? ignoreClienteId, CancellationToken cancellationToken)
     {
         // Comparação case-insensitive via ILike do PostgreSQL — emails sempre são
         // normalizados em lower antes de persistir (InputNormalizer.EmailOrNull),
         // mas defendemos contra dados legados ou inserção fora do fluxo padrão.
-        var alvo = email.ToLowerInvariant();
+        string alvo = email.ToLowerInvariant();
         return context.Clientes
             .AsNoTracking()
             .AnyAsync(
@@ -46,12 +49,14 @@ public class ClienteRepository : IClienteRepository
                 cancellationToken);
     }
 
+    /// <inheritdoc/>
     public Task<Cliente?> ObterPorIdAsync(Guid id, CancellationToken cancellationToken)
     {
         return context.Clientes
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     }
 
+    /// <inheritdoc/>
     public async Task AdicionarAsync(Cliente cliente, string correlationId, Guid? usuarioId, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(cliente);
@@ -92,6 +97,7 @@ public class ClienteRepository : IClienteRepository
         }
     }
 
+    /// <inheritdoc/>
     public async Task SalvarAsync(CancellationToken cancellationToken)
     {
         try
@@ -113,6 +119,7 @@ public class ClienteRepository : IClienteRepository
         }
     }
 
+    /// <inheritdoc/>
     public async Task<(IReadOnlyList<Cliente> Itens, int Total)> ListarAsync(
         string? busca,
         bool? ativo,
@@ -153,14 +160,14 @@ public class ClienteRepository : IClienteRepository
             // - Busca por documento exige que o termo seja "primariamente numérico"
             //   (apenas dígitos + separadores comuns ".-/ ") para evitar que strings
             //   alfanuméricas como "xyzabc123notexist" casem CPFs por substring fortuita.
-            var termoOriginal = busca.Trim();
-            var termoNormalizado = RemoverAcentos(termoOriginal);
-            var likeNomeNormalizado = $"%{termoNormalizado}%";
+            string termoOriginal = busca.Trim();
+            string termoNormalizado = RemoverAcentos(termoOriginal);
+            string likeNomeNormalizado = $"%{termoNormalizado}%";
 
             string? digitos = null;
             if (TermoPareceDocumento(termoOriginal))
             {
-                var soDigitos = new string([.. termoOriginal.Where(char.IsDigit)]);
+                string soDigitos = new string([.. termoOriginal.Where(char.IsDigit)]);
                 if (soDigitos.Length >= 3)
                 {
                     digitos = soDigitos;
@@ -173,7 +180,7 @@ public class ClienteRepository : IClienteRepository
                 || (digitos != null && x.Cnpj != null && x.Cnpj.Contains(digitos)));
         }
 
-        var total = await query.CountAsync(cancellationToken);
+        int total = await query.CountAsync(cancellationToken);
 
         var itens = await query
             .OrderBy(x => x.Nome)
@@ -198,7 +205,7 @@ public class ClienteRepository : IClienteRepository
             return false;
         }
 
-        foreach (var c in termo)
+        foreach (char c in termo)
         {
             if (!char.IsDigit(c) && c != '.' && c != '-' && c != '/' && c != ' ')
             {
@@ -221,9 +228,9 @@ public class ClienteRepository : IClienteRepository
             return input;
         }
 
-        var normalizado = input.Normalize(System.Text.NormalizationForm.FormD);
+        string normalizado = input.Normalize(System.Text.NormalizationForm.FormD);
         var sb = new System.Text.StringBuilder(normalizado.Length);
-        foreach (var c in normalizado)
+        foreach (char c in normalizado)
         {
             var categoria = System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c);
             if (categoria != System.Globalization.UnicodeCategory.NonSpacingMark)

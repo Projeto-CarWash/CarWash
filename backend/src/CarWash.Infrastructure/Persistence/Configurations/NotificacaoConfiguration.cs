@@ -6,6 +6,7 @@ namespace CarWash.Infrastructure.Persistence.Configurations;
 
 public sealed class NotificacaoConfiguration : IEntityTypeConfiguration<Notificacao>
 {
+    /// <inheritdoc/>
     public void Configure(EntityTypeBuilder<Notificacao> builder)
     {
         ArgumentNullException.ThrowIfNull(builder);

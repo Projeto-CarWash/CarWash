@@ -1,0 +1,10 @@
+namespace CarWash.Application.Clientes.HistoricoAtendimentos.Common;
+
+public sealed class HistoricoAtendimentosMetaResponse
+{
+    public int Total { get; set; }
+
+    public int Page { get; set; }
+
+    public int PageSize { get; set; }
+}

@@ -13,6 +13,7 @@ public sealed class ListarUsuariosHandler : IQueryHandler<ListarUsuariosQuery, L
         _repo = repo;
     }
 
+    /// <inheritdoc/>
     public async Task<ListaUsuariosResponse> HandleAsync(ListarUsuariosQuery query, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(query);
@@ -24,8 +25,8 @@ public sealed class ListarUsuariosHandler : IQueryHandler<ListarUsuariosQuery, L
             query.TamanhoPagina,
             cancellationToken).ConfigureAwait(false);
 
-        var pagina = query.Pagina < 1 ? 1 : query.Pagina;
-        var tamanho = query.TamanhoPagina < 1 ? 20 : query.TamanhoPagina;
+        int pagina = query.Pagina < 1 ? 1 : query.Pagina;
+        int tamanho = query.TamanhoPagina < 1 ? 20 : query.TamanhoPagina;
 
         return new ListaUsuariosResponse(
             itens.Select(UsuarioResponse.FromEntity).ToList(),
