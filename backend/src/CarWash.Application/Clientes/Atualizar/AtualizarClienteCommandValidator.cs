@@ -109,7 +109,7 @@ public sealed class AtualizarClienteCommandValidator : AbstractValidator<Atualiz
             return false;
         }
 
-        var idade = hoje.Year - dataNascimento.Year;
+        int idade = hoje.Year - dataNascimento.Year;
         if (dataNascimento > hoje.AddYears(-idade))
         {
             idade--;

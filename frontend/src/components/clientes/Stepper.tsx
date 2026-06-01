@@ -15,6 +15,7 @@ const steps: Step[] = [
   { id: 4, title: 'Preferências', caption: 'LEMBRETES · FIDELIDADE' },
 ];
 
+// ── Dados reativos ─────────────────────────────────────────────────────────────
 interface StepperProps {
   currentStep?: number;
 }
@@ -25,13 +26,22 @@ function getStatus(stepId: number, currentStep: number): StepStatus {
   return 'upcoming';
 }
 
+const STEP_TITLES: Record<number, string> = {
+  1: 'Identifique-se',
+  2: 'Contato & endereço',
+  3: 'Crie uma ficha completa.',
+  4: 'Quase lá!',
+};
+
 export function Stepper({ currentStep = 1 }: StepperProps) {
   return (
-    <aside className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-6">
+    <aside className="sticky top-6 self-start rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-6">
       <p className="mb-1 text-[10px] font-bold tracking-[0.2em] text-zinc-500">
         CADASTRO DE CLIENTE
       </p>
-      <h2 className="mb-1 text-xl font-semibold text-zinc-100">Identifique-se</h2>
+      <h2 className="mb-1 text-xl font-semibold text-zinc-100">
+        {STEP_TITLES[currentStep] ?? 'Identifique-se'}
+      </h2>
       <p className="mb-6 text-sm text-zinc-500">
         Preencha todos os dados para não ter erro na hora do agendamento.
       </p>

@@ -14,6 +14,7 @@ public interface IServicoRepository
     /// <paramref name="ignoreServicoId"/> é informado, ignora o próprio serviço
     /// (usado no PATCH para permitir manter o mesmo nome).
     /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task<bool> ExisteNomeAsync(string nome, Guid? ignoreServicoId, CancellationToken cancellationToken);
 
     Task<Servico?> ObterPorIdAsync(Guid id, CancellationToken cancellationToken);
@@ -21,12 +22,14 @@ public interface IServicoRepository
     Task AdicionarAsync(Servico servico, string correlationId, Guid? usuarioId, CancellationToken cancellationToken);
 
     /// <summary>Persiste alterações pendentes (Update).</summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task SalvarAsync(CancellationToken cancellationToken);
 
     /// <summary>
     /// Registra evento de auditoria (edição, ativação/desativação) com traceId.
     /// Persiste imediatamente no banco.
     /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task RegistrarAuditoriaAsync(
         string evento,
         Guid entidadeId,
@@ -39,6 +42,7 @@ public interface IServicoRepository
     /// Lista serviços paginados com filtro opcional por nome / ativo.
     /// Ordenação por <c>nome ASC</c>.
     /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task<(IReadOnlyList<Servico> Itens, int Total)> ListarAsync(
         string? busca,
         bool? ativo,

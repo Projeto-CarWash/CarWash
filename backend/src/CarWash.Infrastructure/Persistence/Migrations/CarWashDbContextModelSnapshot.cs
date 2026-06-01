@@ -235,6 +235,64 @@ namespace CarWash.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("CarWash.Domain.Entities.AgendamentoObservacao", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AgendamentoId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("agendamento_id");
+
+                    b.Property<bool>("Ativo")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("ativo");
+
+                    b.Property<DateTimeOffset?>("AtualizadoEm")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("atualizado_em");
+
+                    b.Property<Guid?>("AtualizadoPor")
+                        .HasColumnType("uuid")
+                        .HasColumnName("atualizado_por");
+
+                    b.Property<DateTimeOffset>("CriadoEm")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("criado_em");
+
+                    b.Property<Guid>("CriadoPor")
+                        .HasColumnType("uuid")
+                        .HasColumnName("criado_por");
+
+                    b.Property<DateTimeOffset?>("ExcluidoEm")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("excluido_em");
+
+                    b.Property<Guid?>("ExcluidoPor")
+                        .HasColumnType("uuid")
+                        .HasColumnName("excluido_por");
+
+                    b.Property<string>("Texto")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("texto");
+
+                    b.HasKey("Id")
+                        .HasName("pk_agendamento_observacoes");
+
+                    b.HasIndex("AgendamentoId")
+                        .HasDatabaseName("idx_obs_agendamento_id");
+
+                    b.HasIndex("AgendamentoId", "Ativo")
+                        .HasDatabaseName("idx_obs_agendamento_ativo");
+
+                    b.ToTable("agendamento_observacoes", "public");
+                });
+
             modelBuilder.Entity("CarWash.Domain.Entities.AuditLog", b =>
                 {
                     b.Property<Guid>("Id")
@@ -404,6 +462,11 @@ namespace CarWash.Infrastructure.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
                         .HasColumnName("nome");
+
+                    b.Property<string>("Observacoes")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("observacoes");
 
                     b.Property<string>("Telefone")
                         .HasMaxLength(11)

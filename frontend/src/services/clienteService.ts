@@ -36,6 +36,7 @@ export interface ClienteDetalhe {
   veiculos?: {
     id: string;
     placa: string;
+    marca: string;
     modelo: string;
     fabricante: string;
     cor: string;
@@ -91,10 +92,27 @@ function toCreatePayload(data: ClienteFormData) {
     },
     veiculos: data.veiculos.map((v) => ({
       placa: v.placa,
+      marca: v.marca,
       modelo: v.modelo,
-      fabricante: v.fabricante,
       cor: v.cor,
+      renavam: v.renavam ?? undefined,
+      anoModelo: v.anoModelo ?? undefined,
+      categoria: v.categoria ?? undefined,
+      corHex: v.corHex ?? undefined,
+      observacoesAtendimento: v.observacoesAtendimento ?? undefined,
     })),
+    // Preferências & Fidelidade
+    lembretes: data.lembretes?.length ? data.lembretes : undefined,
+    canaisPreferenciais: data.canaisPreferenciais?.length ? data.canaisPreferenciais : undefined,
+    observacoesGerais: data.observacoesGerais?.trim() ?? undefined,
+    filiados: data.filiados?.length
+      ? data.filiados.map((f) => ({
+          cpf: f.cpf.replace(/\D/g, ''),
+          nome: f.nome.trim(),
+          telefone: f.telefone ? f.telefone.replace(/\D/g, '') : undefined,
+          email: f.email?.trim() ?? undefined,
+        }))
+      : undefined,
   };
 }
 

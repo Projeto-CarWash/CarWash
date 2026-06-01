@@ -17,7 +17,7 @@ public sealed record Cpf
             throw new DomainException("CPF não pode ser vazio.");
         }
 
-        var apenasDigitos = new string([.. valor.Where(char.IsDigit)]);
+        string apenasDigitos = new string([.. valor.Where(char.IsDigit)]);
         if (apenasDigitos.Length != 11)
         {
             throw new DomainException("CPF deve possuir 11 dígitos.");
@@ -31,6 +31,7 @@ public sealed record Cpf
         Valor = apenasDigitos;
     }
 
+    /// <inheritdoc/>
     public override string ToString() => Valor;
 
     public static implicit operator string(Cpf cpf) =>
@@ -43,21 +44,21 @@ public sealed record Cpf
             return false; // bloqueia 000..000, 111..111, etc.
         }
 
-        var digito1 = CalcularDigito(cpf, 9, 10);
-        var digito2 = CalcularDigito(cpf, 10, 11);
+        int digito1 = CalcularDigito(cpf, 9, 10);
+        int digito2 = CalcularDigito(cpf, 10, 11);
 
         return cpf[9] - '0' == digito1 && cpf[10] - '0' == digito2;
     }
 
     private static int CalcularDigito(string cpf, int tamanho, int pesoInicial)
     {
-        var soma = 0;
-        for (var i = 0; i < tamanho; i++)
+        int soma = 0;
+        for (int i = 0; i < tamanho; i++)
         {
             soma += (cpf[i] - '0') * (pesoInicial - i);
         }
 
-        var resto = soma % 11;
+        int resto = soma % 11;
         return resto < 2 ? 0 : 11 - resto;
     }
 }

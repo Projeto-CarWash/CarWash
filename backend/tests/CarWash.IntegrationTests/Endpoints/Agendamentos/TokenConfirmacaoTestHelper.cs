@@ -22,16 +22,17 @@ internal static class TokenConfirmacaoTestHelper
     /// Decompõe um token real (vindo de uma pré-confirmação) em partes
     /// estruturadas: o JSON do payload e os campos relevantes.
     /// </summary>
+    /// <returns></returns>
     public static (string PayloadJson, int V, string HashResumo, Guid UsuarioId, string TraceId, long Iat, long Exp)
         Decodificar(string token)
     {
-        var partes = token.Split('.');
+        string[] partes = token.Split('.');
         if (partes.Length != 2)
         {
             throw new InvalidOperationException("Token de confirmação em formato inesperado.");
         }
 
-        var payloadJson = Encoding.UTF8.GetString(Base64UrlDecode(partes[0]));
+        string payloadJson = Encoding.UTF8.GetString(Base64UrlDecode(partes[0]));
         using var doc = JsonDocument.Parse(payloadJson);
         var raiz = doc.RootElement;
         return (
@@ -50,10 +51,11 @@ internal static class TokenConfirmacaoTestHelper
     /// <c>usuarioId</c> e o <c>hashResumo</c> são preservados de um token real
     /// para que apenas a expiração seja a causa da rejeição.
     /// </summary>
+    /// <returns></returns>
     public static string GerarExpiradoApartirDe(string tokenReal)
     {
         var (_, v, hashResumo, usuarioId, _, _, _) = Decodificar(tokenReal);
-        var ontem = DateTimeOffset.UtcNow.AddDays(-1).ToUnixTimeSeconds();
+        long ontem = DateTimeOffset.UtcNow.AddDays(-1).ToUnixTimeSeconds();
         return Montar(v, hashResumo, usuarioId, "trace-expirado", ontem, ontem + 900);
     }
 
@@ -62,11 +64,12 @@ internal static class TokenConfirmacaoTestHelper
     /// que não corresponde ao resumo recalculado — reproduz a divergência de
     /// resumo (espera 409 <c>agendamento-resumo-divergente</c>).
     /// </summary>
+    /// <returns></returns>
     public static string GerarComHashDivergente(string tokenReal)
     {
         var (_, v, _, usuarioId, _, _, _) = Decodificar(tokenReal);
         var agora = DateTimeOffset.UtcNow;
-        var hashFalso = new string('a', 64);
+        string hashFalso = new string('a', 64);
         return Montar(
             v,
             hashFalso,
@@ -79,13 +82,13 @@ internal static class TokenConfirmacaoTestHelper
     private static string Montar(int v, string hashResumo, Guid usuarioId, string traceId, long iat, long exp)
     {
         // Ordem fixa das chaves, igual ao PayloadInterno do TokenConfirmacaoService.
-        var payloadJson =
+        string payloadJson =
             $"{{\"v\":{v},\"hashResumo\":\"{hashResumo}\",\"usuarioId\":\"{usuarioId}\","
             + $"\"traceId\":\"{traceId}\",\"iat\":{iat},\"exp\":{exp}}}";
 
-        var payloadEncoded = Base64UrlEncode(Encoding.UTF8.GetBytes(payloadJson));
+        string payloadEncoded = Base64UrlEncode(Encoding.UTF8.GetBytes(payloadJson));
         using var hmac = new HMACSHA256(Chave);
-        var assinatura = Base64UrlEncode(hmac.ComputeHash(Encoding.UTF8.GetBytes(payloadEncoded)));
+        string assinatura = Base64UrlEncode(hmac.ComputeHash(Encoding.UTF8.GetBytes(payloadEncoded)));
         return payloadEncoded + "." + assinatura;
     }
 
@@ -94,7 +97,7 @@ internal static class TokenConfirmacaoTestHelper
 
     private static byte[] Base64UrlDecode(string value)
     {
-        var normalizado = value.Replace('-', '+').Replace('_', '/');
+        string normalizado = value.Replace('-', '+').Replace('_', '/');
         switch (normalizado.Length % 4)
         {
             case 2: normalizado += "=="; break;

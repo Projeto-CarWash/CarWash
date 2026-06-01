@@ -30,6 +30,8 @@ public class AuthFlowTests : IAsyncDisposable
     [Fact]
     public async Task POST_auth_flow_rotates_refresh_token_and_revokes_session_on_logout()
     {
+        await _factory.EnsureDatabaseCreatedAsync();
+
         string email = $"user-{Guid.NewGuid():N}@example.com";
         string password = "Senha@123";
         var user = await SeedUserAsync(email, password);
@@ -121,6 +123,8 @@ public class AuthFlowTests : IAsyncDisposable
     [Fact]
     public async Task POST_auth_login_blocks_after_three_failed_attempts()
     {
+        await _factory.EnsureDatabaseCreatedAsync();
+
         string email = $"blocked-{Guid.NewGuid():N}@example.com";
         string password = "Senha@123";
         await SeedUserAsync(email, password);

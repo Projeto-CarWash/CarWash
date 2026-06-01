@@ -1,8 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <ItemGroup>
-    <ProjectReference Include="..\CarWash.Application\CarWash.Application.csproj" />
-  </ItemGroup>
+<ItemGroup>
+<ProjectReference Include="..\CarWash.Application\CarWash.Application.csproj" />
+</ItemGroup>
+
+<ItemGroup>
+<Compile Remove="Migrations\**" />
+</ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" />

@@ -1,4 +1,5 @@
 using System.Reflection;
+using CarWash.Application.Abstractions;
 using CarWash.Application.Abstractions.Messaging;
 using CarWash.Application.Agendamentos.Common;
 using CarWash.Application.Interfaces;
@@ -12,6 +13,26 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
+        services.AddScoped<
+            ICommandHandler<CriarObservacaoAgendamentoCommand, CriarObservacaoAgendamentoResponse>,
+            CriarObservacaoAgendamentoHandler>();
+
+        services.AddScoped<
+            ICommandHandler<AtualizarObservacaoAgendamentoCommand, AtualizarObservacaoAgendamentoResponse>,
+            AtualizarObservacaoAgendamentoHandler>();
+
+        services.AddScoped<
+            ICommandHandler<ExcluirObservacaoAgendamentoCommand, ExcluirObservacaoAgendamentoResponse>,
+            ExcluirObservacaoAgendamentoHandler>();
+
+        services.AddScoped<
+            IQueryHandler<ListarObservacoesAgendamentoQuery, ListarObservacoesAgendamentoResponse>,
+            ListarObservacoesAgendamentoHandler>();
+
+        services.AddScoped<
+            IQueryHandler<ConsultarHistoricoAtendimentosClienteQuery, HistoricoAtendimentosResponse>,
+            ConsultarHistoricoAtendimentosClienteHandler>();
+
         ArgumentNullException.ThrowIfNull(services);
 
         var assembly = typeof(DependencyInjection).Assembly;

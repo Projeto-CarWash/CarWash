@@ -64,7 +64,7 @@ public class HealthEndpointTests : IAsyncDisposable
         var response = await client.SendAsync(request);
 
         response.Headers.TryGetValues("X-Correlation-Id", out var values).Should().BeTrue();
-        var correlationId = values.Should().ContainSingle().Which;
+        string correlationId = values.Should().ContainSingle().Which;
         correlationId.Should().NotBe(invalidCorrelationId);
         IsValidCorrelationId(correlationId).Should().BeTrue();
     }
@@ -76,7 +76,7 @@ public class HealthEndpointTests : IAsyncDisposable
             return false;
         }
 
-        foreach (var c in value)
+        foreach (char c in value)
         {
             if (!char.IsAsciiLetterOrDigit(c) && c is not '-' and not '_' and not '.')
             {
@@ -87,6 +87,7 @@ public class HealthEndpointTests : IAsyncDisposable
         return true;
     }
 
+    /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
         await _factory.DisposeAsync();

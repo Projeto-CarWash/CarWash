@@ -19,7 +19,7 @@ using Serilog;
 #pragma warning disable CA1861
 
 const string CorsPolicyName = "CarWashClients";
-var readyTags = new[] { "ready" };
+string[] readyTags = new[] { "ready" };
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -51,6 +51,9 @@ builder.Services.ConfigureHttpJsonOptions(opt =>
 // Filtros de validação genéricos: scan automático do assembly da Application
 // — registra ValidationFilter<T> fechado para cada Command/Query com IValidator<T>.
 builder.Services.AddValidationFilters(typeof(CarWash.Application.DependencyInjection).Assembly);
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 // ---------- Auth: JWT Bearer ----------
 var jwtConfig = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
@@ -117,7 +120,7 @@ builder.Services.AddRateLimiter(opt =>
 
     opt.AddPolicy("auth-login", http =>
     {
-        var key = http.Connection.RemoteIpAddress?.ToString() ?? "anonimo";
+        string key = http.Connection.RemoteIpAddress?.ToString() ?? "anonimo";
         return RateLimitPartition.GetFixedWindowLimiter(key, _ => new FixedWindowRateLimiterOptions
         {
             PermitLimit = 10,
@@ -131,7 +134,7 @@ builder.Services.AddRateLimiter(opt =>
 // ---------- CORS ----------
 // Frontend usa `withCredentials: true` (cookie httpOnly do refresh) — exige
 // origin explícita (AllowAnyOrigin é rejeitado quando AllowCredentials é true).
-var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+string[] corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
 builder.Services.AddCors(opt =>
 {
     opt.AddPolicy(CorsPolicyName, policy =>
@@ -147,7 +150,7 @@ builder.Services.AddCors(opt =>
     });
 });
 
-var conn = builder.Configuration.GetConnectionString("Default")
+string conn = builder.Configuration.GetConnectionString("Default")
     ?? throw new InvalidOperationException("ConnectionStrings:Default não configurada");
 
 builder.Services.AddHealthChecks()
@@ -174,7 +177,7 @@ app.UseStatusCodePages(async ctx =>
         return;
     }
 
-    var correlationId = ctx.HttpContext.Items[CorrelationIdMiddleware.ItemKey] as string
+    string correlationId = ctx.HttpContext.Items[CorrelationIdMiddleware.ItemKey] as string
         ?? Guid.NewGuid().ToString("N");
 
     response.ContentType = "application/problem+json";

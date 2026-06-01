@@ -23,7 +23,7 @@ public class ClientesVeiculosController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize]
+    [Authorize(Policy = "CanCreateVehicle")]
     public async Task<IActionResult> Criar(
         [FromRoute] string clienteId,
         [FromBody] CriarVeiculoRequest? request,

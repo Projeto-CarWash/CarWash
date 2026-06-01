@@ -18,6 +18,7 @@ public sealed class HttpCurrentRequestContext : ICurrentRequestContext
         _httpContext = httpContext;
     }
 
+    /// <inheritdoc/>
     public string CorrelationId
     {
         get
@@ -28,19 +29,20 @@ public sealed class HttpCurrentRequestContext : ICurrentRequestContext
                 return Guid.NewGuid().ToString("N");
             }
 
-            if (ctx.Items.TryGetValue(CorrelationIdMiddleware.ItemKey, out var raw)
+            if (ctx.Items.TryGetValue(CorrelationIdMiddleware.ItemKey, out object? raw)
                 && raw is string id
                 && !string.IsNullOrWhiteSpace(id))
             {
                 return id;
             }
 
-            var novo = Guid.NewGuid().ToString("N");
+            string novo = Guid.NewGuid().ToString("N");
             ctx.Items[CorrelationIdMiddleware.ItemKey] = novo;
             return novo;
         }
     }
 
+    /// <inheritdoc/>
     public Guid? UsuarioId
     {
         get
@@ -51,13 +53,14 @@ public sealed class HttpCurrentRequestContext : ICurrentRequestContext
                 return null;
             }
 
-            var raw = user.FindFirstValue(ClaimTypes.NameIdentifier)
+            string? raw = user.FindFirstValue(ClaimTypes.NameIdentifier)
                 ?? user.FindFirstValue("sub");
 
             return Guid.TryParse(raw, out var id) ? id : null;
         }
     }
 
+    /// <inheritdoc/>
     public string? EventoAtual
     {
         get
@@ -68,10 +71,11 @@ public sealed class HttpCurrentRequestContext : ICurrentRequestContext
                 return null;
             }
 
-            return ctx.Items.TryGetValue("AuditEvent", out var raw) ? raw as string : null;
+            return ctx.Items.TryGetValue("AuditEvent", out object? raw) ? raw as string : null;
         }
     }
 
+    /// <inheritdoc/>
     public void DefinirEvento(string evento)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(evento);
@@ -80,6 +84,7 @@ public sealed class HttpCurrentRequestContext : ICurrentRequestContext
         ctx.Items["AuditEvent"] = evento;
     }
 
+    /// <inheritdoc/>
     public string? IpOrigem
     {
         get
@@ -95,7 +100,7 @@ public sealed class HttpCurrentRequestContext : ICurrentRequestContext
             if (ctx.Request.Headers.TryGetValue("X-Forwarded-For", out var forwarded)
                 && !string.IsNullOrWhiteSpace(forwarded.ToString()))
             {
-                var first = forwarded.ToString().Split(',', 2)[0].Trim();
+                string first = forwarded.ToString().Split(',', 2)[0].Trim();
                 if (!string.IsNullOrWhiteSpace(first))
                 {
                     return first;
@@ -106,6 +111,7 @@ public sealed class HttpCurrentRequestContext : ICurrentRequestContext
         }
     }
 
+    /// <inheritdoc/>
     public string? UserAgent
     {
         get
@@ -116,7 +122,7 @@ public sealed class HttpCurrentRequestContext : ICurrentRequestContext
                 return null;
             }
 
-            var ua = ctx.Request.Headers["User-Agent"].ToString();
+            string ua = ctx.Request.Headers["User-Agent"].ToString();
             if (string.IsNullOrWhiteSpace(ua))
             {
                 return null;

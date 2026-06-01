@@ -61,6 +61,7 @@ public static class AuditDataMasker
     /// Delega para <see cref="EmailMasker.Mask(string?)"/> — mesma política,
     /// disponibilizada aqui para handlers que já tenham referência a <c>AuditDataMasker</c>.
     /// </summary>
+    /// <returns></returns>
     public static string MaskEmail(string? email) => EmailMasker.Mask(email);
 
     private static void MaskNode(JsonNode node)
@@ -93,14 +94,14 @@ public static class AuditDataMasker
 
             if (string.Equals(kvp.Key, "cpf", StringComparison.OrdinalIgnoreCase))
             {
-                var valor = ReadTextValue(kvp.Value);
+                string? valor = ReadTextValue(kvp.Value);
                 alteracoes.Add(new KeyValuePair<string, JsonNode?>(kvp.Key, MaskCpf(valor)));
                 continue;
             }
 
             if (string.Equals(kvp.Key, "cnpj", StringComparison.OrdinalIgnoreCase))
             {
-                var valor = ReadTextValue(kvp.Value);
+                string? valor = ReadTextValue(kvp.Value);
                 alteracoes.Add(new KeyValuePair<string, JsonNode?>(kvp.Key, MaskCnpj(valor)));
                 continue;
             }
@@ -126,7 +127,7 @@ public static class AuditDataMasker
 
         if (value is JsonValue jsonValue)
         {
-            if (jsonValue.TryGetValue<string>(out var texto))
+            if (jsonValue.TryGetValue<string>(out string? texto))
             {
                 return texto;
             }
@@ -144,7 +145,7 @@ public static class AuditDataMasker
             return "***";
         }
 
-        var digitos = new string([.. cpf.Where(char.IsDigit)]);
+        string digitos = new string([.. cpf.Where(char.IsDigit)]);
         if (digitos.Length != 11)
         {
             return "***";
@@ -160,7 +161,7 @@ public static class AuditDataMasker
             return "***";
         }
 
-        var digitos = new string([.. cnpj.Where(char.IsDigit)]);
+        string digitos = new string([.. cnpj.Where(char.IsDigit)]);
         if (digitos.Length != 14)
         {
             return "***";
