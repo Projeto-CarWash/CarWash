@@ -12,6 +12,7 @@ public sealed class AmbientRequestContext : ICurrentRequestContext
 {
     private static readonly AsyncLocal<RequestState?> Estado = new();
 
+    /// <inheritdoc/>
     public string CorrelationId
     {
         get
@@ -27,14 +28,19 @@ public sealed class AmbientRequestContext : ICurrentRequestContext
         }
     }
 
+    /// <inheritdoc/>
     public Guid? UsuarioId => Estado.Value?.UsuarioId;
 
+    /// <inheritdoc/>
     public string? EventoAtual => Estado.Value?.EventoAtual;
 
+    /// <inheritdoc/>
     public string? IpOrigem => Estado.Value?.IpOrigem;
 
+    /// <inheritdoc/>
     public string? UserAgent => Estado.Value?.UserAgent;
 
+    /// <inheritdoc/>
     public void DefinirEvento(string evento)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(evento);

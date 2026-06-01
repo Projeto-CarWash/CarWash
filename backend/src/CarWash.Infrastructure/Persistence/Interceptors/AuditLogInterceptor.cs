@@ -36,6 +36,7 @@ public sealed class AuditLogInterceptor : SaveChangesInterceptor
         _contexto = contexto;
     }
 
+    /// <inheritdoc/>
     public override InterceptionResult<int> SavingChanges(
         DbContextEventData eventData,
         InterceptionResult<int> result)
@@ -44,6 +45,7 @@ public sealed class AuditLogInterceptor : SaveChangesInterceptor
         return base.SavingChanges(eventData, result);
     }
 
+    /// <inheritdoc/>
     public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
         DbContextEventData eventData,
         InterceptionResult<int> result,
@@ -60,7 +62,7 @@ public sealed class AuditLogInterceptor : SaveChangesInterceptor
             return;
         }
 
-        var evento = _contexto.EventoAtual;
+        string? evento = _contexto.EventoAtual;
         if (string.IsNullOrWhiteSpace(evento))
         {
             return;
@@ -77,9 +79,9 @@ public sealed class AuditLogInterceptor : SaveChangesInterceptor
 
         foreach (var entrada in entradas)
         {
-            var nomeEntidade = entrada.Entity.GetType().Name;
+            string nomeEntidade = entrada.Entity.GetType().Name;
             var entidadeId = ExtrairId(entrada);
-            var dadosJson = SerializarDados(entrada);
+            string dadosJson = SerializarDados(entrada);
 
             var log = AuditLog.Registrar(
                 id: Guid.NewGuid(),
@@ -138,7 +140,7 @@ public sealed class AuditLogInterceptor : SaveChangesInterceptor
                 break;
         }
 
-        var raw = JsonSerializer.Serialize(snapshot);
+        string raw = JsonSerializer.Serialize(snapshot);
         return AuditDataMasker.MaskJson(raw);
     }
 
@@ -147,8 +149,8 @@ public sealed class AuditLogInterceptor : SaveChangesInterceptor
         var dict = new Dictionary<string, object?>(StringComparer.Ordinal);
         foreach (var prop in entry.Properties)
         {
-            var nome = prop.Metadata.Name;
-            var valor = useOriginal ? prop.OriginalValue : prop.CurrentValue;
+            string nome = prop.Metadata.Name;
+            object? valor = useOriginal ? prop.OriginalValue : prop.CurrentValue;
             dict[nome] = NormalizeValue(valor);
         }
 
@@ -169,7 +171,7 @@ public sealed class AuditLogInterceptor : SaveChangesInterceptor
                 continue;
             }
 
-            var nome = prop.Metadata.Name;
+            string nome = prop.Metadata.Name;
             before[nome] = NormalizeValue(prop.OriginalValue);
             after[nome] = NormalizeValue(prop.CurrentValue);
             changed.Add(nome);

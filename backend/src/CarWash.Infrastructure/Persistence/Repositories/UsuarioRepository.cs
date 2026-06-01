@@ -25,12 +25,15 @@ public sealed class UsuarioRepository : IUsuarioRepository
         _db = db;
     }
 
+    /// <inheritdoc/>
     public Task<Usuario?> ObterPorIdAsync(Guid id, CancellationToken cancellationToken) =>
         _db.Usuarios.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
 
+    /// <inheritdoc/>
     public Task<Usuario?> ObterPorIdRastreadoAsync(Guid id, CancellationToken cancellationToken) =>
         _db.Usuarios.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
 
+    /// <inheritdoc/>
     public Task<Usuario?> ObterPorEmailAsync(string emailNormalizado, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(emailNormalizado))
@@ -41,12 +44,14 @@ public sealed class UsuarioRepository : IUsuarioRepository
         return _db.Usuarios.FirstOrDefaultAsync(u => u.EmailValor == emailNormalizado, cancellationToken);
     }
 
+    /// <inheritdoc/>
     public Task<bool> ExisteComEmailAsync(string emailNormalizado, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(emailNormalizado);
         return _db.Usuarios.AsNoTracking().AnyAsync(u => u.EmailValor == emailNormalizado, cancellationToken);
     }
 
+    /// <inheritdoc/>
     public Task AdicionarAsync(Usuario usuario, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(usuario);
@@ -54,6 +59,7 @@ public sealed class UsuarioRepository : IUsuarioRepository
         return Task.CompletedTask;
     }
 
+    /// <inheritdoc/>
     public async Task SalvarAsync(CancellationToken cancellationToken)
     {
         try
@@ -80,6 +86,7 @@ public sealed class UsuarioRepository : IUsuarioRepository
             && pg.ConstraintName.Contains(ConstraintEmailUnico, StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <inheritdoc/>
     public async Task<(IReadOnlyList<Usuario> Itens, int Total)> ListarAsync(
         string? busca,
         bool? ativo,
@@ -111,12 +118,12 @@ public sealed class UsuarioRepository : IUsuarioRepository
 
         if (!string.IsNullOrWhiteSpace(busca))
         {
-            var like = $"%{busca.Trim()}%";
+            string like = $"%{busca.Trim()}%";
             query = query.Where(u =>
                 EF.Functions.ILike(u.Nome, like) || EF.Functions.ILike(u.EmailValor, like));
         }
 
-        var total = await query.CountAsync(cancellationToken);
+        int total = await query.CountAsync(cancellationToken);
 
         var itens = await query
             .OrderBy(u => u.Nome)
@@ -127,6 +134,7 @@ public sealed class UsuarioRepository : IUsuarioRepository
         return (itens, total);
     }
 
+    /// <inheritdoc/>
     public Task<int> ContarAdminsAtivosAsync(CancellationToken cancellationToken) =>
         _db.Usuarios
             .AsNoTracking()

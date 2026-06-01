@@ -239,7 +239,7 @@ public class LoginHandlerTests
 
         var handler = NovoHandler();
 
-        for (var tentativa = 1; tentativa <= 3; tentativa++)
+        for (int tentativa = 1; tentativa <= 3; tentativa++)
         {
             await handler.Invoking(h => h.HandleAsync(new LoginCommand(usuario.EmailValor, "ErradaXYZ"), CancellationToken.None))
                 .Should().ThrowAsync<InvalidCredentialsException>();
@@ -341,7 +341,7 @@ public class LoginHandlerTests
             return false;
         }
 
-        var valor = prop.GetValue(dados);
+        object? valor = prop.GetValue(dados);
         return Equals(valor, esperado);
     }
 

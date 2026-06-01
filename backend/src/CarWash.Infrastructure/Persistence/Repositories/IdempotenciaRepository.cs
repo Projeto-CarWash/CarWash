@@ -18,6 +18,7 @@ public sealed class IdempotenciaRepository : IIdempotenciaRepository
         _db = db;
     }
 
+    /// <inheritdoc/>
     public Task<IdempotenciaRequisicao?> ObterAsync(
         Guid idempotencyKey,
         string escopo,

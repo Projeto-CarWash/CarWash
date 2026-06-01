@@ -32,7 +32,7 @@ public sealed class JwtAccessTokenService : IAccessTokenService
                 "JwtOptions.Secret não configurado. Defina a variável de ambiente CARWASH_JWT_SECRET.");
         }
 
-        var keyBytes = Encoding.UTF8.GetBytes(_opcoes.Secret);
+        byte[] keyBytes = Encoding.UTF8.GetBytes(_opcoes.Secret);
         if (keyBytes.Length < 32)
         {
             throw new InvalidOperationException(
@@ -43,6 +43,7 @@ public sealed class JwtAccessTokenService : IAccessTokenService
         _credenciais = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
     }
 
+    /// <inheritdoc/>
     public (string Token, DateTime ExpiresAt) Emitir(Usuario usuario)
     {
         ArgumentNullException.ThrowIfNull(usuario);

@@ -1,5 +1,6 @@
 using CarWash.Api.Filters;
 using CarWash.Application.Abstractions.Messaging;
+using CarWash.Application.Agendamentos.Cancelar;
 using CarWash.Application.Agendamentos.Common;
 using CarWash.Application.Agendamentos.Confirmar;
 using CarWash.Application.Agendamentos.Criar;
@@ -69,6 +70,16 @@ public static class AgendamentosEndpoints
             .ProducesProblem(StatusCodes.Status410Gone)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
 
+        // RF010 — cancelamento de agendamento com motivo obrigatório.
+        grupo.MapPatch("/{id:guid}/cancelar", CancelarAsync)
+            .WithName("CancelarAgendamento")
+            .Produces<CancelarAgendamentoResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict)
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
+
         return app;
     }
 
@@ -87,7 +98,7 @@ public static class AgendamentosEndpoints
                 "Corpo da requisição ausente ou malformado.");
         }
 
-        var traceId = http.TraceIdentifier;
+        string traceId = http.TraceIdentifier;
         var usuarioId = ObterUsuarioId(http);
 
         var command = new CriarAgendamentoCommand(
@@ -133,7 +144,7 @@ public static class AgendamentosEndpoints
                 "Corpo da requisição ausente ou malformado.");
         }
 
-        var traceId = http.TraceIdentifier;
+        string traceId = http.TraceIdentifier;
         var usuarioId = ObterUsuarioId(http);
 
         var command = new PreConfirmarAgendamentoCommand(
@@ -179,7 +190,7 @@ public static class AgendamentosEndpoints
                 "Corpo da requisição ausente ou malformado.");
         }
 
-        var traceId = http.TraceIdentifier;
+        string traceId = http.TraceIdentifier;
         var usuarioId = ObterUsuarioId(http);
 
         var command = new ConfirmarAgendamentoCommand(
@@ -227,9 +238,49 @@ public static class AgendamentosEndpoints
         return TypedResults.Created($"/api/v1/agendamentos/{resposta.Id}", resposta);
     }
 
+    private static async Task<Ok<CancelarAgendamentoResponse>> CancelarAsync(
+        Guid id,
+        [FromBody] CancelarAgendamentoRequest? request,
+        [FromServices] ICommandHandler<CancelarAgendamentoCommand, CancelarAgendamentoResponse> handler,
+        [FromServices] IValidator<CancelarAgendamentoCommand> validator,
+        [FromServices] ILogger<CriarAgendamentoEndpointMarker> logger,
+        HttpContext http,
+        CancellationToken cancellationToken)
+    {
+        if (request is null)
+        {
+            throw ValidationProblems.BodyAusente(
+                MensagemPayloadInvalido,
+                "Corpo da requisição ausente ou malformado.");
+        }
+
+        var traceId = http.TraceIdentifier;
+        var usuarioId = ObterUsuarioId(http);
+
+        var command = new CancelarAgendamentoCommand(
+            AgendamentoId: id,
+            MotivoCancelamento: request.MotivoCancelamento ?? string.Empty,
+            Origem: request.Origem ?? string.Empty,
+            TraceId: traceId,
+            UsuarioId: usuarioId);
+
+        var resultado = await validator.ValidateAsync(command, cancellationToken).ConfigureAwait(false);
+        ValidationProblems.EnsureValid(resultado, MensagemPayloadInvalido);
+
+        var resposta = await handler.HandleAsync(command, cancellationToken).ConfigureAwait(false);
+
+        logger.LogInformation(
+            "Agendamento cancelado via endpoint. TraceId: {TraceId}. AgendamentoId: {AgendamentoId}. UsuarioId: {UsuarioId}",
+            traceId,
+            id,
+            usuarioId);
+
+        return TypedResults.Ok(resposta);
+    }
+
     private static Guid? ObterUsuarioId(HttpContext http)
     {
-        var sub = http.User.FindFirst("sub")?.Value
+        string? sub = http.User.FindFirst("sub")?.Value
             ?? http.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         return Guid.TryParse(sub, out var id) ? id : null;
     }

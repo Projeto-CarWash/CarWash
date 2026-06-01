@@ -50,7 +50,7 @@ public class AuthLockoutTests : IAsyncDisposable
         var client = _factory.CreateClient();
         var (email, _) = await CadastrarUsuarioAsync();
 
-        for (var i = 0; i < LoginHandler.LimiteTentativasInvalidas - 1; i++)
+        for (int i = 0; i < LoginHandler.LimiteTentativasInvalidas - 1; i++)
         {
             var falha = await client.PostAsJsonAsync(RotaLogin, new { email, senha = "Errada9999" }, _json);
             falha.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -70,7 +70,7 @@ public class AuthLockoutTests : IAsyncDisposable
         var client = _factory.CreateClient();
         var (email, senha) = await CadastrarUsuarioAsync();
 
-        for (var i = 0; i < LoginHandler.LimiteTentativasInvalidas; i++)
+        for (int i = 0; i < LoginHandler.LimiteTentativasInvalidas; i++)
         {
             await client.PostAsJsonAsync(RotaLogin, new { email, senha = "Errada9999" }, _json);
         }
@@ -114,7 +114,7 @@ public class AuthLockoutTests : IAsyncDisposable
         var (email, senha) = await CadastrarUsuarioAsync();
 
         // Provoca o bloqueio.
-        for (var i = 0; i < LoginHandler.LimiteTentativasInvalidas; i++)
+        for (int i = 0; i < LoginHandler.LimiteTentativasInvalidas; i++)
         {
             await client.PostAsJsonAsync(RotaLogin, new { email, senha = "Errada9999" }, _json);
         }
@@ -138,7 +138,7 @@ public class AuthLockoutTests : IAsyncDisposable
         var (email, senha) = await CadastrarUsuarioAsync();
 
         // Duas falhas seguidas (abaixo do limite).
-        for (var i = 0; i < 2; i++)
+        for (int i = 0; i < 2; i++)
         {
             var falha = await client.PostAsJsonAsync(RotaLogin, new { email, senha = "Errada9999" }, _json);
             falha.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -149,7 +149,7 @@ public class AuthLockoutTests : IAsyncDisposable
         sucesso.StatusCode.Should().Be(HttpStatusCode.OK);
 
         // Nova rodada: limite-1 falhas devem continuar voltando 401.
-        for (var i = 0; i < LoginHandler.LimiteTentativasInvalidas - 1; i++)
+        for (int i = 0; i < LoginHandler.LimiteTentativasInvalidas - 1; i++)
         {
             var falha = await client.PostAsJsonAsync(RotaLogin, new { email, senha = "Errada9999" }, _json);
             falha.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -166,7 +166,7 @@ public class AuthLockoutTests : IAsyncDisposable
         var client = _factory.CreateClient();
         var (email, _) = await CadastrarUsuarioAsync();
 
-        for (var i = 0; i < LoginHandler.LimiteTentativasInvalidas; i++)
+        for (int i = 0; i < LoginHandler.LimiteTentativasInvalidas; i++)
         {
             await client.PostAsJsonAsync(RotaLogin, new { email, senha = "Errada9999" }, _json);
         }
@@ -178,7 +178,7 @@ public class AuthLockoutTests : IAsyncDisposable
             .Select(u => u.Id)
             .FirstAsync();
 
-        var possuiEventoBloqueado = await db.AuditLogs
+        bool possuiEventoBloqueado = await db.AuditLogs
             .AnyAsync(a => a.Evento == LoginHandler.EventoUsuarioBloqueado && a.EntidadeId == usuarioId);
 
         possuiEventoBloqueado.Should().BeTrue(
@@ -196,7 +196,7 @@ public class AuthLockoutTests : IAsyncDisposable
 
     private async Task<(string Email, string Senha)> CadastrarUsuarioAsync()
     {
-        var email = $"lockout-{Guid.NewGuid():N}@carwash.local";
+        string email = $"lockout-{Guid.NewGuid():N}@carwash.local";
         const string senha = "Senha1234";
 
         using var autenticado = await AuthenticatedHttpClient.CreateAsync(_factory);
@@ -212,6 +212,7 @@ public class AuthLockoutTests : IAsyncDisposable
         return (email, senha);
     }
 
+    /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
         await _factory.DisposeAsync();
