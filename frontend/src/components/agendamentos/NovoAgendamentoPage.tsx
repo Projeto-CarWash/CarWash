@@ -1,9 +1,10 @@
 import { AxiosError } from 'axios';
 import { AlertCircle, Check, X } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { Separator } from '@/components/ui/separator';
+import { useFiliais } from '@/hooks/useAgendamentoQueries';
 import { agendamentoService } from '@/services/agendamentoService';
 
 import { AgendamentoPageHeader } from './AgendamentoPageHeader';
@@ -22,15 +23,17 @@ import type {
 import type { ProblemDetails } from '@/types/auth';
 
 const API_MESSAGES: Record<number, string> = {
-  400: 'Dados do agendamento invalidos. Revise as informacoes e tente novamente.',
+  400: 'Selecione uma filial válida para prosseguir.',
   401: 'Sessao expirada. Faca login novamente.',
   403: 'Voce nao possui permissao para criar agendamentos.',
-  404: 'Cliente, veiculo ou servico nao encontrado. Revise os dados.',
-  409: 'Ja existe agendamento para o horario informado. Escolha outro horario.',
+  404: 'Filial não encontrada.',
+  409: 'A filial selecionada está inativa e não pode receber novos agendamentos.',
   500: 'Nao foi possivel concluir o agendamento no momento. Tente novamente.',
 };
 
 const INITIAL_STATE: AgendamentoWizardState = {
+  filialId: '',
+  filialNome: '',
   cliente: null,
   veiculo: null,
   dataAgendamento: '',
@@ -50,6 +53,20 @@ export function NovoAgendamentoPage() {
 
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  // RF019 — carrega filiais ativas para o seletor.
+  const {
+    data: filiaisData,
+    isLoading: filiaisCarregando,
+    isError: filiaisErro,
+    refetch: refetchFiliais,
+  } = useFiliais();
+  const filiais = useMemo(() => filiaisData?.itens ?? [], [filiaisData]);
+
+  const handleFilialChange = useCallback((filialId: string, filialNome: string) => {
+    setWizardState((prev) => ({ ...prev, filialId, filialNome }));
+    setGlobalError(null);
+  }, []);
 
   const handleClienteChange = useCallback((cliente: ClienteResumido | null) => {
     setWizardState((prev) => ({ ...prev, cliente }));
@@ -102,12 +119,28 @@ export function NovoAgendamentoPage() {
       return;
     }
 
+    // RF019 — filialId é obrigatório.
+    if (!wizardState.filialId) {
+      setGlobalError('Selecione uma filial para prosseguir.');
+      return;
+    }
+
+    // RF019 — revalidar que a filial selecionada ainda existe na lista atual.
+    const filialAindaValida = filiais.some((f) => f.id === wizardState.filialId && f.ativo);
+    if (filiais.length > 0 && !filialAindaValida) {
+      setWizardState((prev) => ({ ...prev, filialId: '', filialNome: '' }));
+      setGlobalError(
+        'A filial selecionada não está mais disponível. Selecione outra filial.',
+      );
+      return;
+    }
+
     const inicio = new Date(`${dataAgendamento}T${horaInicio}:00`);
 
     const payload: CriarAgendamentoPayload = {
       clienteId: cliente.id,
       veiculoId: veiculo.id,
-      filialId: 'mock-filial-id',
+      filialId: wizardState.filialId,
       responsavelId: 'mock-responsavel-id',
       inicio: inicio.toISOString(),
       servicoIds: servicos.map((s) => s.id),
@@ -147,7 +180,7 @@ export function NovoAgendamentoPage() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [isSubmitting, confirmado, wizardState, navigate]);
+  }, [isSubmitting, confirmado, wizardState, navigate, filiais]);
 
   return (
     <>
@@ -197,6 +230,12 @@ export function NovoAgendamentoPage() {
 
           {currentStep === 1 && (
             <ClienteVeiculoStep
+              filialId={wizardState.filialId}
+              onFilialChange={handleFilialChange}
+              filiais={filiais}
+              filiaisCarregando={filiaisCarregando}
+              filiaisErro={filiaisErro}
+              onRetryFiliais={() => { void refetchFiliais(); }}
               cliente={wizardState.cliente}
               veiculo={wizardState.veiculo}
               dataAgendamento={wizardState.dataAgendamento}
