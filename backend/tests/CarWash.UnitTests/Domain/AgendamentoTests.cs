@@ -50,7 +50,7 @@ public class AgendamentoTests
     public void Cancelar_incrementa_versao_e_registra_campos()
     {
         var ag = NovoAgendamento();
-        var versaoOriginal = ag.Versao;
+        int versaoOriginal = ag.Versao;
         var canceladoPor = Guid.NewGuid();
         ag.Cancelar("Cliente desistiu do serviço", canceladoPor);
         ag.Versao.Should().Be(versaoOriginal + 1);
@@ -233,7 +233,7 @@ public class AgendamentoTests
     public void Iniciar_transiciona_para_em_andamento()
     {
         var ag = NovoAgendamento();
-        var versaoOriginal = ag.Versao;
+        int versaoOriginal = ag.Versao;
         ag.Iniciar();
         ag.Status.Should().Be(StatusAgendamento.EmAndamento);
         ag.Versao.Should().Be(versaoOriginal + 1);

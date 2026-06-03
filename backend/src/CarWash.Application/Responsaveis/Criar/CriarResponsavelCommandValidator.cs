@@ -69,7 +69,7 @@ public sealed class CriarResponsavelCommandValidator : AbstractValidator<CriarRe
 
     private static bool DocumentoValido(string? documento)
     {
-        var apenasDigitos = InputNormalizer.OnlyDigitsOrNull(documento);
+        string? apenasDigitos = InputNormalizer.OnlyDigitsOrNull(documento);
         if (apenasDigitos is null)
         {
             return false;

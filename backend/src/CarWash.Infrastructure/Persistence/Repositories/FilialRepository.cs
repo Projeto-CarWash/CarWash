@@ -52,7 +52,7 @@ public class FilialRepository : IFilialRepository
         // expressão LINQ é traduzido pelo provider para `LOWER(...)` no SQL
         // (não executa em runtime C#) — por isso CA1304/CA1862/RCS1155 ficam
         // suprimidos apenas nesse trecho.
-        var normalizadoLower = (nome ?? string.Empty).Trim().ToLowerInvariant();
+        string normalizadoLower = (nome ?? string.Empty).Trim().ToLowerInvariant();
 #pragma warning disable CA1304, CA1311, CA1862, RCS1155
         return context.Filiais
             .AsNoTracking()
@@ -79,7 +79,7 @@ public class FilialRepository : IFilialRepository
         {
             // Race condition: outro POST concorrente venceu o pré-check.
             // Inspeciona o ConstraintName para escolher o slug certo.
-            var constraintName = (ex.InnerException as PostgresException)?.ConstraintName;
+            string? constraintName = (ex.InnerException as PostgresException)?.ConstraintName;
             throw constraintName switch
             {
                 ConstraintCodigo => new FilialCodigoJaExisteException(ex),
@@ -131,15 +131,15 @@ public class FilialRepository : IFilialRepository
 
         if (!string.IsNullOrWhiteSpace(busca))
         {
-            var termo = busca.Trim();
-            var like = $"%{termo}%";
+            string termo = busca.Trim();
+            string like = $"%{termo}%";
             query = query.Where(x =>
                 EF.Functions.ILike(x.Nome, like)
                 || (x.Codigo != null && EF.Functions.ILike(x.Codigo, like))
                 || (x.EnderecoCidade != null && EF.Functions.ILike(x.EnderecoCidade, like)));
         }
 
-        var total = await query.CountAsync(cancellationToken).ConfigureAwait(false);
+        int total = await query.CountAsync(cancellationToken).ConfigureAwait(false);
 
         var itens = await query
             .OrderBy(x => x.Nome)

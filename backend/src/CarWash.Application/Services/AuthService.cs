@@ -121,8 +121,8 @@ public class AuthService : IAuthService
         user.FailedLoginAttempts = 0;
         user.BlockedUntil = null;
 
-        var accessToken = GerarAccessToken(user);
-        var refreshToken = GerarRefreshToken();
+        string accessToken = GerarAccessToken(user);
+        string refreshToken = GerarRefreshToken();
 
         var session = new Session
         {

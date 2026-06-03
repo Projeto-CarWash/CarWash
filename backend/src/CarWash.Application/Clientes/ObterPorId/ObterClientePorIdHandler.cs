@@ -1,3 +1,4 @@
+using System.Linq;
 using CarWash.Application.Abstractions.Messaging;
 using CarWash.Application.Clientes.Common;
 using CarWash.Application.Clientes.Persistence;
@@ -6,7 +7,6 @@ using CarWash.Application.Interfaces;
 using CarWash.Application.Responsaveis.Common;
 using CarWash.Application.Responsaveis.Persistence;
 using Microsoft.EntityFrameworkCore;
-using System.Linq;
 
 namespace CarWash.Application.Clientes.ObterPorId;
 

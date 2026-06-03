@@ -34,8 +34,8 @@ public sealed class HistoricoAtendimentosClienteRepository : IHistoricoAtendimen
         int pageSize,
         CancellationToken cancellationToken)
     {
-        DateTimeOffset? inicioFiltro = dataInicio;
-        DateTimeOffset? fimFiltro = dataFim;
+        var inicioFiltro = dataInicio;
+        var fimFiltro = dataFim;
 
         if (ultimosDias.HasValue)
         {
@@ -64,7 +64,7 @@ public sealed class HistoricoAtendimentosClienteRepository : IHistoricoAtendimen
             statusNormalizado,
             cancellationToken);
 
-        IReadOnlyCollection<HistoricoAtendimentoLinha> linhas = await ObterLinhasAsync(
+        var linhas = await ObterLinhasAsync(
             connection,
             clienteId,
             inicioFiltro,
@@ -74,7 +74,7 @@ public sealed class HistoricoAtendimentosClienteRepository : IHistoricoAtendimen
             offset,
             cancellationToken);
 
-        List<HistoricoAtendimentoResponse> historico = linhas
+        var historico = linhas
             .GroupBy(x => new
             {
                 x.AgendamentoId,

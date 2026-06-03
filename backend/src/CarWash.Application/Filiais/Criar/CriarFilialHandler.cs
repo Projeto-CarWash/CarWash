@@ -48,10 +48,10 @@ public sealed class CriarFilialHandler : ICommandHandler<CriarFilialCommand, Cri
 
         _contexto.DefinirEvento(EventoAuditoria);
 
-        var nome = InputNormalizer.SanitizeTextOrNull(command.Nome)!;
-        var codigo = CriarFilialCommandValidator.NormalizarCodigo(command.Codigo);
-        var cnpjDigits = InputNormalizer.OnlyDigitsOrNull(command.Cnpj);
-        var timezone = InputNormalizer.SanitizeTextOrNull(command.Timezone);
+        string nome = InputNormalizer.SanitizeTextOrNull(command.Nome)!;
+        string codigo = CriarFilialCommandValidator.NormalizarCodigo(command.Codigo);
+        string? cnpjDigits = InputNormalizer.OnlyDigitsOrNull(command.Cnpj);
+        string? timezone = InputNormalizer.SanitizeTextOrNull(command.Timezone);
         var endereco = command.Endereco is null ? null : MontarEndereco(command.Endereco);
 
         // Camada 1 — pré-check para mensagens amigáveis.
