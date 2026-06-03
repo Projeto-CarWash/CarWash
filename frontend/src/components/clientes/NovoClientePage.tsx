@@ -1,23 +1,24 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AxiosError } from 'axios';
-import { AlertCircle, Check, ChevronRight, Loader2, X } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { AlertCircle, Check, X } from 'lucide-react';
+import { useCallback, useRef, useState } from 'react';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { clienteSchema } from '@/schemas/clienteSchema';
 import { clienteService } from '@/services/clienteService';
 
 import { ContatoEnderecoForm } from './ContatoEnderecoForm';
 import { IdentificacaoForm } from './IdentificacaoForm';
 import { PageHeader } from './PageHeader';
+import { PreferenciasFidelidadeForm } from './PreferenciasFidelidadeForm';
 import { Stepper } from './Stepper';
 import { VeiculosClienteForm } from './VeiculosClienteForm';
 
 import type { ClienteFormData } from '@/schemas/clienteSchema';
 import type { ProblemDetails } from '@/types/auth';
+
+const DRAFT_STORAGE_KEY = 'carwash-draft-novo-cliente';
 
 const API_MESSAGES: Record<number, string> = {
   400: 'Dados do cliente inválidos. Verifique os campos e tente novamente.',
@@ -32,12 +33,10 @@ export function NovoClientePage() {
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isResettingRef = useRef(false);
 
-  const form = useForm<ClienteFormData>({
-    resolver: zodResolver(clienteSchema),
-    mode: 'onBlur',
-    shouldFocusError: true,
-    defaultValues: {
+  const getDefaultValues = useCallback(
+    (): ClienteFormData => ({
       cpfCnpj: '',
       dataNascimento: '',
       nome: '',
@@ -52,13 +51,59 @@ export function NovoClientePage() {
       cidade: '',
       uf: '',
       veiculos: [],
-    },
+      lembretes: [],
+      canaisPreferenciais: [],
+      observacoesGerais: '',
+      filiados: [],
+    }),
+    [],
+  );
+
+  const loadDraft = useCallback((): ClienteFormData | null => {
+    try {
+      const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
+      if (!raw) return null;
+      return JSON.parse(raw) as ClienteFormData;
+    } catch {
+      localStorage.removeItem(DRAFT_STORAGE_KEY);
+      return null;
+    }
+  }, []);
+
+  const form = useForm<ClienteFormData>({
+    resolver: zodResolver(clienteSchema),
+    mode: 'onBlur',
+    shouldFocusError: true,
+    defaultValues: loadDraft() ?? getDefaultValues(),
   });
 
+  // Safe reset that prevents rapid consecutive calls from corrupting RHF state
+  const safeReset = useCallback(() => {
+    if (isResettingRef.current) return;
+    isResettingRef.current = true;
+    const defaults = getDefaultValues();
+    form.reset(defaults, { keepErrors: false, keepDirty: false, keepTouched: false });
+    // Allow next reset only after RHF finishes its internal state reconciliation
+    requestAnimationFrame(() => {
+      isResettingRef.current = false;
+    });
+  }, [form, getDefaultValues]);
+
+  // ── Reactive watches for sidebar + step validation ─────────────────────────
   const cpfCnpj = useWatch({ control: form.control, name: 'cpfCnpj' }) || '';
   const dataNascimento = useWatch({ control: form.control, name: 'dataNascimento' }) || '';
   const nome = useWatch({ control: form.control, name: 'nome' }) || '';
+  const celular = useWatch({ control: form.control, name: 'celular' }) || '';
+  const cep = useWatch({ control: form.control, name: 'cep' }) || '';
+  const veiculos = useWatch({ control: form.control, name: 'veiculos' }) || [];
 
+  const logradouro = useWatch({ control: form.control, name: 'logradouro' }) || '';
+  const numero = useWatch({ control: form.control, name: 'numero' }) || '';
+  const bairro = useWatch({ control: form.control, name: 'bairro' }) || '';
+  const cidade = useWatch({ control: form.control, name: 'cidade' }) || '';
+  const uf = useWatch({ control: form.control, name: 'uf' }) || '';
+
+  // ── Step 1 validation ──────────────────────────────────────────────────────
   const docDigits = cpfCnpj.replace(/\D/g, '');
   const dateDigits = dataNascimento.replace(/\D/g, '');
   const isDocFilled = docDigits.length === 11 || docDigits.length === 14;
@@ -71,6 +116,34 @@ export function NovoClientePage() {
   const isNameValid = isNameFilled && !errors.nome;
   const isIdentificacaoComplete = isDocValid && isDateValid && isNameValid;
 
+  // ── Step 2 validation (contato & endereço) ─────────────────────────────────
+  const celularDigits = celular.replace(/\D/g, '');
+  const cepDigits = cep.replace(/\D/g, '');
+  const isContatoComplete =
+    celularDigits.length === 11 &&
+    !errors.celular &&
+    cepDigits.length === 8 &&
+    !errors.cep &&
+    logradouro.trim().length > 0 &&
+    !errors.logradouro &&
+    numero.trim().length > 0 &&
+    !errors.numero &&
+    bairro.trim().length > 0 &&
+    !errors.bairro &&
+    cidade.trim().length > 0 &&
+    !errors.cidade &&
+    uf.trim().length > 0 &&
+    !errors.uf;
+
+  // ── Step 3 validation ──────────────────────────────────────────────────────
+  const isVeiculosComplete = veiculos.length > 0;
+
+  let currentStep = 1;
+  if (isIdentificacaoComplete && isContatoComplete && isVeiculosComplete) currentStep = 4;
+  else if (isIdentificacaoComplete && isContatoComplete) currentStep = 3;
+  else if (isIdentificacaoComplete) currentStep = 2;
+
+  // ── Submit ─────────────────────────────────────────────────────────────────
   const handleSubmit = useCallback(
     async (data: ClienteFormData) => {
       setGlobalError(null);
@@ -80,7 +153,8 @@ export function NovoClientePage() {
       try {
         const resp = await clienteService.criar(data);
         setSuccessMsg('Cliente cadastrado com sucesso! Redirecionando…');
-        form.reset();
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
+        safeReset();
         setTimeout(() => {
           void navigate(`/clientes/${resp.id}`, { replace: true });
         }, 800);
@@ -137,32 +211,37 @@ export function NovoClientePage() {
         setIsSubmitting(false);
       }
     },
-    [form, navigate],
+    [form, navigate, safeReset],
   );
 
-  const handleCancel = useCallback(() => {
-    form.reset();
-    setGlobalError(null);
-    setSuccessMsg(null);
-    void navigate('/clientes', { replace: true });
-  }, [form, navigate]);
-
   const handleClearForm = useCallback(() => {
-    form.reset();
+    safeReset();
     setGlobalError(null);
     setSuccessMsg(null);
+    localStorage.removeItem(DRAFT_STORAGE_KEY);
+  }, [safeReset]);
+
+  const handleSaveDraft = useCallback(() => {
+    const currentValues = form.getValues();
+    try {
+      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(currentValues));
+    } catch (e) {
+      console.warn('Failed to save draft:', e);
+    }
   }, [form]);
 
   return (
     <>
-      <PageHeader onCancel={handleClearForm} step={isIdentificacaoComplete ? 2 : 1} />
+      <PageHeader onClearForm={handleClearForm} onSaveDraft={handleSaveDraft} step={currentStep} />
       <FormProvider {...form}>
         <form
-          onSubmit={form.handleSubmit(handleSubmit)}
+          onSubmit={(e) => {
+            void form.handleSubmit(handleSubmit)(e);
+          }}
           noValidate
           className="grid grid-cols-[minmax(240px,300px)_minmax(0,1fr)] gap-6 px-8"
         >
-          <Stepper currentStep={isIdentificacaoComplete ? 2 : 1} />
+          <Stepper currentStep={currentStep} />
 
           <div className="rounded-2xl border border-zinc-800/60 bg-zinc-900/30 p-8">
             {globalError && (
@@ -202,7 +281,6 @@ export function NovoClientePage() {
                 </button>
               </div>
             )}
-
             <IdentificacaoForm />
 
             <div
@@ -212,44 +290,35 @@ export function NovoClientePage() {
                   : 'mt-0 max-h-0 translate-y-4 opacity-0'
               }`}
             >
-              <Separator className="mb-8 bg-zinc-800/50" />
-              <ContatoEnderecoForm />
-              <Separator className="my-8 bg-zinc-800/50" />
-              <VeiculosClienteForm />
+              <div className="border-t border-zinc-800/60 pt-8">
+                <ContatoEnderecoForm />
+              </div>
             </div>
 
+            {/* ── Step 3: Veículos ───────────────────────────────────────────── */}
             <div
-              className={`flex items-center justify-end gap-3 overflow-hidden transition-all delay-200 duration-500 ease-out ${
-                isIdentificacaoComplete
-                  ? 'mt-8 max-h-20 translate-y-0 opacity-100'
+              className={`overflow-hidden transition-all duration-700 ease-out ${
+                isIdentificacaoComplete && isContatoComplete
+                  ? 'mt-8 max-h-[3000px] translate-y-0 opacity-100'
                   : 'mt-0 max-h-0 translate-y-4 opacity-0'
               }`}
             >
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleCancel}
-                className="h-10 rounded-full border-zinc-700/60 bg-transparent px-5 text-sm text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200"
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                disabled={isSubmitting}
-                className="h-10 rounded-full bg-red-600 px-6 text-sm font-semibold text-white shadow-lg shadow-red-600/25 hover:bg-red-700 disabled:opacity-50"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Salvando...
-                  </>
-                ) : (
-                  <>
-                    Salvar cliente
-                    <ChevronRight className="ml-1 h-4 w-4" />
-                  </>
-                )}
-              </Button>
+              <div className="border-t border-zinc-800/60 pt-8">
+                <VeiculosClienteForm />
+              </div>
+            </div>
+
+            {/* ── Step 4: Preferências & Fidelidade ──────────────────────────── */}
+            <div
+              className={`overflow-hidden transition-all duration-700 ease-out ${
+                isIdentificacaoComplete && isContatoComplete && isVeiculosComplete
+                  ? 'mt-8 max-h-[3000px] translate-y-0 opacity-100'
+                  : 'mt-0 max-h-0 translate-y-4 opacity-0'
+              }`}
+            >
+              <div className="border-t border-zinc-800/60 pt-8">
+                <PreferenciasFidelidadeForm isSubmitting={isSubmitting} />
+              </div>
             </div>
           </div>
         </form>

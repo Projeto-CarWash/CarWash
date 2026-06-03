@@ -35,7 +35,7 @@ public class PreConfirmarAgendamentoEndpointTests : IAsyncDisposable
     }
 
     /// <summary>Checklist 1: pré-confirmação válida devolve o resumo completo SEM persistir.</summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task POST_valido_retorna_200_com_resumo_e_token_sem_persistir()
     {
@@ -82,7 +82,7 @@ public class PreConfirmarAgendamentoEndpointTests : IAsyncDisposable
     }
 
     /// <summary>O token devolvido tem o formato esperado de duas partes base64url.</summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task POST_valido_token_tem_formato_de_duas_partes()
     {
@@ -105,7 +105,7 @@ public class PreConfirmarAgendamentoEndpointTests : IAsyncDisposable
     }
 
     /// <summary>Checklist 9: sem autenticação a pré-confirmação retorna 401.</summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task POST_sem_token_de_acesso_retorna_401()
     {
@@ -117,7 +117,7 @@ public class PreConfirmarAgendamentoEndpointTests : IAsyncDisposable
     }
 
     /// <summary>Pré-confirmação sem filial é barrada pelo validator estrutural (CA007).</summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task POST_sem_filial_retorna_400()
     {
@@ -137,7 +137,7 @@ public class PreConfirmarAgendamentoEndpointTests : IAsyncDisposable
     }
 
     /// <summary>Filial inexistente referenciada na prévia retorna 404.</summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task POST_filial_inexistente_retorna_404()
     {
@@ -156,10 +156,13 @@ public class PreConfirmarAgendamentoEndpointTests : IAsyncDisposable
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    /// <summary>Filial inativa na prévia retorna 422 com slug de recurso inativo.</summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <summary>
+    /// RF019/card 142: filial inativa na prévia retorna 409 com slug filial-inativa
+    /// e a mensagem exata do card — não mais 422.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task POST_filial_inativa_retorna_422()
+    public async Task POST_filial_inativa_retorna_409_com_slug_filial_inativa()
     {
         var client = await AuthenticatedHttpClient.CreateAsync(_factory);
         var (_, clienteId, veiculoId, servicoIds) = await SemearDependenciasAsync();
@@ -174,16 +177,62 @@ public class PreConfirmarAgendamentoEndpointTests : IAsyncDisposable
             servicoIds,
         }, _json);
 
-        response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
         var corpo = await response.Content.ReadFromJsonAsync<JsonElement>(_json);
-        corpo.GetProperty("type").GetString().Should().Contain("recurso-inativo");
+        corpo.GetProperty("type").GetString().Should().Contain("filial-inativa");
+        corpo.GetProperty("title").GetString().Should()
+            .Be("A filial selecionada está inativa e não pode receber novos agendamentos.");
+    }
+
+    /// <summary>RF019: filial inexistente na prévia traz a mensagem exata do card.</summary>
+    [Fact]
+    public async Task POST_filial_inexistente_retorna_404_com_mensagem_do_card()
+    {
+        var client = await AuthenticatedHttpClient.CreateAsync(_factory);
+        var (_, clienteId, veiculoId, servicoIds) = await SemearDependenciasAsync();
+
+        var response = await client.PostAsJsonAsync(RotaPreConfirmar, new
+        {
+            filialId = Guid.NewGuid(),
+            clienteId,
+            veiculoId,
+            inicio = DateTime.UtcNow.AddDays(1),
+            servicoIds,
+        }, _json);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        var corpo = await response.Content.ReadFromJsonAsync<JsonElement>(_json);
+        corpo.GetProperty("title").GetString().Should().Be("Filial não encontrada.");
+    }
+
+    /// <summary>RF019: filialId ausente na prévia traz a mensagem do card em errors[filialId].</summary>
+    [Fact]
+    public async Task POST_sem_filialId_retorna_400_com_mensagem_do_card()
+    {
+        var client = await AuthenticatedHttpClient.CreateAsync(_factory);
+        var (_, clienteId, veiculoId, servicoIds) = await SemearDependenciasAsync();
+
+        var response = await client.PostAsJsonAsync(RotaPreConfirmar, new
+        {
+            filialId = Guid.Empty,
+            clienteId,
+            veiculoId,
+            inicio = DateTime.UtcNow.AddDays(1),
+            servicoIds,
+        }, _json);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var corpo = await response.Content.ReadFromJsonAsync<JsonElement>(_json);
+        corpo.GetProperty("errors").GetProperty("filialId").EnumerateArray()
+            .Select(m => m.GetString())
+            .Should().Contain("Selecione uma filial válida para prosseguir.");
     }
 
     /// <summary>
     /// L9 do RF015: o conflito de veículo (RN011) é detectado já na prévia — 409
     /// com o slug <c>agendamento-conflito-veiculo</c>.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task POST_veiculo_com_conflito_de_horario_retorna_409()
     {

@@ -87,7 +87,7 @@ public sealed class CriarClienteCommandValidator : AbstractValidator<CriarClient
             .MaximumLength(150)
             .When(x => !string.IsNullOrWhiteSpace(x.Email))
             .WithMessage("E-mail deve ter no máximo 150 caracteres.")
-            .EmailAddress()
+            .Must(EmailValido)
             .When(x => !string.IsNullOrWhiteSpace(x.Email))
             .WithMessage("E-mail inválido.");
 
@@ -127,6 +127,10 @@ public sealed class CriarClienteCommandValidator : AbstractValidator<CriarClient
                 .NotEmpty().WithMessage("UF é obrigatória.")
                 .Length(2).WithMessage("UF deve ter exatamente 2 caracteres.");
         });
+
+        RuleFor(x => x.Observacoes)
+            .MaximumLength(500)
+            .WithMessage("Observações deve ter no máximo 500 caracteres.");
     }
 
     private static bool IdadeEntreLimites(DateOnly dataNascimento)
@@ -144,5 +148,57 @@ public sealed class CriarClienteCommandValidator : AbstractValidator<CriarClient
         }
 
         return idade >= Cliente.IdadeMinima && idade <= Cliente.IdadeMaxima;
+    }
+
+    private static bool EmailValido(string? email)
+    {
+        string? normalizado = InputNormalizer.EmailOrNull(email);
+
+        if (string.IsNullOrWhiteSpace(normalizado))
+        {
+            return true;
+        }
+
+        if (normalizado.Length is < 5 or > 150)
+        {
+            return false;
+        }
+
+        var regex = new System.Text.RegularExpressions.Regex(@"^[^@\s]{1,64}@(?=.{1,253}$)(?!.*\.\.)[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+        if (!regex.IsMatch(normalizado))
+        {
+            return false;
+        }
+
+        string dominio = normalizado.Split('@')[1];
+        string[] partesDominio = dominio.Split('.');
+
+        if (partesDominio.Length < 2)
+        {
+            return false;
+        }
+
+        if (partesDominio.Any(parte => string.IsNullOrWhiteSpace(parte)))
+        {
+            return false;
+        }
+
+        string tld = partesDominio[^1];
+
+        if (!System.Text.RegularExpressions.Regex.IsMatch(tld, @"^[a-zA-Z]{2,24}$"))
+        {
+            return false;
+        }
+
+        for (int i = 0; i < partesDominio.Length - 1; i++)
+        {
+            if (string.Equals(partesDominio[i], partesDominio[i + 1], StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

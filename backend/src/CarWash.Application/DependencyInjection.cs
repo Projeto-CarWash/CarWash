@@ -6,6 +6,8 @@ using CarWash.Application.Agendamentos.Observacoes.Atualizar;
 using CarWash.Application.Agendamentos.Observacoes.Criar;
 using CarWash.Application.Agendamentos.Observacoes.Excluir;
 using CarWash.Application.Agendamentos.Observacoes.Listar;
+using CarWash.Application.Clientes.HistoricoAtendimentos.Common;
+using CarWash.Application.Clientes.HistoricoAtendimentos.Consultar;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -30,6 +32,10 @@ public static class DependencyInjection
         services.AddScoped<
             IQueryHandler<ListarObservacoesAgendamentoQuery, ListarObservacoesAgendamentoResponse>,
             ListarObservacoesAgendamentoHandler>();
+
+        services.AddScoped<
+            IQueryHandler<ConsultarHistoricoAtendimentosClienteQuery, HistoricoAtendimentosResponse>,
+            ConsultarHistoricoAtendimentosClienteHandler>();
 
         ArgumentNullException.ThrowIfNull(services);
 

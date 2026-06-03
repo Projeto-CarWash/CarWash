@@ -1,6 +1,5 @@
 using CarWash.Api.Endpoints.Agenda;
 using CarWash.Api.Endpoints.Agendamentos;
-using CarWash.Api.Endpoints.Agendamentos;
 using CarWash.Api.Endpoints.Auth;
 using CarWash.Api.Endpoints.Clientes;
 using CarWash.Api.Endpoints.Filiais;
@@ -28,6 +27,7 @@ public static class EndpointRouteBuilderExtensions
         app.MapServicos();
         app.MapAgenda();
         app.MapAgendamentoObservacoes();
+        app.MapClienteHistoricoAtendimentos();
         return app;
     }
 }

@@ -14,7 +14,7 @@ public interface IRefreshTokenService
     /// hash SHA-256 + IP/UA do request context, e retorna o token bruto que
     /// deve ser entregue ao cliente (apenas via Set-Cookie httpOnly).
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task<RefreshTokenEmitido> EmitirAsync(Usuario usuario, CancellationToken cancellationToken);
 
     /// <summary>
@@ -22,7 +22,7 @@ public interface IRefreshTokenService
     /// Lança <see cref="Common.Exceptions.RefreshTokenInvalidoException"/> se ausente,
     /// expirado ou revogado.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task<UsuarioSessao> ValidarAsync(string refreshTokenBruto, CancellationToken cancellationToken);
 
     /// <summary>
@@ -35,14 +35,14 @@ public interface IRefreshTokenService
     /// (revogada e ainda não expirada), revoga família dentro da transação,
     /// commita e lança <see cref="Common.Exceptions.RefreshTokenReuseDetectadoException"/>.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task<RotacaoContexto> ValidarParaRotacaoAsync(string refreshTokenBruto, CancellationToken cancellationToken);
 
     /// <summary>
     /// Revoga (marca <c>revogado_em</c>) a sessão correspondente ao refresh token
     /// fornecido. Idempotente — chamadas com token inválido/já revogado não falham.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task RevogarAsync(string refreshTokenBruto, CancellationToken cancellationToken);
 }
 

@@ -19,7 +19,7 @@ services:
   migrator:
     profiles: ['manual']
     environment:
-      CARWASH_SEED_ADMIN_PASSWORD: ${CARWASH_SEED_ADMIN_PASSWORD:?precisa estar em .env}
+      CARWASH_SEED_ADMIN_PASSWORD: ${CARWASH_SEED_ADMIN_PASSWORD:-carwash123}
 
   backend:
     build:
@@ -33,7 +33,7 @@ services:
       DOTNET_USE_POLLING_FILE_WATCHER: '1'
       # Senha do admin do seed inicial (DB001 §05 / decisão P12).
       # Sem fallback — a migration falha se a variável estiver vazia.
-      CARWASH_SEED_ADMIN_PASSWORD: ${CARWASH_SEED_ADMIN_PASSWORD:?precisa estar em .env}
+      CARWASH_SEED_ADMIN_PASSWORD: ${CARWASH_SEED_ADMIN_PASSWORD:-carwash123}
     volumes:
       - ./backend:/src
       - backend_nuget:/root/.nuget/packages

@@ -73,6 +73,7 @@ public static class DependencyInjection
         services.AddScoped<IAgendaRepository, AgendaRepository>();
         services.AddScoped<IVeiculoRepository, VeiculoRepository>();
         services.AddScoped<IAgendamentoObservacaoRepository, AgendamentoObservacaoRepository>();
+        services.AddScoped<IFilialRepository, FilialRepository>();
 
         // RF015 — confirmação de agendamento em duas etapas (ADR 0004).
         // Token de confirmação: singleton (sem estado mutável; só lê a chave HMAC).
@@ -91,6 +92,8 @@ public static class DependencyInjection
                     sp.GetRequiredService<AuditableEntitiesInterceptor>(),
                     sp.GetRequiredService<AuditLogInterceptor>());
         });
+
+        services.AddScoped<IHistoricoAtendimentosClienteRepository, HistoricoAtendimentosClienteRepository>();
 
         // IDbContextFactory para casos que precisam de um DbContext fora do escopo
         // da request (ex.: AuditLogger). Construímos as options manualmente — sem
