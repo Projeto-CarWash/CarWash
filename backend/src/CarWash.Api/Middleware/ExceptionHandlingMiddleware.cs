@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using CarWash.Application.Common.Exceptions;
+using CarWash.Application.Exceptions;
 using CarWash.Domain.Common;
 using Microsoft.AspNetCore.Mvc;
 
@@ -53,6 +54,15 @@ public sealed class ExceptionHandlingMiddleware
         try
         {
             await _next(context).ConfigureAwait(false);
+        }
+        catch (ApiException ex)
+        {
+            await EscreverProblemAsync(
+                context,
+                status: ex.StatusCode,
+                slug: ex.ErrorCode.ToLowerInvariant().Replace('_', '-'),
+                title: ex.Message,
+                erros: ex.Errors).ConfigureAwait(false);
         }
         catch (ValidationException ex)
         {

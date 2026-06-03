@@ -5,6 +5,14 @@ import { isValidCnpj, isValidCpf } from '@/lib/validators';
 const UF_PATTERN =
   /^(?:AC|AL|AP|AM|BA|CE|DF|ES|GO|MA|MT|MS|MG|PA|PB|PR|PE|PI|RJ|RN|RS|RO|RR|SC|SP|SE|TO)$/;
 
+const CLIENTE_NOME_PATTERN = /^[a-zA-ZáàãâäéèêëíïóôõöúüçñÁÀÃÂÄÉÈÊËÍÏÓÔÕÖÚÜÇÑ\s-']+$/;
+const BAIRRO_PATTERN = /^[a-zA-ZáàãâäéèêëíïóôõöúüçñÁÀÃÂÄÉÈÊËÍÏÓÔÕÖÚÜÇÑ0-9\s-]+$/;
+const CIDADE_PATTERN = /^[a-zA-ZáàãâäéèêëíïóôõöúüçñÁÀÃÂÄÉÈÊËÍÏÓÔÕÖÚÜÇÑ\s-]+$/;
+const LOGRADOURO_PATTERN = /^[a-zA-ZáàãâäéèêëíïóôõöúüçñÁÀÃÂÄÉÈÊËÍÏÓÔÕÖÚÜÇÑ0-9\s.,-]+$/;
+const VEICULO_TEXTO_PATTERN = /^[a-zA-ZáàãâäéèêëíïóôõöúüçñÁÀÃÂÄÉÈÊËÍÏÓÔÕÖÚÜÇÑ0-9\s.-]+$/;
+const FABRICANTE_PATTERN = /^[a-zA-ZáàãâäéèêëíïóôõöúüçñÁÀÃÂÄÉÈÊËÍÏÓÔÕÖÚÜÇÑ\s-]+$/;
+const COR_PATTERN = /^[a-zA-ZáàãâäéèêëíïóôõöúüçñÁÀÃÂÄÉÈÊËÍÏÓÔÕÖÚÜÇÑ\s]+$/;
+
 /**
  * Schema alinhado com backend CarWash.Application.DTOs.Clientes.CreateClienteRequest.
  * Endereço estruturado, celular obrigatório (RF003), data de nascimento com
@@ -159,7 +167,6 @@ export const clienteSchema = z.object({
       },
       { message: 'Informe um CPF (11 dígitos) ou CNPJ (14 dígitos).' },
     )
-
     .superRefine((val, ctx) => {
       const d = val.replace(/\D/g, '');
       if (d.length === 11 && !isValidCpf(d)) {
@@ -250,7 +257,7 @@ export const clienteSchema = z.object({
         const len = val.replace(/\D/g, '').length;
         return len === 10 || len === 11;
       },
-      { message: 'Telefone deve conter 10 ou 11 dígitos.' },
+      { message: 'Telefone deve conter 10 or 11 dígitos.' },
     ),
 
   // E-mail opcional (DRP não exige)
@@ -305,8 +312,8 @@ export const clienteSchema = z.object({
     .trim()
     .min(3, 'Cidade deve ter no mínimo 3 caracteres.')
     .max(100, 'Cidade deve ter no máximo 100 caracteres.')
-    .refine((val) => /^[a-zA-ZáàãâéèêíïóôõöúçñÁÀÃÂÉÈÊÍÏÓÔÕÖÚÇÑ\s-]+$/.test(val), {
-      message: 'Cidade deve conter apenas letras.',
+    .refine((val) => CIDADE_PATTERN.test(val), {
+      message: 'Cidade não deve conter números ou caracteres especiais.',
     }),
 
   uf: z

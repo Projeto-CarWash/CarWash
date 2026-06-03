@@ -25,6 +25,8 @@ export interface ServicoAtivo {
 }
 
 export interface AgendamentoWizardState {
+  filialId: string;
+  filialNome: string;
   cliente: ClienteResumido | null;
   veiculo: VeiculoResumido | null;
   dataAgendamento: string;
