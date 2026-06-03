@@ -128,7 +128,7 @@ public class CriarVeiculoHandlerTests
         _clientes.ObterPorIdAsync(cliente.Id, Arg.Any<CancellationToken>()).Returns(cliente);
 
         var handler = NovoHandler();
-        var act = () => handler.HandleAsync(NovoComando(cliente.Id) with { Placa = "" }, CancellationToken.None);
+        var act = () => handler.HandleAsync(NovoComando(cliente.Id) with { Placa = string.Empty }, CancellationToken.None);
 
         await act.Should().ThrowAsync<DomainException>().WithMessage("O campo placa é obrigatório.");
     }

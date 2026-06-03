@@ -129,9 +129,7 @@ export function NovoAgendamentoPage() {
     const filialAindaValida = filiais.some((f) => f.id === wizardState.filialId && f.ativo);
     if (filiais.length > 0 && !filialAindaValida) {
       setWizardState((prev) => ({ ...prev, filialId: '', filialNome: '' }));
-      setGlobalError(
-        'A filial selecionada não está mais disponível. Selecione outra filial.',
-      );
+      setGlobalError('A filial selecionada não está mais disponível. Selecione outra filial.');
       return;
     }
 
@@ -235,7 +233,9 @@ export function NovoAgendamentoPage() {
               filiais={filiais}
               filiaisCarregando={filiaisCarregando}
               filiaisErro={filiaisErro}
-              onRetryFiliais={() => { void refetchFiliais(); }}
+              onRetryFiliais={() => {
+                void refetchFiliais();
+              }}
               cliente={wizardState.cliente}
               veiculo={wizardState.veiculo}
               dataAgendamento={wizardState.dataAgendamento}

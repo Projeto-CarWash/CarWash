@@ -61,7 +61,11 @@ public sealed class AgendamentoCatalogoRepository : IAgendamentoCatalogoReposito
             return Array.Empty<ServicoSnapshot>();
         }
 
-        var ids = servicoIds.Distinct().ToArray();
+        // Lista (não array) evita a sobrecarga MemoryExtensions.Contains(ReadOnlySpan<T>)
+        // que quebra a tradução do EF Core 8 no runtime .NET 9/10 (ref struct no
+        // interpretador de expressões). List<T>.Contains é método de instância e
+        // traduz para IN sem ambiguidade.
+        var ids = servicoIds.Distinct().ToList();
         return await _db.Servicos
             .AsNoTracking()
             .Where(s => ids.Contains(s.Id))

@@ -2,8 +2,8 @@ using CarWash.Application.Clientes.Common;
 using CarWash.Application.Clientes.Criar;
 using CarWash.Application.Clientes.Persistence;
 using CarWash.Application.Common.Exceptions;
-using CarWash.Application.Interfaces;
 using CarWash.Application.DTOs;
+using CarWash.Application.Interfaces;
 using CarWash.Domain.Entities;
 using FluentAssertions;
 using NSubstitute;
@@ -90,6 +90,7 @@ public class CriarClienteHandlerTests
             Uf = "SP",
         },
         Veiculos: null,
+        Observacoes: null,
         TraceId: "trace-1",
         UsuarioId: null);
 }

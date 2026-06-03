@@ -1,17 +1,18 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Query;
-using NSubstitute;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
+using NSubstitute;
 
 namespace CarWash.UnitTests;
 
 public static class TestDbSetHelper
 {
-    public static DbSet<T> CreateMockDbSet<T>(List<T> sourceList) where T : class
+    public static DbSet<T> CreateMockDbSet<T>(List<T> sourceList)
+        where T : class
     {
         var queryable = sourceList.AsQueryable();
 
@@ -29,7 +30,7 @@ public static class TestDbSetHelper
     }
 }
 
-internal class TestAsyncQueryProvider<TEntity> : IAsyncQueryProvider
+internal sealed class TestAsyncQueryProvider<TEntity> : IAsyncQueryProvider
 {
     private readonly IQueryProvider _inner;
 
@@ -58,10 +59,10 @@ internal class TestAsyncQueryProvider<TEntity> : IAsyncQueryProvider
         return _inner.Execute<TResult>(expression);
     }
 
-    public TResult ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken)
+    public TResult ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken = default)
     {
         var expectedResultType = typeof(TResult).GetGenericArguments()[0];
-        var executionResult = typeof(IQueryProvider)
+        object? executionResult = typeof(IQueryProvider)
             .GetMethods()
             .First(method => method.Name == nameof(IQueryProvider.Execute) && method.IsGenericMethod)
             .MakeGenericMethod(expectedResultType)
@@ -73,13 +74,17 @@ internal class TestAsyncQueryProvider<TEntity> : IAsyncQueryProvider
     }
 }
 
-internal class TestAsyncEnumerable<T> : EnumerableQuery<T>, IAsyncEnumerable<T>, IQueryable<T>
+internal sealed class TestAsyncEnumerable<T> : EnumerableQuery<T>, IAsyncEnumerable<T>, IQueryable<T>
 {
-    public TestAsyncEnumerable(IEnumerable<T> enumerable) : base(enumerable)
-    { }
+    public TestAsyncEnumerable(IEnumerable<T> enumerable)
+        : base(enumerable)
+    {
+    }
 
-    public TestAsyncEnumerable(Expression expression) : base(expression)
-    { }
+    public TestAsyncEnumerable(Expression expression)
+        : base(expression)
+    {
+    }
 
     public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken = default)
     {
@@ -89,7 +94,7 @@ internal class TestAsyncEnumerable<T> : EnumerableQuery<T>, IAsyncEnumerable<T>,
     IQueryProvider IQueryable.Provider => new TestAsyncQueryProvider<T>(this);
 }
 
-internal class TestAsyncEnumerator<T> : IAsyncEnumerator<T>
+internal sealed class TestAsyncEnumerator<T> : IAsyncEnumerator<T>
 {
     private readonly IEnumerator<T> _inner;
 

@@ -82,7 +82,7 @@ public class AlterarCelulasAtivasEndpointTests : IAsyncDisposable
             .StatusCode.Should().Be(HttpStatusCode.OK);
 
         await using var db2 = CarWashDbContextFactoryForTests.Create(_fixture);
-        var aposIdempotentes = await db2.AuditLogs
+        int aposIdempotentes = await db2.AuditLogs
             .AsNoTracking()
             .CountAsync(a => a.Evento == "FilialCelulasAlteradas" && a.EntidadeId == id);
 
@@ -141,7 +141,7 @@ public class AlterarCelulasAtivasEndpointTests : IAsyncDisposable
         var client = await AuthenticatedHttpClient.CreateAsync(_factory);
         var id = await CriarFilialAsync(client, celulas: 4);
 
-        var body = $"{{\"celulasAtivas\":{valorJson}}}";
+        string body = $"{{\"celulasAtivas\":{valorJson}}}";
         var req = new HttpRequestMessage(HttpMethod.Patch, RotaCelulas(id))
         {
             Content = new StringContent(body, Encoding.UTF8, "application/json"),
@@ -182,8 +182,8 @@ public class AlterarCelulasAtivasEndpointTests : IAsyncDisposable
     // logo não há mais 403 por perfil — funcionário autenticado consegue alterar.
     private async Task<Guid> CriarFilialAsync(HttpClient adminClient, int celulas)
     {
-        var nome = $"Filial {Guid.NewGuid():N}"[..30];
-        var codigo = CodigoUnico();
+        string nome = $"Filial {Guid.NewGuid():N}"[..30];
+        string codigo = CodigoUnico();
         var response = await adminClient.PostAsJsonAsync(RotaFiliais, new { nome, codigo, celulasAtivas = celulas }, _json);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         return (await response.Content.ReadFromJsonAsync<JsonElement>(_json)).GetProperty("id").GetGuid();

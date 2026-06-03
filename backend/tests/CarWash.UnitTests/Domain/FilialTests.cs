@@ -50,7 +50,7 @@ public class FilialTests
     [Fact]
     public void Criar_rejeita_nome_acima_de_120_chars()
     {
-        var nomeLongo = new string('A', 121);
+        string nomeLongo = new string('A', 121);
         var act = () => Filial.Criar(Guid.NewGuid(), nomeLongo, CodigoValido, 10);
         act.Should().Throw<DomainException>().WithMessage("*Nome*");
     }

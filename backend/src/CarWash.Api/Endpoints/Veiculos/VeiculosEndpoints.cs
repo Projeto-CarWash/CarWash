@@ -111,7 +111,7 @@ public static class VeiculosEndpoints
                 "Corpo da requisição ausente ou malformado.");
         }
 
-        var traceId = http.TraceIdentifier;
+        string traceId = http.TraceIdentifier;
         var usuarioId = ObterUsuarioId(http);
 
         var itens = request.Veiculos.Select(v => new VeiculoItemCommand(

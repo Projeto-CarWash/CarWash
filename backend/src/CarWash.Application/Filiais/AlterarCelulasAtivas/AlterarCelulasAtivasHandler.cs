@@ -44,7 +44,7 @@ public sealed class AlterarCelulasAtivasHandler
         ArgumentNullException.ThrowIfNull(command);
 
         // Validator garante NotNull antes de chegar aqui — `.Value` é seguro.
-        var valorSolicitado = command.CelulasAtivas!.Value;
+        int valorSolicitado = command.CelulasAtivas!.Value;
 
         // ObterPorIdAsync (development) retorna a entidade RASTREADA — permite
         // mutar (AjustarCelulas) e persistir via SalvarAsync na mesma unidade
@@ -53,7 +53,7 @@ public sealed class AlterarCelulasAtivasHandler
             .ConfigureAwait(false)
             ?? throw new NotFoundException(MensagemNaoEncontrado);
 
-        var valorAnterior = filial.CelulasAtivas;
+        int valorAnterior = filial.CelulasAtivas;
 
         if (valorAnterior == valorSolicitado)
         {

@@ -26,7 +26,7 @@ public static class FuncionarioHttpClient
 
         // 1) Admin cria um funcionário com credenciais conhecidas.
         var admin = await AuthenticatedHttpClient.CreateAsync(factory).ConfigureAwait(false);
-        var email = $"func-{Guid.NewGuid():N}@carwash.local";
+        string email = $"func-{Guid.NewGuid():N}@carwash.local";
 
         var criar = await admin.PostAsJsonAsync(RotaCriarUsuario, new
         {
@@ -47,7 +47,7 @@ public static class FuncionarioHttpClient
         login.EnsureSuccessStatusCode();
 
         var body = await login.Content.ReadFromJsonAsync<JsonElement>(Json).ConfigureAwait(false);
-        var accessToken = body.GetProperty("accessToken").GetString()
+        string accessToken = body.GetProperty("accessToken").GetString()
             ?? throw new InvalidOperationException("Login do funcionário não devolveu accessToken.");
 
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);

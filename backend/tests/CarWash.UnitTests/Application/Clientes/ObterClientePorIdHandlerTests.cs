@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using CarWash.Application.Clientes.ObterPorId;
 using CarWash.Application.Clientes.Persistence;
 using CarWash.Application.Common.Exceptions;
@@ -8,10 +12,6 @@ using CarWash.Domain.ValueObjects;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using NSubstitute;
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace CarWash.UnitTests.Application.Clientes;
@@ -58,8 +58,7 @@ public class ObterClientePorIdHandlerTests
             new Placa("ABC1D23"),
             "Civic",
             "Honda",
-            "Preto"
-        );
+            "Preto");
 
         var veiculosList = new List<Veiculo> { veiculo };
         var dbSet = TestDbSetHelper.CreateMockDbSet(veiculosList);
