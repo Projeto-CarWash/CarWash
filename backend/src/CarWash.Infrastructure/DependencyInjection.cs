@@ -112,6 +112,8 @@ public static class DependencyInjection
         services.AddSingleton<IDbContextFactory<CarWashDbContext>>(
             new CarWashRuntimeDbContextFactory(factoryOptions));
 
+        services.AddScoped<ICarWashDbContext, CarWashDbContext>();
+
         return services;
     }
 }

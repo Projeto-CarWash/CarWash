@@ -239,9 +239,10 @@ export function ClienteDetalhePage() {
       <Card className="border-zinc-800/60 bg-zinc-900/30">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <div>
-            <CardTitle className="text-lg text-zinc-100 flex items-center gap-2">
+            <CardTitle className="text-lg text-zinc-100 flex items-center gap-2 font-semibold">
               <Car className="h-5 w-5 text-red-500" />
-              Veículos
+              Veículos do cliente{' '}
+              <span className="text-sm font-normal text-zinc-400">({veiculos.length})</span>
             </CardTitle>
             <p className="text-xs text-zinc-400 mt-1">
               Veículos associados a este cliente para ordens de serviço.
@@ -259,10 +260,22 @@ export function ClienteDetalhePage() {
         </CardHeader>
         <CardContent>
           {carregandoVeiculos ? (
-            <div className="flex items-center justify-center py-6 text-sm text-zinc-500">
-              <Loader2 className="mr-2 h-4 w-4 animate-spin text-zinc-400" />
-              Carregando veículos…
-            </div>
+            <ul aria-busy="true" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3].map((skeleton) => (
+                <li
+                  key={skeleton}
+                  className="flex h-20 items-center justify-between rounded-xl border border-zinc-800/40 bg-zinc-900/20 p-4 animate-pulse"
+                >
+                  <div className="flex items-center gap-3 w-full">
+                    <div className="h-9 w-9 rounded-lg bg-zinc-800/50" />
+                    <div className="space-y-2 w-full">
+                      <div className="h-4 w-1/2 rounded bg-zinc-800/50" />
+                      <div className="h-3 w-1/3 rounded bg-zinc-800/50" />
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
           ) : erroVeiculos ? (
             /* ── Erro isolado na seção de veículos ── */
             <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-red-900/40 bg-red-950/10 py-8 text-center">
@@ -299,10 +312,10 @@ export function ClienteDetalhePage() {
             </div>
           ) : (
             /* ── Lista de Veículos ── */
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {veiculos.map((veiculo) => (
-                <div
-                  key={veiculo.id}
+            <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {[...veiculos].reverse().map((veiculo) => (
+                <li
+                  key={veiculo.id || veiculo.placa}
                   className="flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-950/30 p-4 hover:border-zinc-700 transition-colors"
                 >
                   <div className="flex items-center gap-3">
@@ -322,9 +335,9 @@ export function ClienteDetalhePage() {
                   <div className="rounded-md border border-zinc-700 bg-zinc-900 px-2.5 py-1 text-xs font-mono font-bold tracking-wider text-zinc-200 uppercase shadow-inner">
                     {formatarPlacaExibicao(veiculo.placa)}
                   </div>
-                </div>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </CardContent>
       </Card>

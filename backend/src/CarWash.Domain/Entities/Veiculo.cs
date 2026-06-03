@@ -99,7 +99,12 @@ public sealed class Veiculo : IAuditable, IAuditableSetter
         };
     }
 
-    public void AtualizarDados(Placa placa, string modelo, string fabricante, string cor, int? ano = null)
+    public void Atualizar(
+        Placa placa,
+        string modelo,
+        string fabricante,
+        string cor,
+        int? ano = null)
     {
         ArgumentNullException.ThrowIfNull(placa);
 
