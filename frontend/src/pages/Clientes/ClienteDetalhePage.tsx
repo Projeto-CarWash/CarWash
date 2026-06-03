@@ -1,10 +1,28 @@
 import { AxiosError } from 'axios';
-import { ArrowLeft, Car, Loader2, Pencil, Plus, Power, RefreshCw, ShieldOff } from 'lucide-react';
+import {
+  ArrowLeft,
+  Car,
+  CheckCircle2,
+  Loader2,
+  Pencil,
+  Plus,
+  Power,
+  RefreshCw,
+  ShieldOff,
+} from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { clienteService, type ClienteDetalhe } from '@/services/clienteService';
 import { veiculoService, type Veiculo } from '@/services/veiculoService';
 
@@ -21,6 +39,8 @@ export function ClienteDetalhePage() {
   const [carregando, setCarregando] = useState(true);
   const [carregandoVeiculos, setCarregandoVeiculos] = useState(true);
   const [salvando, setSalvando] = useState(false);
+  const [sucesso, setSucesso] = useState<string | null>(null);
+  const [modalStatusAberto, setModalStatusAberto] = useState(false);
 
   // Ref para forçar refetch de veículos de fora do useEffect
   const refetchVeiculosRef = useRef<(() => void) | null>(null);
@@ -38,6 +58,8 @@ export function ClienteDetalhePage() {
     setErroVeiculos(null);
     setCarregando(true);
     setCarregandoVeiculos(true);
+    setSucesso(null);
+    setModalStatusAberto(false);
   }, [id]);
 
   // ─── Fetch do cliente ───
@@ -128,17 +150,27 @@ export function ClienteDetalhePage() {
 
   const toggleStatus = useCallback(async () => {
     if (!cliente) return;
+    const novoAtivo = !cliente.ativo;
     setSalvando(true);
     setErro(null);
     try {
-      const novo = await clienteService.alterarStatus(cliente.id, !cliente.ativo);
+      const novo = await clienteService.alterarStatus(cliente.id, novoAtivo);
       setCliente((prev) => (prev ? { ...prev, ativo: novo.ativo } : null));
+      setSucesso(`Cliente ${novo.ativo ? 'reativado' : 'inativado'} com sucesso.`);
+      setModalStatusAberto(false);
     } catch {
-      setErro('Não foi possível alterar o status do cliente.');
+      setErro(`Não foi possível ${novoAtivo ? 'reativar' : 'inativar'} o cliente.`);
     } finally {
       setSalvando(false);
     }
   }, [cliente]);
+
+  // ─── Mensagem de sucesso transitória ───
+  useEffect(() => {
+    if (!sucesso) return;
+    const timer = setTimeout(() => setSucesso(null), 4000);
+    return () => clearTimeout(timer);
+  }, [sucesso]);
 
   // ─── 404 / 403 global: exibe tela simplificada ───
   if (erro && !cliente && (erroHttp === 404 || erroHttp === 403)) {
@@ -187,7 +219,7 @@ export function ClienteDetalhePage() {
             type="button"
             variant="outline"
             disabled={salvando || carregando || !cliente}
-            onClick={toggleStatus}
+            onClick={() => setModalStatusAberto(true)}
             className="h-9 rounded-full border-zinc-700/60 bg-transparent px-4 text-sm hover:bg-zinc-800/50 hover:text-zinc-200 text-zinc-400"
           >
             {salvando ? (
@@ -199,6 +231,17 @@ export function ClienteDetalhePage() {
           </Button>
         </div>
       </div>
+
+      {sucesso && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="flex items-center gap-2 rounded-xl border border-green-500/30 bg-green-950/30 px-4 py-3 text-sm text-green-400"
+        >
+          <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
+          {sucesso}
+        </div>
+      )}
 
       <Card className="border-zinc-800/60 bg-zinc-900/30">
         <CardHeader>
@@ -358,6 +401,48 @@ export function ClienteDetalhePage() {
           {erro}
         </p>
       )}
+
+      {/* ─── Modal de confirmação de inativação/reativação ─── */}
+      <Dialog
+        open={modalStatusAberto}
+        onOpenChange={(aberto) => {
+          if (salvando) return;
+          setModalStatusAberto(aberto);
+        }}
+      >
+        <DialogContent className="sm:max-w-[425px] bg-zinc-950 border-zinc-800">
+          <DialogHeader>
+            <DialogTitle className="text-zinc-100">
+              {cliente?.ativo ? 'Inativar cliente' : 'Reativar cliente'}
+            </DialogTitle>
+            <DialogDescription className="text-zinc-400">
+              {cliente?.ativo
+                ? `Deseja realmente inativar o cliente "${cliente?.nome}"? Ele não estará mais disponível para novos agendamentos.`
+                : `Deseja reativar o cliente "${cliente?.nome}"? Ele voltará a estar disponível para novos agendamentos.`}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4 gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setModalStatusAberto(false)}
+              disabled={salvando}
+              className="border-zinc-700 bg-transparent text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              onClick={() => void toggleStatus()}
+              disabled={salvando}
+              className="bg-red-600 text-white hover:bg-red-700"
+            >
+              {salvando ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Confirmar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
