@@ -155,7 +155,7 @@ public class CriarFilialEndpointTests : IAsyncDisposable
     {
         var client = await AuthenticatedHttpClient.CreateAsync(_factory);
 
-        var codigo = NovoCodigo();
+        string codigo = NovoCodigo();
         var primeiro = PayloadValido();
         primeiro["codigo"] = codigo;
 
@@ -177,7 +177,7 @@ public class CriarFilialEndpointTests : IAsyncDisposable
     {
         var client = await AuthenticatedHttpClient.CreateAsync(_factory);
 
-        var cnpj = NovoCnpjValido();
+        string cnpj = NovoCnpjValido();
         var primeiro = PayloadValido();
         primeiro["cnpj"] = cnpj;
 
@@ -199,7 +199,7 @@ public class CriarFilialEndpointTests : IAsyncDisposable
     {
         var client = await AuthenticatedHttpClient.CreateAsync(_factory);
 
-        var nome = $"FilNome{Guid.NewGuid():N}"[..20];
+        string nome = $"FilNome{Guid.NewGuid():N}"[..20];
         var primeiro = PayloadValido();
         primeiro["nome"] = nome;
 
@@ -223,10 +223,10 @@ public class CriarFilialEndpointTests : IAsyncDisposable
     {
         var client = await AuthenticatedHttpClient.CreateAsync(_factory);
 
-        var sufixo = Guid.NewGuid().ToString("N")[..6].ToUpperInvariant();
-        var nomeBase = $"FOO{sufixo}BAR";
-        var nomeComPercent = $"FOO{sufixo}%";
-        var nomeComUnderscore = $"FOO{sufixo}_";
+        string sufixo = Guid.NewGuid().ToString("N")[..6].ToUpperInvariant();
+        string nomeBase = $"FOO{sufixo}BAR";
+        string nomeComPercent = $"FOO{sufixo}%";
+        string nomeComUnderscore = $"FOO{sufixo}_";
 
         // Cria primeiro o nome "concreto" que serviria de gabarito caso a
         // implementação errada usasse ILIKE com wildcards.
@@ -257,7 +257,7 @@ public class CriarFilialEndpointTests : IAsyncDisposable
     public async Task POST_concorrente_mesmo_codigo_apenas_um_vence_outro_409()
     {
         var client = await AuthenticatedHttpClient.CreateAsync(_factory);
-        var codigo = NovoCodigo();
+        string codigo = NovoCodigo();
 
         var p1 = PayloadValido();
         p1["codigo"] = codigo;
@@ -268,8 +268,8 @@ public class CriarFilialEndpointTests : IAsyncDisposable
         var t2 = client.PostAsJsonAsync(RotaCriar, p2, _json);
         var resultados = await Task.WhenAll(t1, t2);
 
-        var sucesso = resultados.Count(r => r.StatusCode == HttpStatusCode.Created);
-        var conflito = resultados.Count(r => r.StatusCode == HttpStatusCode.Conflict);
+        int sucesso = resultados.Count(r => r.StatusCode == HttpStatusCode.Created);
+        int conflito = resultados.Count(r => r.StatusCode == HttpStatusCode.Conflict);
         sucesso.Should().Be(1, "apenas uma das tentativas concorrentes deve vencer");
         conflito.Should().Be(1, "a perdedora deve receber 409 traduzido do UK violation");
     }
@@ -425,7 +425,7 @@ public class CriarFilialEndpointTests : IAsyncDisposable
     {
         Span<int> d = stackalloc int[11];
         var rng = Random.Shared;
-        for (var i = 0; i < 9; i++)
+        for (int i = 0; i < 9; i++)
         {
             d[i] = rng.Next(0, 10);
         }
@@ -433,8 +433,8 @@ public class CriarFilialEndpointTests : IAsyncDisposable
         d[9] = Dv(d[..9], 10);
         d[10] = Dv(d[..10], 11);
 
-        var chars = new char[11];
-        for (var i = 0; i < 11; i++)
+        char[] chars = new char[11];
+        for (int i = 0; i < 11; i++)
         {
             chars[i] = (char)('0' + d[i]);
         }
@@ -443,13 +443,13 @@ public class CriarFilialEndpointTests : IAsyncDisposable
 
         static int Dv(ReadOnlySpan<int> parcial, int pesoInicial)
         {
-            var soma = 0;
-            for (var i = 0; i < parcial.Length; i++)
+            int soma = 0;
+            for (int i = 0; i < parcial.Length; i++)
             {
                 soma += parcial[i] * (pesoInicial - i);
             }
 
-            var resto = soma % 11;
+            int resto = soma % 11;
             return resto < 2 ? 0 : 11 - resto;
         }
     }
@@ -458,14 +458,14 @@ public class CriarFilialEndpointTests : IAsyncDisposable
     {
         Span<int> d = stackalloc int[14];
         var rng = Random.Shared;
-        for (var i = 0; i < 12; i++)
+        for (int i = 0; i < 12; i++)
         {
             d[i] = rng.Next(0, 10);
         }
 
         // Evita sequência repetida (rejeitada pelo VO Cnpj).
-        var todosIguais = true;
-        for (var i = 1; i < 12; i++)
+        bool todosIguais = true;
+        for (int i = 1; i < 12; i++)
         {
             if (d[i] != d[0])
             {
@@ -482,8 +482,8 @@ public class CriarFilialEndpointTests : IAsyncDisposable
         d[12] = DvCnpj(d[..12], [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]);
         d[13] = DvCnpj(d[..13], [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]);
 
-        var chars = new char[14];
-        for (var i = 0; i < 14; i++)
+        char[] chars = new char[14];
+        for (int i = 0; i < 14; i++)
         {
             chars[i] = (char)('0' + d[i]);
         }
@@ -492,13 +492,13 @@ public class CriarFilialEndpointTests : IAsyncDisposable
 
         static int DvCnpj(ReadOnlySpan<int> parcial, int[] pesos)
         {
-            var soma = 0;
-            for (var i = 0; i < parcial.Length; i++)
+            int soma = 0;
+            for (int i = 0; i < parcial.Length; i++)
             {
                 soma += parcial[i] * pesos[i];
             }
 
-            var resto = soma % 11;
+            int resto = soma % 11;
             return resto < 2 ? 0 : 11 - resto;
         }
     }

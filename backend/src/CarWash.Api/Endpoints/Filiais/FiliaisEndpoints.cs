@@ -86,7 +86,7 @@ public static class FiliaisEndpoints
                 "Corpo da requisição ausente ou malformado.");
         }
 
-        var traceId = http.TraceIdentifier;
+        string traceId = http.TraceIdentifier;
         var usuarioId = ObterUsuarioId(http);
 
         var command = new CriarFilialCommand(
@@ -203,7 +203,7 @@ public static class FiliaisEndpoints
 
     private static Guid? ObterUsuarioId(HttpContext http)
     {
-        var sub = http.User.FindFirst("sub")?.Value
+        string? sub = http.User.FindFirst("sub")?.Value
             ?? http.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         return Guid.TryParse(sub, out var id) ? id : null;
     }

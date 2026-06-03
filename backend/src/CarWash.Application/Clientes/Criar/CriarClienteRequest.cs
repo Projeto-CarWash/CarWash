@@ -26,5 +26,6 @@ public class CriarClienteRequest
     public EnderecoRequest? Endereco { get; set; }
 
     public List<CriarVeiculoRequest>? Veiculos { get; set; }
+
     public string? Observacoes { get; set; }
 }

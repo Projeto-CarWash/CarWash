@@ -105,7 +105,7 @@ public sealed class PreConfirmarAgendamentoHandler
             throw new CapacidadeFilialAtingidaException();
         }
 
-        var token = _tokens.Gerar(calculado.HashResumo, usuarioId, command.TraceId);
+        string token = _tokens.Gerar(calculado.HashResumo, usuarioId, command.TraceId);
         var validado = _tokens.Validar(token, usuarioId);
 
         _logger.LogInformation(

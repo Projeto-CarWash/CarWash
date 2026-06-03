@@ -23,7 +23,7 @@ public class CriarVeiculoCommandValidatorTests
     [Fact]
     public async Task Placa_vazia_retorna_erro_obrigatoria()
     {
-        var command = ComandoValido() with { Placa = "" };
+        var command = ComandoValido() with { Placa = string.Empty };
 
         var result = await _sut.TestValidateAsync(command);
 

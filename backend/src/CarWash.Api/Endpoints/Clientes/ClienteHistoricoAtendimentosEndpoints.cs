@@ -10,7 +10,7 @@ public static class ClienteHistoricoAtendimentosEndpoints
 {
     public static IEndpointRouteBuilder MapClienteHistoricoAtendimentos(this IEndpointRouteBuilder app)
     {
-        RouteGroupBuilder group = app
+        var group = app
             .MapGroup("/api/v1/clientes")
             .WithTags("Clientes")
             .RequireAuthorization();
@@ -41,7 +41,7 @@ public static class ClienteHistoricoAtendimentosEndpoints
     {
         string traceId = ObterTraceId(httpContext);
 
-        if (!Guid.TryParse(clienteId, out Guid clienteGuid))
+        if (!Guid.TryParse(clienteId, out var clienteGuid))
         {
             return Results.BadRequest(new
             {
@@ -71,7 +71,7 @@ public static class ClienteHistoricoAtendimentosEndpoints
 
         try
         {
-            HistoricoAtendimentosResponse response =
+            var response =
                 await handler.HandleAsync(query, cancellationToken);
 
             return Results.Ok(response);

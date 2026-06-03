@@ -99,6 +99,7 @@ public static class ClientesEndpoints
             Email: request.Email,
             Endereco: request.Endereco,
             Veiculos: request.Veiculos,
+            Observacoes: request.Observacoes,
             TraceId: traceId,
             UsuarioId: usuarioId);
 

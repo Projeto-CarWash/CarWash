@@ -14,6 +14,8 @@ namespace CarWash.UnitTests.Application.Veiculos;
 
 public class CriarVeiculosBatchHandlerTests
 {
+    private static readonly string[] PlacasExistentes = { "ABC1D23" };
+
     private readonly IClienteRepository _clientes = Substitute.For<IClienteRepository>();
     private readonly IVeiculoRepository _veiculos = Substitute.For<IVeiculoRepository>();
 
@@ -66,7 +68,7 @@ public class CriarVeiculosBatchHandlerTests
         var cliente = NovoCliente();
         _clientes.ObterPorIdAsync(cliente.Id, Arg.Any<CancellationToken>()).Returns(cliente);
         _veiculos.PlacasExistentesAsync(Arg.Any<IEnumerable<string>>(), Arg.Any<CancellationToken>())
-            .Returns(new[] { "ABC1D23" });
+            .Returns(PlacasExistentes);
 
         var handler = NovoHandler();
         var command = NovoBatchComando(cliente.Id, [
