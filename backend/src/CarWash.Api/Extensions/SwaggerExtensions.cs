@@ -162,7 +162,7 @@ internal static class SwaggerExtensions
     private static bool TryClaimSchemaId(string candidate, Type type, out string schemaId)
     {
         schemaId = candidate;
-        Type owner = SchemaIdOwners.GetOrAdd(candidate, type);
+        var owner = SchemaIdOwners.GetOrAdd(candidate, type);
         return owner == type;
     }
 

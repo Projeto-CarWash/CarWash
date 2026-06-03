@@ -87,7 +87,7 @@ public class CapacidadeFilialRf008EndpointTests : IAsyncDisposable
 
         await using (var db = CarWashDbContextFactoryForTests.Create(_fixture))
         {
-            var preservados = await db.Agendamentos
+            int preservados = await db.Agendamentos
                 .AsNoTracking()
                 .CountAsync(a => a.FilialId == filialId && a.StatusRaw == "agendado");
             preservados.Should().Be(2, "reduzir capacidade não pode apagar agendamentos existentes");
@@ -124,11 +124,11 @@ public class CapacidadeFilialRf008EndpointTests : IAsyncDisposable
 
     private async Task<Guid> CriarFilialAsync(HttpClient client, int celulas)
     {
-        var nome = $"Filial {Guid.NewGuid():N}"[..30];
+        string nome = $"Filial {Guid.NewGuid():N}"[..30];
 
         // POST de filial agora exige `codigo` (regex ^[A-Z0-9]{2,20}$, único por filial)
         // após a reconciliação com a development.
-        var codigo = $"F{Guid.NewGuid():N}"[..8].ToUpperInvariant();
+        string codigo = $"F{Guid.NewGuid():N}"[..8].ToUpperInvariant();
         var response = await client.PostAsJsonAsync(RotaFiliais, new { nome, codigo, celulasAtivas = celulas }, _json);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         return (await response.Content.ReadFromJsonAsync<JsonElement>(_json)).GetProperty("id").GetGuid();
@@ -194,15 +194,15 @@ public class CapacidadeFilialRf008EndpointTests : IAsyncDisposable
     {
         Span<int> d = stackalloc int[11];
         var rng = Random.Shared;
-        for (var i = 0; i < 9; i++)
+        for (int i = 0; i < 9; i++)
         {
             d[i] = rng.Next(0, 10);
         }
 
         d[9] = Dv(d[..9], 10);
         d[10] = Dv(d[..10], 11);
-        var chars = new char[11];
-        for (var i = 0; i < 11; i++)
+        char[] chars = new char[11];
+        for (int i = 0; i < 11; i++)
         {
             chars[i] = (char)('0' + d[i]);
         }
@@ -211,13 +211,13 @@ public class CapacidadeFilialRf008EndpointTests : IAsyncDisposable
 
         static int Dv(ReadOnlySpan<int> parcial, int pesoInicial)
         {
-            var soma = 0;
-            for (var i = 0; i < parcial.Length; i++)
+            int soma = 0;
+            for (int i = 0; i < parcial.Length; i++)
             {
                 soma += parcial[i] * (pesoInicial - i);
             }
 
-            var resto = soma % 11;
+            int resto = soma % 11;
             return resto < 2 ? 0 : 11 - resto;
         }
     }

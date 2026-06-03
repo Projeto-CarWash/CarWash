@@ -324,7 +324,7 @@ public sealed class CalculadoraResumoAgendamento
         // (sem perda de dado, sem corrupção). A versão "hard" (advisory lock
         // por filial ou EXCLUDE com count) está mapeada como evolução pós-MVP.
         // Mais detalhes em docs/adrs/rf018-celulas-ativas-filial.md §9.4.
-        var celulasAtivas = await _catalogo
+        int? celulasAtivas = await _catalogo
             .ObterCelulasAtivasFilialAsync(filialId, cancellationToken)
             .ConfigureAwait(false);
 
@@ -336,7 +336,7 @@ public sealed class CalculadoraResumoAgendamento
             throw new CapacidadeFilialEsgotadaException();
         }
 
-        var simultaneos = await _catalogo
+        int simultaneos = await _catalogo
             .ContarSobreposicoesNaFilialAsync(filialId, inicioUtc, fimUtc, cancellationToken)
             .ConfigureAwait(false);
 
