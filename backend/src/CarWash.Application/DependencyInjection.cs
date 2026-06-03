@@ -2,12 +2,8 @@ using System.Reflection;
 using CarWash.Application.Abstractions;
 using CarWash.Application.Abstractions.Messaging;
 using CarWash.Application.Agendamentos.Common;
-using CarWash.Application.Agendamentos.Observacoes.Atualizar;
-using CarWash.Application.Agendamentos.Observacoes.Criar;
-using CarWash.Application.Agendamentos.Observacoes.Excluir;
-using CarWash.Application.Agendamentos.Observacoes.Listar;
-using CarWash.Application.Clientes.HistoricoAtendimentos.Common;
-using CarWash.Application.Clientes.HistoricoAtendimentos.Consultar;
+using CarWash.Application.Interfaces;
+using CarWash.Application.Services;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -55,6 +51,8 @@ public static class DependencyInjection
         // não é handler nem validator, então não é alcançado pelo scan acima.
         services.AddScoped<CalculadoraResumoAgendamento>();
 
+        // Registros manuais de serviços da aplicação
+        services.AddScoped<IVeiculoService, VeiculoService>();
         return services;
     }
 

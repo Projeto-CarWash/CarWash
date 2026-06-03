@@ -3,6 +3,7 @@ using CarWash.Application.Clientes.Common;
 using CarWash.Application.Clientes.Persistence;
 using CarWash.Application.Common;
 using CarWash.Application.Common.Exceptions;
+using CarWash.Application.Interfaces;
 using CarWash.Domain.Entities;
 using CarWash.Domain.ValueObjects;
 
@@ -16,10 +17,12 @@ namespace CarWash.Application.Clientes.Criar;
 public sealed class CriarClienteHandler : ICommandHandler<CriarClienteCommand, CriarClienteResponse>
 {
     private readonly IClienteRepository _repositorio;
+    private readonly IVeiculoService _veiculoService;
 
-    public CriarClienteHandler(IClienteRepository repositorio)
+    public CriarClienteHandler(IClienteRepository repositorio, IVeiculoService veiculoService)
     {
         _repositorio = repositorio;
+        _veiculoService = veiculoService;
     }
 
     /// <inheritdoc/>
@@ -79,10 +82,22 @@ public sealed class CriarClienteHandler : ICommandHandler<CriarClienteCommand, C
             email: emailNormalizado is null ? null : new Email(emailNormalizado),
             observacoes: observacoes);
 
-        // GAP-CW-CLI-AUDIT-CREATE: registra o ator do cadastro.
+        // GAP-CW-CLI-AUDIT-CREATE: registra o actor do cadastro.
         cliente.RegistrarCriadoPor(command.UsuarioId);
 
         await _repositorio.AdicionarAsync(cliente, command.TraceId, command.UsuarioId, cancellationToken).ConfigureAwait(false);
+
+        if (command.Veiculos is not null && command.Veiculos.Count > 0)
+        {
+            foreach (var veiculoReq in command.Veiculos)
+            {
+                await _veiculoService.CriarVeiculoAsync(
+                    cliente.Id,
+                    veiculoReq,
+                    command.TraceId,
+                    cancellationToken).ConfigureAwait(false);
+            }
+        }
 
         return new CriarClienteResponse
         {

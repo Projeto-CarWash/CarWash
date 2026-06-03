@@ -1,3 +1,4 @@
+using CarWash.Application.Interfaces;
 using CarWash.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,12 +9,16 @@ namespace CarWash.Infrastructure.Persistence;
 /// por convenção (<see cref="ModelBuilder.ApplyConfigurationsFromAssembly"/>).
 /// Naming convertido para <c>snake_case</c> via <c>EFCore.NamingConventions</c>.
 /// </summary>
-public class CarWashDbContext : DbContext
+public class CarWashDbContext : DbContext, ICarWashDbContext
 {
     public CarWashDbContext(DbContextOptions<CarWashDbContext> options)
         : base(options)
     {
     }
+
+    public DbSet<User> Users => Set<User>();
+
+    public DbSet<Session> Sessions => Set<Session>();
 
     public DbSet<Usuario> Usuarios => Set<Usuario>();
 
@@ -26,6 +31,8 @@ public class CarWashDbContext : DbContext
     public DbSet<Cliente> Clientes => Set<Cliente>();
 
     public DbSet<Filiado> Filiados => Set<Filiado>();
+
+    public DbSet<Responsavel> Responsaveis => Set<Responsavel>();
 
     public DbSet<Veiculo> Veiculos => Set<Veiculo>();
 

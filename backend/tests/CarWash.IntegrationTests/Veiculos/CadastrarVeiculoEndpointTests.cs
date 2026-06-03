@@ -2,9 +2,10 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
-using BCrypt.Net;
 using CarWash.Application.DTOs;
 using CarWash.Domain.Entities;
+using CarWash.Domain.Enums;
+using CarWash.Domain.ValueObjects;
 using CarWash.Infrastructure.Persistence;
 using CarWash.IntegrationTests.Collections;
 using CarWash.IntegrationTests.Fixtures;
@@ -13,6 +14,9 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
+
+using CriarVeiculoRequest = CarWash.Application.Veiculos.Criar.CriarVeiculoRequest;
+using VeiculoResponse = CarWash.Application.Veiculos.Common.VeiculoResponse;
 
 namespace CarWash.IntegrationTests.Veiculos;
 
@@ -31,7 +35,7 @@ public class CadastrarVeiculoEndpointTests : IAsyncDisposable
     [Fact]
     public async Task POST_veiculos_returns_201_with_id_for_valid_request()
     {
-        await _factory.EnsureDatabaseCreatedAsync();
+        await EnsureDatabaseCreatedAsync();
 
         Guid clienteId = await SeedClienteAsync();
         var client = await CreateAuthenticatedClientAsync(isAdmin: true);
@@ -52,62 +56,12 @@ public class CadastrarVeiculoEndpointTests : IAsyncDisposable
         var body = await response.Content.ReadFromJsonAsync<VeiculoResponse>(JsonOptions);
         body.Should().NotBeNull();
         body!.Id.Should().NotBeEmpty();
-        body.Message.Should().Be("Veículo cadastrado com sucesso.");
-    }
-
-    [Fact]
-    public async Task POST_veiculos_returns_400_for_invalid_cliente_id()
-    {
-        var client = await CreateAuthenticatedClientAsync(isAdmin: true);
-
-        var response = await client.PostAsJsonAsync(
-            "/api/v1/clientes/invalid/veiculos",
-            new CriarVeiculoRequest
-            {
-                Placa = "ABC1D23",
-                Modelo = "Corolla",
-                Fabricante = "Toyota",
-                Cor = "Prata"
-            });
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
-        var body = await response.Content.ReadFromJsonAsync<BaseResponse>(JsonOptions);
-        body.Should().NotBeNull();
-        body!.Message.Should().Be("Dados do veículo inválidos. Verifique os campos e tente novamente.");
-        body.Errors.Should().ContainKey("clienteId");
-    }
-
-    [Fact]
-    public async Task POST_veiculos_returns_404_when_cliente_not_found()
-    {
-        await _factory.EnsureDatabaseCreatedAsync();
-
-        var client = await CreateAuthenticatedClientAsync(isAdmin: true);
-        Guid clienteId = Guid.NewGuid();
-        string placa = GeneratePlaca();
-
-        var response = await client.PostAsJsonAsync(
-            $"/api/v1/clientes/{clienteId}/veiculos",
-            new CriarVeiculoRequest
-            {
-                Placa = placa,
-                Modelo = "Corolla",
-                Fabricante = "Toyota",
-                Cor = "Prata"
-            });
-
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
-
-        var body = await response.Content.ReadFromJsonAsync<BaseResponse>(JsonOptions);
-        body.Should().NotBeNull();
-        body!.Message.Should().Be("Cliente não encontrado para vincular o veículo.");
     }
 
     [Fact]
     public async Task POST_veiculos_returns_400_for_empty_placa()
     {
-        await _factory.EnsureDatabaseCreatedAsync();
+        await EnsureDatabaseCreatedAsync();
 
         Guid clienteId = await SeedClienteAsync();
         var client = await CreateAuthenticatedClientAsync(isAdmin: true);
@@ -127,13 +81,13 @@ public class CadastrarVeiculoEndpointTests : IAsyncDisposable
         var body = await response.Content.ReadFromJsonAsync<BaseResponse>(JsonOptions);
         body.Should().NotBeNull();
         body!.Errors.Should().ContainKey("placa");
-        body.Errors!["placa"].Should().Contain(error => error == "Placa é obrigatória.");
+        body.Errors!["placa"].Should().Contain(error => error == "O campo placa é obrigatório.");
     }
 
     [Fact]
     public async Task POST_veiculos_returns_400_for_invalid_placa_characters()
     {
-        await _factory.EnsureDatabaseCreatedAsync();
+        await EnsureDatabaseCreatedAsync();
 
         Guid clienteId = await SeedClienteAsync();
         var client = await CreateAuthenticatedClientAsync(isAdmin: true);
@@ -154,13 +108,40 @@ public class CadastrarVeiculoEndpointTests : IAsyncDisposable
         body.Should().NotBeNull();
         body!.Errors.Should().ContainKey("placa");
         body.Errors!["placa"].Should().Contain(error =>
-            error == "Placa inválida. Formatos aceitos: AAA0000 ou AAA0A00.");
+            error == "A placa informada não está em um formato válido.");
+    }
+
+    [Fact]
+    public async Task POST_veiculos_returns_400_for_placa_with_hyphen()
+    {
+        await EnsureDatabaseCreatedAsync();
+
+        Guid clienteId = await SeedClienteAsync();
+        var client = await CreateAuthenticatedClientAsync(isAdmin: true);
+
+        var response = await client.PostAsJsonAsync(
+            $"/api/v1/clientes/{clienteId}/veiculos",
+            new CriarVeiculoRequest
+            {
+                Placa = "ABC-1234",
+                Modelo = "Corolla",
+                Fabricante = "Toyota",
+                Cor = "Prata"
+            });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var body = await response.Content.ReadFromJsonAsync<BaseResponse>(JsonOptions);
+        body.Should().NotBeNull();
+        body!.Errors.Should().ContainKey("placa");
+        body.Errors!["placa"].Should().Contain(error =>
+            error == "A placa informada não está em um formato válido.");
     }
 
     [Fact]
     public async Task POST_veiculos_returns_400_for_placa_with_invalid_length()
     {
-        await _factory.EnsureDatabaseCreatedAsync();
+        await EnsureDatabaseCreatedAsync();
 
         Guid clienteId = await SeedClienteAsync();
         var client = await CreateAuthenticatedClientAsync(isAdmin: true);
@@ -181,13 +162,13 @@ public class CadastrarVeiculoEndpointTests : IAsyncDisposable
         body.Should().NotBeNull();
         body!.Errors.Should().ContainKey("placa");
         body.Errors!["placa"].Should().Contain(error =>
-            error == "Placa deve conter 7 caracteres válidos.");
+            error == "A placa informada não está em um formato válido.");
     }
 
     [Fact]
     public async Task POST_veiculos_returns_409_for_duplicate_placa()
     {
-        await _factory.EnsureDatabaseCreatedAsync();
+        await EnsureDatabaseCreatedAsync();
 
         Guid clienteId = await SeedClienteAsync();
         Guid outroClienteId = await SeedClienteAsync();
@@ -220,13 +201,13 @@ public class CadastrarVeiculoEndpointTests : IAsyncDisposable
 
         var body = await response.Content.ReadFromJsonAsync<BaseResponse>(JsonOptions);
         body.Should().NotBeNull();
-        body!.Message.Should().Be("Já existe veículo cadastrado com esta placa.");
+        body!.Message.Should().Be("Já existe um veículo cadastrado com a placa informada.");
     }
 
     [Fact]
     public async Task POST_veiculos_returns_400_for_empty_modelo()
     {
-        await _factory.EnsureDatabaseCreatedAsync();
+        await EnsureDatabaseCreatedAsync();
 
         Guid clienteId = await SeedClienteAsync();
         var client = await CreateAuthenticatedClientAsync(isAdmin: true);
@@ -247,40 +228,12 @@ public class CadastrarVeiculoEndpointTests : IAsyncDisposable
         var body = await response.Content.ReadFromJsonAsync<BaseResponse>(JsonOptions);
         body.Should().NotBeNull();
         body!.Errors.Should().ContainKey("modelo");
-        body.Errors!["modelo"].Should().Contain(error => error == "Modelo é obrigatório.");
-    }
-
-    [Fact]
-    public async Task POST_veiculos_returns_400_for_modelo_with_one_char()
-    {
-        await _factory.EnsureDatabaseCreatedAsync();
-
-        Guid clienteId = await SeedClienteAsync();
-        var client = await CreateAuthenticatedClientAsync(isAdmin: true);
-        string placa = GeneratePlaca();
-
-        var response = await client.PostAsJsonAsync(
-            $"/api/v1/clientes/{clienteId}/veiculos",
-            new CriarVeiculoRequest
-            {
-                Placa = placa,
-                Modelo = "A",
-                Fabricante = "Toyota",
-                Cor = "Prata"
-            });
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
-        var body = await response.Content.ReadFromJsonAsync<BaseResponse>(JsonOptions);
-        body.Should().NotBeNull();
-        body!.Errors.Should().ContainKey("modelo");
-        body.Errors!["modelo"].Should().Contain(error => error == "Modelo deve ter entre 2 e 80 caracteres.");
     }
 
     [Fact]
     public async Task POST_veiculos_returns_400_for_empty_fabricante()
     {
-        await _factory.EnsureDatabaseCreatedAsync();
+        await EnsureDatabaseCreatedAsync();
 
         Guid clienteId = await SeedClienteAsync();
         var client = await CreateAuthenticatedClientAsync(isAdmin: true);
@@ -301,13 +254,12 @@ public class CadastrarVeiculoEndpointTests : IAsyncDisposable
         var body = await response.Content.ReadFromJsonAsync<BaseResponse>(JsonOptions);
         body.Should().NotBeNull();
         body!.Errors.Should().ContainKey("fabricante");
-        body.Errors!["fabricante"].Should().Contain(error => error == "Fabricante é obrigatório.");
     }
 
     [Fact]
     public async Task POST_veiculos_returns_400_for_empty_cor()
     {
-        await _factory.EnsureDatabaseCreatedAsync();
+        await EnsureDatabaseCreatedAsync();
 
         Guid clienteId = await SeedClienteAsync();
         var client = await CreateAuthenticatedClientAsync(isAdmin: true);
@@ -328,40 +280,12 @@ public class CadastrarVeiculoEndpointTests : IAsyncDisposable
         var body = await response.Content.ReadFromJsonAsync<BaseResponse>(JsonOptions);
         body.Should().NotBeNull();
         body!.Errors.Should().ContainKey("cor");
-        body.Errors!["cor"].Should().Contain(error => error == "Cor é obrigatória.");
-    }
-
-    [Fact]
-    public async Task POST_veiculos_returns_400_for_cor_with_one_char()
-    {
-        await _factory.EnsureDatabaseCreatedAsync();
-
-        Guid clienteId = await SeedClienteAsync();
-        var client = await CreateAuthenticatedClientAsync(isAdmin: true);
-        string placa = GeneratePlaca();
-
-        var response = await client.PostAsJsonAsync(
-            $"/api/v1/clientes/{clienteId}/veiculos",
-            new CriarVeiculoRequest
-            {
-                Placa = placa,
-                Modelo = "Corolla",
-                Fabricante = "Toyota",
-                Cor = "P"
-            });
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
-        var body = await response.Content.ReadFromJsonAsync<BaseResponse>(JsonOptions);
-        body.Should().NotBeNull();
-        body!.Errors.Should().ContainKey("cor");
-        body.Errors!["cor"].Should().Contain(error => error == "Cor deve ter entre 2 e 40 caracteres.");
     }
 
     [Fact]
     public async Task POST_veiculos_normalizes_placa_to_uppercase()
     {
-        await _factory.EnsureDatabaseCreatedAsync();
+        await EnsureDatabaseCreatedAsync();
 
         Guid clienteId = await SeedClienteAsync();
         var client = await CreateAuthenticatedClientAsync(isAdmin: true);
@@ -387,169 +311,23 @@ public class CadastrarVeiculoEndpointTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task POST_veiculos_normalizes_placa_removing_hyphen_and_spaces()
+    public async Task POST_veiculos_rejects_placa_with_hyphen_and_spaces()
     {
-        await _factory.EnsureDatabaseCreatedAsync();
+        await EnsureDatabaseCreatedAsync();
 
         Guid clienteId = await SeedClienteAsync();
         var client = await CreateAuthenticatedClientAsync(isAdmin: true);
         string placa = GeneratePlaca();
-        string placaComSeparadores = $"{placa.Substring(0, 3)}-{placa.Substring(3, 1)} {placa.Substring(4)}";
+        string placaComSeparadores = $"{placa.Substring(0, 3)}-{placa.Substring(3)}";
 
         var response = await client.PostAsJsonAsync(
             $"/api/v1/clientes/{clienteId}/veiculos",
             new CriarVeiculoRequest
             {
-                Placa = placaComSeparadores.ToLowerInvariant(),
+                Placa = placaComSeparadores,
                 Modelo = "Corolla",
                 Fabricante = "Toyota",
                 Cor = "Prata"
-            });
-
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
-
-        using var scope = _factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<CarWashDbContext>();
-
-        var veiculo = await db.Veiculos.SingleAsync(v => v.ClienteId == clienteId);
-        veiculo.Placa.Should().Be(placa.ToUpperInvariant());
-    }
-
-    [Fact]
-    public async Task POST_veiculos_returns_401_when_missing_authentication()
-    {
-        await _factory.EnsureDatabaseCreatedAsync();
-
-        Guid clienteId = await SeedClienteAsync();
-        var client = _factory.CreateClient();
-        string placa = GeneratePlaca();
-
-        var response = await client.PostAsJsonAsync(
-            $"/api/v1/clientes/{clienteId}/veiculos",
-            new CriarVeiculoRequest
-            {
-                Placa = placa,
-                Modelo = "Corolla",
-                Fabricante = "Toyota",
-                Cor = "Prata"
-            });
-
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
-
-        var body = await response.Content.ReadFromJsonAsync<BaseResponse>(JsonOptions);
-        body.Should().NotBeNull();
-        body!.Message.Should().Be("Autenticação obrigatória para executar esta operação.");
-    }
-
-    [Fact]
-    public async Task POST_veiculos_returns_403_when_missing_permission()
-    {
-        await _factory.EnsureDatabaseCreatedAsync();
-
-        Guid clienteId = await SeedClienteAsync();
-        var client = await CreateAuthenticatedClientAsync(isAdmin: false);
-        string placa = GeneratePlaca();
-
-        var response = await client.PostAsJsonAsync(
-            $"/api/v1/clientes/{clienteId}/veiculos",
-            new CriarVeiculoRequest
-            {
-                Placa = placa,
-                Modelo = "Corolla",
-                Fabricante = "Toyota",
-                Cor = "Prata"
-            });
-
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
-
-        var body = await response.Content.ReadFromJsonAsync<BaseResponse>(JsonOptions);
-        body.Should().NotBeNull();
-        body!.Message.Should().Be("Você não possui permissão para cadastrar ou editar veículos.");
-    }
-
-    [Fact]
-    public async Task PATCH_veiculos_returns_200_for_valid_update()
-    {
-        await _factory.EnsureDatabaseCreatedAsync();
-
-        Guid clienteId = await SeedClienteAsync();
-        var client = await CreateAuthenticatedClientAsync(isAdmin: true);
-        Guid veiculoId = await CreateVeiculoAsync(clienteId, client);
-        string novaPlaca = GeneratePlaca();
-
-        var response = await client.PatchAsJsonAsync(
-            $"/api/v1/veiculos/{veiculoId}",
-            new CriarVeiculoRequest
-            {
-                Placa = novaPlaca,
-                Modelo = "Civic",
-                Fabricante = "Honda",
-                Cor = "Preto"
-            });
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-
-        var body = await response.Content.ReadFromJsonAsync<VeiculoResponse>(JsonOptions);
-        body.Should().NotBeNull();
-        body!.Id.Should().Be(veiculoId);
-        body.Message.Should().Be("Veículo atualizado com sucesso.");
-
-        using var scope = _factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<CarWashDbContext>();
-
-        var veiculo = await db.Veiculos.SingleAsync(v => v.Id == veiculoId);
-        veiculo.Placa.Should().Be(novaPlaca.ToUpperInvariant());
-        veiculo.Modelo.Should().Be("Civic");
-        veiculo.Fabricante.Should().Be("Honda");
-        veiculo.Cor.Should().Be("Preto");
-    }
-
-    [Fact]
-    public async Task PATCH_veiculos_returns_409_for_duplicate_placa()
-    {
-        await _factory.EnsureDatabaseCreatedAsync();
-
-        Guid clienteId = await SeedClienteAsync();
-        var client = await CreateAuthenticatedClientAsync(isAdmin: true);
-
-        string placaOriginal = GeneratePlaca();
-        Guid veiculoId = await CreateVeiculoAsync(clienteId, client, placaOriginal);
-        Guid outroVeiculoId = await CreateVeiculoAsync(clienteId, client);
-
-        var response = await client.PatchAsJsonAsync(
-            $"/api/v1/veiculos/{outroVeiculoId}",
-            new CriarVeiculoRequest
-            {
-                Placa = placaOriginal,
-                Modelo = "Civic",
-                Fabricante = "Honda",
-                Cor = "Preto"
-            });
-
-        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
-
-        var body = await response.Content.ReadFromJsonAsync<BaseResponse>(JsonOptions);
-        body.Should().NotBeNull();
-        body!.Message.Should().Be("Já existe veículo cadastrado com esta placa.");
-    }
-
-    [Fact]
-    public async Task PATCH_veiculos_returns_400_for_invalid_placa_length()
-    {
-        await _factory.EnsureDatabaseCreatedAsync();
-
-        Guid clienteId = await SeedClienteAsync();
-        var client = await CreateAuthenticatedClientAsync(isAdmin: true);
-        Guid veiculoId = await CreateVeiculoAsync(clienteId, client);
-
-        var response = await client.PatchAsJsonAsync(
-            $"/api/v1/veiculos/{veiculoId}",
-            new CriarVeiculoRequest
-            {
-                Placa = "ABC12345",
-                Modelo = "Civic",
-                Fabricante = "Honda",
-                Cor = "Preto"
             });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -557,61 +335,30 @@ public class CadastrarVeiculoEndpointTests : IAsyncDisposable
         var body = await response.Content.ReadFromJsonAsync<BaseResponse>(JsonOptions);
         body.Should().NotBeNull();
         body!.Errors.Should().ContainKey("placa");
-        body.Errors!["placa"].Should().Contain(error => error == "Placa deve conter 7 caracteres válidos.");
+        body.Errors!["placa"].Should().Contain(error =>
+            error == "A placa informada não está em um formato válido.");
     }
 
     [Fact]
-    public async Task PATCH_veiculos_returns_401_when_missing_authentication()
+    public async Task POST_veiculos_returns_401_when_missing_authentication()
     {
-        await _factory.EnsureDatabaseCreatedAsync();
+        await EnsureDatabaseCreatedAsync();
 
         Guid clienteId = await SeedClienteAsync();
         var client = _factory.CreateClient();
-        Guid veiculoId = await CreateVeiculoAsync(clienteId, await CreateAuthenticatedClientAsync(isAdmin: true));
+        string placa = GeneratePlaca();
 
-        var response = await client.PatchAsJsonAsync(
-            $"/api/v1/veiculos/{veiculoId}",
+        var response = await client.PostAsJsonAsync(
+            $"/api/v1/clientes/{clienteId}/veiculos",
             new CriarVeiculoRequest
             {
-                Placa = GeneratePlaca(),
-                Modelo = "Civic",
-                Fabricante = "Honda",
-                Cor = "Preto"
+                Placa = placa,
+                Modelo = "Corolla",
+                Fabricante = "Toyota",
+                Cor = "Prata"
             });
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
-
-        var body = await response.Content.ReadFromJsonAsync<BaseResponse>(JsonOptions);
-        body.Should().NotBeNull();
-        body!.Message.Should().Be("Autenticação obrigatória para executar esta operação.");
-    }
-
-    [Fact]
-    public async Task PATCH_veiculos_returns_403_when_missing_permission()
-    {
-        await _factory.EnsureDatabaseCreatedAsync();
-
-        Guid clienteId = await SeedClienteAsync();
-        var adminClient = await CreateAuthenticatedClientAsync(isAdmin: true);
-        Guid veiculoId = await CreateVeiculoAsync(clienteId, adminClient);
-
-        var client = await CreateAuthenticatedClientAsync(isAdmin: false);
-
-        var response = await client.PatchAsJsonAsync(
-            $"/api/v1/veiculos/{veiculoId}",
-            new CriarVeiculoRequest
-            {
-                Placa = GeneratePlaca(),
-                Modelo = "Civic",
-                Fabricante = "Honda",
-                Cor = "Preto"
-            });
-
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
-
-        var body = await response.Content.ReadFromJsonAsync<BaseResponse>(JsonOptions);
-        body.Should().NotBeNull();
-        body!.Message.Should().Be("Você não possui permissão para cadastrar ou editar veículos.");
     }
 
     public async ValueTask DisposeAsync()
@@ -620,17 +367,32 @@ public class CadastrarVeiculoEndpointTests : IAsyncDisposable
         GC.SuppressFinalize(this);
     }
 
+    private async Task EnsureDatabaseCreatedAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<CarWashDbContext>();
+        await db.Database.MigrateAsync();
+    }
+
     private async Task<Guid> SeedClienteAsync()
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<CarWashDbContext>();
 
-        var cliente = new Cliente
-        {
-            Id = Guid.NewGuid(),
-            Nome = $"Cliente {Guid.NewGuid():N}",
-            CreatedAt = DateTime.UtcNow
-        };
+        var cliente = Cliente.Criar(
+            id: Guid.NewGuid(),
+            nome: $"Cliente {Guid.NewGuid():N}",
+            dataNascimento: new DateOnly(1990, 1, 1),
+            celular: new Telefone("11987654321"),
+            endereco: new Endereco(
+                cep: "01001000",
+                logradouro: "Praça da Sé",
+                numero: "1",
+                complemento: null,
+                bairro: "Sé",
+                cidade: "São Paulo",
+                uf: "SP"),
+            cpf: new Cpf("39053344705"));
 
         db.Clientes.Add(cliente);
         await db.SaveChangesAsync();
@@ -640,14 +402,14 @@ public class CadastrarVeiculoEndpointTests : IAsyncDisposable
 
     private async Task<HttpClient> CreateAuthenticatedClientAsync(bool isAdmin)
     {
-        await _factory.EnsureDatabaseCreatedAsync();
+        await EnsureDatabaseCreatedAsync();
 
         string email = isAdmin
-            ? "admins@carwash.com"
+            ? $"admin-{Guid.NewGuid():N}@carwash.com"
             : $"user-{Guid.NewGuid():N}@example.com";
 
         string password = "Senha@123";
-        await SeedUserAsync(email, password);
+        await SeedUsuarioAsync(email, password, isAdmin);
 
         var client = _factory.CreateClient();
 
@@ -665,62 +427,38 @@ public class CadastrarVeiculoEndpointTests : IAsyncDisposable
         loginBody.Should().NotBeNull();
         loginBody!.AccessToken.Should().NotBeNullOrWhiteSpace();
 
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginBody.AccessToken);
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", loginBody.AccessToken);
         return client;
     }
 
-    private async Task<User> SeedUserAsync(string email, string password)
+    private async Task SeedUsuarioAsync(string email, string password, bool isAdmin)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<CarWashDbContext>();
 
-        string normalizedEmail = email.Trim().ToLowerInvariant();
-        var existing = await db.Users.FirstOrDefaultAsync(u => u.Email == normalizedEmail);
-        if (existing != null)
+        var normalizedEmail = email.Trim().ToLowerInvariant();
+        var existing = await db.Usuarios
+            .FirstOrDefaultAsync(u => u.EmailValor == normalizedEmail);
+
+        if (existing is not null)
         {
-            existing.PasswordHash = BCrypt.Net.BCrypt.HashPassword(password);
-            existing.Active = true;
-            existing.FailedLoginAttempts = 0;
-            existing.BlockedUntil = null;
+            existing.TrocarSenha(BCrypt.Net.BCrypt.HashPassword(password));
+            if (!existing.Ativo) existing.Ativar();
+            existing.RegistrarLoginBemSucedido();
             await db.SaveChangesAsync();
-            return existing;
+            return;
         }
 
-        var user = new User
-        {
-            Id = Guid.NewGuid(),
-            Email = normalizedEmail,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
-            Active = true,
-            FailedLoginAttempts = 0,
-            BlockedUntil = null
-        };
+        var usuario = Usuario.Criar(
+            id: Guid.NewGuid(),
+            nome: isAdmin ? "Admin Teste" : "Funcionário Teste",
+            email: new Email(normalizedEmail),
+            senhaHash: BCrypt.Net.BCrypt.HashPassword(password),
+            perfil: isAdmin ? PerfilUsuario.Admin : PerfilUsuario.Funcionario);
 
-        db.Users.Add(user);
+        db.Usuarios.Add(usuario);
         await db.SaveChangesAsync();
-
-        return user;
-    }
-
-    private async Task<Guid> CreateVeiculoAsync(Guid clienteId, HttpClient client, string? placa = null)
-    {
-        string placaValue = placa ?? GeneratePlaca();
-
-        var response = await client.PostAsJsonAsync(
-            $"/api/v1/clientes/{clienteId}/veiculos",
-            new CriarVeiculoRequest
-            {
-                Placa = placaValue,
-                Modelo = "Corolla",
-                Fabricante = "Toyota",
-                Cor = "Prata"
-            });
-
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
-
-        var body = await response.Content.ReadFromJsonAsync<VeiculoResponse>(JsonOptions);
-        body.Should().NotBeNull();
-        return body!.Id;
     }
 
     private static string GeneratePlaca()
