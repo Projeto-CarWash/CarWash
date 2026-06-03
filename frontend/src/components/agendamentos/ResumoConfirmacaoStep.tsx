@@ -1,12 +1,17 @@
-import { Car, ChevronLeft, Clock, DollarSign, Loader2, User, Wrench } from 'lucide-react';
+import {
+  Building2,
+  Car,
+  ChevronLeft,
+  Clock,
+  DollarSign,
+  Loader2,
+  User,
+  Wrench,
+} from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 
 import type { AgendamentoWizardState } from '@/types/agendamento';
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
 
 function formatarPreco(valor: number): string {
   return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -59,7 +64,7 @@ export function ResumoConfirmacaoStep({
   confirmado,
   onConfirmadoChange,
 }: ResumoConfirmacaoStepProps) {
-  const { cliente, veiculo, servicos, dataAgendamento, horaInicio } = wizardState;
+  const { cliente, veiculo, servicos, dataAgendamento, horaInicio, filialNome } = wizardState;
 
   const duracaoTotal = servicos.reduce((sum, s) => sum + s.duracao, 0);
   const valorTotal = servicos.reduce((sum, s) => sum + s.preco, 0);
@@ -75,6 +80,17 @@ export function ResumoConfirmacaoStep({
       </div>
 
       <div className="space-y-4">
+        <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-4">
+          <p className="mb-3 text-[10px] font-bold tracking-[0.2em] text-zinc-500">FILIAL</p>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-600/10">
+              <Building2 className="h-4.5 w-4.5 text-red-500" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-zinc-100">{filialNome || 'Não selecionada'}</p>
+            </div>
+          </div>
+        </div>
         <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-4">
           <p className="mb-3 text-[10px] font-bold tracking-[0.2em] text-zinc-500">CLIENTE</p>
           <div className="flex items-center gap-3">
