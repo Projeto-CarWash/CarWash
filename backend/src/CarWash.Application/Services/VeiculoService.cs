@@ -313,7 +313,7 @@ public class VeiculoService : IVeiculoService
     }
 
     private static void AddTextErrors(
-        IDictionary<string, string[]> errors,
+        Dictionary<string, string[]> errors,
         string field,
         string value,
         int minLength,
