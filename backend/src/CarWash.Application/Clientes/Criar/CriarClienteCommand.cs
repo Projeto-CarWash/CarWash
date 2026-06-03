@@ -19,5 +19,6 @@ public sealed record CriarClienteCommand(
     string? Email,
     EnderecoRequest? Endereco,
     List<CriarVeiculoRequest>? Veiculos,
+    string? Observacoes,
     string TraceId,
     Guid? UsuarioId) : ICommand<CriarClienteResponse>;

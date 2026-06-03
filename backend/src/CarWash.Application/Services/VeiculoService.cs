@@ -78,19 +78,19 @@ public class VeiculoService : IVeiculoService
             bool placaJaExiste = await _context.Veiculos
                 .AnyAsync(v => v.Placa == normalized.Placa, cancellationToken);
 
-        if (placaJaExiste)
-        {
-            _logger.LogWarning(
-                "VEICULO_CADASTRO_PLACA_DUPLICADA: Placa {Placa} ClienteId {ClienteId} TraceId {TraceId}",
-                normalized.Placa,
-                clienteId,
-                traceId);
+            if (placaJaExiste)
+            {
+                _logger.LogWarning(
+                    "VEICULO_CADASTRO_PLACA_DUPLICADA: Placa {Placa} ClienteId {ClienteId} TraceId {TraceId}",
+                    normalized.Placa,
+                    clienteId,
+                    traceId);
 
-            throw new ApiException(
-                409,
-                "VEICULO_PLACA_DUPLICADA",
-                "Já existe um veículo cadastrado com a placa informada.");
-        }
+                throw new ApiException(
+                    409,
+                    "VEICULO_PLACA_DUPLICADA",
+                    "Já existe um veículo cadastrado com a placa informada.");
+            }
 
             var veiculo = Veiculo.Criar(
                 Guid.NewGuid(),
@@ -98,10 +98,9 @@ public class VeiculoService : IVeiculoService
                 new Placa(normalized.Placa),
                 normalized.Modelo,
                 normalized.Fabricante,
-                normalized.Cor
-            );
+                normalized.Cor);
 
-        _context.Veiculos.Add(veiculo);
+            _context.Veiculos.Add(veiculo);
 
             await _context.SaveChangesAsync(cancellationToken);
 
@@ -116,6 +115,7 @@ public class VeiculoService : IVeiculoService
         catch (DbUpdateException ex) when (IsUniqueViolation(ex))
         {
             _logger.LogWarning(
+                ex,
                 "VEICULO_CADASTRO_PLACA_DUPLICADA_DB: ClienteId {ClienteId} TraceId {TraceId}",
                 clienteId,
                 traceId);
@@ -211,8 +211,7 @@ public class VeiculoService : IVeiculoService
                 new Placa(normalized.Placa),
                 normalized.Modelo,
                 normalized.Fabricante,
-                normalized.Cor
-            );
+                normalized.Cor);
 
             await _context.SaveChangesAsync(cancellationToken);
 
@@ -226,6 +225,7 @@ public class VeiculoService : IVeiculoService
         catch (DbUpdateException ex) when (IsUniqueViolation(ex))
         {
             _logger.LogWarning(
+                ex,
                 "VEICULO_ATUALIZACAO_PLACA_DUPLICADA_DB: VeiculoId {VeiculoId} TraceId {TraceId}",
                 veiculoId,
                 traceId);

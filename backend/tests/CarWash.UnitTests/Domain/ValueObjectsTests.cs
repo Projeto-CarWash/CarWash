@@ -96,7 +96,7 @@ public class ValueObjectsTests
     [Fact]
     public void Placa_vazia_lanca_DomainException()
     {
-        var act = () => new Placa("");
+        var act = () => new Placa(string.Empty);
         act.Should().Throw<DomainException>().WithMessage("O campo placa é obrigatório.");
     }
 

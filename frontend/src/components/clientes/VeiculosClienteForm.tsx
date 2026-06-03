@@ -8,12 +8,6 @@ import { VeiculoModal } from './VeiculoModal';
 
 import type { ClienteFormData, VeiculoLocalFormData } from '@/schemas/clienteSchema';
 
-/**
- * Regex que aceita apenas letras (incluindo acentuadas), espaços e hífens.
- * Bloqueia números, símbolos e caracteres especiais.
- */
-const NOME_TEXTO_PATTERN = /^[a-zA-ZáàãâäéèêëíïóôõöúüçñÁÀÃÂÄÉÈÊËÍÏÓÔÕÖÚÜÇÑ\s\-.']+$/;
-
 export function VeiculosClienteForm() {
   const {
     control,
