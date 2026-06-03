@@ -1,6 +1,6 @@
 import api from './api';
 
-import type { ClienteFormData } from '@/schemas/clienteSchema';
+import type { ClienteFormData, EditarClienteFormData } from '@/schemas/clienteSchema';
 
 export interface ClienteResumo {
   id: string;
@@ -70,6 +70,14 @@ function ddmmaaaaParaIso(ddmmaaaa: string): string {
   return `${year}-${month}-${day}`;
 }
 
+/** Converte a data ISO retornada pelo backend (yyyy-MM-dd) para o formato mascarado DD/MM/AAAA. */
+export function isoParaDdmmaaaa(iso: string | undefined): string {
+  if (!iso) return '';
+  const [year, month, day] = iso.slice(0, 10).split('-');
+  if (!year || !month || !day) return '';
+  return `${day}/${month}/${year}`;
+}
+
 function toCreatePayload(data: ClienteFormData) {
   const docDigits = onlyDigits(data.cpfCnpj) ?? '';
   const isCpf = docDigits.length === 11;
@@ -116,6 +124,26 @@ function toCreatePayload(data: ClienteFormData) {
   };
 }
 
+function toUpdatePayload(data: EditarClienteFormData) {
+  // CPF/CNPJ e veículos não são enviados: o PUT não os edita (RF003 / decisão de produto).
+  return {
+    nome: data.nome.trim(),
+    dataNascimento: ddmmaaaaParaIso(data.dataNascimento),
+    celular: onlyDigits(data.celular)!,
+    telefone: onlyDigits(data.telefone),
+    email: data.email?.trim() ? data.email.trim().toLowerCase() : undefined,
+    endereco: {
+      cep: onlyDigits(data.cep)!,
+      logradouro: data.logradouro.trim(),
+      numero: data.numero.trim(),
+      complemento: data.complemento?.trim() ? data.complemento.trim() : undefined,
+      bairro: data.bairro.trim(),
+      cidade: data.cidade.trim(),
+      uf: data.uf.trim().toUpperCase(),
+    },
+  };
+}
+
 export const clienteService = {
   async criar(data: ClienteFormData): Promise<{ id: string }> {
     const payload = toCreatePayload(data);
@@ -136,6 +164,12 @@ export const clienteService = {
   async obterPorId(id: string): Promise<ClienteDetalhe> {
     const { data } = await api.get<ClienteDetalhe>(`/api/v1/clientes/${id}`);
     return data;
+  },
+
+  async atualizar(id: string, data: EditarClienteFormData): Promise<ClienteDetalhe> {
+    const payload = toUpdatePayload(data);
+    const { data: resp } = await api.put<ClienteDetalhe>(`/api/v1/clientes/${id}`, payload);
+    return resp;
   },
 
   async alterarStatus(id: string, ativo: boolean): Promise<ClienteDetalhe> {

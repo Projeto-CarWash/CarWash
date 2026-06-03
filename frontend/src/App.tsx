@@ -9,6 +9,7 @@ import { AgendamentosCalendarioPage } from '@/pages/Agendamentos/AgendamentosCal
 import { AgendamentosDashboardPage } from '@/pages/Agendamentos/AgendamentosDashboardPage';
 import { ClienteDetalhePage } from '@/pages/Clientes/ClienteDetalhePage';
 import { ClientesListaPage } from '@/pages/Clientes/ClientesListaPage';
+import { EditarClientePage } from '@/pages/Clientes/EditarClientePage';
 import { NovoVeiculoPage } from '@/pages/Clientes/NovoVeiculoPage';
 import Dashboard from '@/pages/Dashboard/Dashboard';
 import Login from '@/pages/Login/Login';
@@ -61,6 +62,17 @@ function App() {
             <PrivateRoute>
               <DashboardLayout>
                 <ClienteDetalhePage />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/clientes/:id/editar"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <EditarClientePage />
               </DashboardLayout>
             </PrivateRoute>
           }

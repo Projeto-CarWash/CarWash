@@ -327,8 +327,27 @@ export const clienteSchema = z.object({
   filiados: z.array(filiadoSchema),
 });
 
+/**
+ * Schema de EDIÇÃO de cliente (PUT /api/v1/clientes/{id}).
+ *
+ * Reaproveita as mesmas regras de identificação, contato e endereço do cadastro,
+ * mas remove os campos que o endpoint de atualização não aceita:
+ * - cpfCnpj: imutável por decisão de produto (backend ignora e apenas loga warning);
+ * - veiculos: possuem fluxo próprio na tela de detalhe do cliente;
+ * - preferências/filiados: não fazem parte do contrato do PUT.
+ */
+export const editarClienteSchema = clienteSchema.omit({
+  cpfCnpj: true,
+  veiculos: true,
+  lembretes: true,
+  canaisPreferenciais: true,
+  observacoesGerais: true,
+  filiados: true,
+});
+
 export type VeiculoLocalFormData = z.infer<typeof veiculoItemSchema>;
 export type FiliadoFormData = z.infer<typeof filiadoSchema>;
 export type ClienteFormData = z.infer<typeof clienteSchema>;
+export type EditarClienteFormData = z.infer<typeof editarClienteSchema>;
 export type LembreteValue = (typeof LEMBRETES_VALUES)[number];
 export type CanalValue = (typeof CANAIS_VALUES)[number];

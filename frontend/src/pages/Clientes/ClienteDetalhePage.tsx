@@ -1,5 +1,5 @@
 import { AxiosError } from 'axios';
-import { ArrowLeft, Car, Loader2, Plus, Power, RefreshCw, ShieldOff } from 'lucide-react';
+import { ArrowLeft, Car, Loader2, Pencil, Plus, Power, RefreshCw, ShieldOff } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
@@ -173,20 +173,31 @@ export function ClienteDetalhePage() {
         >
           <ArrowLeft className="mr-1 h-4 w-4" /> Voltar
         </Button>
-        <Button
-          type="button"
-          variant="outline"
-          disabled={salvando || carregando || !cliente}
-          onClick={toggleStatus}
-          className="h-9 rounded-full border-zinc-700/60 bg-transparent px-4 text-sm hover:bg-zinc-800/50 hover:text-zinc-200 text-zinc-400"
-        >
-          {salvando ? (
-            <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-          ) : (
-            <Power className="mr-1 h-4 w-4" />
-          )}
-          {cliente?.ativo ? 'Inativar cliente' : 'Reativar cliente'}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={carregando || !cliente}
+            onClick={() => void navigate(`/clientes/${id}/editar`)}
+            className="h-9 rounded-full border-zinc-700/60 bg-transparent px-4 text-sm hover:bg-zinc-800/50 hover:text-zinc-200 text-zinc-400"
+          >
+            <Pencil className="mr-1 h-4 w-4" /> Editar
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={salvando || carregando || !cliente}
+            onClick={toggleStatus}
+            className="h-9 rounded-full border-zinc-700/60 bg-transparent px-4 text-sm hover:bg-zinc-800/50 hover:text-zinc-200 text-zinc-400"
+          >
+            {salvando ? (
+              <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+            ) : (
+              <Power className="mr-1 h-4 w-4" />
+            )}
+            {cliente?.ativo ? 'Inativar cliente' : 'Reativar cliente'}
+          </Button>
+        </div>
       </div>
 
       <Card className="border-zinc-800/60 bg-zinc-900/30">

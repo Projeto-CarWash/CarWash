@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Plus, Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pencil, Plus, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -101,19 +101,20 @@ export function ClientesListaPage() {
               <th className="px-4 py-3">Celular</th>
               <th className="px-4 py-3">Cidade/UF</th>
               <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3 text-right">Ações</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-800/60">
             {carregando && (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-zinc-500">
+                <td colSpan={6} className="px-4 py-8 text-center text-zinc-500">
                   Carregando…
                 </td>
               </tr>
             )}
             {!carregando && itens.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-zinc-500">
+                <td colSpan={6} className="px-4 py-8 text-center text-zinc-500">
                   Nenhum cliente encontrado.
                 </td>
               </tr>
@@ -148,6 +149,19 @@ export function ClientesListaPage() {
                     >
                       {c.ativo ? 'ATIVO' : 'INATIVO'}
                     </span>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => void navigate(`/clientes/${c.id}/editar`)}
+                      title="Editar cliente"
+                      className="h-8 w-8 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
+                    >
+                      <Pencil className="h-4 w-4" />
+                      <span className="sr-only">Editar {c.nome}</span>
+                    </Button>
                   </td>
                 </tr>
               ))}
