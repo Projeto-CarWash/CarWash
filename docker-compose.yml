@@ -71,6 +71,9 @@ services:
       Jwt__Secret: ${Jwt__Secret:-carwash123}
       Jwt__Issuer: ${Jwt__Issuer:-carwash}
       Jwt__Audience: ${Jwt__Audience:-carwash-web}
+      # RF015 / ADR 0004: chave dedicada do token de confirmação (≥ 32 bytes, distinta de Jwt__Secret).
+      # Sem fallback — o Program.cs faz fail-fast no startup se ausente/vazia.
+      Jwt__ConfirmacaoSigningKey: ${Jwt__ConfirmacaoSigningKey}
     networks:
       - internal
       - public
