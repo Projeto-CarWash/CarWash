@@ -1,3 +1,4 @@
+using CarWash.Application.Agendamentos.Common;
 using CarWash.Application.Agendamentos.Criar;
 using FluentAssertions;
 using Xunit;
@@ -16,13 +17,17 @@ public class CriarAgendamentoCommandValidatorTests
     }
 
     [Fact]
-    public void Filial_vazia_falha_RF019()
+    public void Filial_vazia_falha_RF019_com_mensagem_do_card()
     {
+        // RF019/card 142: a mensagem ao usuário não cita mais "RF019" — usa o texto
+        // exato do card. A tag de rastreabilidade fica no comentário XML do validator.
         var resultado = _validator.Validate(ComandoValido() with { FilialId = Guid.Empty });
 
         resultado.IsValid.Should().BeFalse();
         resultado.Errors.Should().Contain(e => e.PropertyName == nameof(CriarAgendamentoCommand.FilialId));
-        resultado.Errors.Should().Contain(e => e.ErrorMessage.Contains("RF019", StringComparison.Ordinal));
+        resultado.Errors.Should().Contain(e =>
+            e.PropertyName == nameof(CriarAgendamentoCommand.FilialId)
+            && e.ErrorMessage == MensagensFilialAgendamento.Obrigatoria);
     }
 
     [Fact]

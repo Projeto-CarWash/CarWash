@@ -9,6 +9,7 @@ namespace CarWash.Infrastructure.Persistence.Configurations;
 /// </summary>
 public sealed class UsuarioConfiguration : IEntityTypeConfiguration<Usuario>
 {
+    /// <inheritdoc/>
     public void Configure(EntityTypeBuilder<Usuario> builder)
     {
         ArgumentNullException.ThrowIfNull(builder);

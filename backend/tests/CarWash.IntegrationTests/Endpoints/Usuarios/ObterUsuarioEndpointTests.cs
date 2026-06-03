@@ -46,6 +46,7 @@ public class ObterUsuarioEndpointTests : IAsyncDisposable
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
+    /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
         await _factory.DisposeAsync();

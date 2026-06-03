@@ -27,6 +27,7 @@ public sealed class CriarVeiculoHandler : ICommandHandler<CriarVeiculoCommand, V
         _veiculos = veiculos;
     }
 
+    /// <inheritdoc/>
     public async Task<VeiculoResponse> HandleAsync(CriarVeiculoCommand command, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(command);

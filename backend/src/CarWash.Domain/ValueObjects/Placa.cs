@@ -37,6 +37,7 @@ public sealed partial record Placa
         Valor = normalizado;
     }
 
+    /// <inheritdoc/>
     public override string ToString() => Valor;
 
     public static implicit operator string(Placa placa) =>

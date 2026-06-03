@@ -38,19 +38,21 @@ public sealed class Usuario : IAuditable, IAuditableSetter
     public bool Ativo { get; private set; }
 
     /// <summary>
-    /// Tentativas de login inválidas consecutivas desde o último sucesso (RF001 — lockout).
+    /// Gets tentativas de login inválidas consecutivas desde o último sucesso (RF001 — lockout).
     /// Reseta para zero em qualquer login bem-sucedido.
     /// </summary>
     public int TentativasInvalidas { get; private set; }
 
     /// <summary>
-    /// Instante (UTC) até quando o usuário está temporariamente bloqueado por exceder o
+    /// Gets instante (UTC) até quando o usuário está temporariamente bloqueado por exceder o
     /// limite de tentativas inválidas. <c>null</c> quando não há bloqueio ativo.
     /// </summary>
     public DateTime? BloqueadoAte { get; private set; }
 
+    /// <inheritdoc/>
     public DateTime CriadoEm { get; private set; }
 
+    /// <inheritdoc/>
     public DateTime AtualizadoEm { get; private set; }
 
     public static Usuario Criar(
@@ -135,6 +137,7 @@ public sealed class Usuario : IAuditable, IAuditableSetter
     /// <paramref name="agoraUtc"/>. Tempo passado como parâmetro para permitir testes
     /// determinísticos.
     /// </summary>
+    /// <returns></returns>
     public bool EstaBloqueado(DateTime agoraUtc) =>
         BloqueadoAte.HasValue && BloqueadoAte.Value > agoraUtc;
 
@@ -172,7 +175,9 @@ public sealed class Usuario : IAuditable, IAuditableSetter
         BloqueadoAte = null;
     }
 
+    /// <inheritdoc/>
     void IAuditableSetter.SetCriadoEm(DateTime valor) => CriadoEm = valor;
 
+    /// <inheritdoc/>
     void IAuditableSetter.SetAtualizadoEm(DateTime valor) => AtualizadoEm = valor;
 }

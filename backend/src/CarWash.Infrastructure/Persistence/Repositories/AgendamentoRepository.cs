@@ -43,6 +43,7 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
         _db = db;
     }
 
+    /// <inheritdoc/>
     public Task<bool> ExisteConflitoVeiculoAsync(
         Guid veiculoId,
         DateTime inicio,
@@ -62,6 +63,44 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
                 cancellationToken);
     }
 
+    /// <inheritdoc/>
+    public async Task<bool> CapacidadeAtingidaAsync(
+        Guid filialId,
+        DateTime inicio,
+        DateTime fim,
+        CancellationToken cancellationToken)
+    {
+        // RF008/RN009: a filial aceita atendimentos simultâneos até o número de
+        // células ativas. Lê o teto e conta a ocupação da janela [inicio, fim)
+        // (apenas status 'agendado', mesma semântica de sobreposição do conflito
+        // de veículo). Filial inexistente → false (existência validada antes pela
+        // CalculadoraResumoAgendamento).
+        var celulasAtivas = await _db.Filiais
+            .AsNoTracking()
+            .Where(f => f.Id == filialId)
+            .Select(f => (int?)f.CelulasAtivas)
+            .FirstOrDefaultAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        if (celulasAtivas is not { } teto)
+        {
+            return false;
+        }
+
+        var ocupacao = await _db.Agendamentos
+            .AsNoTracking()
+            .CountAsync(
+                a => a.FilialId == filialId
+                    && a.StatusRaw == "agendado"
+                    && a.Inicio < fim
+                    && a.Fim > inicio,
+                cancellationToken)
+            .ConfigureAwait(false);
+
+        return ocupacao >= teto;
+    }
+
+    /// <inheritdoc/>
     public async Task AdicionarAsync(
         Agendamento agendamento,
         IReadOnlyCollection<AgendamentoItem> itens,
@@ -160,6 +199,7 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
         }
     }
 
+    /// <inheritdoc/>
     public async Task<ResultadoConfirmacaoIdempotente> AdicionarComIdempotenciaAsync(
         Agendamento agendamento,
         IReadOnlyCollection<AgendamentoItem> itens,
@@ -286,15 +326,15 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
             return false;
         }
 
-        var ehExclusionViolation = string.Equals(
+        bool ehExclusionViolation = string.Equals(
             pg.SqlState,
             ExclusionViolationSqlState,
             StringComparison.Ordinal);
 
-        var ehConstraintDeVeiculo = pg.ConstraintName is { } nome
+        bool ehConstraintDeVeiculo = pg.ConstraintName is { } nome
             && nome.Contains(ConstraintConflitoVeiculoPrefixo, StringComparison.OrdinalIgnoreCase);
 
-        var ehConcorrencia = Array.Exists(
+        bool ehConcorrencia = Array.Exists(
             ConcorrenciaSqlStates,
             estado => string.Equals(pg.SqlState, estado, StringComparison.Ordinal));
 
@@ -312,14 +352,77 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
             return false;
         }
 
-        var ehUniqueViolation = string.Equals(
+        bool ehUniqueViolation = string.Equals(
             pg.SqlState,
             UniqueViolationSqlState,
             StringComparison.Ordinal);
 
-        var ehConstraintDeIdempotencia = pg.ConstraintName is { } nome
+        bool ehConstraintDeIdempotencia = pg.ConstraintName is { } nome
             && nome.Contains(ConstraintIdempotenciaKeyEscopo, StringComparison.OrdinalIgnoreCase);
 
         return ehUniqueViolation && ehConstraintDeIdempotencia;
+    }
+
+    public async Task<Agendamento?> ObterPorIdRastreadoAsync(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        return await _db.Agendamentos
+            .FirstOrDefaultAsync(a => a.Id == id, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    public async Task SalvarAsync(
+        Agendamento agendamento,
+        AgendamentoHistorico historico,
+        string correlationId,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(agendamento);
+        ArgumentNullException.ThrowIfNull(historico);
+
+        await using var transaction = await _db.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+
+        _db.AgendamentoHistoricos.Add(historico);
+
+        var audit = AuditLog.Registrar(
+            id: Guid.NewGuid(),
+            evento: "AGENDAMENTO_CANCELADO",
+            entidade: "agendamentos",
+            correlationId: correlationId,
+            entidadeId: agendamento.Id,
+            usuarioId: agendamento.CanceladoPor,
+            dados: JsonSerializer.Serialize(new
+            {
+                agendamento.Id,
+                StatusNovo = agendamento.StatusRaw,
+                agendamento.CanceladoPor,
+                agendamento.MotivoCancelamento,
+                agendamento.CanceladoEm,
+            }));
+        await _db.AuditLogs.AddAsync(audit, cancellationToken).ConfigureAwait(false);
+
+        try
+        {
+            await _db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
+            throw;
+        }
+#pragma warning disable CA1031
+        catch (Exception ex)
+#pragma warning restore CA1031
+        {
+            if (ex is OperationCanceledException)
+            {
+                throw;
+            }
+
+            await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
+            throw;
+        }
     }
 }

@@ -40,8 +40,8 @@ public class AuthException : Exception
     public AuthException(int statusCode, string errorCode, string message)
         : base(message)
     {
-        this.StatusCode = statusCode;
-        this.ErrorCode = errorCode;
+        StatusCode = statusCode;
+        ErrorCode = errorCode;
     }
 
     /// <summary>

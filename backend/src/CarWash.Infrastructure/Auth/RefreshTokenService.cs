@@ -44,13 +44,14 @@ public sealed class RefreshTokenService : IRefreshTokenService
         _log = log;
     }
 
+    /// <inheritdoc/>
     public async Task<RefreshTokenEmitido> EmitirAsync(Usuario usuario, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(usuario);
         cancellationToken.ThrowIfCancellationRequested();
 
-        var tokenBruto = GerarTokenBruto();
-        var tokenHash = _hasher.Hash(tokenBruto);
+        string tokenBruto = GerarTokenBruto();
+        string tokenHash = _hasher.Hash(tokenBruto);
         var expira = DateTime.UtcNow.Add(_opcoes.RefreshTokenValidade);
 
         var sessao = UsuarioSessao.Criar(
@@ -67,6 +68,7 @@ public sealed class RefreshTokenService : IRefreshTokenService
         return new RefreshTokenEmitido(tokenBruto, expira, sessao.Id);
     }
 
+    /// <inheritdoc/>
     public async Task<UsuarioSessao> ValidarAsync(string refreshTokenBruto, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(refreshTokenBruto))
@@ -74,7 +76,7 @@ public sealed class RefreshTokenService : IRefreshTokenService
             throw new RefreshTokenInvalidoException();
         }
 
-        var hash = _hasher.Hash(refreshTokenBruto);
+        string hash = _hasher.Hash(refreshTokenBruto);
         var sessao = await _repo.ObterPorHashAsync(hash, cancellationToken).ConfigureAwait(false);
 
         await AvaliarOuLancarAsync(sessao, cancellationToken).ConfigureAwait(false);
@@ -82,6 +84,7 @@ public sealed class RefreshTokenService : IRefreshTokenService
         return sessao!;
     }
 
+    /// <inheritdoc/>
     public async Task<RotacaoContexto> ValidarParaRotacaoAsync(
         string refreshTokenBruto,
         CancellationToken cancellationToken)
@@ -93,7 +96,7 @@ public sealed class RefreshTokenService : IRefreshTokenService
             throw new RefreshTokenInvalidoException();
         }
 
-        var hash = _hasher.Hash(refreshTokenBruto);
+        string hash = _hasher.Hash(refreshTokenBruto);
 
         var transacao = await _repo.IniciarTransacaoAsync(cancellationToken).ConfigureAwait(false);
         try
@@ -161,7 +164,7 @@ public sealed class RefreshTokenService : IRefreshTokenService
         // TODAS as sessões ativas do usuário e responde como token inválido.
         if (sessao.RevogadoEm is not null && sessao.ExpiraEm > agora)
         {
-            var afetadas = await _repo.RevogarTodasAtivasDoUsuarioAsync(sessao.UsuarioId, agora, cancellationToken)
+            int afetadas = await _repo.RevogarTodasAtivasDoUsuarioAsync(sessao.UsuarioId, agora, cancellationToken)
                 .ConfigureAwait(false);
 
             _log.LogWarning(
@@ -192,6 +195,7 @@ public sealed class RefreshTokenService : IRefreshTokenService
         }
     }
 
+    /// <inheritdoc/>
     public async Task RevogarAsync(string refreshTokenBruto, CancellationToken cancellationToken)
     {
         // Idempotente: revogação com token inválido/inexistente não falha.
@@ -200,7 +204,7 @@ public sealed class RefreshTokenService : IRefreshTokenService
             return;
         }
 
-        var hash = _hasher.Hash(refreshTokenBruto);
+        string hash = _hasher.Hash(refreshTokenBruto);
         var sessao = await _repo.ObterPorHashAsync(hash, cancellationToken).ConfigureAwait(false);
         if (sessao is null)
         {
@@ -213,8 +217,8 @@ public sealed class RefreshTokenService : IRefreshTokenService
 
     private static string GerarTokenBruto()
     {
-        var bytes = RandomNumberGenerator.GetBytes(TamanhoBytes);
-        var b64 = Convert.ToBase64String(bytes);
+        byte[] bytes = RandomNumberGenerator.GetBytes(TamanhoBytes);
+        string b64 = Convert.ToBase64String(bytes);
         return b64.Replace('+', '-').Replace('/', '_').TrimEnd('=');
     }
 }

@@ -21,6 +21,7 @@ public sealed class VeiculoRepository : IVeiculoRepository
         _context = context;
     }
 
+    /// <inheritdoc/>
     public Task<bool> ExistePlacaAsync(string placaNormalizada, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(placaNormalizada);
@@ -52,6 +53,7 @@ public sealed class VeiculoRepository : IVeiculoRepository
         return existentes;
     }
 
+    /// <inheritdoc/>
     public async Task AdicionarAsync(Veiculo veiculo, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(veiculo);

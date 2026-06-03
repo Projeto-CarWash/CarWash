@@ -86,6 +86,7 @@ public class CriarClienteHandlerTests
             Cidade = "São Paulo",
             Uf = "SP",
         },
+        Observacoes: "Cliente prefere atendimento pela manhã.",
         TraceId: "trace-1",
         UsuarioId: null);
 }

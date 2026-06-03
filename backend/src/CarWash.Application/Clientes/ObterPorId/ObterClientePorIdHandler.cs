@@ -20,6 +20,7 @@ public sealed class ObterClientePorIdHandler : IQueryHandler<ObterClientePorIdQu
         _responsaveis = responsaveis;
     }
 
+    /// <inheritdoc/>
     public async Task<ClienteResponse> HandleAsync(ObterClientePorIdQuery query, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(query);

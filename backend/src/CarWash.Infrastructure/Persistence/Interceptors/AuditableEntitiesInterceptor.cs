@@ -11,6 +11,7 @@ namespace CarWash.Infrastructure.Persistence.Interceptors;
 /// </summary>
 public sealed class AuditableEntitiesInterceptor : SaveChangesInterceptor
 {
+    /// <inheritdoc/>
     public override InterceptionResult<int> SavingChanges(
         DbContextEventData eventData,
         InterceptionResult<int> result)
@@ -19,6 +20,7 @@ public sealed class AuditableEntitiesInterceptor : SaveChangesInterceptor
         return base.SavingChanges(eventData, result);
     }
 
+    /// <inheritdoc/>
     public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
         DbContextEventData eventData,
         InterceptionResult<int> result,

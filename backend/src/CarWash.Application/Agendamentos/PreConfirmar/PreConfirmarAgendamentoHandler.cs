@@ -33,6 +33,7 @@ public sealed class PreConfirmarAgendamentoHandler
         _logger = logger;
     }
 
+    /// <inheritdoc/>
     public async Task<PreConfirmacaoResponse> HandleAsync(
         PreConfirmarAgendamentoCommand command,
         CancellationToken cancellationToken)
@@ -84,6 +85,24 @@ public sealed class PreConfirmarAgendamentoHandler
                 calculado.Fim,
                 command.TraceId);
             throw new AgendamentoConflitanteException();
+        }
+
+        // RF008/RN009: agendamentos simultâneos são permitidos até o limite de
+        // células ativas da filial. Pré-check já na prévia (409) — o teto pode ter
+        // sido atingido entre a montagem do formulário e a pré-confirmação.
+        if (await _agendamentos.CapacidadeAtingidaAsync(
+            command.FilialId,
+            calculado.Inicio,
+            calculado.Fim,
+            cancellationToken).ConfigureAwait(false))
+        {
+            _logger.LogWarning(
+                "Pré-confirmação rejeitada por capacidade da filial atingida (RF008) — filial {FilialId} na janela [{Inicio:o}, {Fim:o}). TraceId: {TraceId}",
+                command.FilialId,
+                calculado.Inicio,
+                calculado.Fim,
+                command.TraceId);
+            throw new CapacidadeFilialAtingidaException();
         }
 
         var token = _tokens.Gerar(calculado.HashResumo, usuarioId, command.TraceId);

@@ -24,6 +24,7 @@ public class PostgresFixture : IAsyncLifetime
 
     public string ConnectionString => _container.GetConnectionString();
 
+    /// <inheritdoc/>
     public async Task InitializeAsync()
     {
         // P12: a migration falha se a env não estiver definida. Definimos para os testes.

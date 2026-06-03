@@ -5,7 +5,7 @@ namespace CarWash.Domain.Entities;
 
 /// <summary>
 /// Veículo do cliente (RF005). Placa única em todo o sistema (RN003) — value object
-/// <see cref="Placa"/> normaliza para uppercase sem espaços antes da persistência. (RN003)
+/// <see cref="Placa"/> normaliza para uppercase sem espaços antes da persistência. (RN003).
 /// </summary>
 public sealed class Veiculo : IAuditable, IAuditableSetter
 {
@@ -36,8 +36,10 @@ public sealed class Veiculo : IAuditable, IAuditableSetter
 
     public bool Ativo { get; private set; }
 
+    /// <inheritdoc/>
     public DateTime CriadoEm { get; private set; }
 
+    /// <inheritdoc/>
     public DateTime AtualizadoEm { get; private set; }
 
     public static Veiculo Criar(
@@ -133,7 +135,9 @@ public sealed class Veiculo : IAuditable, IAuditableSetter
 
     public void Ativar() => Ativo = true;
 
+    /// <inheritdoc/>
     void IAuditableSetter.SetCriadoEm(DateTime valor) => CriadoEm = valor;
 
+    /// <inheritdoc/>
     void IAuditableSetter.SetAtualizadoEm(DateTime valor) => AtualizadoEm = valor;
 }
