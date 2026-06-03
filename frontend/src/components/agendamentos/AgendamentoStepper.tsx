@@ -9,7 +9,7 @@ interface Step {
 }
 
 const steps: Step[] = [
-  { id: 1, title: 'Cliente e Veículo', caption: 'CLIENTE · VEÍCULO · DATA' },
+  { id: 1, title: 'Filial, Cliente e Veículo', caption: 'FILIAL · CLIENTE · VEÍCULO · DATA' },
   { id: 2, title: 'Serviços', caption: 'CATÁLOGO · SELEÇÃO' },
   { id: 3, title: 'Resumo e Confirmação', caption: 'CONFIRMAÇÃO · ENVIO' },
 ];
