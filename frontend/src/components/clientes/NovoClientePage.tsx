@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AxiosError } from 'axios';
 import { AlertCircle, Check, X } from 'lucide-react';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 
@@ -33,7 +33,6 @@ export function NovoClientePage() {
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const isResettingRef = useRef(false);
 
   const getDefaultValues = useCallback(
     (): ClienteFormData => ({
@@ -77,16 +76,9 @@ export function NovoClientePage() {
     defaultValues: loadDraft() ?? getDefaultValues(),
   });
 
-  // Safe reset that prevents rapid consecutive calls from corrupting RHF state
-  const safeReset = useCallback(() => {
-    if (isResettingRef.current) return;
-    isResettingRef.current = true;
-    const defaults = getDefaultValues();
-    form.reset(defaults, { keepErrors: false, keepDirty: false, keepTouched: false });
-    // Allow next reset only after RHF finishes its internal state reconciliation
-    requestAnimationFrame(() => {
-      isResettingRef.current = false;
-    });
+  // form.reset é síncrono e idempotente: pode ser chamado quantas vezes for preciso.
+  const resetForm = useCallback(() => {
+    form.reset(getDefaultValues(), { keepErrors: false, keepDirty: false, keepTouched: false });
   }, [form, getDefaultValues]);
 
   // ── Reactive watches for sidebar + step validation ─────────────────────────
@@ -154,7 +146,7 @@ export function NovoClientePage() {
         const resp = await clienteService.criar(data);
         setSuccessMsg('Cliente cadastrado com sucesso! Redirecionando…');
         localStorage.removeItem(DRAFT_STORAGE_KEY);
-        safeReset();
+        resetForm();
         setTimeout(() => {
           void navigate(`/clientes/${resp.id}`, { replace: true });
         }, 800);
@@ -211,15 +203,15 @@ export function NovoClientePage() {
         setIsSubmitting(false);
       }
     },
-    [form, navigate, safeReset],
+    [form, navigate, resetForm],
   );
 
   const handleClearForm = useCallback(() => {
-    safeReset();
+    resetForm();
     setGlobalError(null);
     setSuccessMsg(null);
     localStorage.removeItem(DRAFT_STORAGE_KEY);
-  }, [safeReset]);
+  }, [resetForm]);
 
   const handleSaveDraft = useCallback(() => {
     const currentValues = form.getValues();
