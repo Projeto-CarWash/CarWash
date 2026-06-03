@@ -143,7 +143,7 @@ public class CriarResponsavelEndpointTests : IAsyncDisposable
     {
         var payload = new Dictionary<string, object?>
         {
-            ["nome"] = $"Titular-{Guid.NewGuid():N}",
+            ["nome"] = "Cliente Titular",
             ["dataNascimento"] = "1990-01-01",
             ["cpf"] = NovoCpfValido(),
             ["celular"] = "11987654321",

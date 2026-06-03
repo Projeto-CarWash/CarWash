@@ -58,10 +58,7 @@ export function SeletorFilial({
 
   return (
     <div className="space-y-1.5">
-      <Label
-        htmlFor="ag-filial"
-        className="text-[10px] font-bold tracking-[0.2em] text-zinc-500"
-      >
+      <Label htmlFor="ag-filial" className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">
         FILIAL <span className="text-red-500">*</span>
       </Label>
 
@@ -134,11 +131,7 @@ export function SeletorFilial({
 
       <div aria-live="polite">
         {temErroValidacao && (
-          <p
-            id={erroIdRef}
-            role="alert"
-            className="flex items-center gap-1.5 text-xs text-red-500"
-          >
+          <p id={erroIdRef} role="alert" className="flex items-center gap-1.5 text-xs text-red-500">
             <AlertCircle className="h-3.5 w-3.5" />
             Selecione uma filial para prosseguir.
           </p>

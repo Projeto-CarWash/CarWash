@@ -71,10 +71,13 @@ public class ClienteResponse
     public class ClienteVeiculoResponse
     {
         public Guid Id { get; set; }
+
         public string Placa { get; set; } = string.Empty;
+
         public string Modelo { get; set; } = string.Empty;
+
         public string Fabricante { get; set; } = string.Empty;
+
         public string Cor { get; set; } = string.Empty;
     }
 }
-
