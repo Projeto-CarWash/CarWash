@@ -32,6 +32,8 @@ public class CarWashDbContext : DbContext, ICarWashDbContext
 
     public DbSet<Filiado> Filiados => Set<Filiado>();
 
+    public DbSet<Responsavel> Responsaveis => Set<Responsavel>();
+
     public DbSet<Veiculo> Veiculos => Set<Veiculo>();
 
     public DbSet<Servico> Servicos => Set<Servico>();

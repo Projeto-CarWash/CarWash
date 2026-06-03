@@ -2,10 +2,10 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace CarWash.Infrastructure.Migrations
+namespace CarWash.Infrastructure.Persistence.Migrations
 {
     /// <inheritdoc />
-    public partial class UpdateVeiculoPlacaLength : Migration
+    public partial class AtualizaPlacaMaxLengthEUnique : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -18,8 +18,8 @@ namespace CarWash.Infrastructure.Migrations
                 maxLength: 7,
                 nullable: false,
                 oldClrType: typeof(string),
-                oldType: "character varying(8)",
-                oldMaxLength: 8);
+                oldType: "character varying(10)",
+                oldMaxLength: 10);
         }
 
         /// <inheritdoc />
@@ -29,8 +29,8 @@ namespace CarWash.Infrastructure.Migrations
                 name: "placa",
                 schema: "public",
                 table: "veiculos",
-                type: "character varying(8)",
-                maxLength: 8,
+                type: "character varying(10)",
+                maxLength: 10,
                 nullable: false,
                 oldClrType: typeof(string),
                 oldType: "character varying(7)",

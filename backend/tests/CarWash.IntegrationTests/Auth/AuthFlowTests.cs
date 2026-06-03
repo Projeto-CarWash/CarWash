@@ -4,6 +4,8 @@ using System.Text.Json;
 using BCrypt.Net;
 using CarWash.Application.DTOs;
 using CarWash.Domain.Entities;
+using CarWash.Domain.Enums;
+using CarWash.Domain.ValueObjects;
 using CarWash.Infrastructure.Persistence;
 using CarWash.IntegrationTests.Collections;
 using CarWash.IntegrationTests.Fixtures;
@@ -30,11 +32,11 @@ public class AuthFlowTests : IAsyncDisposable
     [Fact]
     public async Task POST_auth_flow_rotates_refresh_token_and_revokes_session_on_logout()
     {
-        await _factory.EnsureDatabaseCreatedAsync();
+        await EnsureDatabaseCreatedAsync();
 
         string email = $"user-{Guid.NewGuid():N}@example.com";
         string password = "Senha@123";
-        var user = await SeedUserAsync(email, password);
+        var usuario = await SeedUsuarioAsync(email, password);
 
         var client = _factory.CreateClient();
 
@@ -54,7 +56,7 @@ public class AuthFlowTests : IAsyncDisposable
         loginBody.TraceId.Should().NotBeNullOrWhiteSpace();
         loginBody.AccessToken.Should().NotBeNullOrWhiteSpace();
         loginBody.RefreshToken.Should().NotBeNullOrWhiteSpace();
-        loginBody.Usuario.Id.Should().Be(user.Id);
+        loginBody.Usuario.Id.Should().Be(usuario.Id);
         loginBody.Usuario.Email.Should().Be(email);
 
         string firstRefreshToken = loginBody.RefreshToken;
@@ -75,7 +77,7 @@ public class AuthFlowTests : IAsyncDisposable
         refreshBody.AccessToken.Should().NotBeNullOrWhiteSpace();
         refreshBody.RefreshToken.Should().NotBe(firstRefreshToken);
 
-        var refreshedSession = await GetSingleSessionAsync(user.Id);
+        var refreshedSession = await GetSingleSessionAsync(usuario.Id);
         BCrypt.Net.BCrypt.Verify(refreshBody.RefreshToken, refreshedSession.RefreshTokenHash).Should().BeTrue();
         BCrypt.Net.BCrypt.Verify(firstRefreshToken, refreshedSession.RefreshTokenHash).Should().BeFalse();
 
@@ -107,8 +109,8 @@ public class AuthFlowTests : IAsyncDisposable
         logoutBody!.Message.Should().Be("Logout realizado com sucesso.");
         logoutBody.TraceId.Should().NotBeNullOrWhiteSpace();
 
-        var revokedSession = await GetSingleSessionAsync(user.Id);
-        revokedSession.IsRevoked.Should().BeTrue();
+        var revokedSession = await GetSingleSessionAsync(usuario.Id);
+        revokedSession.RevogadoEm.Should().NotBeNull();
 
         var logoutAgainResponse = await client.PostAsJsonAsync(
             "/api/v1/auth/logout",
@@ -123,11 +125,11 @@ public class AuthFlowTests : IAsyncDisposable
     [Fact]
     public async Task POST_auth_login_blocks_after_three_failed_attempts()
     {
-        await _factory.EnsureDatabaseCreatedAsync();
+        await EnsureDatabaseCreatedAsync();
 
         string email = $"blocked-{Guid.NewGuid():N}@example.com";
         string password = "Senha@123";
-        await SeedUserAsync(email, password);
+        await SeedUsuarioAsync(email, password);
 
         var client = _factory.CreateClient();
 
@@ -174,10 +176,10 @@ public class AuthFlowTests : IAsyncDisposable
 
         blockedCorrectPasswordResponse.StatusCode.Should().Be(HttpStatusCode.Forbidden);
 
-        var reloadedUser = await GetUserByEmailAsync(email);
-        reloadedUser.FailedLoginAttempts.Should().Be(3);
-        reloadedUser.BlockedUntil.Should().NotBeNull();
-        reloadedUser.BlockedUntil.Should().BeAfter(DateTime.UtcNow);
+        var reloadedUser = await GetUsuarioByEmailAsync(email);
+        reloadedUser.TentativasInvalidas.Should().Be(3);
+        reloadedUser.BloqueadoAte.Should().NotBeNull();
+        reloadedUser.BloqueadoAte.Should().BeAfter(DateTime.UtcNow);
     }
 
     [Fact]
@@ -211,42 +213,46 @@ public class AuthFlowTests : IAsyncDisposable
         GC.SuppressFinalize(this);
     }
 
-    private async Task<User> SeedUserAsync(string email, string password)
+    private async Task EnsureDatabaseCreatedAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<CarWashDbContext>();
+        await db.Database.MigrateAsync();
+    }
+
+    private async Task<Usuario> SeedUsuarioAsync(string email, string password)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<CarWashDbContext>();
 
-        var user = new User
-        {
-            Id = Guid.NewGuid(),
-            Email = email.Trim().ToLowerInvariant(),
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
-            Active = true,
-            FailedLoginAttempts = 0,
-            BlockedUntil = null
-        };
+        var usuario = Usuario.Criar(
+            id: Guid.NewGuid(),
+            nome: "Usuário Teste",
+            email: new Email(email.Trim().ToLowerInvariant()),
+            senhaHash: BCrypt.Net.BCrypt.HashPassword(password),
+            perfil: PerfilUsuario.Funcionario);
 
-        db.Users.Add(user);
+        db.Usuarios.Add(usuario);
         await db.SaveChangesAsync();
 
-        return user;
+        return usuario;
     }
 
-    private async Task<User> GetUserByEmailAsync(string email)
+    private async Task<Usuario> GetUsuarioByEmailAsync(string email)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<CarWashDbContext>();
 
         string normalizedEmail = email.Trim().ToLowerInvariant();
 
-        return await db.Users.SingleAsync(user => user.Email == normalizedEmail);
+        return await db.Usuarios.SingleAsync(u => u.EmailValor == normalizedEmail);
     }
 
-    private async Task<Session> GetSingleSessionAsync(Guid userId)
+    private async Task<UsuarioSessao> GetSingleSessionAsync(Guid usuarioId)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<CarWashDbContext>();
 
-        return await db.Sessions.SingleAsync(session => session.UserId == userId);
+        return await db.UsuarioSessoes.SingleAsync(s => s.UsuarioId == usuarioId);
     }
 }

@@ -78,19 +78,19 @@ public class VeiculoService : IVeiculoService
             bool placaJaExiste = await _context.Veiculos
                 .AnyAsync(v => v.Placa == normalized.Placa, cancellationToken);
 
-            if (placaJaExiste)
-            {
-                _logger.LogWarning(
-                    "VEICULO_CADASTRO_PLACA_DUPLICADA: Placa {Placa} ClienteId {ClienteId} TraceId {TraceId}",
-                    normalized.Placa,
-                    clienteId,
-                    traceId);
+        if (placaJaExiste)
+        {
+            _logger.LogWarning(
+                "VEICULO_CADASTRO_PLACA_DUPLICADA: Placa {Placa} ClienteId {ClienteId} TraceId {TraceId}",
+                normalized.Placa,
+                clienteId,
+                traceId);
 
-                throw new ApiException(
-                    409,
-                    "VEICULO_PLACA_DUPLICADA",
-                    "Já existe veículo cadastrado com esta placa.");
-            }
+            throw new ApiException(
+                409,
+                "VEICULO_PLACA_DUPLICADA",
+                "Já existe um veículo cadastrado com a placa informada.");
+        }
 
             var veiculo = Veiculo.Criar(
                 Guid.NewGuid(),
@@ -101,7 +101,7 @@ public class VeiculoService : IVeiculoService
                 normalized.Cor
             );
 
-            _context.Veiculos.Add(veiculo);
+        _context.Veiculos.Add(veiculo);
 
             await _context.SaveChangesAsync(cancellationToken);
 
@@ -123,7 +123,7 @@ public class VeiculoService : IVeiculoService
             throw new ApiException(
                 409,
                 "VEICULO_PLACA_DUPLICADA",
-                "Já existe veículo cadastrado com esta placa.");
+                "Já existe um veículo cadastrado com a placa informada.");
         }
         catch (ApiException)
         {
@@ -204,7 +204,7 @@ public class VeiculoService : IVeiculoService
                 throw new ApiException(
                     409,
                     "VEICULO_PLACA_DUPLICADA",
-                    "Já existe veículo cadastrado com esta placa.");
+                    "Já existe um veículo cadastrado com a placa informada.");
             }
 
             veiculo.Atualizar(
@@ -233,7 +233,7 @@ public class VeiculoService : IVeiculoService
             throw new ApiException(
                 409,
                 "VEICULO_PLACA_DUPLICADA",
-                "Já existe veículo cadastrado com esta placa.");
+                "Já existe um veículo cadastrado com a placa informada.");
         }
         catch (ApiException)
         {
@@ -257,15 +257,15 @@ public class VeiculoService : IVeiculoService
     private static CriarVeiculoRequest Normalize(CriarVeiculoRequest request)
     {
         string placaOriginal = request.Placa ?? string.Empty;
-        string placaSemEspacos = string.Concat(placaOriginal.Where(c => !char.IsWhiteSpace(c)));
-        string placaNormalizada = placaSemEspacos.Replace("-", string.Empty).ToUpperInvariant();
+        string placaNormalizada = placaOriginal.Trim().ToUpperInvariant();
 
         return new CriarVeiculoRequest
         {
             Placa = placaNormalizada,
             Modelo = (request.Modelo ?? string.Empty).Trim(),
             Fabricante = (request.Fabricante ?? string.Empty).Trim(),
-            Cor = (request.Cor ?? string.Empty).Trim()
+            Cor = (request.Cor ?? string.Empty).Trim(),
+            Ano = request.Ano
         };
     }
 
@@ -275,15 +275,15 @@ public class VeiculoService : IVeiculoService
 
         if (string.IsNullOrWhiteSpace(request.Placa))
         {
-            errors["placa"] = new[] { "Placa é obrigatória." };
+            errors["placa"] = new[] { "O campo placa é obrigatório." };
         }
         else if (request.Placa.Length != 7)
         {
-            errors["placa"] = new[] { "Placa deve conter 7 caracteres válidos." };
+            errors["placa"] = new[] { "A placa informada não está em um formato válido." };
         }
         else if (!PlacaRegex.IsMatch(request.Placa))
         {
-            errors["placa"] = new[] { "Placa inválida. Formatos aceitos: AAA0000 ou AAA0A00." };
+            errors["placa"] = new[] { "A placa informada não está em um formato válido." };
         }
 
         AddTextErrors(errors, "modelo", request.Modelo, 2, 80, "Modelo");
@@ -302,6 +302,11 @@ public class VeiculoService : IVeiculoService
         if (!errors.ContainsKey("cor") && !string.IsNullOrWhiteSpace(request.Cor) && !CorRegex.IsMatch(request.Cor))
         {
             errors["cor"] = new[] { "Cor não deve conter números ou caracteres especiais." };
+        }
+
+        if (request.Ano is < Veiculo.AnoMinimo or > Veiculo.AnoMaximo)
+        {
+            errors["ano"] = new[] { $"Ano deve estar entre {Veiculo.AnoMinimo} e {Veiculo.AnoMaximo}." };
         }
 
         return errors;

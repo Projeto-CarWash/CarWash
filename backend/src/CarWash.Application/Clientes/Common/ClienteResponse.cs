@@ -1,3 +1,4 @@
+using CarWash.Application.Responsaveis.Common;
 using CarWash.Domain.Entities;
 
 namespace CarWash.Application.Clientes.Common;
@@ -32,6 +33,8 @@ public class ClienteResponse
     public DateTime CriadoEm { get; set; }
 
     public DateTime AtualizadoEm { get; set; }
+
+    public List<ResponsavelResponse> Responsaveis { get; set; } = [];
 
     public static ClienteResponse FromEntity(Cliente cliente)
     {

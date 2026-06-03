@@ -2,6 +2,7 @@ using CarWash.Application.Clientes.ObterPorId;
 using CarWash.Application.Clientes.Persistence;
 using CarWash.Application.Common.Exceptions;
 using CarWash.Application.Interfaces;
+using CarWash.Application.Responsaveis.Persistence;
 using CarWash.Domain.Entities;
 using CarWash.Domain.ValueObjects;
 using FluentAssertions;
@@ -18,6 +19,7 @@ namespace CarWash.UnitTests.Application.Clientes;
 public class ObterClientePorIdHandlerTests
 {
     private readonly IClienteRepository _repo = Substitute.For<IClienteRepository>();
+    private readonly IResponsavelRepository _responsaveis = Substitute.For<IResponsavelRepository>();
     private readonly ICarWashDbContext _context = Substitute.For<ICarWashDbContext>();
 
     [Fact]
@@ -25,17 +27,20 @@ public class ObterClientePorIdHandlerTests
     {
         var cliente = NovoCliente();
         _repo.ObterPorIdAsync(cliente.Id, Arg.Any<CancellationToken>()).Returns(cliente);
+        _responsaveis.ListarPorClienteTitularIdAsync(cliente.Id, Arg.Any<CancellationToken>())
+            .Returns(new List<Responsavel>());
 
         var veiculosList = new List<Veiculo>();
         var dbSet = TestDbSetHelper.CreateMockDbSet(veiculosList);
         _context.Veiculos.Returns(dbSet);
 
-        var handler = new ObterClientePorIdHandler(_repo, _context);
+        var handler = new ObterClientePorIdHandler(_repo, _responsaveis, _context);
         var resposta = await handler.HandleAsync(new ObterClientePorIdQuery(cliente.Id), CancellationToken.None);
 
         resposta.Id.Should().Be(cliente.Id);
         resposta.Nome.Should().Be("Maria Souza");
         resposta.Endereco.Cidade.Should().Be("São Paulo");
+        resposta.Responsaveis.Should().BeEmpty();
         resposta.Veiculos.Should().BeEmpty();
     }
 
@@ -44,6 +49,8 @@ public class ObterClientePorIdHandlerTests
     {
         var cliente = NovoCliente();
         _repo.ObterPorIdAsync(cliente.Id, Arg.Any<CancellationToken>()).Returns(cliente);
+        _responsaveis.ListarPorClienteTitularIdAsync(cliente.Id, Arg.Any<CancellationToken>())
+            .Returns(new List<Responsavel>());
 
         var veiculo = Veiculo.Criar(
             Guid.NewGuid(),
@@ -58,7 +65,7 @@ public class ObterClientePorIdHandlerTests
         var dbSet = TestDbSetHelper.CreateMockDbSet(veiculosList);
         _context.Veiculos.Returns(dbSet);
 
-        var handler = new ObterClientePorIdHandler(_repo, _context);
+        var handler = new ObterClientePorIdHandler(_repo, _responsaveis, _context);
         var resposta = await handler.HandleAsync(new ObterClientePorIdQuery(cliente.Id), CancellationToken.None);
 
         resposta.Id.Should().Be(cliente.Id);
@@ -76,7 +83,7 @@ public class ObterClientePorIdHandlerTests
         var dbSet = TestDbSetHelper.CreateMockDbSet(veiculosList);
         _context.Veiculos.Returns(dbSet);
 
-        var handler = new ObterClientePorIdHandler(_repo, _context);
+        var handler = new ObterClientePorIdHandler(_repo, _responsaveis, _context);
         var act = () => handler.HandleAsync(new ObterClientePorIdQuery(Guid.NewGuid()), CancellationToken.None);
 
         var ex = await act.Should().ThrowAsync<NotFoundException>();

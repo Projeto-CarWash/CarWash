@@ -3,6 +3,8 @@ using CarWash.Application.Clientes.Common;
 using CarWash.Application.Clientes.Persistence;
 using CarWash.Application.Common.Exceptions;
 using CarWash.Application.Interfaces;
+using CarWash.Application.Responsaveis.Common;
+using CarWash.Application.Responsaveis.Persistence;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 
@@ -13,11 +15,13 @@ public sealed class ObterClientePorIdHandler : IQueryHandler<ObterClientePorIdQu
     public const string MensagemNaoEncontrado = "Cliente não encontrado.";
 
     private readonly IClienteRepository _repositorio;
+    private readonly IResponsavelRepository _responsaveis;
     private readonly ICarWashDbContext _context;
 
-    public ObterClientePorIdHandler(IClienteRepository repositorio, ICarWashDbContext context)
+    public ObterClientePorIdHandler(IClienteRepository repositorio, IResponsavelRepository responsaveis, ICarWashDbContext context)
     {
         _repositorio = repositorio;
+        _responsaveis = responsaveis;
         _context = context;
     }
 
@@ -30,6 +34,21 @@ public sealed class ObterClientePorIdHandler : IQueryHandler<ObterClientePorIdQu
             ?? throw new NotFoundException(MensagemNaoEncontrado);
 
         var response = ClienteResponse.FromEntity(cliente);
+
+        var responsaveis = await _responsaveis.ListarPorClienteTitularIdAsync(query.Id, cancellationToken).ConfigureAwait(false);
+        response.Responsaveis = responsaveis.Select(r => new ResponsavelResponse
+        {
+            Id = r.Id,
+            ClienteTitularId = r.ClienteTitularId,
+            Nome = r.Nome,
+            Documento = r.Documento,
+            Telefone = r.Telefone,
+            Email = r.Email,
+            GrauVinculo = r.GrauVinculo,
+            Ativo = r.Ativo,
+            CriadoEm = r.CriadoEm,
+            AtualizadoEm = r.AtualizadoEm,
+        }).ToList();
 
         var veiculos = await _context.Veiculos
             .AsNoTracking()
