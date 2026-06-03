@@ -1,8 +1,25 @@
-import { ChevronLeft, ChevronRight, Pencil, Plus, Search } from 'lucide-react';
+import {
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Pencil,
+  Plus,
+  Power,
+  Search,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { clienteService, type ClienteResumo } from '@/services/clienteService';
 
@@ -16,6 +33,13 @@ export function ClientesListaPage() {
   const [total, setTotal] = useState(0);
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [sucesso, setSucesso] = useState<string | null>(null);
+
+  // ─── Estado da inativação/reativação ───
+  const [clienteStatus, setClienteStatus] = useState<ClienteResumo | null>(null);
+  const [modalStatusAberto, setModalStatusAberto] = useState(false);
+  const [salvandoStatus, setSalvandoStatus] = useState(false);
+  const [erroStatus, setErroStatus] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelado = false;
@@ -41,6 +65,44 @@ export function ClientesListaPage() {
       cancelado = true;
     };
   }, [busca, pagina]);
+
+  // ─── Mensagem de sucesso transitória ───
+  useEffect(() => {
+    if (!sucesso) return;
+    const timer = setTimeout(() => setSucesso(null), 4000);
+    return () => clearTimeout(timer);
+  }, [sucesso]);
+
+  const abrirModalStatus = (cliente: ClienteResumo) => {
+    setErroStatus(null);
+    setClienteStatus(cliente);
+    setModalStatusAberto(true);
+  };
+
+  const confirmarAlteracaoStatus = async () => {
+    if (!clienteStatus) return;
+    const novoAtivo = !clienteStatus.ativo;
+    setSalvandoStatus(true);
+    setErroStatus(null);
+    try {
+      await clienteService.alterarStatus(clienteStatus.id, novoAtivo);
+      // Atualiza o item local para refletir imediatamente na listagem
+      setItens((prev) =>
+        prev.map((c) => (c.id === clienteStatus.id ? { ...c, ativo: novoAtivo } : c)),
+      );
+      setSucesso(
+        `Cliente "${clienteStatus.nome}" ${novoAtivo ? 'reativado' : 'inativado'} com sucesso.`,
+      );
+      setModalStatusAberto(false);
+      setClienteStatus(null);
+    } catch {
+      setErroStatus(
+        `Não foi possível ${novoAtivo ? 'reativar' : 'inativar'} o cliente "${clienteStatus.nome}".`,
+      );
+    } finally {
+      setSalvandoStatus(false);
+    }
+  };
 
   const totalPaginas = Math.max(1, Math.ceil(total / TAMANHO_PAGINA));
   const podeVoltar = pagina > 1;
@@ -89,6 +151,17 @@ export function ClientesListaPage() {
           className="mb-4 rounded-xl border border-red-500/30 bg-red-950/30 px-4 py-3 text-sm text-red-400"
         >
           {erro}
+        </div>
+      )}
+
+      {sucesso && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="mb-4 flex items-center gap-2 rounded-xl border border-green-500/30 bg-green-950/30 px-4 py-3 text-sm text-green-400"
+        >
+          <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
+          {sucesso}
         </div>
       )}
 
@@ -151,17 +224,32 @@ export function ClientesListaPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => void navigate(`/clientes/${c.id}/editar`)}
-                      title="Editar cliente"
-                      className="h-8 w-8 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
-                    >
-                      <Pencil className="h-4 w-4" />
-                      <span className="sr-only">Editar {c.nome}</span>
-                    </Button>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => void navigate(`/clientes/${c.id}/editar`)}
+                        title="Editar cliente"
+                        className="h-8 w-8 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
+                      >
+                        <Pencil className="h-4 w-4" />
+                        <span className="sr-only">Editar {c.nome}</span>
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => abrirModalStatus(c)}
+                        title={c.ativo ? 'Inativar cliente' : 'Reativar cliente'}
+                        className="h-8 w-8 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
+                      >
+                        <Power className="h-4 w-4" />
+                        <span className="sr-only">
+                          {c.ativo ? 'Inativar' : 'Reativar'} {c.nome}
+                        </span>
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -194,6 +282,59 @@ export function ClientesListaPage() {
           </Button>
         </div>
       </div>
+
+      {/* ─── Modal de confirmação de inativação/reativação ─── */}
+      <Dialog
+        open={modalStatusAberto}
+        onOpenChange={(aberto) => {
+          if (salvandoStatus) return;
+          setModalStatusAberto(aberto);
+          if (!aberto) {
+            setClienteStatus(null);
+            setErroStatus(null);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-[425px] bg-zinc-950 border-zinc-800">
+          <DialogHeader>
+            <DialogTitle className="text-zinc-100">
+              {clienteStatus?.ativo ? 'Inativar cliente' : 'Reativar cliente'}
+            </DialogTitle>
+            <DialogDescription className="text-zinc-400">
+              {clienteStatus?.ativo
+                ? `Deseja realmente inativar o cliente "${clienteStatus?.nome}"? Ele não estará mais disponível para novos agendamentos.`
+                : `Deseja reativar o cliente "${clienteStatus?.nome}"? Ele voltará a estar disponível para novos agendamentos.`}
+            </DialogDescription>
+          </DialogHeader>
+
+          {erroStatus && (
+            <p role="alert" className="text-sm text-red-400">
+              {erroStatus}
+            </p>
+          )}
+
+          <DialogFooter className="mt-4 gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setModalStatusAberto(false)}
+              disabled={salvandoStatus}
+              className="border-zinc-700 bg-transparent text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              onClick={() => void confirmarAlteracaoStatus()}
+              disabled={salvandoStatus}
+              className="bg-red-600 text-white hover:bg-red-700"
+            >
+              {salvandoStatus ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Confirmar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
