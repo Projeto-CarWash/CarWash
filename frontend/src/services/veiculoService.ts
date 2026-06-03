@@ -15,10 +15,6 @@ export interface Veiculo {
   atualizadoEm: string;
 }
 
-export interface ListarVeiculosResponse {
-  itens: Veiculo[];
-}
-
 // Contrato alinhado ao slice CriarVeiculo do backend (Application/Veiculos/Criar):
 // retorna o agregado Veiculo completo, não { id, mensagem, traceId }.
 export type CriarVeiculoResponse = Veiculo;
@@ -36,12 +32,5 @@ export const veiculoService = {
       payload,
     );
     return data;
-  },
-
-  async listarPorCliente(clienteId: string): Promise<Veiculo[]> {
-    const { data } = await api.get<ListarVeiculosResponse>(
-      `/api/v1/clientes/${clienteId}/veiculos`,
-    );
-    return data.itens;
   },
 };

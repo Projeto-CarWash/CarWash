@@ -15,6 +15,18 @@ export interface ClienteResumo {
   criadoEm: string;
 }
 
+/**
+ * Veículo vinculado ao cliente, conforme retornado por `GET /api/v1/clientes/{id}`
+ * (propriedade `veiculos`). Espelha `ClienteResponse.ClienteVeiculoResponse` do backend.
+ */
+export interface ClienteVeiculo {
+  id: string;
+  placa: string;
+  modelo: string;
+  fabricante: string;
+  cor: string;
+}
+
 export interface ClienteDetalhe {
   id: string;
   nome: string;
@@ -33,14 +45,7 @@ export interface ClienteDetalhe {
     cidade: string;
     uf: string;
   };
-  veiculos?: {
-    id: string;
-    placa: string;
-    marca: string;
-    modelo: string;
-    fabricante: string;
-    cor: string;
-  }[];
+  veiculos: ClienteVeiculo[];
   ativo: boolean;
   criadoEm: string;
   atualizadoEm: string;
