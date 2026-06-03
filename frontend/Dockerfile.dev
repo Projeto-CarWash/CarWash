@@ -16,5 +16,5 @@ EXPOSE 5173
 
 # node_modules pode ser montado como volume nomeado para evitar conflito
 # entre host e container (especialmente Linux x Alpine). O CMD garante install
-# se a pasta estiver vazia.
-CMD ["sh", "-c", "if [ ! -f node_modules/.installed ] || [ package-lock.json -nt node_modules/.installed ]; then npm install --no-audit --no-fund && touch node_modules/.installed; fi && npm run dev -- --host 0.0.0.0"]
+# se a pasta estiver vazia. --force resolve bindings nativos (rolldown) para musl.
+CMD ["sh", "-c", "if [ ! -f node_modules/.installed ] || [ package-lock.json -nt node_modules/.installed ]; then npm install --no-audit --no-fund --force && touch node_modules/.installed; fi && npm run dev -- --host 0.0.0.0"]

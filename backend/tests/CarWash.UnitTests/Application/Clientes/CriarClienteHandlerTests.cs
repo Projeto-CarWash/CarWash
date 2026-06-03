@@ -2,6 +2,8 @@ using CarWash.Application.Clientes.Common;
 using CarWash.Application.Clientes.Criar;
 using CarWash.Application.Clientes.Persistence;
 using CarWash.Application.Common.Exceptions;
+using CarWash.Application.Interfaces;
+using CarWash.Application.DTOs;
 using CarWash.Domain.Entities;
 using FluentAssertions;
 using NSubstitute;
@@ -12,6 +14,7 @@ namespace CarWash.UnitTests.Application.Clientes;
 public class CriarClienteHandlerTests
 {
     private readonly IClienteRepository _repo = Substitute.For<IClienteRepository>();
+    private readonly IVeiculoService _veiculoService = Substitute.For<IVeiculoService>();
 
     [Fact]
     public async Task Caminho_feliz_chama_repo_e_retorna_response_com_traceId()
@@ -67,7 +70,7 @@ public class CriarClienteHandlerTests
         await act.Should().ThrowAsync<ValidationException>();
     }
 
-    private CriarClienteHandler NovoHandler() => new(_repo);
+    private CriarClienteHandler NovoHandler() => new(_repo, _veiculoService);
 
     private static CriarClienteCommand NovoComando() => new(
         Nome: "Maria Souza",
@@ -86,7 +89,7 @@ public class CriarClienteHandlerTests
             Cidade = "São Paulo",
             Uf = "SP",
         },
-        Observacoes: "Cliente prefere atendimento pela manhã.",
+        Veiculos: null,
         TraceId: "trace-1",
         UsuarioId: null);
 }

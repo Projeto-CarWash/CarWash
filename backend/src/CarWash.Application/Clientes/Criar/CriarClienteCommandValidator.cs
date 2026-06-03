@@ -20,7 +20,9 @@ public sealed class CriarClienteCommandValidator : AbstractValidator<CriarClient
             .Must(nome => InputNormalizer.SanitizeTextOrNull(nome)!.Length >= 3)
             .WithMessage("O nome deve ter no mínimo 3 caracteres.")
             .Must(nome => InputNormalizer.SanitizeTextOrNull(nome)!.Length <= 100)
-            .WithMessage("O nome deve ter no máximo 100 caracteres.");
+            .WithMessage("O nome deve ter no máximo 100 caracteres.")
+            .Matches(@"^[a-zA-ZáàãâäéèêëíïóôõöúüçñÁÀÃÂÄÉÈÊËÍÏÓÔÕÖÚÜÇÑ\s\-']+$")
+            .WithMessage("Nome não deve conter números ou caracteres especiais.");
 
         RuleFor(x => x.DataNascimento)
             .NotNull().WithMessage("Data de nascimento é obrigatória.")
@@ -104,7 +106,9 @@ public sealed class CriarClienteCommandValidator : AbstractValidator<CriarClient
 
             RuleFor(x => x.Endereco!.Logradouro)
                 .NotEmpty().WithMessage("Logradouro é obrigatório.")
-                .MaximumLength(150).WithMessage("Logradouro deve ter no máximo 150 caracteres.");
+                .MaximumLength(150).WithMessage("Logradouro deve ter no máximo 150 caracteres.")
+                .Matches(@"^[a-zA-ZáàãâäéèêëíïóôõöúüçñÁÀÃÂÄÉÈÊËÍÏÓÔÕÖÚÜÇÑ0-9\s.,\-]+$")
+                .WithMessage("Logradouro não deve conter caracteres especiais.");
 
             RuleFor(x => x.Endereco!.Numero)
                 .NotEmpty().WithMessage("Número é obrigatório.")
@@ -117,11 +121,15 @@ public sealed class CriarClienteCommandValidator : AbstractValidator<CriarClient
 
             RuleFor(x => x.Endereco!.Bairro)
                 .NotEmpty().WithMessage("Bairro é obrigatório.")
-                .MaximumLength(100).WithMessage("Bairro deve ter no máximo 100 caracteres.");
+                .MaximumLength(100).WithMessage("Bairro deve ter no máximo 100 caracteres.")
+                .Matches(@"^[a-zA-ZáàãâäéèêëíïóôõöúüçñÁÀÃÂÄÉÈÊËÍÏÓÔÕÖÚÜÇÑ0-9\s\-]+$")
+                .WithMessage("Bairro não deve conter caracteres especiais.");
 
             RuleFor(x => x.Endereco!.Cidade)
                 .NotEmpty().WithMessage("Cidade é obrigatória.")
-                .MaximumLength(100).WithMessage("Cidade deve ter no máximo 100 caracteres.");
+                .MaximumLength(100).WithMessage("Cidade deve ter no máximo 100 caracteres.")
+                .Matches(@"^[a-zA-ZáàãâäéèêëíïóôõöúüçñÁÀÃÂÄÉÈÊËÍÏÓÔÕÖÚÜÇÑ\s\-]+$")
+                .WithMessage("Cidade não deve conter números ou caracteres especiais.");
 
             RuleFor(x => x.Endereco!.Uf)
                 .NotEmpty().WithMessage("UF é obrigatória.")

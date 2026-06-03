@@ -1,5 +1,9 @@
 import { z } from 'zod';
 
+const VEICULO_TEXTO_PATTERN = /^[a-zA-ZáàãâäéèêëíïóôõöúüçñÁÀÃÂÄÉÈÊËÍÏÓÔÕÖÚÜÇÑ0-9\s.-]+$/;
+const FABRICANTE_PATTERN = /^[a-zA-ZáàãâäéèêëíïóôõöúüçñÁÀÃÂÄÉÈÊËÍÏÓÔÕÖÚÜÇÑ\s-]+$/;
+const COR_PATTERN = /^[a-zA-ZáàãâäéèêëíïóôõöúüçñÁÀÃÂÄÉÈÊËÍÏÓÔÕÖÚÜÇÑ\s]+$/;
+
 export const veiculoSchema = z.object({
   clienteId: z
     .string()
@@ -29,6 +33,9 @@ export const veiculoSchema = z.object({
     .transform((val) => val.trim())
     .refine((val) => val.length >= 2 && val.length <= 80, {
       message: 'Modelo deve ter entre 2 e 80 caracteres.',
+    })
+    .refine((val) => VEICULO_TEXTO_PATTERN.test(val), {
+      message: 'Modelo não deve conter caracteres especiais.',
     }),
 
   fabricante: z
@@ -37,6 +44,9 @@ export const veiculoSchema = z.object({
     .transform((val) => val.trim())
     .refine((val) => val.length >= 2 && val.length <= 80, {
       message: 'Fabricante deve ter entre 2 e 80 caracteres.',
+    })
+    .refine((val) => FABRICANTE_PATTERN.test(val), {
+      message: 'Fabricante não deve conter números ou caracteres especiais.',
     }),
 
   cor: z
@@ -45,6 +55,9 @@ export const veiculoSchema = z.object({
     .transform((val) => val.trim())
     .refine((val) => val.length >= 2 && val.length <= 40, {
       message: 'Cor deve ter entre 2 e 40 caracteres.',
+    })
+    .refine((val) => COR_PATTERN.test(val), {
+      message: 'Cor não deve conter números ou caracteres especiais.',
     }),
 });
 
