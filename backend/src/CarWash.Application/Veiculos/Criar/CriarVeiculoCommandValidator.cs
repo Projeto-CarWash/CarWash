@@ -55,7 +55,7 @@ public sealed class CriarVeiculoCommandValidator : AbstractValidator<CriarVeicul
             return false;
         }
 
-        var normalizado = placa.Trim().ToUpperInvariant();
+        string normalizado = placa.Trim().ToUpperInvariant();
 
         return normalizado.Length == 7 && PlacaFormatoRegex.IsMatch(normalizado);
     }

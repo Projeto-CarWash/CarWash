@@ -24,7 +24,7 @@ public sealed class ListarFiliaisHandler : IQueryHandler<ListarFiliaisQuery, Lis
             query.TamanhoPagina,
             cancellationToken).ConfigureAwait(false);
 
-        var paginaEfetiva = query.Pagina < 1 ? 1 : query.Pagina;
+        int paginaEfetiva = query.Pagina < 1 ? 1 : query.Pagina;
         int tamanhoEfetivo;
         if (query.TamanhoPagina < 1)
         {

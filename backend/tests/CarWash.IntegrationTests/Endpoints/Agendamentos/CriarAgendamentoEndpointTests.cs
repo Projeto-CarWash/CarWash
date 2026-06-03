@@ -297,7 +297,7 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
         var client = await AuthenticatedHttpClient.CreateAsync(_factory);
         var (_, clienteId, veiculoId, servicoIds) = await SemearDependenciasAsync();
 
-        var payloadJson = JsonSerializer.Serialize(new
+        string payloadJson = JsonSerializer.Serialize(new
         {
             filialId = "nao-e-um-uuid",
             clienteId,
@@ -312,7 +312,7 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
         // Documenta o corpo real: vazio ou, se houver, sem expor detalhes internos.
-        var corpo = await response.Content.ReadAsStringAsync();
+        string corpo = await response.Content.ReadAsStringAsync();
         corpo.Should().NotContain("at CarWash.");
         corpo.Should().NotContain("System.");
         corpo.Should().NotContain("Exception");
@@ -360,7 +360,7 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
         var client = await AuthenticatedHttpClient.CreateAsync(_factory);
         var (_, clienteId, veiculoId, servicoIds) = await SemearDependenciasAsync();
         var filialFantasma = Guid.NewGuid();
-        var correlationId = $"rf019-inexistente-{Guid.NewGuid():N}";
+        string correlationId = $"rf019-inexistente-{Guid.NewGuid():N}";
         using var requisicao = new HttpRequestMessage(HttpMethod.Post, RotaCriar)
         {
             Content = JsonContent.Create(new
@@ -406,7 +406,7 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
         var client = await AuthenticatedHttpClient.CreateAsync(_factory);
         var (_, clienteId, veiculoId, servicoIds) = await SemearDependenciasAsync();
         var filialInativaId = await SemearFilialAsync(ativa: false);
-        var correlationId = $"rf019-inativa-{Guid.NewGuid():N}";
+        string correlationId = $"rf019-inativa-{Guid.NewGuid():N}";
         using var requisicao = new HttpRequestMessage(HttpMethod.Post, RotaCriar)
         {
             Content = JsonContent.Create(new

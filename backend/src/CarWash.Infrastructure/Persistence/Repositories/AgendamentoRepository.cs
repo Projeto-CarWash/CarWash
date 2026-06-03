@@ -75,7 +75,7 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
         // (apenas status 'agendado', mesma semântica de sobreposição do conflito
         // de veículo). Filial inexistente → false (existência validada antes pela
         // CalculadoraResumoAgendamento).
-        var celulasAtivas = await _db.Filiais
+        int? celulasAtivas = await _db.Filiais
             .AsNoTracking()
             .Where(f => f.Id == filialId)
             .Select(f => (int?)f.CelulasAtivas)
@@ -87,7 +87,7 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
             return false;
         }
 
-        var ocupacao = await _db.Agendamentos
+        int ocupacao = await _db.Agendamentos
             .AsNoTracking()
             .CountAsync(
                 a => a.FilialId == filialId

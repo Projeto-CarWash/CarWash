@@ -81,8 +81,8 @@ public class ObterFilialPorIdEndpointTests : IAsyncDisposable
 
     private async Task<Guid> CriarFilialAsync(HttpClient adminClient, int celulas)
     {
-        var nome = $"Filial {Guid.NewGuid():N}"[..30];
-        var codigo = $"F{Guid.NewGuid():N}"[..8].ToUpperInvariant();
+        string nome = $"Filial {Guid.NewGuid():N}"[..30];
+        string codigo = $"F{Guid.NewGuid():N}"[..8].ToUpperInvariant();
         var response = await adminClient.PostAsJsonAsync(RotaFiliais, new { nome, codigo, celulasAtivas = celulas }, _json);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         return (await response.Content.ReadFromJsonAsync<JsonElement>(_json)).GetProperty("id").GetGuid();

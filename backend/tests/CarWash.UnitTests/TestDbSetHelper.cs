@@ -62,7 +62,7 @@ internal sealed class TestAsyncQueryProvider<TEntity> : IAsyncQueryProvider
     public TResult ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken = default)
     {
         var expectedResultType = typeof(TResult).GetGenericArguments()[0];
-        var executionResult = typeof(IQueryProvider)
+        object? executionResult = typeof(IQueryProvider)
             .GetMethods()
             .First(method => method.Name == nameof(IQueryProvider.Execute) && method.IsGenericMethod)
             .MakeGenericMethod(expectedResultType)
