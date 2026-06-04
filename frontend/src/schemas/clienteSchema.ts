@@ -45,12 +45,19 @@ export const veiculoItemSchema = z.object({
   cor: z
     .string()
     .min(1, 'Cor é obrigatória.'),
-  ano: z.coerce
-    .number()
-    .int('Ano deve ser um número inteiro.')
-    .min(1930, 'O ano deve ser entre 1930 e 2027.')
-    .max(2027, 'O ano deve ser entre 1930 e 2027.')
-    .optional(),
+  ano: z
+    .union([z.string(), z.number()])
+    .optional()
+    .transform((val) => {
+      if (val === '' || val === undefined || val === null) return undefined;
+      return Number(val);
+    })
+    .refine((val) => val === undefined || (!isNaN(val) && Number.isInteger(val)), {
+      message: 'Ano deve ser um número inteiro.',
+    })
+    .refine((val) => val === undefined || (val >= 1930 && val <= 2027), {
+      message: 'O ano deve ser entre 1930 e 2027.',
+    }),
 });
 
 export const filiadoSchema = z.object({
