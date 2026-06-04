@@ -280,13 +280,15 @@ export const clienteSchema = z.object({
     .min(3, 'Logradouro deve ter no mínimo 3 caracteres.')
     .max(150, 'Logradouro deve ter no máximo 150 caracteres.'),
 
+  // Número do endereço aceita valores alfanuméricos (ex.: 123, 123A, 12-F,
+  // 100 Fundos, 25 Casa 2, A-15). Apenas espaços em branco são inválidos.
   numero: z
     .string()
     .trim()
     .min(1, 'Número é obrigatório.')
     .max(20, 'Número deve ter no máximo 20 caracteres.')
-    .refine((val) => /^\d+$/.test(val), {
-      message: 'Número deve conter apenas dígitos numéricos.',
+    .refine((val) => /^[\p{L}\p{N}][\p{L}\p{N}\s/.,-]*$/u.test(val), {
+      message: 'Número inválido. Use letras, números e separadores (ex: 123A, 12-F, 100 Fundos).',
     }),
 
   complemento: z
