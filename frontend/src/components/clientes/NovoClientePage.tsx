@@ -56,7 +56,7 @@ export function NovoClientePage() {
     [],
   );
 
-  const form = useForm<ClienteFormInput, any, ClienteFormData>({
+  const form = useForm<ClienteFormInput, unknown, ClienteFormData>({
     resolver: zodResolver(clienteSchema),
     mode: 'onBlur',
     shouldFocusError: true,
