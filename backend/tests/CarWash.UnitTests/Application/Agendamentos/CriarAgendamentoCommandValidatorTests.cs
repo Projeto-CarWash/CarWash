@@ -86,10 +86,28 @@ public class CriarAgendamentoCommandValidatorTests
         resultado.IsValid.Should().BeFalse();
     }
 
+    [Fact]
+    public async Task ResponsavelId_vazio_falha()
+    {
+        var cmd = CommandValido() with { ResponsavelId = Guid.Empty };
+        var resultado = await _sut.ValidateAsync(cmd, CancellationToken.None);
+        resultado.IsValid.Should().BeFalse();
+        resultado.Errors.Should().ContainSingle(e => e.PropertyName == "ResponsavelId");
+    }
+
+    [Fact]
+    public async Task ResponsavelId_nulo_passa()
+    {
+        var cmd = CommandValido() with { ResponsavelId = null };
+        var resultado = await _sut.ValidateAsync(cmd, CancellationToken.None);
+        resultado.IsValid.Should().BeTrue();
+    }
+
     private static CriarAgendamentoCommand CommandValido() => new(
         FilialId: Guid.NewGuid(),
         ClienteId: Guid.NewGuid(),
         VeiculoId: Guid.NewGuid(),
+        ResponsavelId: null,
         Inicio: DateTime.UtcNow.AddHours(1),
         ServicoIds: [Guid.NewGuid()],
         Observacoes: null,

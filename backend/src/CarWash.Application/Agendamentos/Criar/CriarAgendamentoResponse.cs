@@ -19,6 +19,8 @@ public class CriarAgendamentoData
 
     public Guid VeiculoId { get; set; }
 
+    public Guid? ResponsavelId { get; set; }
+
     public string Status { get; set; } = "AGENDADO";
 
     public DateTime Inicio { get; set; }

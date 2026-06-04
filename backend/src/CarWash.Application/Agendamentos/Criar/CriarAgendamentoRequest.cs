@@ -8,6 +8,8 @@ public class CriarAgendamentoRequest
 
     public Guid? VeiculoId { get; set; }
 
+    public Guid? ResponsavelId { get; set; }
+
     public DateTime? Inicio { get; set; }
 
     public List<Guid>? ServicoIds { get; set; }

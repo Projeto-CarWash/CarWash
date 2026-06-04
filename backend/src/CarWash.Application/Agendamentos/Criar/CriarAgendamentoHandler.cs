@@ -64,6 +64,21 @@ public sealed class CriarAgendamentoHandler : ICommandHandler<CriarAgendamentoCo
                 });
         }
 
+        if (command.ResponsavelId.HasValue)
+        {
+            var filiado = await _repositorio.ObterFiliadoPorIdAsync(
+                command.ResponsavelId.Value, cancellationToken);
+            if (filiado is null || !filiado.Ativo)
+            {
+                throw new NotFoundException("Responsável informado não foi encontrado.");
+            }
+
+            if (filiado.ClienteId != command.ClienteId)
+            {
+                throw new ResponsavelConflitoException();
+            }
+        }
+
         var servicos = await _repositorio.ObterServicosPorIdsAsync(
             command.ServicoIds, cancellationToken);
 
@@ -156,17 +171,18 @@ public sealed class CriarAgendamentoHandler : ICommandHandler<CriarAgendamentoCo
         }
 
         var agendamentoId = Guid.NewGuid();
-        var agendamento = Agendamento.Criar(
-            id: agendamentoId,
-            filialId: command.FilialId,
-            clienteId: command.ClienteId,
-            veiculoId: command.VeiculoId,
-            criadoPor: command.UsuarioId ?? Guid.Empty,
-            inicio: inicio,
-            fim: fim,
-            duracaoTotalMin: duracaoTotalMin,
-            valorTotal: valorTotal,
-            observacoes: command.Observacoes);
+    var agendamento = Agendamento.Criar(
+        id: agendamentoId,
+        filialId: command.FilialId,
+        clienteId: command.ClienteId,
+        veiculoId: command.VeiculoId,
+        criadoPor: command.UsuarioId ?? Guid.Empty,
+        inicio: inicio,
+        fim: fim,
+        duracaoTotalMin: duracaoTotalMin,
+        valorTotal: valorTotal,
+        responsavelId: command.ResponsavelId,
+        observacoes: command.Observacoes);
 
         var itens = servicos.Select(s => AgendamentoItem.Criar(
             id: Guid.NewGuid(),
@@ -195,13 +211,14 @@ public sealed class CriarAgendamentoHandler : ICommandHandler<CriarAgendamentoCo
         return new CriarAgendamentoResponse
         {
             Message = "Agendamento criado com sucesso.",
-            Data = new CriarAgendamentoData
-            {
-                Id = agendamento.Id,
-                FilialId = agendamento.FilialId,
-                ClienteId = agendamento.ClienteId,
-                VeiculoId = agendamento.VeiculoId,
-                Status = "AGENDADO",
+        Data = new CriarAgendamentoData
+        {
+            Id = agendamento.Id,
+            FilialId = agendamento.FilialId,
+            ClienteId = agendamento.ClienteId,
+            VeiculoId = agendamento.VeiculoId,
+            ResponsavelId = agendamento.ResponsavelId,
+            Status = "AGENDADO",
                 Inicio = agendamento.Inicio,
                 Fim = agendamento.Fim,
                 DuracaoTotalMin = agendamento.DuracaoTotalMin,

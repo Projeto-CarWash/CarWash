@@ -81,6 +81,15 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
             .ConfigureAwait(false);
     }
 
+    public async Task<Filiado?> ObterFiliadoPorIdAsync(
+        Guid filiadoId,
+        CancellationToken cancellationToken)
+    {
+        return await _db.Filiados
+            .FirstOrDefaultAsync(f => f.Id == filiadoId, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
     public async Task<IReadOnlyList<Servico>> ObterServicosPorIdsAsync(
         IReadOnlyList<Guid> servicoIds,
         CancellationToken cancellationToken)

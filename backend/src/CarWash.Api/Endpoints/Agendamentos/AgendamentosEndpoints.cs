@@ -51,15 +51,16 @@ public static class AgendamentosEndpoints
         var traceId = http.TraceIdentifier;
         var usuarioId = ObterUsuarioId(http);
 
-        var command = new CriarAgendamentoCommand(
-            FilialId: request.FilialId ?? Guid.Empty,
-            ClienteId: request.ClienteId ?? Guid.Empty,
-            VeiculoId: request.VeiculoId ?? Guid.Empty,
-            Inicio: request.Inicio ?? default,
-            ServicoIds: request.ServicoIds ?? [],
-            Observacoes: request.Observacoes,
-            TraceId: traceId,
-            UsuarioId: usuarioId);
+    var command = new CriarAgendamentoCommand(
+        FilialId: request.FilialId ?? Guid.Empty,
+        ClienteId: request.ClienteId ?? Guid.Empty,
+        VeiculoId: request.VeiculoId ?? Guid.Empty,
+        ResponsavelId: request.ResponsavelId,
+        Inicio: request.Inicio ?? default,
+        ServicoIds: request.ServicoIds ?? [],
+        Observacoes: request.Observacoes,
+        TraceId: traceId,
+        UsuarioId: usuarioId);
 
         await ValidarAsync(validator, command, MensagemPayloadInvalido, cancellationToken)
             .ConfigureAwait(false);

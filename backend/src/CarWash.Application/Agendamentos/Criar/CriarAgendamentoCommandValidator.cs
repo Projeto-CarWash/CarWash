@@ -12,8 +12,12 @@ public sealed class CriarAgendamentoCommandValidator : AbstractValidator<CriarAg
         RuleFor(x => x.ClienteId)
             .NotEqual(Guid.Empty).WithMessage("O ID do cliente é obrigatório e deve ser um UUID válido.");
 
-        RuleFor(x => x.VeiculoId)
-            .NotEqual(Guid.Empty).WithMessage("O ID do veículo é obrigatório e deve ser um UUID válido.");
+    RuleFor(x => x.VeiculoId)
+        .NotEqual(Guid.Empty).WithMessage("O ID do veículo é obrigatório e deve ser um UUID válido.");
+
+    RuleFor(x => x.ResponsavelId)
+        .NotEqual(Guid.Empty).WithMessage("O ID do responsável deve ser um UUID válido.")
+        .When(x => x.ResponsavelId.HasValue);
 
         RuleFor(x => x.Inicio)
             .NotEqual(default(DateTime)).WithMessage("A data/hora de início é obrigatória (ISO-8601 UTC).");

@@ -220,12 +220,74 @@ public class CriarAgendamentoHandlerTests
         await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
+    [Fact]
+    public async Task ResponsavelId_valido_e_do_cliente_passa()
+    {
+        SetupEntidadesValidas();
+        var filiadoId = Guid.Parse("60000000-0000-0000-0000-000000000006");
+        var filiado = FiliadoAtivo(filiadoId, _clienteId);
+        _repo.ObterFiliadoPorIdAsync(filiadoId, Arg.Any<CancellationToken>()).Returns(filiado);
+
+        var handler = NovoHandler();
+        var cmd = CommandValido() with { ResponsavelId = filiadoId };
+        var resposta = await handler.HandleAsync(cmd, CancellationToken.None);
+
+        resposta.Message.Should().Be("Agendamento criado com sucesso.");
+    }
+
+    [Fact]
+    public async Task ResponsavelId_nao_encontrado_lanca_NotFoundException()
+    {
+        SetupEntidadesValidas();
+        var filiadoId = Guid.Parse("60000000-0000-0000-0000-000000000006");
+        _repo.ObterFiliadoPorIdAsync(filiadoId, Arg.Any<CancellationToken>()).Returns((Filiado?)null);
+
+        var handler = NovoHandler();
+        var cmd = CommandValido() with { ResponsavelId = filiadoId };
+        var act = () => handler.HandleAsync(cmd, CancellationToken.None);
+
+        await act.Should().ThrowAsync<NotFoundException>().WithMessage("*Responsável*");
+    }
+
+    [Fact]
+    public async Task ResponsavelId_inativo_lanca_NotFoundException()
+    {
+        SetupEntidadesValidas();
+        var filiadoId = Guid.Parse("60000000-0000-0000-0000-000000000006");
+        var filiado = FiliadoAtivo(filiadoId, _clienteId);
+        filiado.Inativar();
+        _repo.ObterFiliadoPorIdAsync(filiadoId, Arg.Any<CancellationToken>()).Returns(filiado);
+
+        var handler = NovoHandler();
+        var cmd = CommandValido() with { ResponsavelId = filiadoId };
+        var act = () => handler.HandleAsync(cmd, CancellationToken.None);
+
+        await act.Should().ThrowAsync<NotFoundException>().WithMessage("*Responsável*");
+    }
+
+    [Fact]
+    public async Task ResponsavelId_de_outro_cliente_lanca_ResponsavelConflitoException()
+    {
+        SetupEntidadesValidas();
+        var filiadoId = Guid.Parse("60000000-0000-0000-0000-000000000006");
+        var outroClienteId = Guid.Parse("99999999-0000-0000-0000-000000000099");
+        var filiado = FiliadoAtivo(filiadoId, outroClienteId);
+        _repo.ObterFiliadoPorIdAsync(filiadoId, Arg.Any<CancellationToken>()).Returns(filiado);
+
+        var handler = NovoHandler();
+        var cmd = CommandValido() with { ResponsavelId = filiadoId };
+        var act = () => handler.HandleAsync(cmd, CancellationToken.None);
+
+        await act.Should().ThrowAsync<ResponsavelConflitoException>();
+    }
+
     private CriarAgendamentoHandler NovoHandler() => new(_repo, _auditLogger, _logger);
 
     private CriarAgendamentoCommand CommandValido() => new(
         FilialId: _filialId,
         ClienteId: _clienteId,
         VeiculoId: _veiculoId,
+        ResponsavelId: null,
         Inicio: DateTime.UtcNow.AddHours(1),
         ServicoIds: [_servicoId],
         Observacoes: null,
@@ -295,4 +357,11 @@ public class CriarAgendamentoHandlerTests
         nome: "Lavagem Simples",
         preco: 50m,
         duracaoMin: 30);
+
+    private Filiado FiliadoAtivo(Guid filiadoId, Guid clienteId) => Filiado.Criar(
+        id: filiadoId,
+        clienteId: clienteId,
+        nome: "Maria Responsável",
+        telefone: new Telefone("11988887777"),
+        cpf: new Cpf("52998224725"));
 }

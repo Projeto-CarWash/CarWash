@@ -16,6 +16,8 @@ public interface IAgendamentoRepository
 
     Task<Veiculo?> ObterVeiculoPorIdAsync(Guid veiculoId, CancellationToken cancellationToken);
 
+    Task<Filiado?> ObterFiliadoPorIdAsync(Guid filiadoId, CancellationToken cancellationToken);
+
     Task<IReadOnlyList<Servico>> ObterServicosPorIdsAsync(
         IReadOnlyList<Guid> servicoIds, CancellationToken cancellationToken);
 
