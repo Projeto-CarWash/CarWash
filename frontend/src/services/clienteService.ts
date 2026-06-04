@@ -105,14 +105,10 @@ function toCreatePayload(data: ClienteFormData) {
     },
     veiculos: data.veiculos.map((v) => ({
       placa: v.placa,
-      marca: v.marca,
+      fabricante: v.fabricante,
       modelo: v.modelo,
       cor: v.cor,
-      renavam: v.renavam ?? undefined,
-      anoModelo: v.anoModelo ?? undefined,
-      categoria: v.categoria ?? undefined,
-      corHex: v.corHex ?? undefined,
-      observacoesAtendimento: v.observacoesAtendimento ?? undefined,
+      ano: v.ano ?? undefined,
     })),
     // Preferências & Fidelidade
     lembretes: data.lembretes?.length ? data.lembretes : undefined,
