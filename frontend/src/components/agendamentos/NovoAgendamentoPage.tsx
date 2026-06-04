@@ -157,7 +157,8 @@ export function NovoAgendamentoPage() {
       }, 1200);
     } catch (error) {
       if (!(error instanceof AxiosError) || !error.response) {
-        setGlobalError(API_MESSAGES[500]!);
+        // Erro de rede ou erro genérico — NÃO apagar dados do formulário.
+        setGlobalError('Não foi possível concluir o agendamento no momento. Tente novamente.');
         return;
       }
 
@@ -165,7 +166,22 @@ export function NovoAgendamentoPage() {
       const problem = error.response.data as ProblemDetails | undefined;
 
       if (status === 409) {
-        setGlobalError(API_MESSAGES[409]!);
+        // RF008.3 — Diferenciar conflito de capacidade vs conflito de veículo.
+        const detail = (problem?.detail ?? '').toLowerCase();
+        const title = (problem?.title ?? '').toLowerCase();
+        const texto = detail || title;
+
+        if (texto.includes('capacidade') || texto.includes('filial')) {
+          setGlobalError('Capacidade da filial atingida para o horário informado.');
+        } else if (texto.includes('veículo') || texto.includes('veiculo')) {
+          setGlobalError('Já existe agendamento para este veículo no horário informado.');
+        } else {
+          // Fallback: usa título do backend se reconhecível, senão mensagem genérica.
+          setGlobalError(
+            problem?.title ?? 'Conflito de horário detectado. Ajuste os dados e tente novamente.',
+          );
+        }
+        // NÃO limpar formulário, NÃO redirecionar — o usuário pode ajustar e reenviar.
         return;
       }
 
@@ -174,7 +190,13 @@ export function NovoAgendamentoPage() {
         return;
       }
 
-      setGlobalError(API_MESSAGES[status] ?? API_MESSAGES[500]!);
+      if (status === 500) {
+        // RF008.3 — Erro de servidor: mensagem genérica, sem apagar dados.
+        setGlobalError('Não foi possível concluir o agendamento no momento. Tente novamente.');
+        return;
+      }
+
+      setGlobalError(API_MESSAGES[status] ?? 'Não foi possível concluir o agendamento no momento. Tente novamente.');
     } finally {
       setIsSubmitting(false);
     }
