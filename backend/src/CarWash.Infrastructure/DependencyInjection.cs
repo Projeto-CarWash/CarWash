@@ -26,6 +26,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using CarWash.Application.Interfaces;
+using CarWash.Infrastructure.Repositories;
 
 namespace CarWash.Infrastructure;
 
@@ -82,6 +84,8 @@ public static class DependencyInjection
 
         // Limpeza diária dos registros de idempotência expirados (janela 24h).
         services.AddHostedService<IdempotenciaCleanupService>();
+
+        services.AddScoped<IDashboardMetricasRepository, DashboardMetricasRepository>();
 
         services.AddDbContext<CarWashDbContext>((sp, opt) =>
         {

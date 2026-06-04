@@ -7,6 +7,7 @@ using CarWash.Api.Endpoints.Responsaveis;
 using CarWash.Api.Endpoints.Servicos;
 using CarWash.Api.Endpoints.Usuarios;
 using CarWash.Api.Endpoints.Veiculos;
+using CarWash.Api.Endpoints.Dashboard;
 
 namespace CarWash.Api.Endpoints;
 
@@ -30,6 +31,7 @@ public static class EndpointRouteBuilderExtensions
         app.MapResponsaveis();
         app.MapAgendamentoObservacoes();
         app.MapClienteHistoricoAtendimentos();
+        app.MapDashboardMetricas();
         return app;
     }
 }
