@@ -15,6 +15,8 @@ import type { AgendaItemDetalhado } from '@/types/agenda';
 
 interface AgendaItemDetalhadoCardProps {
   item: AgendaItemDetalhado;
+  /** Callback disparado ao clicar/ativar o card (RF008.1 — detalhe individual). */
+  onClick?: (item: AgendaItemDetalhado) => void;
 }
 
 /** Par rótulo/valor usado nos blocos de cliente e veículo. */
@@ -36,9 +38,29 @@ function Campo({ rotulo, valor }: { rotulo: string; valor: string }) {
  * observações e totais. Layout responsivo: blocos empilham no mobile e formam
  * grade no desktop.</p>
  */
-export function AgendaItemDetalhadoCard({ item }: AgendaItemDetalhadoCardProps) {
+export function AgendaItemDetalhadoCard({ item, onClick }: AgendaItemDetalhadoCardProps) {
+  const descricao = `Agendamento de ${item.cliente.nome}, placa ${item.veiculo.placa}, ${rotuloStatus(item.status)}`;
+
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (onClick && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault();
+      onClick(item);
+    }
+  }
+
   return (
-    <Card className="border border-zinc-200/70 dark:border-zinc-800/60">
+    <Card
+      className={`border border-zinc-200/70 dark:border-zinc-800/60 transition-shadow ${
+        onClick
+          ? 'cursor-pointer hover:shadow-lg hover:border-red-500/30 focus-visible:ring-2 focus-visible:ring-red-500/50 focus-visible:outline-none'
+          : ''
+      }`}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      aria-label={descricao}
+      onClick={onClick ? () => onClick(item) : undefined}
+      onKeyDown={onClick ? handleKeyDown : undefined}
+    >
       <CardHeader className="gap-3">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex items-center gap-2 text-sm font-semibold text-zinc-800 dark:text-zinc-100">

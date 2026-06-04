@@ -6,6 +6,8 @@ import type { AgendaItemSimples } from '@/types/agenda';
 
 interface AgendaItemSimplesRowProps {
   item: AgendaItemSimples;
+  /** Callback disparado ao clicar/ativar a linha (RF008.1 — detalhe individual). */
+  onClick?: (item: AgendaItemSimples) => void;
 }
 
 /**
@@ -14,9 +16,29 @@ interface AgendaItemSimplesRowProps {
  * <p>Renderiza como `<li>` — o container é uma `<ul>`. Layout responsivo:
  * empilha no mobile, alinha em colunas no desktop.</p>
  */
-export function AgendaItemSimplesRow({ item }: AgendaItemSimplesRowProps) {
+export function AgendaItemSimplesRow({ item, onClick }: AgendaItemSimplesRowProps) {
+  const descricao = `Agendamento: ${item.clienteNome}, placa ${item.veiculoPlaca}, ${rotuloStatus(item.status)}`;
+
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (onClick && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault();
+      onClick(item);
+    }
+  }
+
   return (
-    <li className="flex flex-col gap-2 rounded-xl border border-zinc-200/70 bg-white/60 p-4 transition-colors hover:border-red-500/40 sm:flex-row sm:items-center sm:gap-4 dark:border-zinc-800/60 dark:bg-zinc-900/30">
+    <li
+      className={`flex flex-col gap-2 rounded-xl border border-zinc-200/70 bg-white/60 p-4 transition-colors hover:border-red-500/40 sm:flex-row sm:items-center sm:gap-4 dark:border-zinc-800/60 dark:bg-zinc-900/30 ${
+        onClick
+          ? 'cursor-pointer focus-visible:ring-2 focus-visible:ring-red-500/50 focus-visible:outline-none'
+          : ''
+      }`}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      aria-label={descricao}
+      onClick={onClick ? () => onClick(item) : undefined}
+      onKeyDown={onClick ? handleKeyDown : undefined}
+    >
       <div className="flex items-center gap-2 text-sm font-medium text-zinc-700 sm:w-64 sm:shrink-0 dark:text-zinc-200">
         <CalendarClock className="h-4 w-4 shrink-0 text-red-500" aria-hidden="true" />
         <span className="tabular-nums">{formatarFaixaHorario(item.inicio, item.fim)}</span>

@@ -10,6 +10,7 @@ import { tratarErroApi } from '@/lib/apiError';
 
 import { AgendaItemDetalhadoCard } from './AgendaItemDetalhadoCard';
 import { AgendaItemSimplesRow } from './AgendaItemSimplesRow';
+import { AgendaSlotGroup } from './AgendaSlotGroup';
 
 import type {
   AgendaFiltros,
@@ -18,6 +19,31 @@ import type {
   AgendaItemSimples,
   AgendaStatus,
 } from '@/types/agenda';
+
+/**
+ * Agrupa itens da agenda pelo par (inicio, fim) para renderizar
+ * múltiplos agendamentos no mesmo slot de horário (RF008.1).
+ */
+function agruparPorHorario<T extends { inicio: string; fim: string }>(
+  itens: T[],
+): { chave: string; inicio: string; fim: string; itens: T[] }[] {
+  const mapa = new Map<string, { inicio: string; fim: string; itens: T[] }>();
+
+  for (const item of itens) {
+    const chave = `${item.inicio}|${item.fim}`;
+    const grupo = mapa.get(chave);
+    if (grupo) {
+      grupo.itens.push(item);
+    } else {
+      mapa.set(chave, { inicio: item.inicio, fim: item.fim, itens: [item] });
+    }
+  }
+
+  return Array.from(mapa.entries()).map(([chave, grupo]) => ({
+    chave,
+    ...grupo,
+  }));
+}
 
 /** Opções de status para o seletor de filtro. */
 const STATUS_OPCOES: { valor: AgendaStatus; rotulo: string }[] = [
@@ -62,6 +88,11 @@ const classeCampo =
  */
 export function AgendaPage() {
   const [formato, setFormato] = useState<AgendaFormato>('simples');
+
+  // Item selecionado para exibição em modal de detalhe (RF008.1).
+  const [itemSelecionado, setItemSelecionado] = useState<
+    AgendaItemDetalhado | AgendaItemSimples | null
+  >(null);
 
   // Filtros "em edição" — só viram filtros aplicados ao clicar em "Buscar".
   const [periodoInicio, setPeriodoInicio] = useState<string>(agoraLocal);
@@ -419,22 +450,121 @@ export function AgendaPage() {
               {itens.length} agendamento(s) no período.
             </p>
             {formato === 'simples' ? (
-              <ul className="space-y-2">
-                {itens
-                  .filter((i): i is AgendaItemSimples => !ehDetalhado(i))
-                  .map((item) => (
-                    <AgendaItemSimplesRow key={item.agendamentoId} item={item} />
-                  ))}
-              </ul>
+              <div className="space-y-4">
+                {agruparPorHorario(
+                  itens.filter((i): i is AgendaItemSimples => !ehDetalhado(i)),
+                ).map((grupo) => (
+                  <AgendaSlotGroup
+                    key={grupo.chave}
+                    inicio={grupo.inicio}
+                    fim={grupo.fim}
+                    quantidade={grupo.itens.length}
+                    modoGrade={false}
+                  >
+                    <ul className="space-y-2">
+                      {grupo.itens.map((item) => (
+                        <AgendaItemSimplesRow
+                          key={item.agendamentoId}
+                          item={item}
+                          onClick={(i) => setItemSelecionado(i)}
+                        />
+                      ))}
+                    </ul>
+                  </AgendaSlotGroup>
+                ))}
+              </div>
             ) : (
               <div className="space-y-4">
-                {itens.filter(ehDetalhado).map((item) => (
-                  <AgendaItemDetalhadoCard key={item.agendamentoId} item={item} />
+                {agruparPorHorario(itens.filter(ehDetalhado)).map((grupo) => (
+                  <AgendaSlotGroup
+                    key={grupo.chave}
+                    inicio={grupo.inicio}
+                    fim={grupo.fim}
+                    quantidade={grupo.itens.length}
+                    modoGrade={true}
+                  >
+                    {grupo.itens.map((item) => (
+                      <AgendaItemDetalhadoCard
+                        key={item.agendamentoId}
+                        item={item}
+                        onClick={(i) => setItemSelecionado(i)}
+                      />
+                    ))}
+                  </AgendaSlotGroup>
                 ))}
               </div>
             )}
           </>
         )}
+
+        {/* Modal de detalhe do agendamento selecionado (RF008.1) */}
+        {itemSelecionado && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+            onClick={() => setItemSelecionado(null)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') setItemSelecionado(null);
+            }}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Detalhe do agendamento"
+          >
+            <div
+              className="relative mx-4 max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-zinc-200/70 bg-white p-6 shadow-2xl dark:border-zinc-800/60 dark:bg-zinc-900"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => setItemSelecionado(null)}
+                className="absolute right-4 top-4 rounded-full p-1 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+                aria-label="Fechar detalhe"
+                autoFocus
+              >
+                <AlertCircle className="h-5 w-5 rotate-45" aria-hidden="true" />
+              </button>
+
+              <h2 className="mb-4 text-lg font-bold text-zinc-900 dark:text-zinc-50">
+                Detalhe do Agendamento
+              </h2>
+
+              {ehDetalhado(itemSelecionado) ? (
+                <AgendaItemDetalhadoCard item={itemSelecionado} />
+              ) : (
+                <div className="space-y-3">
+                  <div className="rounded-xl border border-zinc-200/60 bg-zinc-50/50 p-4 dark:border-zinc-800/40 dark:bg-zinc-950/30">
+                    <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                      {itemSelecionado.titulo}
+                    </p>
+                    <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                      {itemSelecionado.servicosResumo}
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-xl border border-zinc-200/60 bg-zinc-50/50 p-3 dark:border-zinc-800/40 dark:bg-zinc-950/30">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-zinc-400">Cliente</p>
+                      <p className="text-sm text-zinc-700 dark:text-zinc-200">{itemSelecionado.clienteNome}</p>
+                    </div>
+                    <div className="rounded-xl border border-zinc-200/60 bg-zinc-50/50 p-3 dark:border-zinc-800/40 dark:bg-zinc-950/30">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-zinc-400">Placa</p>
+                      <p className="font-mono text-sm text-zinc-700 dark:text-zinc-200">{itemSelecionado.veiculoPlaca}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="mt-6 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setItemSelecionado(null)}
+                  className="rounded-full bg-red-600 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-red-600/25 transition-colors hover:bg-red-700"
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
       </section>
     </div>
   );
