@@ -30,6 +30,15 @@ public sealed class VeiculoRepository : IVeiculoRepository
             .AnyAsync(v => v.Placa == placaNormalizada, cancellationToken);
     }
 
+    public Task<bool> ExistePlacaExcetoAsync(string placaNormalizada, Guid ignoreVeiculoId, CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(placaNormalizada);
+
+        return _context.Veiculos
+            .AsNoTracking()
+            .AnyAsync(v => v.Placa == placaNormalizada && v.Id != ignoreVeiculoId, cancellationToken);
+    }
+
     public async Task<IReadOnlyCollection<string>> PlacasExistentesAsync(
         IEnumerable<string> placasNormalizadas, CancellationToken cancellationToken)
     {
@@ -50,6 +59,24 @@ public sealed class VeiculoRepository : IVeiculoRepository
             .ConfigureAwait(false);
 
         return existentes;
+    }
+
+    public Task<Veiculo?> ObterPorIdAsync(Guid id, CancellationToken cancellationToken)
+    {
+        return _context.Veiculos
+            .FirstOrDefaultAsync(v => v.Id == id, cancellationToken);
+    }
+
+    public async Task SalvarAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (DbUpdateException ex) when (IsUniqueViolation(ex))
+        {
+            throw new PlacaJaCadastradaException(ex);
+        }
     }
 
     public async Task AdicionarAsync(Veiculo veiculo, CancellationToken cancellationToken)

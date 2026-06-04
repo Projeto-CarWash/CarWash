@@ -16,10 +16,21 @@ public interface IVeiculoRepository
     Task<bool> ExistePlacaAsync(string placaNormalizada, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Verifica se a placa (normalizada) já está cadastrada, ignorando o próprio
+    /// veículo (permite manter a mesma placa em PUT/PATCH).
+    /// </summary>
+    Task<bool> ExistePlacaExcetoAsync(string placaNormalizada, Guid ignoreVeiculoId, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Verifica se qualquer uma das placas (normalizadas) já está cadastrada no sistema.
     /// Retorna a lista de placas que já existem no banco.
     /// </summary>
     Task<IReadOnlyCollection<string>> PlacasExistentesAsync(IEnumerable<string> placasNormalizadas, CancellationToken cancellationToken);
+
+    Task<Veiculo?> ObterPorIdAsync(Guid id, CancellationToken cancellationToken);
+
+    /// <summary>Persiste alterações pendentes (Update).</summary>
+    Task SalvarAsync(CancellationToken cancellationToken);
 
     /// <summary>
     /// Persiste o veículo. Em violação concorrente da <c>uk_veiculos_placa</c>,
