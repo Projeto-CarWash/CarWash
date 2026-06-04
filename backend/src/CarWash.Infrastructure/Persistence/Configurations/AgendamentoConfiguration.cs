@@ -24,7 +24,7 @@ public sealed class AgendamentoConfiguration : IEntityTypeConfiguration<Agendame
         builder.Property(x => x.FilialId).IsRequired();
         builder.Property(x => x.ClienteId).IsRequired();
         builder.Property(x => x.VeiculoId).IsRequired();
-        builder.Property(x => x.ResponsavelId);
+        builder.Property(x => x.ResponsavelId).IsRequired();
         builder.Property(x => x.CriadoPor).IsRequired();
         builder.Property(x => x.StatusRaw)
             .IsRequired()
@@ -70,12 +70,11 @@ public sealed class AgendamentoConfiguration : IEntityTypeConfiguration<Agendame
             .HasConstraintName("fk_ag_veiculo")
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne<Filiado>()
-            .WithMany()
-            .HasForeignKey(x => x.ResponsavelId)
-            .HasConstraintName("fk_ag_responsavel")
-            .OnDelete(DeleteBehavior.Restrict)
-            .IsRequired(false);
+    builder.HasOne<Responsavel>()
+        .WithMany()
+        .HasForeignKey(x => x.ResponsavelId)
+        .HasConstraintName("fk_ag_responsavel")
+        .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne<Usuario>()
             .WithMany()

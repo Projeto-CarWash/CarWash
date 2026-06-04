@@ -89,17 +89,20 @@ public sealed class PreConfirmarAgendamentoHandler
         var token = _tokens.Gerar(calculado.HashResumo, usuarioId, command.TraceId);
         var validado = _tokens.Validar(token, usuarioId);
 
-        _logger.LogInformation(
-            "Pré-confirmação gerada. UsuarioId: {UsuarioId}. FilialId: {FilialId}. VeiculoId: {VeiculoId}. "
-            + "Janela: [{Inicio:o}, {Fim:o}). HashResumo: {HashResumo}. ExpiraEm: {ExpiraEm:o}. TraceId: {TraceId}",
-            usuarioId,
-            command.FilialId,
-            command.VeiculoId,
-            calculado.Inicio,
-            calculado.Fim,
-            calculado.HashResumo,
-            validado.ExpiraEm,
-            command.TraceId);
+    _logger.LogInformation(
+        "Pré-confirmação gerada. UsuarioId: {UsuarioId}. FilialId: {FilialId}. VeiculoId: {VeiculoId}. "
+        + "ClienteId: {ClienteId}. ResponsavelId: {ResponsavelId}. "
+        + "Janela: [{Inicio:o}, {Fim:o}). HashResumo: {HashResumo}. ExpiraEm: {ExpiraEm:o}. TraceId: {TraceId}",
+        usuarioId,
+        command.FilialId,
+        command.VeiculoId,
+        command.ClienteId,
+        command.ResponsavelId,
+        calculado.Inicio,
+        calculado.Fim,
+        calculado.HashResumo,
+        validado.ExpiraEm,
+        command.TraceId);
 
         return new PreConfirmacaoResponse
         {

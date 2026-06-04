@@ -14,7 +14,7 @@ public sealed class ConfirmarAgendamentoRequest
 
     public Guid VeiculoId { get; set; }
 
-    public Guid? ResponsavelId { get; set; }
+    public Guid ResponsavelId { get; set; }
 
     public DateTime? Inicio { get; set; }
 

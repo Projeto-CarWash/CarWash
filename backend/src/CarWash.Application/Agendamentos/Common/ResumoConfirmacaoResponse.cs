@@ -14,6 +14,8 @@ public sealed class ResumoConfirmacaoResponse
 
     public ResumoVeiculo Veiculo { get; init; } = new();
 
+    public ResumoResponsavel Responsavel { get; init; } = new();
+
     public IReadOnlyList<ResumoServico> Servicos { get; init; } = Array.Empty<ResumoServico>();
 
     public DateTime Inicio { get; init; }
@@ -58,6 +60,18 @@ public sealed class ResumoVeiculo
     public string Modelo { get; init; } = string.Empty;
 
     public string Cor { get; init; } = string.Empty;
+}
+
+/// <summary>Responsável exibido no resumo de confirmação (RF015/RF024).</summary>
+public sealed class ResumoResponsavel
+{
+    public Guid Id { get; init; }
+
+    public string Nome { get; init; } = string.Empty;
+
+    public string Documento { get; init; } = string.Empty;
+
+    public string GrauVinculo { get; init; } = string.Empty;
 }
 
 /// <summary>Serviço exibido no resumo de confirmação (RF015) — preço/duração de catálogo.</summary>

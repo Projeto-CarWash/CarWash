@@ -37,7 +37,7 @@ public sealed class CalculadoraResumoAgendamento
         Guid filialId,
         Guid clienteId,
         Guid veiculoId,
-        Guid? responsavelId,
+        Guid responsavelId,
         DateTime inicio,
         IReadOnlyList<Guid> servicoIds,
         string? observacoes,
@@ -62,7 +62,7 @@ public sealed class CalculadoraResumoAgendamento
         var veiculo = await GarantirVeiculoAsync(veiculoId, cancellationToken).ConfigureAwait(false);
         var cliente = await GarantirClienteAsync(clienteId, cancellationToken).ConfigureAwait(false);
         GarantirVinculoVeiculoCliente(veiculo, clienteId);
-        await GarantirResponsavelAsync(responsavelId, clienteId, cancellationToken).ConfigureAwait(false);
+        var responsavel = await GarantirResponsavelAsync(responsavelId, clienteId, cancellationToken).ConfigureAwait(false);
 
         var servicos = await GarantirServicosAsync(servicoIds, cancellationToken).ConfigureAwait(false);
 
@@ -81,23 +81,30 @@ public sealed class CalculadoraResumoAgendamento
             valorTotal,
             observacoesNormalizadas);
 
-        var resumo = new ResumoConfirmacaoResponse
+    var resumo = new ResumoConfirmacaoResponse
+    {
+        Filial = new ResumoFilial { Id = filial.Id, Nome = filial.Nome },
+        Cliente = new ResumoCliente
         {
-            Filial = new ResumoFilial { Id = filial.Id, Nome = filial.Nome },
-            Cliente = new ResumoCliente
-            {
-                Id = cliente.Id,
-                Nome = cliente.Nome,
-                Documento = cliente.Documento,
-            },
-            Veiculo = new ResumoVeiculo
-            {
-                Id = veiculo.Id,
-                Placa = veiculo.Placa,
-                Modelo = veiculo.Modelo,
-                Cor = veiculo.Cor,
-            },
-            Servicos = servicos
+            Id = cliente.Id,
+            Nome = cliente.Nome,
+            Documento = cliente.Documento,
+        },
+        Veiculo = new ResumoVeiculo
+        {
+            Id = veiculo.Id,
+            Placa = veiculo.Placa,
+            Modelo = veiculo.Modelo,
+            Cor = veiculo.Cor,
+        },
+        Responsavel = new ResumoResponsavel
+        {
+            Id = responsavel.Id,
+            Nome = responsavel.Nome,
+            Documento = MascararDocumento(responsavel.Documento),
+            GrauVinculo = responsavel.GrauVinculo,
+        },
+        Servicos = servicos
                 .Select(s => new ResumoServico
                 {
                     Id = s.Id,
@@ -114,15 +121,16 @@ public sealed class CalculadoraResumoAgendamento
             HashResumo = hashResumo,
         };
 
-        return new ResumoAgendamentoCalculado(
-            resumo,
-            servicos,
-            inicioUtc,
-            fim,
-            duracaoTotal,
-            valorTotal,
-            observacoesNormalizadas);
-    }
+    return new ResumoAgendamentoCalculado(
+        resumo,
+        servicos,
+        inicioUtc,
+        fim,
+        duracaoTotal,
+        valorTotal,
+        observacoesNormalizadas,
+        responsavel);
+}
 
     /// <summary>
     /// Deriva o <c>hashResumo</c> (RF015 / ADR 0004): SHA-256 hex minúsculo sobre
@@ -134,7 +142,7 @@ public sealed class CalculadoraResumoAgendamento
         Guid filialId,
         Guid clienteId,
         Guid veiculoId,
-        Guid? responsavelId,
+        Guid responsavelId,
         IReadOnlyList<Guid> servicoIds,
         DateTime inicioUtc,
         int duracaoTotalMin,
@@ -160,7 +168,7 @@ public sealed class CalculadoraResumoAgendamento
             filialId.ToString("D", CultureInfo.InvariantCulture),
             clienteId.ToString("D", CultureInfo.InvariantCulture),
             veiculoId.ToString("D", CultureInfo.InvariantCulture),
-            responsavelId is { } r ? r.ToString("D", CultureInfo.InvariantCulture) : "null",
+            responsavelId.ToString("D", CultureInfo.InvariantCulture),
             servicosCanonicos,
             inicioCanonico,
             duracaoTotalMin.ToString(CultureInfo.InvariantCulture),
@@ -224,31 +232,24 @@ public sealed class CalculadoraResumoAgendamento
         return cliente;
     }
 
-    private async Task GarantirResponsavelAsync(Guid? responsavelId, Guid clienteId, CancellationToken cancellationToken)
+    private async Task<ResponsavelResumoSnapshot> GarantirResponsavelAsync(Guid responsavelId, Guid clienteId, CancellationToken cancellationToken)
     {
-        if (!responsavelId.HasValue)
-        {
-            return;
-        }
-
-        var responsavel = await _catalogo.ObterResponsavelAsync(responsavelId.Value, cancellationToken).ConfigureAwait(false)
-            ?? throw new NotFoundException("Responsável informado não foi encontrado.");
+        var responsavel = await _catalogo.ObterResponsavelResumoAsync(responsavelId, cancellationToken).ConfigureAwait(false)
+            ?? throw new NotFoundException("Responsável não encontrado.");
 
         if (!responsavel.Ativo)
         {
             throw new RecursoInativoException("O responsável selecionado está inativo.");
         }
 
-        // CA009: responsável só pode agendar em nome do seu próprio titular.
         if (responsavel.ClienteId != clienteId)
         {
-            throw new ValidationException(
-                MensagemPayloadInvalido,
-                new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
-                {
-                    ["responsavelId"] = ["O responsável não pertence ao titular do veículo."],
-                });
+            throw new ConflictException(
+                "O responsável selecionado não está vinculado ao cliente informado.",
+                "responsavel-nao-vinculado");
         }
+
+        return responsavel;
     }
 
     private async Task<IReadOnlyList<ServicoSnapshot>> GarantirServicosAsync(
@@ -276,5 +277,32 @@ public sealed class CalculadoraResumoAgendamento
         return servicoIds
             .Select(id => encontrados.First(s => s.Id == id))
             .ToList();
+    }
+
+    /// <summary>
+    /// Mascara o documento do responsável para o payload de resposta (RF024):
+    /// ex.: "123.456.789-00" → "123.***.***-**". CPF mantém os 3 primeiros
+    /// dígitos e o DV; CNPJ mantém os 2 primeiros e o DV.
+    /// </summary>
+    private static string MascararDocumento(string documento)
+    {
+        if (string.IsNullOrWhiteSpace(documento))
+        {
+            return documento;
+        }
+
+        var digitos = new string(documento.Where(char.IsDigit).ToArray());
+
+        if (digitos.Length == 11)
+        {
+            return $"{digitos[..3]}.***.***-{digitos[^2..]}";
+        }
+
+        if (digitos.Length == 14)
+        {
+            return $"{digitos[..2]}.***.***/{digitos[^6..4]}.{digitos[^2..]}";
+        }
+
+        return new string('*', documento.Length);
     }
 }

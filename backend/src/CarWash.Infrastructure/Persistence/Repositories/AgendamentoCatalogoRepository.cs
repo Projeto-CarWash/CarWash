@@ -37,10 +37,10 @@ public sealed class AgendamentoCatalogoRepository : IAgendamentoCatalogoReposito
         _db.Clientes.AsNoTracking().AnyAsync(c => c.Id == clienteId, cancellationToken);
 
     public Task<ResponsavelSnapshot?> ObterResponsavelAsync(Guid responsavelId, CancellationToken cancellationToken) =>
-        _db.Filiados
+        _db.Responsaveis
             .AsNoTracking()
-            .Where(f => f.Id == responsavelId)
-            .Select(f => new ResponsavelSnapshot(f.Id, f.ClienteId, f.Ativo))
+            .Where(r => r.Id == responsavelId)
+            .Select(r => new ResponsavelSnapshot(r.Id, r.ClienteTitularId, r.Ativo))
             .FirstOrDefaultAsync(cancellationToken);
 
     public async Task<IReadOnlyList<ServicoSnapshot>> ObterServicosAsync(
@@ -94,5 +94,18 @@ public sealed class AgendamentoCatalogoRepository : IAgendamentoCatalogoReposito
                 v.Modelo,
                 v.Cor,
                 v.Ativo))
+            .FirstOrDefaultAsync(cancellationToken);
+
+    public Task<ResponsavelResumoSnapshot?> ObterResponsavelResumoAsync(Guid responsavelId, CancellationToken cancellationToken) =>
+        _db.Responsaveis
+            .AsNoTracking()
+            .Where(r => r.Id == responsavelId)
+            .Select(r => new ResponsavelResumoSnapshot(
+                r.Id,
+                r.ClienteTitularId,
+                r.Nome,
+                r.Documento,
+                r.GrauVinculo,
+                r.Ativo))
             .FirstOrDefaultAsync(cancellationToken);
 }

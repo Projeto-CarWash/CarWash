@@ -8,6 +8,8 @@ namespace CarWash.UnitTests.Domain;
 
 public class AgendamentoTests
 {
+    private static readonly Guid ResponsavelId = Guid.NewGuid();
+
     [Fact]
     public void Criar_exige_filial()
     {
@@ -18,7 +20,8 @@ public class AgendamentoTests
             veiculoId: Guid.NewGuid(),
             criadoPor: Guid.NewGuid(),
             inicio: DateTime.UtcNow,
-            fim: DateTime.UtcNow.AddHours(1));
+            fim: DateTime.UtcNow.AddHours(1),
+            responsavelId: ResponsavelId);
         act.Should().Throw<DomainException>().WithMessage("*RN010*");
     }
 
@@ -32,7 +35,8 @@ public class AgendamentoTests
             veiculoId: Guid.NewGuid(),
             criadoPor: Guid.NewGuid(),
             inicio: DateTime.UtcNow.AddHours(2),
-            fim: DateTime.UtcNow.AddHours(1));
+            fim: DateTime.UtcNow.AddHours(1),
+            responsavelId: ResponsavelId);
         act.Should().Throw<DomainException>();
     }
 
@@ -66,6 +70,7 @@ public class AgendamentoTests
             criadoPor: Guid.NewGuid(),
             inicio: DateTime.UtcNow.AddHours(1),
             fim: DateTime.UtcNow.AddHours(2),
+            responsavelId: ResponsavelId,
             duracaoTotalMin: 90,
             valorTotal: 135.50m);
 
@@ -84,6 +89,7 @@ public class AgendamentoTests
             criadoPor: Guid.NewGuid(),
             inicio: DateTime.UtcNow.AddHours(1),
             fim: DateTime.UtcNow.AddHours(2),
+            responsavelId: ResponsavelId,
             duracaoTotalMin: -1);
         act.Should().Throw<DomainException>().WithMessage("*Duração total*");
     }
@@ -99,6 +105,7 @@ public class AgendamentoTests
             criadoPor: Guid.NewGuid(),
             inicio: DateTime.UtcNow.AddHours(1),
             fim: DateTime.UtcNow.AddHours(2),
+            responsavelId: ResponsavelId,
             valorTotal: -0.01m);
         act.Should().Throw<DomainException>().WithMessage("*Valor total*");
     }
@@ -129,5 +136,6 @@ public class AgendamentoTests
         veiculoId: Guid.NewGuid(),
         criadoPor: Guid.NewGuid(),
         inicio: DateTime.UtcNow.AddHours(1),
-        fim: DateTime.UtcNow.AddHours(2));
+        fim: DateTime.UtcNow.AddHours(2),
+        responsavelId: ResponsavelId);
 }

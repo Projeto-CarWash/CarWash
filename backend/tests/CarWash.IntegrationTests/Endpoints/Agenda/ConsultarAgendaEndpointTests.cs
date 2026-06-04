@@ -521,7 +521,7 @@ public class ConsultarAgendaEndpointTests : IAsyncDisposable
         var idComResponsavel = await SemearAgendamentoCruAsync(
             filialId, clienteA, veiculoA, baseInicio, responsavelId: responsavelId);
         await SemearAgendamentoCruAsync(
-            filialId, clienteB, veiculoB, baseInicio.AddHours(2), responsavelId: null);
+            filialId, clienteB, veiculoB, baseInicio.AddHours(2));
 
         var url = new Uri(
             MontarUrl("simples", filialId, baseInicio.AddHours(-1), baseInicio.AddHours(4)).OriginalString
@@ -685,10 +685,10 @@ public class ConsultarAgendaEndpointTests : IAsyncDisposable
     private async Task<Guid> SemearAgendamentoCruAsync(
         Guid filialId,
         Guid clienteId,
-        Guid veiculoId,
-        DateTime inicio,
-        Guid? responsavelId = null,
-        bool cancelar = false)
+    Guid veiculoId,
+    DateTime inicio,
+    Guid responsavelId = default,
+    bool cancelar = false)
     {
         await using var db = NovoDbContext();
         var agendamento = Agendamento.Criar(
@@ -699,7 +699,7 @@ public class ConsultarAgendaEndpointTests : IAsyncDisposable
             criadoPor: AdminId,
             inicio: inicio,
             fim: inicio.AddMinutes(30),
-            responsavelId: responsavelId,
+            responsavelId: responsavelId == Guid.Empty ? Guid.NewGuid() : responsavelId,
             observacoes: null,
             duracaoTotalMin: 0,
             valorTotal: 0m);
@@ -773,9 +773,9 @@ public class ConsultarAgendaEndpointTests : IAsyncDisposable
             veiculoId: veiculo.Id,
             criadoPor: AdminId,
             inicio: inicio,
-            fim: inicio.AddMinutes(Math.Max(duracaoTotal, 30)),
-            responsavelId: null,
-            observacoes: observacoes,
+fim: inicio.AddMinutes(Math.Max(duracaoTotal, 30)),
+                responsavelId: Guid.NewGuid(),
+                observacoes: observacoes,
             duracaoTotalMin: duracaoTotal,
             valorTotal: valorTotal);
 

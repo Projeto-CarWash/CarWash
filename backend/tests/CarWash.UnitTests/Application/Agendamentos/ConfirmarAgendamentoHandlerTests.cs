@@ -23,6 +23,7 @@ public class ConfirmarAgendamentoHandlerTests
     private static readonly Guid ServicoA = Guid.NewGuid();
     private static readonly Guid ServicoB = Guid.NewGuid();
     private static readonly Guid UsuarioId = Guid.NewGuid();
+    private static readonly Guid ResponsavelId = Guid.NewGuid();
     private static readonly Guid IdempotencyKey = Guid.NewGuid();
     private static readonly DateTime Inicio = DateTime.SpecifyKind(
         DateTime.UtcNow.AddDays(1).Date.AddHours(14), DateTimeKind.Utc);
@@ -48,6 +49,8 @@ public class ConfirmarAgendamentoHandlerTests
             .Returns(new VeiculoResumoSnapshot(VeiculoId, ClienteId, "ABC1D23", "Civic", "Preto", true));
         _catalogo.ObterClienteResumoAsync(ClienteId, Arg.Any<CancellationToken>())
             .Returns(new ClienteResumoSnapshot(ClienteId, "Maria", "12345678901", true));
+        _catalogo.ObterResponsavelResumoAsync(ResponsavelId, Arg.Any<CancellationToken>())
+            .Returns(new ResponsavelResumoSnapshot(ResponsavelId, ClienteId, "João", "12345678901", "Irmão", true));
         _catalogo.ObterServicosAsync(Arg.Any<IReadOnlyCollection<Guid>>(), Arg.Any<CancellationToken>())
             .Returns(new List<ServicoSnapshot>
             {
@@ -283,7 +286,7 @@ public class ConfirmarAgendamentoHandlerTests
             filialId: FilialId,
             clienteId: ClienteId,
             veiculoId: VeiculoId,
-            responsavelId: null,
+            responsavelId: ResponsavelId,
             servicoIds: new[] { ServicoA, ServicoB },
             inicioUtc: Inicio,
             duracaoTotalMin: 75,
@@ -316,7 +319,7 @@ public class ConfirmarAgendamentoHandlerTests
         FilialId: FilialId,
         ClienteId: ClienteId,
         VeiculoId: VeiculoId,
-        ResponsavelId: null,
+        ResponsavelId: ResponsavelId,
         Inicio: Inicio,
         ServicoIds: new[] { ServicoA, ServicoB },
         Observacoes: "Cliente aguarda.",

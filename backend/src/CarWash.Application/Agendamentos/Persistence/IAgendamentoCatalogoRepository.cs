@@ -62,6 +62,13 @@ public interface IAgendamentoCatalogoRepository
     /// resumo de confirmação (RF015). <c>null</c> quando o veículo não existe.
     /// </summary>
     Task<VeiculoResumoSnapshot?> ObterVeiculoResumoAsync(Guid veiculoId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Snapshot rico do responsável (nome + documento + grau vínculo + titular +
+    /// estado) para o resumo de confirmação (RF015/RF024). <c>null</c> quando o
+    /// responsável não existe.
+    /// </summary>
+    Task<ResponsavelResumoSnapshot?> ObterResponsavelResumoAsync(Guid responsavelId, CancellationToken cancellationToken);
 }
 
 /// <summary>Projeção mínima de um veículo para validação de agendamento.</summary>
@@ -69,6 +76,15 @@ public sealed record VeiculoSnapshot(Guid Id, Guid ClienteId, bool Ativo);
 
 /// <summary>Projeção mínima de um responsável (filiado) para validação de agendamento.</summary>
 public sealed record ResponsavelSnapshot(Guid Id, Guid ClienteId, bool Ativo);
+
+/// <summary>Projeção rica do responsável para o resumo de confirmação (RF015/RF024).</summary>
+public sealed record ResponsavelResumoSnapshot(
+    Guid Id,
+    Guid ClienteId,
+    string Nome,
+    string Documento,
+    string GrauVinculo,
+    bool Ativo);
 
 /// <summary>Projeção da filial para o resumo de confirmação (RF015).</summary>
 public sealed record FilialResumoSnapshot(Guid Id, string Nome, bool Ativa);

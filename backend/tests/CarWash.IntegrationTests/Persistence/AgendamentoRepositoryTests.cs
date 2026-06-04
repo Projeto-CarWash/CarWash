@@ -118,6 +118,7 @@ public class AgendamentoRepositoryTests : IAsyncLifetime
             criadoPor: criadoPor,
             inicio: inicio,
             fim: inicio.AddMinutes(30),
+            responsavelId: Guid.NewGuid(),
             duracaoTotalMin: 30,
             valorTotal: 30m);
 

@@ -172,9 +172,9 @@ public class AgendaRepositoryTests : IAsyncDisposable
             veiculoId: veiculo.Id,
             criadoPor: AdminId,
             inicio: inicio,
-            fim: inicio.AddMinutes(Math.Max(duracaoTotal, 30)),
-            responsavelId: null,
-            observacoes: null,
+fim: inicio.AddMinutes(Math.Max(duracaoTotal, 30)),
+                responsavelId: Guid.NewGuid(),
+                observacoes: null,
             duracaoTotalMin: duracaoTotal,
             valorTotal: valorTotal);
 

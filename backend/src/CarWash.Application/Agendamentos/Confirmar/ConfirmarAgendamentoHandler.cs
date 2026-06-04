@@ -199,7 +199,7 @@ public sealed class ConfirmarAgendamentoHandler
             evento: EventoHistorico.Criado,
             usuarioId: usuarioId);
 
-        var resposta = AgendamentoResponseFactory.Montar(agendamento, itens, calculado.Servicos, command.TraceId);
+        var resposta = AgendamentoResponseFactory.Montar(agendamento, itens, calculado.Servicos, calculado.Responsavel, command.TraceId);
 
         var idempotencia = IdempotenciaRequisicao.Registrar(
             id: Guid.NewGuid(),
@@ -232,19 +232,22 @@ public sealed class ConfirmarAgendamentoHandler
                 Desserializar(resultado.RespostaJsonOriginal!));
         }
 
-        _logger.LogInformation(
-            "Agendamento confirmado. AgendamentoId: {AgendamentoId}. UsuarioId: {UsuarioId}. "
-            + "FilialId: {FilialId}. VeiculoId: {VeiculoId}. Janela: [{Inicio:o}, {Fim:o}). "
-            + "ValorTotal: {ValorTotal}. IdempotencyKey: {IdempotencyKey}. TraceId: {TraceId}",
-            agendamentoId,
-            usuarioId,
-            command.FilialId,
-            command.VeiculoId,
-            calculado.Inicio,
-            calculado.Fim,
-            calculado.ValorTotal,
-            idempotencyKey,
-            command.TraceId);
+    _logger.LogInformation(
+        "Agendamento confirmado. AgendamentoId: {AgendamentoId}. UsuarioId: {UsuarioId}. "
+        + "FilialId: {FilialId}. VeiculoId: {VeiculoId}. ClienteId: {ClienteId}. ResponsavelId: {ResponsavelId}. "
+        + "Janela: [{Inicio:o}, {Fim:o}). "
+        + "ValorTotal: {ValorTotal}. IdempotencyKey: {IdempotencyKey}. TraceId: {TraceId}",
+        agendamentoId,
+        usuarioId,
+        command.FilialId,
+        command.VeiculoId,
+        command.ClienteId,
+        command.ResponsavelId,
+        calculado.Inicio,
+        calculado.Fim,
+        calculado.ValorTotal,
+        idempotencyKey,
+        command.TraceId);
 
         return ConfirmarAgendamentoResultado.Novo(resposta);
     }

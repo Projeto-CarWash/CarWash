@@ -106,14 +106,17 @@ public static class AgendamentosEndpoints
 
         var resposta = await handler.HandleAsync(command, cancellationToken).ConfigureAwait(false);
 
-        logger.LogInformation(
-            "Agendamento criado com sucesso. TraceId: {TraceId}. AgendamentoId: {AgendamentoId}. "
-            + "VeiculoId: {VeiculoId}. FilialId: {FilialId}. UsuarioId: {UsuarioId}",
-            traceId,
-            resposta.Id,
-            resposta.VeiculoId,
-            resposta.FilialId,
-            usuarioId);
+    logger.LogInformation(
+        "Agendamento criado com sucesso. TraceId: {TraceId}. AgendamentoId: {AgendamentoId}. "
+        + "VeiculoId: {VeiculoId}. FilialId: {FilialId}. ClienteId: {ClienteId}. "
+        + "ResponsavelId: {ResponsavelId}. UsuarioId: {UsuarioId}",
+        traceId,
+        resposta.Id,
+        resposta.VeiculoId,
+        resposta.FilialId,
+        resposta.ClienteId,
+        resposta.ResponsavelId,
+        usuarioId);
 
         return TypedResults.Created($"/api/v1/agendamentos/{resposta.Id}", resposta);
     }
@@ -152,14 +155,17 @@ public static class AgendamentosEndpoints
 
         var resposta = await handler.HandleAsync(command, cancellationToken).ConfigureAwait(false);
 
-        logger.LogInformation(
-            "Pré-confirmação de agendamento gerada. TraceId: {TraceId}. FilialId: {FilialId}. "
-            + "VeiculoId: {VeiculoId}. UsuarioId: {UsuarioId}. ExpiraEm: {ExpiraEm:o}",
-            traceId,
-            resposta.Resumo.Filial.Id,
-            resposta.Resumo.Veiculo.Id,
-            usuarioId,
-            resposta.ExpiraEm);
+    logger.LogInformation(
+        "Pré-confirmação de agendamento gerada. TraceId: {TraceId}. FilialId: {FilialId}. "
+        + "VeiculoId: {VeiculoId}. ClienteId: {ClienteId}. ResponsavelId: {ResponsavelId}. "
+        + "UsuarioId: {UsuarioId}. ExpiraEm: {ExpiraEm:o}",
+        traceId,
+        resposta.Resumo.Filial.Id,
+        resposta.Resumo.Veiculo.Id,
+        resposta.Resumo.Cliente.Id,
+        resposta.Resumo.Responsavel.Id,
+        usuarioId,
+        resposta.ExpiraEm);
 
         return TypedResults.Ok(resposta);
     }
@@ -214,14 +220,17 @@ public static class AgendamentosEndpoints
         }
         else
         {
-            logger.LogInformation(
-                "Agendamento confirmado com sucesso. TraceId: {TraceId}. AgendamentoId: {AgendamentoId}. "
-                + "VeiculoId: {VeiculoId}. FilialId: {FilialId}. UsuarioId: {UsuarioId}",
-                traceId,
-                resposta.Id,
-                resposta.VeiculoId,
-                resposta.FilialId,
-                usuarioId);
+        logger.LogInformation(
+            "Agendamento confirmado com sucesso. TraceId: {TraceId}. AgendamentoId: {AgendamentoId}. "
+            + "VeiculoId: {VeiculoId}. FilialId: {FilialId}. ClienteId: {ClienteId}. "
+            + "ResponsavelId: {ResponsavelId}. UsuarioId: {UsuarioId}",
+            traceId,
+            resposta.Id,
+            resposta.VeiculoId,
+            resposta.FilialId,
+            resposta.ClienteId,
+            resposta.ResponsavelId,
+            usuarioId);
         }
 
         return TypedResults.Created($"/api/v1/agendamentos/{resposta.Id}", resposta);

@@ -16,6 +16,7 @@ public class HashResumoAgendamentoTests
     private static readonly Guid Veiculo = Guid.Parse("33333333-3333-3333-3333-333333333333");
     private static readonly Guid ServicoA = Guid.Parse("44444444-4444-4444-4444-444444444444");
     private static readonly Guid ServicoB = Guid.Parse("55555555-5555-5555-5555-555555555555");
+    private static readonly Guid Responsavel = Guid.Parse("66666666-6666-6666-6666-666666666666");
     private static readonly DateTime Inicio = new(2099, 6, 1, 14, 0, 0, DateTimeKind.Utc);
 
     [Fact]
@@ -72,12 +73,12 @@ public class HashResumoAgendamentoTests
     }
 
     [Fact]
-    public void Responsavel_ausente_e_presente_produzem_hashes_distintos()
+    public void Mudanca_de_responsavel_altera_o_hash()
     {
-        var semResponsavel = Calcular(responsavel: null);
-        var comResponsavel = Calcular(responsavel: Guid.NewGuid());
+        var hashA = Calcular(responsavel: Responsavel);
+        var hashB = Calcular(responsavel: Guid.NewGuid());
 
-        semResponsavel.Should().NotBe(comResponsavel);
+        hashA.Should().NotBe(hashB);
     }
 
     [Fact]
@@ -122,7 +123,7 @@ public class HashResumoAgendamentoTests
             filialId: filial ?? Filial,
             clienteId: Cliente,
             veiculoId: Veiculo,
-            responsavelId: responsavel,
+            responsavelId: responsavel ?? Responsavel,
             servicoIds: servicos ?? new[] { ServicoA, ServicoB },
             inicioUtc: inicio ?? Inicio,
             duracaoTotalMin: duracao,
@@ -133,12 +134,13 @@ public class HashResumoAgendamentoTests
     [Fact]
     public void Forma_canonica_documentada_produz_o_hash_esperado()
     {
-        // Regressão: garante que a string canônica não muda silenciosamente.
+        var responsavelCanonico = Guid.Parse("66666666-6666-6666-6666-666666666666");
+
         var hash = CalculadoraResumoAgendamento.CalcularHashResumo(
             filialId: Filial,
             clienteId: Cliente,
             veiculoId: Veiculo,
-            responsavelId: null,
+            responsavelId: responsavelCanonico,
             servicoIds: new[] { ServicoA },
             inicioUtc: Inicio,
             duracaoTotalMin: 30,
@@ -146,20 +148,20 @@ public class HashResumoAgendamentoTests
             observacoes: null);
 
         // Calculado a partir da canônica definida no ADR 0004:
-        // filial|cliente|veiculo|null|servico|2099-06-01T14:00:00.000Z|30|50.00|null
+        // filial|cliente|veiculo|responsavel|servico|2099-06-01T14:00:00.000Z|30|50.00|null
         var canonico = string.Join(
             '|',
             Filial.ToString("D", CultureInfo.InvariantCulture),
             Cliente.ToString("D", CultureInfo.InvariantCulture),
             Veiculo.ToString("D", CultureInfo.InvariantCulture),
-            "null",
+            responsavelCanonico.ToString("D", CultureInfo.InvariantCulture),
             ServicoA.ToString("D", CultureInfo.InvariantCulture),
             "2099-06-01T14:00:00.000Z",
             "30",
             "50.00",
             "null");
         var esperado = Convert.ToHexString(
-                System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(canonico)))
+            System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(canonico)))
             .ToLowerInvariant();
 
         hash.Should().Be(esperado);

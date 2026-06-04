@@ -140,7 +140,7 @@ public class CriarAgendamentoCommandValidatorTests
         FilialId: Guid.NewGuid(),
         ClienteId: Guid.NewGuid(),
         VeiculoId: Guid.NewGuid(),
-        ResponsavelId: null,
+        ResponsavelId: Guid.NewGuid(),
         Inicio: DateTime.UtcNow.AddDays(1),
         ServicoIds: new[] { Guid.NewGuid() },
         Observacoes: null,
