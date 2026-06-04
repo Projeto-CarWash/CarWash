@@ -4,6 +4,7 @@ using CarWash.Application.Agendamentos.Cancelar;
 using CarWash.Application.Agendamentos.Common;
 using CarWash.Application.Agendamentos.Confirmar;
 using CarWash.Application.Agendamentos.Criar;
+using CarWash.Application.Agendamentos.ObterPorId;
 using CarWash.Application.Agendamentos.PreConfirmar;
 using FluentValidation;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -45,6 +46,14 @@ public static class AgendamentosEndpoints
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status409Conflict)
             .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
+
+        // RF008 — GET por ID.
+        grupo.MapGet("/{id:guid}", ObterPorIdAsync)
+            .WithName("ObterAgendamentoPorId")
+            .Produces<ObterAgendamentoPorIdResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
         // RF015 — etapa 1: pré-confirmação (revisão das informações, sem persistir).
         grupo.MapPost("/pre-confirmacao", PreConfirmarAsync)
@@ -130,6 +139,18 @@ public static class AgendamentosEndpoints
             usuarioId);
 
         return TypedResults.Created($"/api/v1/agendamentos/{resposta.Id}", resposta);
+    }
+
+    private static async Task<Ok<ObterAgendamentoPorIdResponse>> ObterPorIdAsync(
+        Guid id,
+        [FromServices] IQueryHandler<ObterAgendamentoPorIdQuery, ObterAgendamentoPorIdResponse> handler,
+        HttpContext http,
+        CancellationToken cancellationToken)
+    {
+        http.Response.Headers.CacheControl = "no-store";
+        var resposta = await handler.HandleAsync(
+            new ObterAgendamentoPorIdQuery(id), cancellationToken).ConfigureAwait(false);
+        return TypedResults.Ok(resposta);
     }
 
     private static async Task<Ok<PreConfirmacaoResponse>> PreConfirmarAsync(

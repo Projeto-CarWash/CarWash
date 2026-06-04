@@ -42,7 +42,12 @@ public class CriarAgendamentoHandlerTests
                 new(ServicoA, "Lavagem Simples", 30m, 30, true),
                 new(ServicoB, "Enceramento", 45m, 45, true),
             });
+
         _agendamentos.ExisteConflitoVeiculoAsync(
+            Arg.Any<Guid>(), Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+            .Returns(false);
+
+        _agendamentos.CapacidadeAtingidaAsync(
             Arg.Any<Guid>(), Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
             .Returns(false);
 
@@ -104,8 +109,6 @@ public class CriarAgendamentoHandlerTests
     [Fact]
     public async Task Capacidade_da_filial_atingida_lanca_CapacidadeFilialAtingidaException()
     {
-        // RF008/RN009: sem conflito de veículo, porém a filial já está no teto de
-        // células ativas para a janela → rejeita com 409 (capacidade-filial).
         _agendamentos.CapacidadeAtingidaAsync(
             FilialId, Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
             .Returns(true);
@@ -125,6 +128,34 @@ public class CriarAgendamentoHandlerTests
     }
 
     [Fact]
+    public async Task Capacidade_da_filial_abaixo_do_teto_permite_criacao()
+    {
+        // RF008: CapacidadeAtingidaAsync retorna false → caminho feliz.
+        _agendamentos.CapacidadeAtingidaAsync(
+            FilialId, Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+            .Returns(false);
+
+        var handler = NovoHandler();
+        var resposta = await handler.HandleAsync(NovoComando(), CancellationToken.None);
+
+        resposta.Id.Should().NotBeEmpty();
+
+        await _agendamentos.Received(1).CapacidadeAtingidaAsync(
+            FilialId, Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Inicio_agora_mesmo_e_aceito()
+    {
+        // RF008: agendamento para o dia/horário atual é permitido.
+        var handler = NovoHandler();
+        var resposta = await handler.HandleAsync(
+            NovoComando() with { Inicio = DateTime.UtcNow }, CancellationToken.None);
+
+        resposta.Id.Should().NotBeEmpty();
+    }
+
+    [Fact]
     public async Task Filial_inexistente_lanca_NotFound_e_audita_motivo_filial_inexistente()
     {
         _catalogo.ObterFilialResumoAsync(FilialId, Arg.Any<CancellationToken>())
@@ -136,7 +167,6 @@ public class CriarAgendamentoHandlerTests
         var ex = await act.Should().ThrowAsync<NotFoundException>();
         ex.Which.Message.Should().Be(MensagensFilialAgendamento.NaoEncontrada);
 
-        // RF019/DAT §9.1: a rejeição é auditada com motivo estruturado antes do throw.
         await _audit.Received(1).LogAsync(
             CalculadoraResumoAgendamento.EventoFilialRejeitada,
             CalculadoraResumoAgendamento.EntidadeAuditoria,
@@ -148,9 +178,6 @@ public class CriarAgendamentoHandlerTests
     [Fact]
     public async Task Filial_inativa_lanca_FilialInativaException()
     {
-        // RF019: filial inativa é o único recurso que vira 409 (slug filial-inativa),
-        // via FilialInativaException : ConflictException — distinto de veículo/
-        // cliente/serviço/responsável inativos, que seguem 422 (RecursoInativoException).
         _catalogo.ObterFilialResumoAsync(FilialId, Arg.Any<CancellationToken>())
             .Returns(new FilialResumoSnapshot(FilialId, "Filial Centro", false));
 
@@ -161,7 +188,6 @@ public class CriarAgendamentoHandlerTests
         ex.Which.Slug.Should().Be(FilialInativaException.SlugPadrao);
         ex.Which.Message.Should().Be(MensagensFilialAgendamento.Inativa);
 
-        // RF019/DAT §9.1: a rejeição é auditada com motivo estruturado antes do throw.
         await _audit.Received(1).LogAsync(
             CalculadoraResumoAgendamento.EventoFilialRejeitada,
             CalculadoraResumoAgendamento.EntidadeAuditoria,
@@ -240,7 +266,6 @@ public class CriarAgendamentoHandlerTests
     [Fact]
     public async Task Responsavel_do_titular_persiste_no_agendamento_CA009()
     {
-        // Already set up in constructor with matching ClienteId.
         var handler = NovoHandler();
         var resposta = await handler.HandleAsync(NovoComando(), CancellationToken.None);
 
@@ -289,7 +314,6 @@ public class CriarAgendamentoHandlerTests
     [Fact]
     public async Task Veiculo_de_outro_cliente_lanca_ValidationException_RN002()
     {
-        // RN002: o veículo informado pertence a outro titular, não ao ClienteId do payload.
         _catalogo.ObterVeiculoResumoAsync(VeiculoId, Arg.Any<CancellationToken>())
             .Returns(new VeiculoResumoSnapshot(VeiculoId, Guid.NewGuid(), "ABC1D23", "Civic", "Preto", true));
 
@@ -340,7 +364,6 @@ public class CriarAgendamentoHandlerTests
             NovoComando() with { Inicio = inicio, ServicoIds = new[] { ServicoA } },
             CancellationToken.None);
 
-        // ServicoA: 30 min / R$ 30.
         resposta.DuracaoTotalMin.Should().Be(30);
         resposta.ValorTotal.Should().Be(30m);
         resposta.Itens.Should().HaveCount(1);
@@ -352,7 +375,6 @@ public class CriarAgendamentoHandlerTests
     {
         var handler = NovoHandler();
 
-        // Informa B antes de A — a resposta deve respeitar essa ordem.
         var resposta = await handler.HandleAsync(
             NovoComando() with { ServicoIds = new[] { ServicoB, ServicoA } },
             CancellationToken.None);
@@ -437,7 +459,6 @@ public class CriarAgendamentoHandlerTests
             NovoComando() with { Inicio = inicio, ServicoIds = new[] { ServicoA, ServicoB } },
             CancellationToken.None);
 
-        // Janela = [inicio, inicio + 75min) — soma das durações de A (30) e B (45).
         await _agendamentos.Received(1).ExisteConflitoVeiculoAsync(
             VeiculoId,
             Arg.Is<DateTime>(d => d == inicio),

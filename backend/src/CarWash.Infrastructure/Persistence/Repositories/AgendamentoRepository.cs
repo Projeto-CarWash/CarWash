@@ -3,6 +3,7 @@ using CarWash.Application.Agendamentos.Common;
 using CarWash.Application.Agendamentos.Persistence;
 using CarWash.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Npgsql;
 
 namespace CarWash.Infrastructure.Persistence.Repositories;
@@ -11,7 +12,9 @@ namespace CarWash.Infrastructure.Persistence.Repositories;
 /// Implementação concreta de <see cref="IAgendamentoRepository"/> sobre EF Core.
 /// Persiste o agregado (agendamento + itens + histórico) em transação única e
 /// traduz a violação da constraint EXCLUDE <c>ex_ag_veiculo_janela</c> (RN011)
-/// em <see cref="AgendamentoConflitanteException"/>.
+/// em <see cref="AgendamentoConflitanteException"/>. RF008: o <c>AdicionarAsync</c>
+/// usa <c>SELECT … FOR UPDATE</c> na linha da filial como lock de concorrência
+/// antes de verificar a capacidade.
 /// </summary>
 public sealed class AgendamentoRepository : IAgendamentoRepository
 {
@@ -36,11 +39,20 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
     /// </summary>
     private static readonly string[] ConcorrenciaSqlStates = ["40P01", "40001"];
 
-    private readonly CarWashDbContext _db;
+    /// <summary>
+    /// Status que contam como ocupação de célula (RF008): agendados e em andamento.
+    /// </summary>
+    private static readonly string[] StatusOcupacao = ["agendado", "em_andamento"];
 
-    public AgendamentoRepository(CarWashDbContext db)
+    private readonly CarWashDbContext _db;
+    private readonly ILogger<AgendamentoRepository> _logger;
+
+    public AgendamentoRepository(
+        CarWashDbContext db,
+        ILogger<AgendamentoRepository> logger)
     {
         _db = db;
+        _logger = logger;
     }
 
     /// <inheritdoc/>
@@ -51,13 +63,13 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
         CancellationToken cancellationToken)
     {
         // Espelha a EXCLUDE ex_ag_veiculo_janela: janela meio-aberta [inicio, fim),
-        // apenas status 'agendado'. Sobreposição ⇔ inicio_existente < fim_novo
+        // status 'agendado' e 'em_andamento'. Sobreposição ⇔ inicio_existente < fim_novo
         // && fim_existente > inicio_novo.
         return _db.Agendamentos
             .AsNoTracking()
             .AnyAsync(
                 a => a.VeiculoId == veiculoId
-                    && a.StatusRaw == "agendado"
+                    && StatusOcupacao.Contains(a.StatusRaw)
                     && a.Inicio < fim
                     && a.Fim > inicio,
                 cancellationToken);
@@ -101,6 +113,26 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
     }
 
     /// <inheritdoc/>
+    public async Task<int> ContarOcupacaoAsync(
+        Guid filialId,
+        DateTime inicio,
+        DateTime fim,
+        CancellationToken cancellationToken)
+    {
+        // RF008: conta agendamentos por status de ocupação (agendado + em_andamento)
+        // na janela [inicio, fim) — cálculo correto de vagas por status.
+        return await _db.Agendamentos
+            .AsNoTracking()
+            .CountAsync(
+                a => a.FilialId == filialId
+                    && a.Inicio < fim
+                    && a.Fim > inicio
+                    && StatusOcupacao.Contains(a.StatusRaw),
+                cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc/>
     public async Task AdicionarAsync(
         Agendamento agendamento,
         IReadOnlyCollection<AgendamentoItem> itens,
@@ -113,6 +145,24 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
         ArgumentNullException.ThrowIfNull(historico);
 
         await using var transaction = await _db.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+
+        // RF008: lock de concorrência na linha da filial para evitar race condition
+        // na verificação de capacidade — SELECT … FOR UPDATE serializa acessos
+        // concorrentes à mesma célula de horário.
+        var filial = await _db.Filiais
+            .FromSqlRaw("SELECT * FROM filiais WHERE id = {0} FOR UPDATE", agendamento.FilialId)
+            .FirstAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        var ocupacao = await ContarOcupacaoAsync(
+            agendamento.FilialId, agendamento.Inicio, agendamento.Fim, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (ocupacao >= filial.CelulasAtivas)
+        {
+            await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
+            throw new CapacidadeFilialAtingidaException();
+        }
 
         await _db.Agendamentos.AddAsync(agendamento, cancellationToken).ConfigureAwait(false);
         await _db.AgendamentoItens.AddRangeAsync(itens, cancellationToken).ConfigureAwait(false);
@@ -144,6 +194,17 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
         {
             await _db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException pg
+            && pg.ConstraintName == "ex_ag_veiculo_janela")
+        {
+            await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
+            _logger.LogWarning(ex, "EXCLUDE constraint violada (concorrencia). CorrelationId: {CorrelationId}", correlationId);
+            throw new AgendamentoConflitanteException(ex);
+        }
+        catch (CapacidadeFilialAtingidaException)
+        {
+            throw;
         }
 #pragma warning disable CA1031 // Toda falha de persistência é reavaliada como conflito da RN011 antes de subir.
         catch (Exception ex)
@@ -363,6 +424,18 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
         return ehUniqueViolation && ehConstraintDeIdempotencia;
     }
 
+    /// <inheritdoc/>
+    public async Task<Agendamento?> ObterPorIdAsync(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        return await _db.Agendamentos
+            .AsNoTracking()
+            .FirstOrDefaultAsync(a => a.Id == id, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc/>
     public async Task<Agendamento?> ObterPorIdRastreadoAsync(
         Guid id,
         CancellationToken cancellationToken)
@@ -372,6 +445,7 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
             .ConfigureAwait(false);
     }
 
+    /// <inheritdoc/>
     public async Task SalvarAsync(
         Agendamento agendamento,
         AgendamentoHistorico historico,
