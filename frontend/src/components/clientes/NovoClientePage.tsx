@@ -18,8 +18,6 @@ import { VeiculosClienteForm } from './VeiculosClienteForm';
 import type { ClienteFormData } from '@/schemas/clienteSchema';
 import type { ProblemDetails } from '@/types/auth';
 
-const DRAFT_STORAGE_KEY = 'carwash-draft-novo-cliente';
-
 const API_MESSAGES: Record<number, string> = {
   400: 'Dados do cliente inválidos. Verifique os campos e tente novamente.',
   401: 'Sessão expirada. Faça login novamente.',
@@ -58,22 +56,11 @@ export function NovoClientePage() {
     [],
   );
 
-  const loadDraft = useCallback((): ClienteFormData | null => {
-    try {
-      const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
-      if (!raw) return null;
-      return JSON.parse(raw) as ClienteFormData;
-    } catch {
-      localStorage.removeItem(DRAFT_STORAGE_KEY);
-      return null;
-    }
-  }, []);
-
   const form = useForm<ClienteFormData>({
     resolver: zodResolver(clienteSchema),
     mode: 'onBlur',
     shouldFocusError: true,
-    defaultValues: loadDraft() ?? getDefaultValues(),
+    defaultValues: getDefaultValues(),
   });
 
   // form.reset é síncrono e idempotente: pode ser chamado quantas vezes for preciso.
@@ -145,7 +132,6 @@ export function NovoClientePage() {
       try {
         const resp = await clienteService.criar(data);
         setSuccessMsg('Cliente cadastrado com sucesso! Redirecionando…');
-        localStorage.removeItem(DRAFT_STORAGE_KEY);
         resetForm();
         setTimeout(() => {
           void navigate(`/clientes/${resp.id}`, { replace: true });
@@ -210,21 +196,11 @@ export function NovoClientePage() {
     resetForm();
     setGlobalError(null);
     setSuccessMsg(null);
-    localStorage.removeItem(DRAFT_STORAGE_KEY);
   }, [resetForm]);
-
-  const handleSaveDraft = useCallback(() => {
-    const currentValues = form.getValues();
-    try {
-      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(currentValues));
-    } catch (e) {
-      console.warn('Failed to save draft:', e);
-    }
-  }, [form]);
 
   return (
     <>
-      <PageHeader onClearForm={handleClearForm} onSaveDraft={handleSaveDraft} step={currentStep} />
+      <PageHeader onClearForm={handleClearForm} step={currentStep} />
       <FormProvider {...form}>
         <form
           onSubmit={(e) => {
