@@ -19,26 +19,8 @@ interface AgendaItemSimplesRowProps {
 export function AgendaItemSimplesRow({ item, onClick }: AgendaItemSimplesRowProps) {
   const descricao = `Agendamento: ${item.clienteNome}, placa ${item.veiculoPlaca}, ${rotuloStatus(item.status)}`;
 
-  function handleKeyDown(e: React.KeyboardEvent) {
-    if (onClick && (e.key === 'Enter' || e.key === ' ')) {
-      e.preventDefault();
-      onClick(item);
-    }
-  }
-
-  return (
-    <li
-      className={`flex flex-col gap-2 rounded-xl border border-zinc-200/70 bg-white/60 p-4 transition-colors hover:border-red-500/40 sm:flex-row sm:items-center sm:gap-4 dark:border-zinc-800/60 dark:bg-zinc-900/30 ${
-        onClick
-          ? 'cursor-pointer focus-visible:ring-2 focus-visible:ring-red-500/50 focus-visible:outline-none'
-          : ''
-      }`}
-      role={onClick ? 'button' : undefined}
-      tabIndex={onClick ? 0 : undefined}
-      aria-label={descricao}
-      onClick={onClick ? () => onClick(item) : undefined}
-      onKeyDown={onClick ? handleKeyDown : undefined}
-    >
+  const content = (
+    <>
       <div className="flex items-center gap-2 text-sm font-medium text-zinc-700 sm:w-64 sm:shrink-0 dark:text-zinc-200">
         <CalendarClock className="h-4 w-4 shrink-0 text-red-500" aria-hidden="true" />
         <span className="tabular-nums">{formatarFaixaHorario(item.inicio, item.fim)}</span>
@@ -71,6 +53,30 @@ export function AgendaItemSimplesRow({ item, onClick }: AgendaItemSimplesRowProp
       >
         {rotuloStatus(item.status).toUpperCase()}
       </span>
+    </>
+  );
+
+  if (onClick) {
+    return (
+      <li>
+        <button
+          type="button"
+          className="w-full text-left flex flex-col gap-2 rounded-xl border border-zinc-200/70 bg-white/60 p-4 transition-colors hover:border-red-500/40 sm:flex-row sm:items-center sm:gap-4 dark:border-zinc-800/60 dark:bg-zinc-900/30 cursor-pointer focus-visible:ring-2 focus-visible:ring-red-500/50 focus-visible:outline-none"
+          aria-label={descricao}
+          onClick={() => onClick(item)}
+        >
+          {content}
+        </button>
+      </li>
+    );
+  }
+
+  return (
+    <li
+      className="flex flex-col gap-2 rounded-xl border border-zinc-200/70 bg-white/60 p-4 sm:flex-row sm:items-center sm:gap-4 dark:border-zinc-800/60 dark:bg-zinc-900/30"
+      aria-label={descricao}
+    >
+      {content}
     </li>
   );
 }

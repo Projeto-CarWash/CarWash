@@ -31,7 +31,6 @@ const API_MESSAGES: Record<number, string> = {
   500: 'Nao foi possivel concluir o agendamento no momento. Tente novamente.',
 };
 
-
 const INITIAL_STATE: AgendamentoWizardState = {
   filialId: '',
   filialNome: '',
@@ -197,7 +196,10 @@ export function NovoAgendamentoPage() {
         return;
       }
 
-      setGlobalError(API_MESSAGES[status] ?? 'Não foi possível concluir o agendamento no momento. Tente novamente.');
+      setGlobalError(
+        API_MESSAGES[status] ??
+          'Não foi possível concluir o agendamento no momento. Tente novamente.',
+      );
     } finally {
       setIsSubmitting(false);
     }

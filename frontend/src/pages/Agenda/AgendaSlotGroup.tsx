@@ -40,10 +40,7 @@ export function AgendaSlotGroup({
     >
       {/* Header do slot */}
       <div className="flex flex-wrap items-center gap-2 border-b border-zinc-200/50 px-4 py-3 dark:border-zinc-800/40">
-        <CalendarClock
-          className="h-4 w-4 shrink-0 text-red-500"
-          aria-hidden="true"
-        />
+        <CalendarClock className="h-4 w-4 shrink-0 text-red-500" aria-hidden="true" />
         <span className="text-sm font-semibold tabular-nums text-zinc-800 dark:text-zinc-100">
           {formatarFaixaHorario(inicio, fim)}
         </span>
