@@ -12,6 +12,7 @@ import type {
   PreConfirmacaoResponse,
   ServicoAtivo,
   VeiculoResumido,
+  CancelarAgendamentoResponse,
 } from '@/types/agendamento';
 
 const MOCK_VEICULOS: Record<string, VeiculoResumido[]> = {
@@ -205,5 +206,24 @@ export const agendamentoService = {
   async listarAgendamentosSemana(_dataInicio: Date, _dataFim: Date): Promise<AgendamentoSemana[]> {
     await delay(600);
     return [];
+  },
+
+  async cancelar(id: string, motivoCancelamento: string): Promise<CancelarAgendamentoResponse> {
+    const { data } = await api.patch<CancelarAgendamentoResponse>(
+      `/api/v1/agendamentos/${id}/cancelar`,
+      {
+        motivoCancelamento,
+        origem: 'CLIENTE',
+      },
+    );
+    return data;
+  },
+
+  async atualizar(
+    id: string,
+    payload: { observacoes: string | null },
+  ): Promise<AgendamentoResponse> {
+    const { data } = await api.put<AgendamentoResponse>(`/api/v1/agendamentos/${id}`, payload);
+    return data;
   },
 };

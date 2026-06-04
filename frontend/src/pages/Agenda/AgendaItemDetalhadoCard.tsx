@@ -1,4 +1,4 @@
-import { CalendarClock, Car, Clock, FileText, Receipt, User } from 'lucide-react';
+import { CalendarClock, Car, Clock, FileText, Pencil, Receipt, Trash2, User } from 'lucide-react';
 
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { formatarDuracao, formatarReais } from '@/lib/format';
@@ -17,6 +17,8 @@ interface AgendaItemDetalhadoCardProps {
   item: AgendaItemDetalhado;
   /** Callback disparado ao clicar/ativar o card (RF008.1 — detalhe individual). */
   onClick?: (item: AgendaItemDetalhado) => void;
+  onEditar?: (item: AgendaItemDetalhado) => void;
+  onCancelar?: (item: AgendaItemDetalhado) => void;
 }
 
 /** Par rótulo/valor usado nos blocos de cliente e veículo. */
@@ -38,7 +40,12 @@ function Campo({ rotulo, valor }: { rotulo: string; valor: string }) {
  * observações e totais. Layout responsivo: blocos empilham no mobile e formam
  * grade no desktop.</p>
  */
-export function AgendaItemDetalhadoCard({ item, onClick }: AgendaItemDetalhadoCardProps) {
+export function AgendaItemDetalhadoCard({
+  item,
+  onClick,
+  onEditar,
+  onCancelar,
+}: AgendaItemDetalhadoCardProps) {
   const descricao = `Agendamento de ${item.cliente.nome}, placa ${item.veiculo.placa}, ${rotuloStatus(item.status)}`;
 
   function handleKeyDown(e: React.KeyboardEvent) {
@@ -67,13 +74,40 @@ export function AgendaItemDetalhadoCard({ item, onClick }: AgendaItemDetalhadoCa
             <CalendarClock className="h-4 w-4 shrink-0 text-red-500" aria-hidden="true" />
             <span className="tabular-nums">{formatarFaixaHorario(item.inicio, item.fim)}</span>
           </div>
-          <span
-            className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold tracking-[0.12em] ${classesStatus(
-              item.status,
-            )}`}
+          {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
+          <div
+            className="flex items-center gap-2"
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
           >
-            {rotuloStatus(item.status).toUpperCase()}
-          </span>
+            {onEditar && item.status === 'AGENDADO' && (
+              <button
+                type="button"
+                className="p-1 rounded text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 focus-visible:ring-2 focus-visible:ring-red-500/50"
+                aria-label="Editar agendamento"
+                onClick={() => onEditar(item)}
+              >
+                <Pencil className="h-4 w-4" />
+              </button>
+            )}
+            {onCancelar && (item.status === 'AGENDADO' || item.status === 'EM_ANDAMENTO') && (
+              <button
+                type="button"
+                className="p-1 rounded text-zinc-400 hover:text-red-500 focus-visible:ring-2 focus-visible:ring-red-500/50"
+                aria-label="Cancelar agendamento"
+                onClick={() => onCancelar(item)}
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            )}
+            <span
+              className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold tracking-[0.12em] ${classesStatus(
+                item.status,
+              )}`}
+            >
+              {rotuloStatus(item.status).toUpperCase()}
+            </span>
+          </div>
         </div>
       </CardHeader>
 

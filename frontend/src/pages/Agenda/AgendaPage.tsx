@@ -1,5 +1,8 @@
-import { AlertCircle, CalendarRange, CalendarSearch, Loader2, RotateCw } from 'lucide-react';
+/* eslint-disable jsx-a11y/no-autofocus */
+import { useQueryClient } from '@tanstack/react-query';
+import { AlertCircle, CalendarRange, CalendarSearch, Loader2, RotateCw, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +10,9 @@ import { Label } from '@/components/ui/label';
 import { useClientesParaAgendamento, useFiliais } from '@/hooks/useAgendamentoQueries';
 import { useAgenda, validarFiltrosAgenda } from '@/hooks/useAgendaQuery';
 import { tratarErroApi } from '@/lib/apiError';
+import { agendamentoService } from '@/services/agendamentoService';
 
+import { classesStatus, rotuloStatus } from './agendaFormat';
 import { AgendaItemDetalhadoCard } from './AgendaItemDetalhadoCard';
 import { AgendaItemSimplesRow } from './AgendaItemSimplesRow';
 import { AgendaSlotGroup } from './AgendaSlotGroup';
@@ -18,6 +23,7 @@ import type {
   AgendaItemDetalhado,
   AgendaItemSimples,
   AgendaStatus,
+  ConsultarAgendaResponse,
 } from '@/types/agenda';
 
 /**
@@ -93,6 +99,228 @@ export function AgendaPage() {
   const [itemSelecionado, setItemSelecionado] = useState<
     AgendaItemDetalhado | AgendaItemSimples | null
   >(null);
+
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  // Estados de cancelamento e edição
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [cancelItem, setCancelItem] = useState<AgendaItemSimples | AgendaItemDetalhado | null>(
+    null,
+  );
+  const [motivoCancelamento, setMotivoCancelamento] = useState('');
+  const [motivoError, setMotivoError] = useState<string | null>(null);
+  const [cancelLoading, setCancelLoading] = useState(false);
+
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editItem, setEditItem] = useState<AgendaItemSimples | AgendaItemDetalhado | null>(null);
+  const [observacoesEdit, setObservacoesEdit] = useState('');
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+
+  const [toast, setToast] = useState<{ tipo: 'sucesso' | 'erro'; mensagem: string } | null>(null);
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    if (toast) {
+      timer = setTimeout(() => setToast(null), 5000);
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [toast]);
+
+  function handleEditarClick(item: AgendaItemSimples | AgendaItemDetalhado) {
+    if (item.status !== 'AGENDADO') {
+      const msg =
+        item.status === 'CONCLUIDO'
+          ? 'Agendamento finalizado não pode ser editado.'
+          : 'Agendamento no status atual não permite edição.';
+      setToast({ tipo: 'erro', mensagem: msg });
+      return;
+    }
+    setEditItem(item);
+    setObservacoesEdit(ehDetalhado(item) ? (item.observacoes ?? '') : '');
+    setEditError(null);
+    setEditModalOpen(true);
+  }
+
+  function handleCancelarClick(item: AgendaItemSimples | AgendaItemDetalhado) {
+    if (item.status !== 'AGENDADO' && item.status !== 'EM_ANDAMENTO') {
+      setToast({ tipo: 'erro', mensagem: 'Este agendamento não pode ser cancelado.' });
+      return;
+    }
+    setCancelItem(item);
+    setMotivoCancelamento('');
+    setMotivoError(null);
+    setCancelModalOpen(true);
+  }
+
+  async function handleConfirmarCancelamento() {
+    if (!cancelItem) return;
+    const motivo = motivoCancelamento.trim();
+    if (!motivo) {
+      setMotivoError('O motivo do cancelamento é obrigatório.');
+      return;
+    }
+    if (motivo.length < 5) {
+      setMotivoError('O motivo do cancelamento deve ter pelo menos 5 caracteres.');
+      return;
+    }
+    if (motivo.length > 500) {
+      setMotivoError('O motivo do cancelamento não pode ultrapassar 500 caracteres.');
+      return;
+    }
+
+    setCancelLoading(true);
+    setMotivoError(null);
+
+    try {
+      await agendamentoService.cancelar(cancelItem.agendamentoId, motivo);
+
+      setCancelModalOpen(false);
+
+      queryClient.setQueriesData<ConsultarAgendaResponse<AgendaItemSimples | AgendaItemDetalhado>>(
+        { queryKey: ['agenda'] },
+        (oldData: ConsultarAgendaResponse<AgendaItemSimples | AgendaItemDetalhado> | undefined) => {
+          if (!oldData) return oldData;
+          return {
+            ...oldData,
+            data: oldData.data.map((item: AgendaItemSimples | AgendaItemDetalhado) => {
+              if (item.agendamentoId === cancelItem.agendamentoId) {
+                return { ...item, status: 'CANCELADO' };
+              }
+              return item;
+            }),
+          };
+        },
+      );
+
+      if (itemSelecionado?.agendamentoId === cancelItem.agendamentoId) {
+        setItemSelecionado((prev) => (prev ? { ...prev, status: 'CANCELADO' } : null));
+      }
+
+      setToast({ tipo: 'sucesso', mensagem: 'Agendamento cancelado com sucesso.' });
+      setCancelItem(null);
+    } catch (err: unknown) {
+      const erro = tratarErroApi(err);
+      if (erro.status === 401) {
+        setToast({
+          tipo: 'erro',
+          mensagem: 'Autenticação obrigatória para executar esta operação.',
+        });
+        void navigate('/login');
+        setCancelModalOpen(false);
+      } else if (erro.status === 403) {
+        setToast({
+          tipo: 'erro',
+          mensagem: 'Você não possui permissão para cancelar ou editar agendamentos.',
+        });
+        setCancelModalOpen(false);
+      } else if (erro.status === 404) {
+        setToast({ tipo: 'erro', mensagem: 'Agendamento não encontrado.' });
+        setCancelModalOpen(false);
+        if (itemSelecionado?.agendamentoId === cancelItem.agendamentoId) {
+          setItemSelecionado(null);
+        }
+      } else if (erro.status === 409) {
+        setToast({
+          tipo: 'erro',
+          mensagem: erro.mensagem ?? 'Agendamento no status atual não permite a operação.',
+        });
+      } else if (erro.status === 400) {
+        const msgErro =
+          erro.errorsPorCampo.motivoCancelamento ??
+          'Dados inválidos para a operação. Verifique e tente novamente.';
+        setMotivoError(msgErro);
+      } else {
+        setToast({
+          tipo: 'erro',
+          mensagem: 'Não foi possível concluir a operação no momento. Tente novamente.',
+        });
+      }
+    } finally {
+      setCancelLoading(false);
+    }
+  }
+
+  async function handleConfirmarEdicao() {
+    if (!editItem) return;
+    const obs = observacoesEdit.trim();
+
+    setEditLoading(true);
+    setEditError(null);
+
+    try {
+      await agendamentoService.atualizar(editItem.agendamentoId, { observacoes: obs || null });
+
+      setEditModalOpen(false);
+
+      queryClient.setQueriesData<ConsultarAgendaResponse<AgendaItemSimples | AgendaItemDetalhado>>(
+        { queryKey: ['agenda'] },
+        (oldData: ConsultarAgendaResponse<AgendaItemSimples | AgendaItemDetalhado> | undefined) => {
+          if (!oldData) return oldData;
+          return {
+            ...oldData,
+            data: oldData.data.map((item: AgendaItemSimples | AgendaItemDetalhado) => {
+              if (item.agendamentoId === editItem.agendamentoId) {
+                return {
+                  ...item,
+                  ...(ehDetalhado(item) ? { observacoes: obs || null } : {}),
+                };
+              }
+              return item;
+            }),
+          };
+        },
+      );
+
+      if (itemSelecionado?.agendamentoId === editItem.agendamentoId) {
+        setItemSelecionado((prev) => (prev ? { ...prev, observacoes: obs || null } : null));
+      }
+
+      setToast({ tipo: 'sucesso', mensagem: 'Agendamento atualizado com sucesso.' });
+      setEditItem(null);
+    } catch (err: unknown) {
+      const erro = tratarErroApi(err);
+      if (erro.status === 401) {
+        setToast({
+          tipo: 'erro',
+          mensagem: 'Autenticação obrigatória para executar esta operação.',
+        });
+        void navigate('/login');
+        setEditModalOpen(false);
+      } else if (erro.status === 403) {
+        setToast({
+          tipo: 'erro',
+          mensagem: 'Você não possui permissão para cancelar ou editar agendamentos.',
+        });
+        setEditModalOpen(false);
+      } else if (erro.status === 404) {
+        setToast({ tipo: 'erro', mensagem: 'Agendamento não encontrado.' });
+        setEditModalOpen(false);
+        if (itemSelecionado?.agendamentoId === editItem.agendamentoId) {
+          setItemSelecionado(null);
+        }
+      } else if (erro.status === 409) {
+        const msg =
+          editItem.status === 'CONCLUIDO'
+            ? 'Agendamento finalizado não pode ser editado.'
+            : 'Agendamento no status atual não permite edição.';
+        setToast({ tipo: 'erro', mensagem: msg });
+        setEditModalOpen(false);
+      } else if (erro.status === 400) {
+        setEditError('Dados inválidos para a operação. Verifique e tente novamente.');
+      } else {
+        setToast({
+          tipo: 'erro',
+          mensagem: 'Não foi possível concluir a operação no momento. Tente novamente.',
+        });
+      }
+    } finally {
+      setEditLoading(false);
+    }
+  }
 
   // Fecha o modal ao pressionar Escape (RF008.1)
   useEffect(() => {
@@ -479,6 +707,8 @@ export function AgendaPage() {
                           key={item.agendamentoId}
                           item={item}
                           onClick={(i) => setItemSelecionado(i)}
+                          onEditar={handleEditarClick}
+                          onCancelar={handleCancelarClick}
                         />
                       ))}
                     </ul>
@@ -500,6 +730,8 @@ export function AgendaPage() {
                         key={item.agendamentoId}
                         item={item}
                         onClick={(i) => setItemSelecionado(i)}
+                        onEditar={handleEditarClick}
+                        onCancelar={handleCancelarClick}
                       />
                     ))}
                   </AgendaSlotGroup>
@@ -537,9 +769,18 @@ export function AgendaPage() {
                 <AlertCircle className="h-5 w-5 rotate-45" aria-hidden="true" />
               </button>
 
-              <h2 className="mb-4 text-lg font-bold text-zinc-900 dark:text-zinc-50">
-                Detalhe do Agendamento
-              </h2>
+              <div className="mb-4 flex items-center justify-between border-b border-zinc-200/60 pb-3 dark:border-zinc-800/40">
+                <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
+                  Detalhe do Agendamento
+                </h2>
+                <span
+                  className={`rounded-full px-2.5 py-1 text-[10px] font-bold tracking-[0.12em] ${classesStatus(
+                    itemSelecionado.status,
+                  )}`}
+                >
+                  {rotuloStatus(itemSelecionado.status).toUpperCase()}
+                </span>
+              </div>
 
               {ehDetalhado(itemSelecionado) ? (
                 <AgendaItemDetalhadoCard item={itemSelecionado} />
@@ -574,16 +815,267 @@ export function AgendaPage() {
                 </div>
               )}
 
-              <div className="mt-6 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => setItemSelecionado(null)}
-                  className="rounded-full bg-red-600 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-red-600/25 transition-colors hover:bg-red-700"
-                >
-                  Fechar
-                </button>
+              {/* Ações do Agendamento */}
+              <div className="mt-6 flex flex-col gap-3 border-t border-zinc-200/60 pt-4 dark:border-zinc-800/40">
+                {/* Se não editável e não cancelado, exibir motivo do bloqueio */}
+                {itemSelecionado.status !== 'AGENDADO' &&
+                  itemSelecionado.status !== 'CANCELADO' && (
+                    <div className="flex items-center gap-2 rounded-lg bg-zinc-50 dark:bg-zinc-950/30 p-3 text-xs text-zinc-500 dark:text-zinc-400 border border-zinc-200/60 dark:border-zinc-800/40">
+                      <AlertCircle className="h-4 w-4 text-zinc-400" />
+                      <span>
+                        {itemSelecionado.status === 'CONCLUIDO'
+                          ? 'Agendamento finalizado não pode ser editado.'
+                          : 'Agendamento no status atual não permite edição.'}
+                      </span>
+                    </div>
+                  )}
+
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex gap-2">
+                    {/* Cancelar (elegível para AGENDADO e EM_ANDAMENTO; senão escondido/desabilitado) */}
+                    {itemSelecionado.status === 'AGENDADO' ||
+                    itemSelecionado.status === 'EM_ANDAMENTO' ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-10 rounded-full border-red-200 hover:bg-red-50 text-red-600 hover:text-red-700 dark:border-red-900/30 dark:hover:bg-red-950/20"
+                        onClick={() => handleCancelarClick(itemSelecionado)}
+                      >
+                        Cancelar agendamento
+                      </Button>
+                    ) : null}
+
+                    {/* Editar (elegível apenas para AGENDADO; se concluído ou em andamento, desabilitado com motivo) */}
+                    {itemSelecionado.status === 'AGENDADO' ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-10 rounded-full"
+                        onClick={() => handleEditarClick(itemSelecionado)}
+                      >
+                        Editar agendamento
+                      </Button>
+                    ) : (
+                      itemSelecionado.status !== 'CANCELADO' && (
+                        <span
+                          title={
+                            itemSelecionado.status === 'CONCLUIDO'
+                              ? 'Agendamento finalizado não pode ser editado.'
+                              : 'Agendamento no status atual não permite edição.'
+                          }
+                        >
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="h-10 rounded-full opacity-50 cursor-not-allowed"
+                            disabled
+                          >
+                            Editar agendamento
+                          </Button>
+                        </span>
+                      )
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setItemSelecionado(null)}
+                    className="rounded-full bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 px-5 py-2 text-sm font-semibold text-zinc-800 dark:text-zinc-200 transition-colors"
+                  >
+                    Fechar
+                  </button>
+                </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Modal de cancelamento */}
+        {cancelModalOpen && cancelItem && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <button
+              type="button"
+              className="absolute inset-0 h-full w-full bg-black/60 backdrop-blur-sm cursor-default border-none outline-none focus:outline-none"
+              aria-label="Fechar modal"
+              onClick={() => !cancelLoading && setCancelModalOpen(false)}
+              tabIndex={-1}
+            />
+
+            <div
+              className="relative z-10 mx-4 w-full max-w-md rounded-2xl border border-zinc-200/70 bg-white p-6 shadow-2xl dark:border-zinc-800/60 dark:bg-zinc-900 animate-in zoom-in-95 duration-150"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="cancel-title"
+            >
+              <h2 id="cancel-title" className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
+                Confirmar cancelamento do agendamento
+              </h2>
+
+              <div className="mt-4 space-y-4">
+                <div className="flex flex-col gap-1.5">
+                  <Label
+                    htmlFor="cancel-motivo"
+                    className="text-sm font-semibold text-zinc-700 dark:text-zinc-300"
+                  >
+                    Motivo do cancelamento <span className="text-red-500">*</span>
+                  </Label>
+                  <textarea
+                    id="cancel-motivo"
+                    rows={4}
+                    value={motivoCancelamento}
+                    autoFocus
+                    onChange={(e) => {
+                      setMotivoCancelamento(e.target.value);
+                      if (e.target.value.trim().length >= 5) {
+                        setMotivoError(null);
+                      }
+                    }}
+                    placeholder="Descreva o motivo do cancelamento..."
+                    aria-describedby="cancel-description cancel-error"
+                    disabled={cancelLoading}
+                    className="w-full min-h-[100px] rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-800 focus-visible:border-red-500 focus-visible:ring-3 focus-visible:ring-red-500/20 focus-visible:outline-none disabled:opacity-50 dark:border-zinc-700/60 dark:bg-zinc-950/40 dark:text-zinc-100 resize-none"
+                  />
+                  <div className="flex justify-between items-center text-xs">
+                    <span id="cancel-description" className="text-zinc-400 dark:text-zinc-500">
+                      Mínimo de 5 caracteres.
+                    </span>
+                    <span
+                      className={`font-medium ${motivoCancelamento.length > 500 ? 'text-red-500' : 'text-zinc-500 dark:text-zinc-400'}`}
+                    >
+                      {motivoCancelamento.length}/500
+                    </span>
+                  </div>
+                  {motivoError && (
+                    <p
+                      id="cancel-error"
+                      role="alert"
+                      className="text-xs font-medium text-red-600 dark:text-red-400"
+                    >
+                      {motivoError}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={cancelLoading}
+                  onClick={() => setCancelModalOpen(false)}
+                  className="rounded-full h-10 px-5"
+                >
+                  Voltar
+                </Button>
+                <Button
+                  type="button"
+                  disabled={
+                    cancelLoading ||
+                    motivoCancelamento.trim().length < 5 ||
+                    motivoCancelamento.length > 500
+                  }
+                  onClick={handleConfirmarCancelamento}
+                  className="rounded-full h-10 px-5 bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-red-600/25 flex items-center gap-2"
+                >
+                  {cancelLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                  Confirmar cancelamento
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de edição simplificada */}
+        {editModalOpen && editItem && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <button
+              type="button"
+              className="absolute inset-0 h-full w-full bg-black/60 backdrop-blur-sm cursor-default border-none outline-none focus:outline-none"
+              aria-label="Fechar modal"
+              onClick={() => !editLoading && setEditModalOpen(false)}
+              tabIndex={-1}
+            />
+
+            <div
+              className="relative z-10 mx-4 w-full max-w-md rounded-2xl border border-zinc-200/70 bg-white p-6 shadow-2xl dark:border-zinc-800/60 dark:bg-zinc-900 animate-in zoom-in-95 duration-150"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="edit-title"
+            >
+              <h2 id="edit-title" className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
+                Editar agendamento
+              </h2>
+
+              <div className="mt-4 space-y-4">
+                <div className="flex flex-col gap-1.5">
+                  <Label
+                    htmlFor="edit-obs"
+                    className="text-sm font-semibold text-zinc-700 dark:text-zinc-300"
+                  >
+                    Observações do agendamento
+                  </Label>
+                  <textarea
+                    id="edit-obs"
+                    rows={4}
+                    value={observacoesEdit}
+                    autoFocus
+                    onChange={(e) => setObservacoesEdit(e.target.value)}
+                    placeholder="Adicione observações para este agendamento..."
+                    disabled={editLoading}
+                    className="w-full min-h-[100px] rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-800 focus-visible:border-red-500 focus-visible:ring-3 focus-visible:ring-red-500/20 focus-visible:outline-none disabled:opacity-50 dark:border-zinc-700/60 dark:bg-zinc-950/40 dark:text-zinc-100 resize-none"
+                  />
+                  {editError && (
+                    <p role="alert" className="text-xs font-medium text-red-600 dark:text-red-400">
+                      {editError}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={editLoading}
+                  onClick={() => setEditModalOpen(false)}
+                  className="rounded-full h-10 px-5"
+                >
+                  Voltar
+                </Button>
+                <Button
+                  type="button"
+                  disabled={editLoading}
+                  onClick={handleConfirmarEdicao}
+                  className="rounded-full h-10 px-5 bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-red-600/25 flex items-center gap-2"
+                >
+                  {editLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                  Salvar alterações
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Toast flutuante de sucesso / erro */}
+        {toast && (
+          <div
+            role="alert"
+            aria-live="polite"
+            className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-2xl border px-5 py-4 shadow-xl backdrop-blur-md transition-all animate-in fade-in slide-in-from-bottom-5 duration-300 ${
+              toast.tipo === 'sucesso'
+                ? 'border-green-500/30 bg-green-50/90 dark:bg-green-950/90 text-green-800 dark:text-green-200'
+                : 'border-red-500/30 bg-red-50/90 dark:bg-red-950/90 text-red-800 dark:text-red-200'
+            }`}
+          >
+            <div className="flex-1 text-sm font-semibold">{toast.mensagem}</div>
+            <button
+              type="button"
+              onClick={() => setToast(null)}
+              className="rounded-full p-1 hover:bg-black/5 dark:hover:bg-white/5 text-current/60"
+              aria-label="Fechar notificação"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
         )}
       </section>
