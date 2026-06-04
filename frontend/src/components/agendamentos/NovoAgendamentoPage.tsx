@@ -27,9 +27,10 @@ const API_MESSAGES: Record<number, string> = {
   401: 'Sessao expirada. Faca login novamente.',
   403: 'Voce nao possui permissao para criar agendamentos.',
   404: 'Filial não encontrada.',
-  409: 'A filial selecionada está inativa e não pode receber novos agendamentos.',
+  409: 'Conflito de horário detectado. Ajuste os dados e tente novamente.',
   500: 'Nao foi possivel concluir o agendamento no momento. Tente novamente.',
 };
+
 
 const INITIAL_STATE: AgendamentoWizardState = {
   filialId: '',
