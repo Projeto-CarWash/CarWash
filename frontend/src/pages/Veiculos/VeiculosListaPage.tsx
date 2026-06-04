@@ -62,14 +62,6 @@ export function VeiculosListaPage() {
   return (
     <div className="px-8 py-8">
       {/* Breadcrumb (espelha os mockups: ADMIN / VEÍCULOS) */}
-      <nav
-        aria-label="Trilha de navegação"
-        className="mb-4 flex items-center gap-2 text-[10px] font-bold tracking-[0.2em] text-zinc-600"
-      >
-        <span>ADMIN</span>
-        <span className="text-zinc-700">/</span>
-        <span className="text-zinc-400">VEÍCULOS</span>
-      </nav>
 
       <div className="mb-6 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
