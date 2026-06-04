@@ -42,9 +42,7 @@ export const veiculoItemSchema = z.object({
     .refine((val) => val.length >= 2 && val.length <= 80, {
       message: 'Modelo deve ter entre 2 e 80 caracteres.',
     }),
-  cor: z
-    .string()
-    .min(1, 'Cor é obrigatória.'),
+  cor: z.string().min(1, 'Cor é obrigatória.'),
   ano: z
     .union([z.string(), z.number()])
     .optional()
@@ -310,6 +308,7 @@ export const editarClienteSchema = clienteSchema.omit({
 
 export type VeiculoLocalFormData = z.infer<typeof veiculoItemSchema>;
 export type FiliadoFormData = z.infer<typeof filiadoSchema>;
+export type ClienteFormInput = z.input<typeof clienteSchema>;
 export type ClienteFormData = z.infer<typeof clienteSchema>;
 export type EditarClienteFormData = z.infer<typeof editarClienteSchema>;
 export type LembreteValue = (typeof LEMBRETES_VALUES)[number];

@@ -15,7 +15,7 @@ import { PreferenciasFidelidadeForm } from './PreferenciasFidelidadeForm';
 import { Stepper } from './Stepper';
 import { VeiculosClienteForm } from './VeiculosClienteForm';
 
-import type { ClienteFormData } from '@/schemas/clienteSchema';
+import type { ClienteFormData, ClienteFormInput } from '@/schemas/clienteSchema';
 import type { ProblemDetails } from '@/types/auth';
 
 const API_MESSAGES: Record<number, string> = {
@@ -33,7 +33,7 @@ export function NovoClientePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const getDefaultValues = useCallback(
-    (): ClienteFormData => ({
+    (): ClienteFormInput => ({
       cpfCnpj: '',
       dataNascimento: '',
       nome: '',
@@ -56,7 +56,7 @@ export function NovoClientePage() {
     [],
   );
 
-  const form = useForm<ClienteFormData>({
+  const form = useForm<ClienteFormInput, any, ClienteFormData>({
     resolver: zodResolver(clienteSchema),
     mode: 'onBlur',
     shouldFocusError: true,
