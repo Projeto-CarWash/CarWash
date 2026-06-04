@@ -3,6 +3,7 @@ import { useCallback, useState } from 'react';
 import { useFieldArray, useFormContext } from 'react-hook-form';
 
 import { Button } from '@/components/ui/button';
+import { getCorCSS } from '@/lib/colors';
 
 import { VeiculoModal } from './VeiculoModal';
 
@@ -68,8 +69,9 @@ export function VeiculosClienteForm() {
                       {field.ano && field.cor ? ' · ' : ''}
                       {field.cor && (
                         <span
-                          className="inline-block h-3 w-3 rounded-full border border-zinc-600"
-                          style={{ backgroundColor: field.cor }}
+                          className="inline-block h-3 w-3 rounded-full border border-zinc-600 shadow-sm"
+                          style={{ backgroundColor: getCorCSS(field.cor) }}
+                          title={`Cor: ${field.cor}`}
                         />
                       )}
                     </p>
