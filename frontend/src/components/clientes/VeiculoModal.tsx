@@ -5,17 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PRESET_COLORS } from '@/lib/colors';
 import { type VeiculoLocalFormData, veiculoItemSchema } from '@/schemas/clienteSchema';
-
-const PRESET_COLORS = [
-  { name: 'VERMELHO', hex: '#E61F2D' },
-  { name: 'PRETO', hex: '#1A1A1A' },
-  { name: 'BRANCO', hex: '#F5F5F5' },
-  { name: 'CINZA', hex: '#808080' },
-  { name: 'AZUL', hex: '#2563EB' },
-  { name: 'BEGE', hex: '#D4A843' },
-  { name: 'VERDE', hex: '#22C55E' },
-] as const;
 
 interface VeiculoModalProps {
   open: boolean;
@@ -81,7 +72,6 @@ export function VeiculoModal({
 
     const parsed = parseInt(ano, 10);
     if (isNaN(parsed) || parsed < 1930 || parsed > 2027) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setErrors((prev) => {
         if (prev.ano !== 'O ano deve ser entre 1930 e 2027.') {
           return { ...prev, ano: 'O ano deve ser entre 1930 e 2027.' };
@@ -89,7 +79,6 @@ export function VeiculoModal({
         return prev;
       });
     } else {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setErrors((prev) => {
         if (prev.ano) {
           const { ano: _ano, ...rest } = prev;
@@ -162,17 +151,7 @@ export function VeiculoModal({
     });
     resetForm();
     onOpenChange(false);
-  }, [
-    placa,
-    fabricante,
-    modelo,
-    ano,
-    corHex,
-    existingPlacas,
-    onSave,
-    onOpenChange,
-    resetForm,
-  ]);
+  }, [placa, fabricante, modelo, ano, corHex, existingPlacas, onSave, onOpenChange, resetForm]);
 
   const placaIsValid = /^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$/i.test(placa.replace(/[\s-]/g, ''));
 
@@ -268,8 +247,7 @@ export function VeiculoModal({
 
             <div className="space-y-1.5">
               <Label className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">
-                ANO{' '}
-                <span className="font-normal tracking-normal text-zinc-600">(opcional)</span>
+                ANO <span className="font-normal tracking-normal text-zinc-600">(opcional)</span>
               </Label>
               <Input
                 value={ano}
@@ -293,7 +271,9 @@ export function VeiculoModal({
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">FABRICANTE</Label>
+              <Label className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">
+                FABRICANTE
+              </Label>
               <Input
                 value={fabricante}
                 onChange={(e) => setFabricante(e.target.value.slice(0, 80))}

@@ -25,3 +25,13 @@ export function getCorCSS(cor: string | undefined): string | undefined {
   // Retorna a cor mapeada ou, se não estiver no mapa, retorna o valor original (que pode ser um HEX válido ou nome CSS).
   return map[cleanCor] ?? cor;
 }
+
+export const PRESET_COLORS = [
+  { name: 'VERMELHO', hex: '#E61F2D' },
+  { name: 'PRETO', hex: '#1A1A1A' },
+  { name: 'BRANCO', hex: '#F5F5F5' },
+  { name: 'CINZA', hex: '#808080' },
+  { name: 'AZUL', hex: '#2563EB' },
+  { name: 'BEGE', hex: '#D4A843' },
+  { name: 'VERDE', hex: '#22C55E' },
+] as const;
