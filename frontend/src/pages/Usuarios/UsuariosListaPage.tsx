@@ -1,6 +1,16 @@
-import { ChevronLeft, ChevronRight, Filter, Loader2, Plus, Power, Search } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  Filter,
+  Loader2,
+  Pencil,
+  Plus,
+  Power,
+  Search,
+} from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -191,12 +201,7 @@ export function UsuariosListaPage() {
               itens.map((u) => (
                 <tr key={u.id} className="text-zinc-200 hover:bg-zinc-800/30">
                   <td className="px-4 py-3">
-                    <Link
-                      to={`/usuarios/${u.id}`}
-                      className="font-medium text-zinc-100 hover:text-red-400"
-                    >
-                      {u.nome}
-                    </Link>
+                    <span className="font-medium text-zinc-100">{u.nome}</span>
                   </td>
                   <td className="px-4 py-3 text-zinc-400">{u.email}</td>
                   <td className="px-4 py-3 text-zinc-400">{u.perfil}</td>
@@ -212,16 +217,41 @@ export function UsuariosListaPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-center">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => abrirModalStatus(u)}
-                      className="h-8 w-8 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
-                      aria-label={`${u.ativo ? 'Inativar' : 'Ativar'} ${u.nome}`}
-                    >
-                      <Power className="h-4 w-4" />
-                    </Button>
+                    <div className="flex justify-center gap-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => void navigate(`/usuarios/${u.id}`)}
+                        title="Visualizar usuário"
+                        className="h-8 w-8 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
+                      >
+                        <Eye className="h-4 w-4" />
+                        <span className="sr-only">Visualizar {u.nome}</span>
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => void navigate(`/usuarios/${u.id}`)}
+                        title="Editar usuário"
+                        className="h-8 w-8 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
+                      >
+                        <Pencil className="h-4 w-4" />
+                        <span className="sr-only">Editar {u.nome}</span>
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => abrirModalStatus(u)}
+                        title={u.ativo ? 'Inativar usuário' : 'Ativar usuário'}
+                        className="h-8 w-8 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
+                        aria-label={`${u.ativo ? 'Inativar' : 'Ativar'} ${u.nome}`}
+                      >
+                        <Power className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}

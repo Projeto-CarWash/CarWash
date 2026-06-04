@@ -2,6 +2,7 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  Eye,
   Loader2,
   Pencil,
   Plus,
@@ -9,7 +10,7 @@ import {
   Search,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -196,12 +197,7 @@ export function ClientesListaPage() {
               itens.map((c) => (
                 <tr key={c.id} className="text-zinc-200 hover:bg-zinc-800/30">
                   <td className="px-4 py-3">
-                    <Link
-                      to={`/clientes/${c.id}`}
-                      className="font-medium text-zinc-100 hover:text-red-400"
-                    >
-                      {c.nome}
-                    </Link>
+                    <span className="font-medium text-zinc-100">{c.nome}</span>
                   </td>
                   <td className="px-4 py-3 tabular-nums text-zinc-400">
                     {formatarDocumento(c.cpf, c.cnpj)}
@@ -225,6 +221,17 @@ export function ClientesListaPage() {
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex justify-end gap-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => void navigate(`/clientes/${c.id}`)}
+                        title="Visualizar cliente"
+                        className="h-8 w-8 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
+                      >
+                        <Eye className="h-4 w-4" />
+                        <span className="sr-only">Visualizar {c.nome}</span>
+                      </Button>
                       <Button
                         type="button"
                         variant="ghost"
