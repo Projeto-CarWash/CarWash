@@ -140,10 +140,7 @@ export const agendamentoService = {
   },
 
   async confirmar(payload: ConfirmarAgendamentoRequest): Promise<AgendamentoResponse> {
-    const { data } = await api.post<AgendamentoResponse>(
-      '/api/v1/agendamentos/confirmar',
-      payload,
-    );
+    const { data } = await api.post<AgendamentoResponse>('/api/v1/agendamentos/confirmar', payload);
     return data;
   },
 
