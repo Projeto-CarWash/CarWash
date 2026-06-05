@@ -5,6 +5,7 @@ using CarWash.Application.Common.Exceptions;
 using CarWash.Application.Common.Security;
 using CarWash.Application.Usuarios.Persistence;
 using Microsoft.Extensions.Logging;
+using CarWash.Application.Usuarios.Preferencias.Persistence;
 
 namespace CarWash.Application.Auth.Login;
 
@@ -64,6 +65,7 @@ public sealed class LoginHandler : ICommandHandler<LoginCommand, LoginResultado>
     private readonly ICurrentRequestContext _contexto;
     private readonly DummyPasswordHash _dummy;
     private readonly ILogger<LoginHandler> _log;
+    private readonly IUsuarioPreferenciaRepository _preferencias;
 
     public LoginHandler(
         IUsuarioRepository repositorio,
@@ -73,6 +75,7 @@ public sealed class LoginHandler : ICommandHandler<LoginCommand, LoginResultado>
         IAuditLogger auditoria,
         ICurrentRequestContext contexto,
         DummyPasswordHash dummy,
+        IUsuarioPreferenciaRepository preferencias,
         ILogger<LoginHandler> log)
     {
         _repositorio = repositorio;
@@ -83,6 +86,7 @@ public sealed class LoginHandler : ICommandHandler<LoginCommand, LoginResultado>
         _contexto = contexto;
         _dummy = dummy;
         _log = log;
+        _preferencias = preferencias;
     }
 
     /// <inheritdoc/>
@@ -230,6 +234,12 @@ public sealed class LoginHandler : ICommandHandler<LoginCommand, LoginResultado>
             emailMascarado,
             refresh.SessaoId);
 
+        var preferencia = await _preferencias
+        .ObterPorUsuarioIdAsync(usuario.Id, cancellationToken)
+        .ConfigureAwait(false);
+
+        string theme = preferencia?.TemaRaw ?? "light";
+
         return new LoginResultado(
             AccessToken: accessToken,
             AccessExpiresAt: accessExpiresAt,
@@ -239,6 +249,7 @@ public sealed class LoginHandler : ICommandHandler<LoginCommand, LoginResultado>
                 usuario.Id,
                 usuario.Nome,
                 usuario.EmailValor,
-                usuario.Perfil));
+                usuario.Perfil,
+                theme));
     }
 }

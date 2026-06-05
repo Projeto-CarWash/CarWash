@@ -19,5 +19,5 @@ public sealed record LoginResultado(
     DateTime RefreshExpiresAt,
     LoginResultado.UsuarioLogado Usuario)
 {
-    public sealed record UsuarioLogado(Guid Id, string Nome, string Email, PerfilUsuario Perfil);
+    public sealed record UsuarioLogado(Guid Id, string Nome, string Email, PerfilUsuario Perfil, string Theme);
 }

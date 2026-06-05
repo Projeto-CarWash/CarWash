@@ -17,7 +17,7 @@ public sealed record LoginResponse(
     LoginResponse.UsuarioLogado Usuario)
 {
     /// <summary>Recorte público do usuário autenticado — nunca inclui hash de senha.</summary>
-    public sealed record UsuarioLogado(Guid Id, string Nome, string Email, PerfilUsuario Perfil);
+    public sealed record UsuarioLogado(Guid Id, string Nome, string Email, PerfilUsuario Perfil, string Theme);
 
     public static LoginResponse From(LoginResultado resultado)
     {
@@ -29,6 +29,7 @@ public sealed record LoginResponse(
                 resultado.Usuario.Id,
                 resultado.Usuario.Nome,
                 resultado.Usuario.Email,
-                resultado.Usuario.Perfil));
+                resultado.Usuario.Perfil,
+                resultado.Usuario.Theme));
     }
 }

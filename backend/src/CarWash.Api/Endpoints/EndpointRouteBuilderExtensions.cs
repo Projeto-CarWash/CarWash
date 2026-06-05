@@ -30,6 +30,7 @@ public static class EndpointRouteBuilderExtensions
         app.MapResponsaveis();
         app.MapAgendamentoObservacoes();
         app.MapClienteHistoricoAtendimentos();
+        app.MapUsuarioPreferencias();
         return app;
     }
 }
