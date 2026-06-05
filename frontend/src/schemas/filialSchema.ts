@@ -15,6 +15,52 @@ import { isValidCnpj } from '@/lib/validators';
 const UF_PATTERN =
   /^(?:AC|AL|AP|AM|BA|CE|DF|ES|GO|MA|MT|MS|MG|PA|PB|PR|PE|PI|RJ|RN|RS|RO|RR|SC|SP|SE|TO)$/;
 
+/**
+ * Mensagens de validação do campo "células ativas" (RF018).
+ *
+ * <p>Centralizadas para reúso entre schema, formulários e testes, garantindo o
+ * texto exato exigido pela especificação do campo. Cada caso é distinto:
+ * obrigatório, tipo inválido (texto/decimal) e faixa inválida (1–100).</p>
+ */
+export const MENSAGENS_CELULAS_ATIVAS = {
+  obrigatorio: 'Células ativas é obrigatório.',
+  tipo: 'Células ativas deve ser um número inteiro.',
+  faixa: 'Células ativas deve estar entre 1 e 100.',
+  generico: 'Informe um valor válido de células ativas.',
+} as const;
+
+/**
+ * Campo "células ativas": inteiro obrigatório entre 1 e 100 (RF018).
+ *
+ * <p>O `preprocess` normaliza a entrada do input (string) para número, tratando
+ * vazio/ausente como obrigatório. Mantém apenas dígitos não é responsabilidade
+ * do schema (o input cuida disso); aqui as mensagens distinguem cada caso para
+ * o usuário. Saída sempre é `number` inteiro — o payload nunca envia string.</p>
+ */
+export const celulasAtivasSchema = z.preprocess(
+  (value) => {
+    if (typeof value === 'number') return value;
+    if (typeof value === 'string') {
+      const limpo = value.trim();
+      if (limpo === '') return undefined;
+      const numero = Number(limpo);
+      return Number.isNaN(numero) ? limpo : numero;
+    }
+    // `null` é tratado como ausência → dispara a mensagem de obrigatório.
+    return value ?? undefined;
+  },
+  z
+    .number({
+      error: (issue) =>
+        issue.input === undefined
+          ? MENSAGENS_CELULAS_ATIVAS.obrigatorio
+          : MENSAGENS_CELULAS_ATIVAS.tipo,
+    })
+    .int(MENSAGENS_CELULAS_ATIVAS.tipo)
+    .min(1, MENSAGENS_CELULAS_ATIVAS.faixa)
+    .max(100, MENSAGENS_CELULAS_ATIVAS.faixa),
+);
+
 export const filialSchema = z.object({
   nome: z
     .string()
@@ -42,20 +88,7 @@ export const filialSchema = z.object({
       message: 'CNPJ inválido. Verifique os dados informados.',
     }),
 
-  celulasAtivas: z.preprocess(
-    (v) => {
-      if (typeof v === 'string') {
-        const t = v.trim();
-        return t === '' ? undefined : Number(t);
-      }
-      return v;
-    },
-    z
-      .number({ error: 'Células ativas é obrigatório.' })
-      .int('Células ativas deve ser um número inteiro entre 1 e 100.')
-      .min(1, 'Células ativas deve ser um número inteiro entre 1 e 100.')
-      .max(100, 'Células ativas deve ser um número inteiro entre 1 e 100.'),
-  ),
+  celulasAtivas: celulasAtivasSchema,
 
   // ── Endereço estruturado ──────────────────────────────────────────────────
   cep: z
