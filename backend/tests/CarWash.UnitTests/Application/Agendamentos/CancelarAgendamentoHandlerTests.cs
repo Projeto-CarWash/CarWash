@@ -85,8 +85,9 @@ public class CancelarAgendamentoHandlerTests
 	[Fact]
 	public async Task Agendamento_finalizado_lanca_CancelamentoStatusException()
 	{
-		var agendamento = NovoAgendamento();
-		agendamento.Finalizar();
+        var agendamento = NovoAgendamento();
+        agendamento.Iniciar();
+        agendamento.Finalizar();
 		_agendamentos.ObterPorIdRastreadoAsync(AgendamentoId, Arg.Any<CancellationToken>())
 			.Returns(agendamento);
 

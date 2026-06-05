@@ -24,4 +24,9 @@ public class CriarVeiculoRequest
     /// Gets or sets a cor do veiculo.
     /// </summary>
     public string Cor { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets o ano do veiculo.
+    /// </summary>
+    public int? Ano { get; set; }
 }

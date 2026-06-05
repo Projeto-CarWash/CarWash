@@ -13,7 +13,8 @@ namespace CarWash.Application.Veiculos.Criar;
 /// Use case de cadastro de veículo (RF005). Defesa em camadas para a placa:
 /// validator (sintaxe) → value object <see cref="Placa"/> (RN003 / formato) →
 /// pré-check no banco (RN011) → UK <c>uk_veiculos_placa</c>
-/// (race condition concorrente).
+/// (race condition concorrente). Normalização (trim + uppercase) aplicada
+/// antes de qualquer validação.
 /// </summary>
 public sealed class CriarVeiculoHandler : ICommandHandler<CriarVeiculoCommand, VeiculoResponse>
 {
@@ -33,9 +34,10 @@ public sealed class CriarVeiculoHandler : ICommandHandler<CriarVeiculoCommand, V
         var cliente = await _clientes.ObterPorIdAsync(command.ClienteId, cancellationToken).ConfigureAwait(false)
             ?? throw new NotFoundException("Cliente não encontrado.");
 
-        // RN003 + RAT03: o value object normaliza (upper, sem espaços/hifens) e
-        // valida o formato Mercosul/antigo antes do hit no banco.
-        var placa = new Placa(command.Placa ?? string.Empty);
+        // RN003 + RAT03: normaliza (trim + uppercase) antes de instanciar o value object.
+        // O value object valida o formato Mercosul/antigo antes do hit no banco.
+        var placaNormalizada = (command.Placa ?? string.Empty).Trim().ToUpperInvariant();
+        var placa = new Placa(placaNormalizada);
 
         if (await _veiculos.ExistePlacaAsync(placa.Valor, cancellationToken).ConfigureAwait(false))
         {
