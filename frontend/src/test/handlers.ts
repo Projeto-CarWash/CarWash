@@ -142,7 +142,7 @@ export const handlersPadrao = [
           id: IDS.veiculo,
           clienteId: IDS.cliente,
           placa: 'ABC1D23',
-          marca: 'Fiat',
+          fabricante: 'Fiat',
           modelo: 'Uno',
           ativo: true,
         },
@@ -165,12 +165,76 @@ export const handlersPadrao = [
   http.get('/api/v1/servicos', () =>
     HttpResponse.json({
       itens: [
-        { id: IDS.servicoA, nome: 'Lavagem simples', precoBase: 50, duracaoMin: 30, ativo: true },
-        { id: IDS.servicoB, nome: 'Enceramento', precoBase: 100, duracaoMin: 60, ativo: true },
+        {
+          id: IDS.servicoA,
+          nome: 'Lavagem simples',
+          preco: 50,
+          duracaoMin: 30,
+          ativo: true,
+          criadoEm: '2026-01-01T00:00:00.000Z',
+          atualizadoEm: '2026-01-01T00:00:00.000Z',
+        },
+        {
+          id: IDS.servicoB,
+          nome: 'Enceramento',
+          preco: 100,
+          duracaoMin: 60,
+          ativo: true,
+          criadoEm: '2026-01-01T00:00:00.000Z',
+          atualizadoEm: '2026-01-01T00:00:00.000Z',
+        },
       ],
       total: 2,
     }),
   ),
+
+  http.patch('/api/v1/servicos/:id/status', async ({ request, params }) => {
+    const body = (await request.json()) as { ativo?: boolean };
+    return HttpResponse.json(
+      {
+        id: params.id,
+        nome: 'Serviço',
+        preco: 50,
+        duracaoMin: 30,
+        ativo: Boolean(body.ativo),
+        criadoEm: '2026-01-01T00:00:00.000Z',
+        atualizadoEm: new Date().toISOString(),
+      },
+      { status: 200 },
+    );
+  }),
+
+  http.patch('/api/v1/servicos/:id', async ({ request, params }) => {
+    const body = (await request.json()) as { nome?: string; preco?: number; duracaoMin?: number };
+    return HttpResponse.json(
+      {
+        id: params.id,
+        nome: body.nome ?? 'Serviço',
+        preco: body.preco ?? 50,
+        duracaoMin: body.duracaoMin ?? 30,
+        ativo: true,
+        criadoEm: '2026-01-01T00:00:00.000Z',
+        atualizadoEm: new Date().toISOString(),
+      },
+      { status: 200 },
+    );
+  }),
+
+  http.post('/api/v1/servicos', async ({ request }) => {
+    const body = (await request.json()) as { nome?: string; preco?: number; duracaoMin?: number };
+    return HttpResponse.json(
+      {
+        id: crypto.randomUUID(),
+        nome: body.nome ?? 'Novo Serviço',
+        preco: body.preco ?? 50,
+        duracaoMin: body.duracaoMin ?? 30,
+        ativo: true,
+        criadoEm: new Date().toISOString(),
+        atualizadoEm: new Date().toISOString(),
+      },
+      { status: 201 },
+    );
+  }),
 
   http.get('/api/v1/agenda', ({ request }) => {
     const formato = new URL(request.url).searchParams.get('formato');
@@ -199,6 +263,108 @@ export const handlersPadrao = [
   http.post('/api/v1/agendamentos/confirmar', () =>
     HttpResponse.json(respostaCriacao, { status: 201 }),
   ),
+
+  http.patch('/api/v1/agendamentos/:id/cancelar', async ({ params, request }) => {
+    const body = (await request.json()) as { motivoCancelamento?: string };
+    const id = params.id as string;
+    const motivo = body.motivoCancelamento?.trim() ?? '';
+
+    if (motivo === 'trigger-409') {
+      return HttpResponse.json(
+        {
+          title: 'Conflito de estado inválido para operação.',
+          detail: 'Não é possível cancelar o agendamento.',
+        },
+        { status: 409 },
+      );
+    }
+    if (motivo === 'trigger-403') {
+      return HttpResponse.json({ title: 'Sem permissão.' }, { status: 403 });
+    }
+    if (motivo === 'trigger-401') {
+      return HttpResponse.json({ title: 'Não autenticado.' }, { status: 401 });
+    }
+    if (motivo === 'trigger-404') {
+      return HttpResponse.json({ title: 'Não encontrado.' }, { status: 404 });
+    }
+    if (motivo === 'trigger-500') {
+      return HttpResponse.json({ title: 'Erro interno.' }, { status: 500 });
+    }
+
+    if (motivo.length < 5) {
+      return HttpResponse.json(
+        {
+          title: 'Dados inválidos.',
+          errors: {
+            motivoCancelamento: ['O motivo do cancelamento deve ter pelo menos 5 caracteres.'],
+          },
+        },
+        { status: 400 },
+      );
+    }
+
+    return HttpResponse.json({
+      message: 'Agendamento cancelado com sucesso.',
+      data: {
+        id,
+        status: 'CANCELADO',
+        canceladoEm: new Date().toISOString(),
+        canceladoPor: '00000000-0000-0000-0000-000000000001',
+        motivoCancelamento: motivo,
+      },
+      traceId: 'trace-cancel',
+    });
+  }),
+
+  http.put('/api/v1/agendamentos/:id', async ({ params, request }) => {
+    const body = (await request.json()) as { observacoes?: string | null };
+    const id = params.id as string;
+    const obs = body.observacoes?.trim() ?? '';
+
+    if (obs === 'trigger-409') {
+      return HttpResponse.json(
+        { title: 'O agendamento não permite edição neste status.', detail: 'Status inválido.' },
+        { status: 409 },
+      );
+    }
+    if (obs === 'trigger-403') {
+      return HttpResponse.json({ title: 'Sem permissão.' }, { status: 403 });
+    }
+    if (obs === 'trigger-401') {
+      return HttpResponse.json({ title: 'Não autenticado.' }, { status: 401 });
+    }
+    if (obs === 'trigger-404') {
+      return HttpResponse.json({ title: 'Não encontrado.' }, { status: 404 });
+    }
+    if (obs === 'trigger-500') {
+      return HttpResponse.json({ title: 'Erro interno.' }, { status: 500 });
+    }
+    if (obs === 'trigger-400') {
+      return HttpResponse.json(
+        { title: 'Dados inválidos.', errors: { observacoes: ['Observações inválidas.'] } },
+        { status: 400 },
+      );
+    }
+
+    return HttpResponse.json({
+      id,
+      filialId: IDS.filial,
+      clienteId: IDS.cliente,
+      veiculoId: IDS.veiculo,
+      responsavelId: null,
+      status: 'AGENDADO',
+      inicio: '2099-01-01T14:00:00.000Z',
+      fim: '2099-01-01T15:30:00.000Z',
+      duracaoTotalMin: 90,
+      valorTotal: 150,
+      observacoes: body.observacoes ?? null,
+      versao: 2,
+      itens: [],
+      criadoEm: '2026-05-21T12:00:00.000Z',
+      mensagem: 'Agendamento atualizado com sucesso.',
+      traceId: 'trace-edit-mock',
+    });
+  }),
 ];
 
 /** Fixtures reaproveitáveis em asserções. */

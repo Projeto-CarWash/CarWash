@@ -1,17 +1,24 @@
-export interface VeiculoResumo {
+/**
+ * Item da listagem de veículos retornada por `GET /api/v1/veiculos`.
+ * Espelha `VeiculoListaItemResponse` do backend (slice Veiculos/Listar),
+ * incluindo o cliente vinculado (RF005/RF022).
+ */
+export interface VeiculoListaItem {
   id: string;
   clienteId: string;
+  clienteNome: string;
+  clienteAtivo: boolean;
   placa: string;
-  marca: string;
   modelo: string;
-  cor?: string;
+  fabricante: string;
+  cor: string;
+  ano?: number | null;
   ativo: boolean;
-  fabricante?: string;
-  observacoes?: string;
+  criadoEm: string;
 }
 
 export interface ListaVeiculos {
-  itens: VeiculoResumo[];
+  itens: VeiculoListaItem[];
   total: number;
   pagina: number;
   tamanhoPagina: number;

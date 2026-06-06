@@ -43,6 +43,7 @@ public sealed class AlterarStatusUsuarioHandler
         _log = log;
     }
 
+    /// <inheritdoc/>
     public async Task<AlterarStatusUsuarioResponse> HandleAsync(
         AlterarStatusUsuarioCommand command,
         CancellationToken cancellationToken)
@@ -50,7 +51,7 @@ public sealed class AlterarStatusUsuarioHandler
         ArgumentNullException.ThrowIfNull(command);
 
         // Validator garante NotNull antes de chegar aqui. `.Value` é seguro.
-        var ativoDesejado = command.Ativo!.Value;
+        bool ativoDesejado = command.Ativo!.Value;
 
         _log.LogInformation(
             "Solicitação de alteração de status. UsuarioId={UsuarioId}, AtivoSolicitado={AtivoSolicitado}",
@@ -70,7 +71,7 @@ public sealed class AlterarStatusUsuarioHandler
             return ToResponse(usuario);
         }
 
-        var estadoAnterior = usuario.Ativo;
+        bool estadoAnterior = usuario.Ativo;
 
         // BUG-U009 (auto-desativação / último admin): só vale quando o alvo está
         // sendo INATIVADO. Reativação não tem risco. Avalia em duas frentes
@@ -126,7 +127,7 @@ public sealed class AlterarStatusUsuarioHandler
             return;
         }
 
-        var totalAdminsAtivos = await _repositorio.ContarAdminsAtivosAsync(cancellationToken).ConfigureAwait(false);
+        int totalAdminsAtivos = await _repositorio.ContarAdminsAtivosAsync(cancellationToken).ConfigureAwait(false);
         if (totalAdminsAtivos <= 1)
         {
             _log.LogWarning(

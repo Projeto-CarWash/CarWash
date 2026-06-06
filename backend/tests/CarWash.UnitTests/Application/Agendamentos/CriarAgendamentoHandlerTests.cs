@@ -1,3 +1,4 @@
+using CarWash.Application.Abstractions;
 using CarWash.Application.Agendamentos.Common;
 using CarWash.Application.Agendamentos.Criar;
 using CarWash.Application.Agendamentos.Persistence;
@@ -23,6 +24,7 @@ public class CriarAgendamentoHandlerTests
 
     private readonly IAgendamentoRepository _agendamentos = Substitute.For<IAgendamentoRepository>();
     private readonly IAgendamentoCatalogoRepository _catalogo = Substitute.For<IAgendamentoCatalogoRepository>();
+    private readonly IAuditLogger _audit = Substitute.For<IAuditLogger>();
 
     public CriarAgendamentoHandlerTests()
     {
@@ -43,6 +45,16 @@ public class CriarAgendamentoHandlerTests
         _agendamentos.ExisteConflitoVeiculoAsync(
             Arg.Any<Guid>(), Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
             .Returns(false);
+
+        // RF018/RF008: a CalculadoraResumoAgendamento agora valida capacidade da
+        // filial (RN009). Sem stub, o mock retorna celulas_ativas=null/0 e a
+        // verificação lançaria CapacidadeFilialEsgotadaException nos caminhos
+        // felizes. Capacidade ampla + 0 sobreposições deixa o caminho livre.
+        _catalogo.ObterCelulasAtivasFilialAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(50);
+        _catalogo.ContarSobreposicoesNaFilialAsync(
+            Arg.Any<Guid>(), Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+            .Returns(0);
     }
 
     [Fact]
@@ -90,7 +102,30 @@ public class CriarAgendamentoHandlerTests
     }
 
     [Fact]
-    public async Task Filial_inexistente_lanca_NotFound()
+    public async Task Capacidade_da_filial_atingida_lanca_CapacidadeFilialAtingidaException()
+    {
+        // RF008/RN009: sem conflito de veículo, porém a filial já está no teto de
+        // células ativas para a janela → rejeita com 409 (capacidade-filial).
+        _agendamentos.CapacidadeAtingidaAsync(
+            FilialId, Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+            .Returns(true);
+
+        var handler = NovoHandler();
+        var act = () => handler.HandleAsync(NovoComando(), CancellationToken.None);
+
+        var ex = await act.Should().ThrowAsync<CapacidadeFilialAtingidaException>();
+        ex.Which.Slug.Should().Be("capacidade-filial");
+
+        await _agendamentos.DidNotReceive().AdicionarAsync(
+            Arg.Any<Agendamento>(),
+            Arg.Any<IReadOnlyCollection<AgendamentoItem>>(),
+            Arg.Any<AgendamentoHistorico>(),
+            Arg.Any<string>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Filial_inexistente_lanca_NotFound_e_audita_motivo_filial_inexistente()
     {
         _catalogo.ObterFilialResumoAsync(FilialId, Arg.Any<CancellationToken>())
             .Returns((FilialResumoSnapshot?)null);
@@ -98,19 +133,41 @@ public class CriarAgendamentoHandlerTests
         var handler = NovoHandler();
         var act = () => handler.HandleAsync(NovoComando(), CancellationToken.None);
 
-        await act.Should().ThrowAsync<NotFoundException>();
+        var ex = await act.Should().ThrowAsync<NotFoundException>();
+        ex.Which.Message.Should().Be(MensagensFilialAgendamento.NaoEncontrada);
+
+        // RF019/DAT §9.1: a rejeição é auditada com motivo estruturado antes do throw.
+        await _audit.Received(1).LogAsync(
+            CalculadoraResumoAgendamento.EventoFilialRejeitada,
+            CalculadoraResumoAgendamento.EntidadeAuditoria,
+            null,
+            Arg.Is<object>(d => MotivoDe(d) == MotivosFalhaFilial.Inexistente),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task Filial_inativa_lanca_RecursoInativo()
+    public async Task Filial_inativa_lanca_FilialInativaException()
     {
+        // RF019: filial inativa é o único recurso que vira 409 (slug filial-inativa),
+        // via FilialInativaException : ConflictException — distinto de veículo/
+        // cliente/serviço/responsável inativos, que seguem 422 (RecursoInativoException).
         _catalogo.ObterFilialResumoAsync(FilialId, Arg.Any<CancellationToken>())
             .Returns(new FilialResumoSnapshot(FilialId, "Filial Centro", false));
 
         var handler = NovoHandler();
         var act = () => handler.HandleAsync(NovoComando(), CancellationToken.None);
 
-        await act.Should().ThrowAsync<RecursoInativoException>();
+        var ex = await act.Should().ThrowAsync<FilialInativaException>();
+        ex.Which.Slug.Should().Be(FilialInativaException.SlugPadrao);
+        ex.Which.Message.Should().Be(MensagensFilialAgendamento.Inativa);
+
+        // RF019/DAT §9.1: a rejeição é auditada com motivo estruturado antes do throw.
+        await _audit.Received(1).LogAsync(
+            CalculadoraResumoAgendamento.EventoFilialRejeitada,
+            CalculadoraResumoAgendamento.EntidadeAuditoria,
+            null,
+            Arg.Is<object>(d => MotivoDe(d) == MotivosFalhaFilial.Inativa),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -388,10 +445,28 @@ public class CriarAgendamentoHandlerTests
             Arg.Any<CancellationToken>());
     }
 
+    /// <summary>
+    /// Lê o campo <c>motivo</c> do objeto anônimo <c>dados</c> passado ao
+    /// <see cref="IAuditLogger"/> (<c>new { motivo, filialId }</c>). Confirmado
+    /// empiricamente: a serialização preserva o nome do membro (camelCase), igual
+    /// ao que cai em <c>audit_logs.dados</c>.
+    /// </summary>
+    private static string? MotivoDe(object dados)
+    {
+        using var doc = System.Text.Json.JsonDocument.Parse(
+            System.Text.Json.JsonSerializer.Serialize(dados));
+        return doc.RootElement.TryGetProperty("motivo", out var motivo)
+            ? motivo.GetString()
+            : null;
+    }
+
     private CriarAgendamentoHandler NovoHandler() =>
         new(
             _agendamentos,
-            new CalculadoraResumoAgendamento(_catalogo),
+            new CalculadoraResumoAgendamento(
+                _catalogo,
+                _audit,
+                NullLogger<CalculadoraResumoAgendamento>.Instance),
             NullLogger<CriarAgendamentoHandler>.Instance);
 
     private static CriarAgendamentoCommand NovoComando() => new(

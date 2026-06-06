@@ -6,6 +6,7 @@ namespace CarWash.Infrastructure.Persistence.Configurations;
 
 public sealed class OutboxEventoConfiguration : IEntityTypeConfiguration<OutboxEvento>
 {
+    /// <inheritdoc/>
     public void Configure(EntityTypeBuilder<OutboxEvento> builder)
     {
         ArgumentNullException.ThrowIfNull(builder);

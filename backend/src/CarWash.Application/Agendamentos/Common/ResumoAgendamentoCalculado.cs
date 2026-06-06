@@ -19,6 +19,6 @@ public sealed record ResumoAgendamentoCalculado(
     string? Observacoes,
     ResponsavelResumoSnapshot Responsavel)
 {
-    /// <summary>Atalho para o <c>hashResumo</c> calculado.</summary>
+    /// <summary>Gets atalho para o <c>hashResumo</c> calculado.</summary>
     public string HashResumo => Resumo.HashResumo;
 }

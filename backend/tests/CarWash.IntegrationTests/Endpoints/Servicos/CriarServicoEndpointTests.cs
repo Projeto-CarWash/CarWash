@@ -79,7 +79,7 @@ public class CriarServicoEndpointTests : IAsyncDisposable
     {
         var client = await AuthenticatedHttpClient.CreateAsync(_factory);
 
-        var nome = $"Serviço-{Guid.NewGuid():N}";
+        string nome = $"Serviço-{Guid.NewGuid():N}";
         var primeiroPayload = PayloadValido();
         primeiroPayload["nome"] = nome;
 
@@ -105,6 +105,7 @@ public class CriarServicoEndpointTests : IAsyncDisposable
         ["duracaoMin"] = 30,
     };
 
+    /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
         await _factory.DisposeAsync();

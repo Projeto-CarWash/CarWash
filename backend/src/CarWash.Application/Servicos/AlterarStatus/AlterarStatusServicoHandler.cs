@@ -19,17 +19,18 @@ public sealed class AlterarStatusServicoHandler
         _repositorio = repositorio;
     }
 
+    /// <inheritdoc/>
     public async Task<ServicoResponse> HandleAsync(AlterarStatusServicoCommand command, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(command);
 
         // Validator garante NotNull antes de chegar aqui. `.Value` é seguro.
-        var ativo = command.Ativo!.Value;
+        bool ativo = command.Ativo!.Value;
 
         var servico = await _repositorio.ObterPorIdAsync(command.ServicoId, cancellationToken).ConfigureAwait(false)
             ?? throw new NotFoundException("Serviço não encontrado.");
 
-        var evento = ativo ? "SERVICO_ATIVADO" : "SERVICO_DESATIVADO";
+        string evento = ativo ? "SERVICO_ATIVADO" : "SERVICO_DESATIVADO";
 
         if (ativo)
         {

@@ -27,6 +27,7 @@ public sealed class CriarVeiculoHandler : ICommandHandler<CriarVeiculoCommand, V
         _veiculos = veiculos;
     }
 
+    /// <inheritdoc/>
     public async Task<VeiculoResponse> HandleAsync(CriarVeiculoCommand command, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(command);
@@ -36,7 +37,7 @@ public sealed class CriarVeiculoHandler : ICommandHandler<CriarVeiculoCommand, V
 
         // RN003 + RAT03: normaliza (trim + uppercase) antes de instanciar o value object.
         // O value object valida o formato Mercosul/antigo antes do hit no banco.
-        var placaNormalizada = (command.Placa ?? string.Empty).Trim().ToUpperInvariant();
+        string placaNormalizada = (command.Placa ?? string.Empty).Trim().ToUpperInvariant();
         var placa = new Placa(placaNormalizada);
 
         if (await _veiculos.ExistePlacaAsync(placa.Valor, cancellationToken).ConfigureAwait(false))

@@ -12,6 +12,7 @@ import type {
   PreConfirmacaoResponse,
   ServicoAtivo,
   VeiculoResumido,
+  CancelarAgendamentoResponse,
 } from '@/types/agendamento';
 
 const MOCK_VEICULOS: Record<string, VeiculoResumido[]> = {
@@ -92,43 +93,6 @@ function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-const MOCK_AGENDAMENTO_RESPONSE: AgendamentoResponse = {
-  id: 'mock-agendamento-id',
-  filialId: 'mock-filial-id',
-  clienteId: 'mock-cliente-id',
-  veiculoId: 'mock-veiculo-id',
-  responsavelId: null,
-  status: 'agendado',
-  inicio: new Date().toISOString(),
-  fim: new Date(Date.now() + 3600000).toISOString(),
-  duracaoTotalMin: 60,
-  valorTotal: 100,
-  observacoes: null,
-  versao: 1,
-  itens: [],
-  criadoEm: new Date().toISOString(),
-  mensagem: 'Agendamento criado com sucesso.',
-  traceId: 'mock-trace-id',
-};
-
-const MOCK_PRE_CONFIRMACAO: PreConfirmacaoResponse = {
-  tokenConfirmacao: 'mock-token',
-  expiraEm: new Date(Date.now() + 600000).toISOString(),
-  resumo: {
-    filial: { id: 'mock-filial-id', nome: 'Filial Centro' },
-    cliente: { id: 'mock-cliente-id', nome: 'Cliente Mock', documento: '000.000.000-00' },
-    veiculo: { id: 'mock-veiculo-id', placa: 'ABC1D23', modelo: 'Fiat Uno', cor: 'Prata' },
-    servicos: [{ id: 's1', nome: 'Lavagem Simples', duracaoMin: 30, preco: 45 }],
-    inicio: new Date().toISOString(),
-    fim: new Date(Date.now() + 1800000).toISOString(),
-    duracaoTotalMin: 30,
-    valorTotal: 45,
-    observacoes: null,
-    hashResumo: 'mock-hash',
-  },
-  traceId: 'mock-trace-pre',
-};
-
 export const agendamentoService = {
   async buscarClientes(busca: string): Promise<ClienteResumido[]> {
     const { data } = await api.get<{ itens: ClienteResumido[] }>('/api/v1/clientes', {
@@ -152,26 +116,33 @@ export const agendamentoService = {
     return [...MOCK_SERVICOS];
   },
 
+  /**
+   * Cria o agendamento em passo único — `POST /api/v1/agendamentos` (RF007/RF019).
+   *
+   * <p>Envia o payload real (incluindo `filialId`); os erros HTTP (400/401/403/
+   * 404/409/500) são propagados para a UI tratar — sem mock.</p>
+   */
   async criarAgendamento(payload: CriarAgendamentoPayload): Promise<CriarAgendamentoResponse> {
-    await delay(800);
-    void api;
-    void payload;
-    return { id: crypto.randomUUID() };
+    const { data } = await api.post<AgendamentoResponse>('/api/v1/agendamentos', payload);
+    return { id: data.id };
   },
 
-  async criar(_payload: CriarAgendamentoRequest): Promise<AgendamentoResponse> {
-    await delay(800);
-    return { ...MOCK_AGENDAMENTO_RESPONSE, id: crypto.randomUUID() };
+  async criar(payload: CriarAgendamentoRequest): Promise<AgendamentoResponse> {
+    const { data } = await api.post<AgendamentoResponse>('/api/v1/agendamentos', payload);
+    return data;
   },
 
-  async preConfirmar(_payload: CriarAgendamentoRequest): Promise<PreConfirmacaoResponse> {
-    await delay(600);
-    return { ...MOCK_PRE_CONFIRMACAO, tokenConfirmacao: crypto.randomUUID() };
+  async preConfirmar(payload: CriarAgendamentoRequest): Promise<PreConfirmacaoResponse> {
+    const { data } = await api.post<PreConfirmacaoResponse>(
+      '/api/v1/agendamentos/pre-confirmacao',
+      payload,
+    );
+    return data;
   },
 
-  async confirmar(_payload: ConfirmarAgendamentoRequest): Promise<AgendamentoResponse> {
-    await delay(800);
-    return { ...MOCK_AGENDAMENTO_RESPONSE, id: crypto.randomUUID() };
+  async confirmar(payload: ConfirmarAgendamentoRequest): Promise<AgendamentoResponse> {
+    const { data } = await api.post<AgendamentoResponse>('/api/v1/agendamentos/confirmar', payload);
+    return data;
   },
 
   async obterEstatisticasAno(_ano: number): Promise<EstatisticasMes[]> {
@@ -205,5 +176,24 @@ export const agendamentoService = {
   async listarAgendamentosSemana(_dataInicio: Date, _dataFim: Date): Promise<AgendamentoSemana[]> {
     await delay(600);
     return [];
+  },
+
+  async cancelar(id: string, motivoCancelamento: string): Promise<CancelarAgendamentoResponse> {
+    const { data } = await api.patch<CancelarAgendamentoResponse>(
+      `/api/v1/agendamentos/${id}/cancelar`,
+      {
+        motivoCancelamento,
+        origem: 'CLIENTE',
+      },
+    );
+    return data;
+  },
+
+  async atualizar(
+    id: string,
+    payload: { observacoes: string | null },
+  ): Promise<AgendamentoResponse> {
+    const { data } = await api.put<AgendamentoResponse>(`/api/v1/agendamentos/${id}`, payload);
+    return data;
   },
 };

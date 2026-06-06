@@ -21,7 +21,7 @@ public sealed class ListarVeiculosHandler : IQueryHandler<ListarVeiculosQuery, L
     {
         ArgumentNullException.ThrowIfNull(query);
 
-        var clienteExiste = await _clientes.ObterPorIdAsync(query.ClienteId, cancellationToken).ConfigureAwait(false)
+        _ = await _clientes.ObterPorIdAsync(query.ClienteId, cancellationToken).ConfigureAwait(false)
             ?? throw new NotFoundException("Cliente não encontrado.");
 
         var (itens, total) = await _veiculos.ListarPorClienteIdAsync(
@@ -32,7 +32,7 @@ public sealed class ListarVeiculosHandler : IQueryHandler<ListarVeiculosQuery, L
             query.TamanhoPagina,
             cancellationToken).ConfigureAwait(false);
 
-        var paginaEfetiva = query.Pagina < 1 ? 1 : query.Pagina;
+        int paginaEfetiva = query.Pagina < 1 ? 1 : query.Pagina;
         int tamanhoEfetivo;
         if (query.TamanhoPagina < 1)
         {

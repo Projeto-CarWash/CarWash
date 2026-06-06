@@ -1,6 +1,11 @@
 using System.Reflection;
+using CarWash.Application.Abstractions;
 using CarWash.Application.Abstractions.Messaging;
 using CarWash.Application.Agendamentos.Common;
+using CarWash.Application.Dashboard.Metricas.Common;
+using CarWash.Application.Dashboard.Metricas.Consultar;
+using CarWash.Application.Interfaces;
+using CarWash.Application.Services;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -27,6 +32,12 @@ public static class DependencyInjection
         // Serviço de domínio de cálculo do resumo de agendamento (RF007/RF015) —
         // não é handler nem validator, então não é alcançado pelo scan acima.
         services.AddScoped<CalculadoraResumoAgendamento>();
+
+        // Registros manuais de serviços da aplicação
+        services.AddScoped<IVeiculoService, VeiculoService>();
+
+        services.AddScoped<IQueryHandler<ConsultarDashboardMetricasQuery, DashboardMetricasResponse>,
+        ConsultarDashboardMetricasHandler>();
 
         return services;
     }

@@ -28,7 +28,7 @@ public sealed class ResumoConfirmacaoResponse
 
     public string? Observacoes { get; init; }
 
-    /// <summary>SHA-256 (hex minúsculo) da forma canônica dos campos de negócio.</summary>
+    /// <summary>Gets sHA-256 (hex minúsculo) da forma canônica dos campos de negócio.</summary>
     public string HashResumo { get; init; } = string.Empty;
 }
 

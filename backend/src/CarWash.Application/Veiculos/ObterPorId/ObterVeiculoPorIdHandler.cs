@@ -23,7 +23,7 @@ public sealed class ObterVeiculoPorIdHandler : IQueryHandler<ObterVeiculoPorIdQu
     {
         ArgumentNullException.ThrowIfNull(query);
 
-        var cliente = await _clientes.ObterPorIdAsync(query.ClienteId, cancellationToken).ConfigureAwait(false)
+        _ = await _clientes.ObterPorIdAsync(query.ClienteId, cancellationToken).ConfigureAwait(false)
             ?? throw new NotFoundException("Cliente não encontrado.");
 
         var veiculo = await _veiculos.ObterPorIdAsync(query.VeiculoId, cancellationToken).ConfigureAwait(false)

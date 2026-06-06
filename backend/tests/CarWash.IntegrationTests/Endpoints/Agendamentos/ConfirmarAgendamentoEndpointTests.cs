@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using CarWash.Domain.Entities;
+using CarWash.Domain.Enums;
 using CarWash.Domain.ValueObjects;
 using CarWash.Infrastructure.Persistence;
 using CarWash.IntegrationTests.Collections;
@@ -219,6 +220,7 @@ public class ConfirmarAgendamentoEndpointTests : IAsyncDisposable
                 filialId = ctx.FilialId,
                 clienteId = ctx.ClienteId,
                 veiculoId = ctx.VeiculoId,
+                responsavelId = ctx.ResponsavelId,
                 inicio = ctx.Inicio,
                 servicoIds = ctx.ServicoIds,
             },
@@ -286,7 +288,7 @@ public class ConfirmarAgendamentoEndpointTests : IAsyncDisposable
 
         if ((int)response.StatusCode >= 500)
         {
-            var corpo = await response.Content.ReadAsStringAsync();
+            string corpo = await response.Content.ReadAsStringAsync();
             corpo.Should().NotContain("at CarWash.");
             corpo.Should().NotContain("Exception:");
             corpo.Should().NotContainEquivalentOf("npgsql");
@@ -296,6 +298,52 @@ public class ConfirmarAgendamentoEndpointTests : IAsyncDisposable
         {
             response.StatusCode.Should().Be(HttpStatusCode.Created);
         }
+    }
+
+    // ---------------------------------------------------------------------
+    // RF019/card 142 — filial desativada entre a prévia e a confirmação → 409.
+    // Cobre o terceiro fluxo (confirmar), não exercitado antes. O hash do resumo
+    // depende só do filialId (não do estado ativo), então o token continua válido;
+    // a re-validação server-side de GarantirFilialAsync barra a confirmação com
+    // 409 + slug filial-inativa — defesa em profundidade dos três caminhos.
+    // ---------------------------------------------------------------------
+    [Fact]
+    public async Task POST_filial_inativada_entre_previa_e_confirmacao_retorna_409_filial_inativa()
+    {
+        var client = await AuthenticatedHttpClient.CreateAsync(_factory);
+        var ctx = await PrepararConfirmacaoAsync(client);
+
+        // A filial é desativada DEPOIS de emitir o token (entre prévia e confirmação).
+        await InativarFilialAsync(ctx.FilialId);
+
+        var response = await client.PostAsJsonAsync(RotaConfirmar, ctx.PayloadConfirmacao(), _json);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        var corpo = await response.Content.ReadFromJsonAsync<JsonElement>(_json);
+        corpo.GetProperty("type").GetString().Should().Contain("filial-inativa");
+        corpo.GetProperty("title").GetString().Should()
+            .Be("A filial selecionada está inativa e não pode receber novos agendamentos.");
+
+        // Nada persistido após o 409.
+        await using var db = NovoDbContext();
+        (await db.Agendamentos.CountAsync(a => a.VeiculoId == ctx.VeiculoId)).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task POST_filial_inexistente_na_confirmacao_retorna_404_com_mensagem_do_card()
+    {
+        var client = await AuthenticatedHttpClient.CreateAsync(_factory);
+        var ctx = await PrepararConfirmacaoAsync(client);
+
+        // A filial é removida entre a prévia e a confirmação — o token (que só
+        // carrega o filialId no hash) continua válido, mas a re-validação acha 404.
+        await RemoverFilialAsync(ctx.FilialId);
+
+        var response = await client.PostAsJsonAsync(RotaConfirmar, ctx.PayloadConfirmacao(), _json);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        var corpo = await response.Content.ReadFromJsonAsync<JsonElement>(_json);
+        corpo.GetProperty("title").GetString().Should().Be("Filial não encontrada.");
     }
 
     // ---------------------------------------------------------------------
@@ -328,6 +376,7 @@ public class ConfirmarAgendamentoEndpointTests : IAsyncDisposable
     /// no ProblemDetails — base para o frontend discriminar pelo <c>type</c> em
     /// vez de regex de texto.
     /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task POST_os_tres_409_tem_type_distintos_no_problem_details()
     {
@@ -339,7 +388,7 @@ public class ConfirmarAgendamentoEndpointTests : IAsyncDisposable
         payloadDivergente["tokenConfirmacao"] =
             TokenConfirmacaoTestHelper.GerarComHashDivergente(ctxDivergente.Token);
         var respDivergente = await client.PostAsJsonAsync(RotaConfirmar, payloadDivergente, _json);
-        var typeDivergente = (await respDivergente.Content.ReadFromJsonAsync<JsonElement>(_json))
+        string? typeDivergente = (await respDivergente.Content.ReadFromJsonAsync<JsonElement>(_json))
             .GetProperty("type").GetString();
 
         // 409 (b) — conflito de idempotência.
@@ -350,7 +399,7 @@ public class ConfirmarAgendamentoEndpointTests : IAsyncDisposable
         var payloadIdem = outro.PayloadConfirmacao();
         payloadIdem["idempotencyKey"] = ctxIdem.IdempotencyKey;
         var respIdem = await client.PostAsJsonAsync(RotaConfirmar, payloadIdem, _json);
-        var typeIdem = (await respIdem.Content.ReadFromJsonAsync<JsonElement>(_json))
+        string? typeIdem = (await respIdem.Content.ReadFromJsonAsync<JsonElement>(_json))
             .GetProperty("type").GetString();
 
         // 409 (c) — conflito de veículo (RN011).
@@ -362,12 +411,13 @@ public class ConfirmarAgendamentoEndpointTests : IAsyncDisposable
                 filialId = ctxConflito.FilialId,
                 clienteId = ctxConflito.ClienteId,
                 veiculoId = ctxConflito.VeiculoId,
+                responsavelId = ctxConflito.ResponsavelId,
                 inicio = ctxConflito.Inicio,
                 servicoIds = ctxConflito.ServicoIds,
             },
             _json)).StatusCode.Should().Be(HttpStatusCode.Created);
         var respConflito = await client.PostAsJsonAsync(RotaConfirmar, ctxConflito.PayloadConfirmacao(), _json);
-        var typeConflito = (await respConflito.Content.ReadFromJsonAsync<JsonElement>(_json))
+        string? typeConflito = (await respConflito.Content.ReadFromJsonAsync<JsonElement>(_json))
             .GetProperty("type").GetString();
 
         typeDivergente.Should().EndWith("agendamento-resumo-divergente");
@@ -436,6 +486,7 @@ public class ConfirmarAgendamentoEndpointTests : IAsyncDisposable
         Guid FilialId,
         Guid ClienteId,
         Guid VeiculoId,
+        Guid ResponsavelId,
         IReadOnlyList<Guid> ServicoIds,
         DateTime Inicio,
         string Token,
@@ -447,6 +498,7 @@ public class ConfirmarAgendamentoEndpointTests : IAsyncDisposable
             ["filialId"] = FilialId,
             ["clienteId"] = ClienteId,
             ["veiculoId"] = VeiculoId,
+            ["responsavelId"] = ResponsavelId,
             ["inicio"] = Inicio,
             ["servicoIds"] = ServicoIds,
             ["confirmar"] = true,
@@ -463,7 +515,7 @@ public class ConfirmarAgendamentoEndpointTests : IAsyncDisposable
         HttpClient client,
         int inicioOffsetDias = 1)
     {
-        var (filialId, clienteId, veiculoId, servicoIds) = await SemearDependenciasAsync();
+        var (filialId, clienteId, veiculoId, responsavelId, servicoIds) = await SemearDependenciasAsync();
         var inicio = DateTime.UtcNow.AddDays(inicioOffsetDias).AddHours(Random.Shared.Next(0, 12));
 
         var pre = await client.PostAsJsonAsync(RotaPreConfirmar, new
@@ -471,18 +523,20 @@ public class ConfirmarAgendamentoEndpointTests : IAsyncDisposable
             filialId,
             clienteId,
             veiculoId,
+            responsavelId,
             inicio,
             servicoIds,
         }, _json);
         pre.StatusCode.Should().Be(HttpStatusCode.OK, "a pré-confirmação é pré-requisito da confirmação");
 
         var corpo = await pre.Content.ReadFromJsonAsync<JsonElement>(_json);
-        var token = corpo.GetProperty("tokenConfirmacao").GetString()!;
+        string token = corpo.GetProperty("tokenConfirmacao").GetString()!;
 
         return new ContextoConfirmacao(
             filialId,
             clienteId,
             veiculoId,
+            responsavelId,
             servicoIds,
             inicio,
             token,
@@ -513,12 +567,12 @@ public class ConfirmarAgendamentoEndpointTests : IAsyncDisposable
         return mensagens;
     }
 
-    private async Task<(Guid FilialId, Guid ClienteId, Guid VeiculoId, IReadOnlyList<Guid> ServicoIds)>
+    private async Task<(Guid FilialId, Guid ClienteId, Guid VeiculoId, Guid ResponsavelId, IReadOnlyList<Guid> ServicoIds)>
         SemearDependenciasAsync()
     {
         await using var db = NovoDbContext();
 
-        var filial = Filial.Criar(Guid.NewGuid(), $"Filial {Guid.NewGuid():N}"[..30], 4);
+        var filial = Filial.Criar(Guid.NewGuid(), $"Filial {Guid.NewGuid():N}"[..30], CodigoTeste(), 4);
         var cliente = ClienteValido();
         var veiculo = Veiculo.Criar(
             id: Guid.NewGuid(),
@@ -527,10 +581,12 @@ public class ConfirmarAgendamentoEndpointTests : IAsyncDisposable
             modelo: "Civic",
             fabricante: "Honda",
             cor: "Preto");
+        var responsavel = ResponsavelValido(cliente.Id);
 
         db.Filiais.Add(filial);
         db.Clientes.Add(cliente);
         db.Veiculos.Add(veiculo);
+        db.Responsaveis.Add(responsavel);
         await db.SaveChangesAsync();
 
         var servicoIds = await db.Servicos
@@ -541,8 +597,33 @@ public class ConfirmarAgendamentoEndpointTests : IAsyncDisposable
             .Take(2)
             .ToListAsync();
 
-        return (filial.Id, cliente.Id, veiculo.Id, servicoIds);
+        return (filial.Id, cliente.Id, veiculo.Id, responsavel.Id, servicoIds);
     }
+
+    private static Responsavel ResponsavelValido(Guid clienteTitularId) => Responsavel.Criar(
+        id: Guid.NewGuid(),
+        clienteTitularId: clienteTitularId,
+        nome: "Responsável Teste",
+        documento: GerarCpfValido(),
+        grauVinculo: GrauVinculo.ResponsavelFinanceiro);
+
+    private async Task InativarFilialAsync(Guid filialId)
+    {
+        await using var db = NovoDbContext();
+        var filial = await db.Filiais.FirstAsync(f => f.Id == filialId);
+        filial.Inativar();
+        await db.SaveChangesAsync();
+    }
+
+    private async Task RemoverFilialAsync(Guid filialId)
+    {
+        await using var db = NovoDbContext();
+        var filial = await db.Filiais.FirstAsync(f => f.Id == filialId);
+        db.Filiais.Remove(filial);
+        await db.SaveChangesAsync();
+    }
+
+    private static string CodigoTeste() => $"F{Guid.NewGuid():N}"[..10].ToUpperInvariant();
 
     private CarWashDbContext NovoDbContext() => CarWashDbContextFactoryForTests.Create(_fixture);
 
@@ -572,15 +653,15 @@ public class ConfirmarAgendamentoEndpointTests : IAsyncDisposable
     {
         Span<int> d = stackalloc int[11];
         var rng = Random.Shared;
-        for (var i = 0; i < 9; i++)
+        for (int i = 0; i < 9; i++)
         {
             d[i] = rng.Next(0, 10);
         }
 
         d[9] = Dv(d[..9], 10);
         d[10] = Dv(d[..10], 11);
-        var chars = new char[11];
-        for (var i = 0; i < 11; i++)
+        char[] chars = new char[11];
+        for (int i = 0; i < 11; i++)
         {
             chars[i] = (char)('0' + d[i]);
         }
@@ -589,17 +670,18 @@ public class ConfirmarAgendamentoEndpointTests : IAsyncDisposable
 
         static int Dv(ReadOnlySpan<int> parcial, int pesoInicial)
         {
-            var soma = 0;
-            for (var i = 0; i < parcial.Length; i++)
+            int soma = 0;
+            for (int i = 0; i < parcial.Length; i++)
             {
                 soma += parcial[i] * (pesoInicial - i);
             }
 
-            var resto = soma % 11;
+            int resto = soma % 11;
             return resto < 2 ? 0 : 11 - resto;
         }
     }
 
+    /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
         await _factory.DisposeAsync();

@@ -21,6 +21,7 @@ public sealed class VeiculoRepository : IVeiculoRepository
         _context = context;
     }
 
+    /// <inheritdoc/>
     public Task<bool> ExistePlacaAsync(string placaNormalizada, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(placaNormalizada);
@@ -101,14 +102,14 @@ public sealed class VeiculoRepository : IVeiculoRepository
 
         if (!string.IsNullOrWhiteSpace(busca))
         {
-            var termo = $"%{busca.Trim().ToUpperInvariant()}%";
+            string termo = $"%{busca.Trim().ToUpperInvariant()}%";
             query = query.Where(v =>
                 EF.Functions.ILike(v.Placa, termo)
                 || EF.Functions.ILike(v.Modelo, termo)
                 || EF.Functions.ILike(v.Fabricante, termo));
         }
 
-        var total = await query.CountAsync(cancellationToken).ConfigureAwait(false);
+        int total = await query.CountAsync(cancellationToken).ConfigureAwait(false);
 
         var itens = await query
             .OrderBy(v => v.Placa)
@@ -120,6 +121,7 @@ public sealed class VeiculoRepository : IVeiculoRepository
         return (itens, total);
     }
 
+    /// <inheritdoc/>
     public async Task AdicionarAsync(Veiculo veiculo, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(veiculo);

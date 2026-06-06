@@ -26,19 +26,21 @@ public class InsertValidoTests : IAsyncLifetime
         _fixture = fixture;
     }
 
+    /// <inheritdoc/>
     public Task InitializeAsync()
     {
         _db = CarWashDbContextFactoryForTests.Create(_fixture);
         return Task.CompletedTask;
     }
 
+    /// <inheritdoc/>
     public async Task DisposeAsync() => await _db.DisposeAsync().ConfigureAwait(false);
 
     [Fact]
     public async Task Insere_uma_linha_em_cada_uma_das_15_tabelas()
     {
         // Filial
-        var filial = Filial.Criar(Guid.NewGuid(), $"F{Guid.NewGuid():N}".Substring(0, 30), 5);
+        var filial = Filial.Criar(Guid.NewGuid(), $"F{Guid.NewGuid():N}".Substring(0, 30), $"F{Guid.NewGuid():N}"[..10].ToUpperInvariant(), 5);
         _db.Filiais.Add(filial);
 
         // Usuario
@@ -75,6 +77,15 @@ public class InsertValidoTests : IAsyncLifetime
             cpf: new Cpf(GerarCpfValido()));
         _db.Filiados.Add(filiado);
 
+        // Responsavel (RF024 — FK do Agendamento aponta para responsaveis)
+        var responsavel = Responsavel.Criar(
+            id: Guid.NewGuid(),
+            clienteTitularId: cliente.Id,
+            nome: "Responsavel Teste",
+            documento: GerarCpfValido(),
+            grauVinculo: GrauVinculo.ResponsavelFinanceiro);
+        _db.Responsaveis.Add(responsavel);
+
         // Veiculo
         var veiculo = Veiculo.Criar(
             id: Guid.NewGuid(),
@@ -97,7 +108,7 @@ public class InsertValidoTests : IAsyncLifetime
         _db.UsuarioSessoes.Add(sessao);
 
         // Preferencia
-        var preferencia = UsuarioPreferencia.Criar(Guid.NewGuid(), usuario.Id, TemaPreferencia.Escuro);
+        var preferencia = UsuarioPreferencia.Criar(Guid.NewGuid(), usuario.Id, TemaPreferencia.Dark);
         _db.UsuarioPreferencias.Add(preferencia);
 
         await _db.SaveChangesAsync().ConfigureAwait(false);
@@ -112,7 +123,7 @@ public class InsertValidoTests : IAsyncLifetime
             criadoPor: usuario.Id,
             inicio: inicio,
             fim: inicio.AddHours(1),
-            responsavelId: filiado.Id,
+            responsavelId: responsavel.Id,
             observacoes: "teste");
         _db.Agendamentos.Add(ag);
         await _db.SaveChangesAsync().ConfigureAwait(false);
@@ -182,7 +193,7 @@ public class InsertValidoTests : IAsyncLifetime
     private static string GerarPlacaAleatoria()
     {
         var rng = Random.Shared;
-        var letras = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        string letras = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         return $"{letras[rng.Next(26)]}{letras[rng.Next(26)]}{letras[rng.Next(26)]}{rng.Next(0, 10)}{letras[rng.Next(26)]}{rng.Next(0, 10)}{rng.Next(0, 10)}";
     }
 
@@ -190,15 +201,15 @@ public class InsertValidoTests : IAsyncLifetime
     {
         Span<int> d = stackalloc int[11];
         var rng = Random.Shared;
-        for (var i = 0; i < 9; i++)
+        for (int i = 0; i < 9; i++)
         {
             d[i] = rng.Next(0, 10);
         }
 
         d[9] = Dv(d[..9], 10);
         d[10] = Dv(d[..10], 11);
-        var chars = new char[11];
-        for (var i = 0; i < 11; i++)
+        char[] chars = new char[11];
+        for (int i = 0; i < 11; i++)
         {
             chars[i] = (char)('0' + d[i]);
         }
@@ -207,13 +218,13 @@ public class InsertValidoTests : IAsyncLifetime
 
         static int Dv(ReadOnlySpan<int> parcial, int pesoInicial)
         {
-            var soma = 0;
-            for (var i = 0; i < parcial.Length; i++)
+            int soma = 0;
+            for (int i = 0; i < parcial.Length; i++)
             {
                 soma += parcial[i] * (pesoInicial - i);
             }
 
-            var resto = soma % 11;
+            int resto = soma % 11;
             return resto < 2 ? 0 : 11 - resto;
         }
     }

@@ -29,8 +29,10 @@ public sealed class Filiado : IAuditable, IAuditableSetter
 
     public bool Ativo { get; private set; }
 
+    /// <inheritdoc/>
     public DateTime CriadoEm { get; private set; }
 
+    /// <inheritdoc/>
     public DateTime AtualizadoEm { get; private set; }
 
     public static Filiado Criar(
@@ -82,7 +84,9 @@ public sealed class Filiado : IAuditable, IAuditableSetter
 
     public void Ativar() => Ativo = true;
 
+    /// <inheritdoc/>
     void IAuditableSetter.SetCriadoEm(DateTime valor) => CriadoEm = valor;
 
+    /// <inheritdoc/>
     void IAuditableSetter.SetAtualizadoEm(DateTime valor) => AtualizadoEm = valor;
 }

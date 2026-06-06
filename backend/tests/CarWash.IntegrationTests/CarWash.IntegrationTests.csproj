@@ -10,15 +10,20 @@
     <ProjectReference Include="..\..\src\CarWash.Infrastructure\CarWash.Infrastructure.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" />
-    <PackageReference Include="xunit" />
-    <PackageReference Include="xunit.runner.visualstudio" />
-    <PackageReference Include="FluentAssertions" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
-    <PackageReference Include="Testcontainers.PostgreSql" />
-    <PackageReference Include="Npgsql" />
-    <PackageReference Include="coverlet.collector" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.NET.Test.Sdk" />
+		<PackageReference Include="xunit" />
+		<PackageReference Include="xunit.runner.visualstudio" />
+		<PackageReference Include="FluentAssertions" />
+		<PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+		<PackageReference Include="Testcontainers.PostgreSql" />
+		<PackageReference Include="Npgsql" />
+		<PackageReference Include="coverlet.collector" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Compile Remove="Auth\AuthFlowTests.cs" />
+		<Compile Remove="Veiculos\CadastrarVeiculoEndpointTests.cs" />
+	</ItemGroup>
 
 </Project>

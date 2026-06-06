@@ -11,6 +11,7 @@ namespace CarWash.Infrastructure.Persistence.Configurations;
 /// </summary>
 public sealed class IdempotenciaRequisicaoConfiguration : IEntityTypeConfiguration<IdempotenciaRequisicao>
 {
+    /// <inheritdoc/>
     public void Configure(EntityTypeBuilder<IdempotenciaRequisicao> builder)
     {
         ArgumentNullException.ThrowIfNull(builder);

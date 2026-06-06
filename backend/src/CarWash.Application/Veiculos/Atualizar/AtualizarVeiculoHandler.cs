@@ -28,7 +28,7 @@ public sealed class AtualizarVeiculoHandler : ICommandHandler<AtualizarVeiculoCo
     {
         ArgumentNullException.ThrowIfNull(command);
 
-        var cliente = await _clientes.ObterPorIdAsync(command.ClienteId, cancellationToken).ConfigureAwait(false)
+        _ = await _clientes.ObterPorIdAsync(command.ClienteId, cancellationToken).ConfigureAwait(false)
             ?? throw new NotFoundException("Cliente não encontrado.");
 
         var veiculo = await _veiculos.ObterPorIdAsync(command.VeiculoId, cancellationToken).ConfigureAwait(false)
@@ -39,7 +39,7 @@ public sealed class AtualizarVeiculoHandler : ICommandHandler<AtualizarVeiculoCo
             throw new NotFoundException("Veículo não encontrado.");
         }
 
-        var placaNormalizada = InputNormalizer.PlacaOrNull(command.Placa)!;
+        string placaNormalizada = InputNormalizer.PlacaOrNull(command.Placa)!;
         var placa = new Placa(placaNormalizada);
 
         if (await _veiculos.ExistePlacaExcetoAsync(placa.Valor, command.VeiculoId, cancellationToken).ConfigureAwait(false))
@@ -47,7 +47,7 @@ public sealed class AtualizarVeiculoHandler : ICommandHandler<AtualizarVeiculoCo
             throw new PlacaJaCadastradaException();
         }
 
-        veiculo.AtualizarDados(
+        veiculo.Atualizar(
             placa: placa,
             modelo: command.Modelo!,
             fabricante: command.Fabricante!,

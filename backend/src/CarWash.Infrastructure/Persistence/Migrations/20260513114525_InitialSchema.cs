@@ -760,7 +760,7 @@ ON public.feature_flags (
             var preferenciaAdmin = new Guid("00000000-0000-0000-0000-000000000200");
 
             // Hash Argon2id em runtime — lê env CARWASH_SEED_ADMIN_PASSWORD (obrigatória).
-            var senhaHash = SeedPasswordResolver.ResolveAdminArgon2idHash();
+            string senhaHash = SeedPasswordResolver.ResolveAdminArgon2idHash();
 
             migrationBuilder.InsertData(
                 schema: "public",

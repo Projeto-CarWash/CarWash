@@ -25,6 +25,8 @@ export interface ServicoAtivo {
 }
 
 export interface AgendamentoWizardState {
+  filialId: string;
+  filialNome: string;
   cliente: ClienteResumido | null;
   veiculo: VeiculoResumido | null;
   dataAgendamento: string;
@@ -36,7 +38,8 @@ export interface CriarAgendamentoPayload {
   clienteId: string;
   veiculoId: string;
   filialId: string;
-  responsavelId: string;
+  /** Opcional (RF024) — omitido enquanto não há seleção de responsável no fluxo. */
+  responsavelId?: string | null;
   inicio: string;
   servicoIds: string[];
   observacoes?: string;
@@ -124,5 +127,19 @@ export interface PreConfirmacaoResponse {
   tokenConfirmacao: string;
   expiraEm: string;
   resumo: ResumoConfirmacao;
+  traceId: string;
+}
+
+export interface CancelarAgendamentoData {
+  id: string;
+  status: string;
+  canceladoEm: string | null;
+  canceladoPor: string | null;
+  motivoCancelamento: string | null;
+}
+
+export interface CancelarAgendamentoResponse {
+  message: string;
+  data: CancelarAgendamentoData;
   traceId: string;
 }

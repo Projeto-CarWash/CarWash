@@ -22,7 +22,7 @@ const MENSAGENS_PADRAO: Record<number, string> = {
   401: 'Sessão expirada. Faça login novamente.',
   403: 'Você não possui permissão para criar agendamentos.',
   404: 'Um dos recursos selecionados não foi encontrado. Atualize a página e tente novamente.',
-  409: 'Este veículo já possui um agendamento que conflita com o horário escolhido (RN011).',
+  409: 'Conflito de horário detectado. Ajuste os dados e tente novamente.',
   422: 'Há um recurso desativado na seleção (filial, cliente, veículo ou serviço).',
   500: 'Não foi possível concluir o agendamento agora. Tente novamente.',
 };

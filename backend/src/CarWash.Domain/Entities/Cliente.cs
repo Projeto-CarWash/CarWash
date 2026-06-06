@@ -55,21 +55,25 @@ public sealed class Cliente : IAuditable, IAuditableSetter
 
     public string EnderecoUf { get; private set; }
 
+    public string? Observacoes { get; private set; }
+
     public bool Ativo { get; private set; }
 
+    /// <inheritdoc/>
     public DateTime CriadoEm { get; private set; }
 
+    /// <inheritdoc/>
     public DateTime AtualizadoEm { get; private set; }
 
     /// <summary>
-    /// Id do usuário autenticado que criou o cliente.
+    /// Gets id do usuário autenticado que criou o cliente.
     /// Pode ser <c>null</c> em registros legados (anteriores à migration
     /// <c>AdicionaAuditoriaUsuarioCliente</c>); para releases futuras deve virar NOT NULL.
     /// </summary>
     public Guid? CriadoPorUsuarioId { get; private set; }
 
     /// <summary>
-    /// Id do usuário autenticado que efetuou a última alteração do cliente
+    /// Gets id do usuário autenticado que efetuou a última alteração do cliente
     /// (atualização de dados ou mudança de status).
     /// </summary>
     public Guid? AtualizadoPorUsuarioId { get; private set; }
@@ -92,7 +96,8 @@ public sealed class Cliente : IAuditable, IAuditableSetter
         Cpf? cpf = null,
         Cnpj? cnpj = null,
         Telefone? telefone = null,
-        Email? email = null)
+        Email? email = null,
+        string? observacoes = null)
     {
         if (id == Guid.Empty)
         {
@@ -140,6 +145,7 @@ public sealed class Cliente : IAuditable, IAuditableSetter
             Ativo = true,
             CriadoEm = agora,
             AtualizadoEm = agora,
+            Observacoes = observacoes,
         };
     }
 
@@ -198,8 +204,10 @@ public sealed class Cliente : IAuditable, IAuditableSetter
         AtualizadoPorUsuarioId = usuarioId;
     }
 
+    /// <inheritdoc/>
     void IAuditableSetter.SetCriadoEm(DateTime valor) => CriadoEm = valor;
 
+    /// <inheritdoc/>
     void IAuditableSetter.SetAtualizadoEm(DateTime valor) => AtualizadoEm = valor;
 
     private static void ValidarIdade(DateOnly dataNascimento)
@@ -211,7 +219,7 @@ public sealed class Cliente : IAuditable, IAuditableSetter
             throw new DomainException("Data de nascimento não pode ser futura.");
         }
 
-        var idade = hoje.Year - dataNascimento.Year;
+        int idade = hoje.Year - dataNascimento.Year;
         if (dataNascimento > hoje.AddYears(-idade))
         {
             idade--;

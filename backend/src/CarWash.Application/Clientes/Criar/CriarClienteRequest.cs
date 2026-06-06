@@ -1,4 +1,5 @@
 using CarWash.Application.Clientes.Common;
+using CarWash.Application.DTOs;
 
 namespace CarWash.Application.Clientes.Criar;
 
@@ -23,4 +24,8 @@ public class CriarClienteRequest
     public string? Email { get; set; }
 
     public EnderecoRequest? Endereco { get; set; }
+
+    public List<CriarVeiculoRequest>? Veiculos { get; set; }
+
+    public string? Observacoes { get; set; }
 }

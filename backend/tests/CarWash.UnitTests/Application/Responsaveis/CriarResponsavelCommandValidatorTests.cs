@@ -44,7 +44,7 @@ public class CriarResponsavelCommandValidatorTests
     [Fact]
     public async Task Nome_vazio_retorna_erro_obrigatorio()
     {
-        var command = ComandoValido() with { Nome = "" };
+        var command = ComandoValido() with { Nome = string.Empty };
 
         var result = await _sut.TestValidateAsync(command);
 

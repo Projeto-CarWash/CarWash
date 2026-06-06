@@ -25,9 +25,9 @@ public sealed class AlterarStatusVeiculoHandler
     {
         ArgumentNullException.ThrowIfNull(command);
 
-        var ativo = command.Ativo!.Value;
+        bool ativo = command.Ativo!.Value;
 
-        var cliente = await _clientes.ObterPorIdAsync(command.ClienteId, cancellationToken).ConfigureAwait(false)
+        _ = await _clientes.ObterPorIdAsync(command.ClienteId, cancellationToken).ConfigureAwait(false)
             ?? throw new NotFoundException("Cliente não encontrado.");
 
         var veiculo = await _veiculos.ObterPorIdAsync(command.VeiculoId, cancellationToken).ConfigureAwait(false)
