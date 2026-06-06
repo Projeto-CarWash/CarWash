@@ -27,7 +27,7 @@ const API_MESSAGES: Record<number, string> = {
   401: 'Sessão expirada. Faça login novamente.',
   403: 'Você não possui permissão para realizar esta operação.',
   404: 'Filial não encontrada.',
-  409: 'A filial selecionada está inativa e não pode receber novos agendamentos.',
+  409: 'Conflito detectado. Ajuste os dados e tente novamente.',
   500: 'Não foi possível concluir o agendamento no momento. Tente novamente.',
 };
 
@@ -160,20 +160,50 @@ export function NovoAgendamentoPage() {
       // 401 (sessão expirada) é tratado pelo interceptor do axios: tenta refresh
       // e, em falha, redireciona para /login (fluxo padrão de autenticação).
       if (!(error instanceof AxiosError) || !error.response) {
-        setGlobalError(API_MESSAGES[500]!);
+        // Erro de rede ou erro genérico — NÃO apagar dados do formulário.
+        setGlobalError('Não foi possível concluir o agendamento no momento. Tente novamente.');
         return;
       }
 
       const status = error.response.status;
       const problem = error.response.data as ProblemDetails | undefined;
 
-      // 404 (filial não encontrada) e 409 (filial inativa): a seleção atual não
-      // é mais válida — limpa o campo, volta à etapa 1 e pede nova escolha.
-      if (status === 404 || status === 409) {
+      // 404 (filial não encontrada): a seleção não é mais válida — limpa o campo,
+      // volta à etapa 1 e pede nova escolha.
+      if (status === 404) {
         setWizardState((prev) => ({ ...prev, filialId: '', filialNome: '' }));
         setConfirmado(false);
-        setGlobalError(API_MESSAGES[status]!);
+        setGlobalError(API_MESSAGES[404]!);
         goToStep(1);
+        return;
+      }
+
+      if (status === 409) {
+        // Diferencia os motivos de 409: filial inativa (RF019) vs conflito de
+        // capacidade ou de veículo (RF008.3).
+        const detail = (problem?.detail ?? '').toLowerCase();
+        const title = (problem?.title ?? '').toLowerCase();
+        const texto = detail || title;
+
+        if (texto.includes('inativa')) {
+          // Filial inativa: a seleção deixou de ser válida — volta à etapa 1.
+          setWizardState((prev) => ({ ...prev, filialId: '', filialNome: '' }));
+          setConfirmado(false);
+          setGlobalError(
+            'A filial selecionada está inativa e não pode receber novos agendamentos.',
+          );
+          goToStep(1);
+        } else if (texto.includes('capacidade')) {
+          setGlobalError('Capacidade da filial atingida para o horário informado.');
+        } else if (texto.includes('veículo') || texto.includes('veiculo')) {
+          setGlobalError('Já existe agendamento para este veículo no horário informado.');
+        } else {
+          // Fallback: usa título do backend se reconhecível, senão mensagem genérica.
+          setGlobalError(
+            problem?.title ?? 'Conflito detectado. Ajuste os dados e tente novamente.',
+          );
+        }
+        // Em conflito de capacidade/veículo NÃO limpa o formulário — o usuário ajusta e reenvia.
         return;
       }
 
