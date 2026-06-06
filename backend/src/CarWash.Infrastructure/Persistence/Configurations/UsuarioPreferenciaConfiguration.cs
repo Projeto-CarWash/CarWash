@@ -12,7 +12,7 @@ public sealed class UsuarioPreferenciaConfiguration : IEntityTypeConfiguration<U
         ArgumentNullException.ThrowIfNull(builder);
 
         builder.ToTable("usuario_preferencias", t =>
-            t.HasCheckConstraint("ck_pref_tema", "tema IN ('claro','escuro')"));
+            t.HasCheckConstraint("ck_pref_tema", "tema IN ('light','dark')"));
 
         builder.HasKey(x => x.Id).HasName("pk_usuario_preferencias");
         builder.Property(x => x.Id).ValueGeneratedNever();
@@ -22,7 +22,7 @@ public sealed class UsuarioPreferenciaConfiguration : IEntityTypeConfiguration<U
             .IsRequired()
             .HasMaxLength(10)
             .HasColumnName("tema")
-            .HasDefaultValue("claro");
+            .HasDefaultValue("light");
         builder.Property(x => x.AtualizadoEm)
             .IsRequired()
             .HasColumnType("timestamptz")

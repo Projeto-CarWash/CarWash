@@ -67,6 +67,6 @@ public class SeedTests
             .ConfigureAwait(false);
 
         pref.Should().NotBeNull();
-        pref!.TemaRaw.Should().Be("claro");
+        pref!.TemaRaw.Should().Be("light");
     }
 }
