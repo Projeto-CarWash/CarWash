@@ -2,6 +2,8 @@ using System.Reflection;
 using CarWash.Application.Abstractions;
 using CarWash.Application.Abstractions.Messaging;
 using CarWash.Application.Agendamentos.Common;
+using CarWash.Application.Dashboard.Metricas.Common;
+using CarWash.Application.Dashboard.Metricas.Consultar;
 using CarWash.Application.Interfaces;
 using CarWash.Application.Services;
 using FluentValidation;
@@ -33,6 +35,10 @@ public static class DependencyInjection
 
         // Registros manuais de serviços da aplicação
         services.AddScoped<IVeiculoService, VeiculoService>();
+
+        services.AddScoped<IQueryHandler<ConsultarDashboardMetricasQuery, DashboardMetricasResponse>,
+        ConsultarDashboardMetricasHandler>();
+
         return services;
     }
 
