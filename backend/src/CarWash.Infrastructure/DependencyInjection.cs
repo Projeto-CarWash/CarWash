@@ -12,6 +12,7 @@ using CarWash.Application.Interfaces;
 using CarWash.Application.Responsaveis.Persistence;
 using CarWash.Application.Servicos.Persistence;
 using CarWash.Application.Usuarios.Persistence;
+using CarWash.Application.Usuarios.Preferencias.Persistence;
 using CarWash.Application.Veiculos.Persistence;
 using CarWash.Infrastructure.Agendamentos;
 using CarWash.Infrastructure.Auditing;
@@ -84,6 +85,7 @@ public static class DependencyInjection
         services.AddHostedService<IdempotenciaCleanupService>();
 
         services.AddScoped<IDashboardMetricasRepository, DashboardMetricasRepository>();
+        services.AddScoped<IUsuarioPreferenciaRepository, UsuarioPreferenciaRepository>();
 
         services.AddDbContext<CarWashDbContext>((sp, opt) =>
         {
