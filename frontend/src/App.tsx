@@ -12,6 +12,9 @@ import { ClientesListaPage } from '@/pages/Clientes/ClientesListaPage';
 import { EditarClientePage } from '@/pages/Clientes/EditarClientePage';
 import { NovoVeiculoPage } from '@/pages/Clientes/NovoVeiculoPage';
 import Dashboard from '@/pages/Dashboard/Dashboard';
+import { FiliaisListaPage } from '@/pages/Filiais/FiliaisListaPage';
+import { FilialEditarPage } from '@/pages/Filiais/FilialEditarPage';
+import { FilialFormPage } from '@/pages/Filiais/FilialFormPage';
 import Login from '@/pages/Login/Login';
 import { ServicoFormPage } from '@/pages/Servicos/ServicoFormPage';
 import { ServicosListaPage } from '@/pages/Servicos/ServicosListaPage';
@@ -173,6 +176,39 @@ function App() {
             <PrivateRoute>
               <DashboardLayout>
                 <ServicoFormPage />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/filiais"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <FiliaisListaPage />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/filiais/nova"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <FilialFormPage />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/filiais/:id/editar"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <FilialEditarPage />
               </DashboardLayout>
             </PrivateRoute>
           }
