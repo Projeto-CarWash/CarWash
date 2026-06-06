@@ -12,8 +12,10 @@ const CIDADE_PATTERN = /^[a-zA-ZáàãâäéèêëíïóôõöúüçñÁÀÃÂÄ
  * Endereço estruturado, celular obrigatório (RF003), data de nascimento com
  * idade 18..110, email opcional.
  *
- * Expandido para suportar:
- * - Veículos com campos ampliados (marca, anoModelo, categoria, renavam, observações)
+ * Veículos seguem o contrato oficial da API:
+ *   { placa: string, fabricante: string, modelo: string, cor: string, ano: number }
+ * - `cor` persiste o valor hexadecimal diretamente (ex: "#2563EB").
+ * - `ano` é enviado como Number.
  * - Preferências de agendamento (lembretes, canais de contato)
  * - Filiados vinculados ao cliente
  */
@@ -26,18 +28,12 @@ export const veiculoItemSchema = z.object({
     .refine((val) => /^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$/.test(val), {
       message: 'Formato de placa inválido (ex: ABC-1234 ou ABC1D23).',
     }),
-  renavam: z
+  fabricante: z
     .string()
-    .optional()
-    .refine((val) => !val || /^\d{11}$/.test(val), {
-      message: 'Renavam deve conter 11 números.',
-    }),
-  marca: z
-    .string()
-    .min(1, 'Marca é obrigatória.')
+    .min(1, 'Fabricante é obrigatório.')
     .transform((val) => val.trim())
     .refine((val) => val.length >= 2 && val.length <= 80, {
-      message: 'Marca deve ter entre 2 e 80 caracteres.',
+      message: 'Fabricante deve ter entre 2 e 80 caracteres.',
     }),
   modelo: z
     .string()
@@ -46,57 +42,20 @@ export const veiculoItemSchema = z.object({
     .refine((val) => val.length >= 2 && val.length <= 80, {
       message: 'Modelo deve ter entre 2 e 80 caracteres.',
     }),
-  anoModelo: z
-    .string()
+  cor: z.string().min(1, 'Cor é obrigatória.'),
+  ano: z
+    .union([z.string(), z.number()])
     .optional()
-    .refine((val) => !val || /^[\d/ ]{4,11}$/.test(val), {
-      message: 'Ano inválido (ex: 2024 / 2025).',
+    .transform((val) => {
+      if (val === '' || val === undefined || val === null) return undefined;
+      return Number(val);
     })
-    .refine(
-      (val) => {
-        if (!val) return true;
-        const nums = val.replace(/\D/g, '');
-        if (nums.length < 4) return true;
-
-        const year1 = parseInt(nums.slice(0, 4), 10);
-        if (year1 < 1930 || year1 > 2027) return false;
-
-        if (nums.length >= 8) {
-          const year2 = parseInt(nums.slice(4, 8), 10);
-          if (year2 < 1930 || year2 > 2027) return false;
-        }
-
-        return true;
-      },
-      {
-        message: 'O ano deve ser entre 1930 e 2027.',
-      },
-    )
-    .refine(
-      (val) => {
-        if (!val) return true;
-        const nums = val.replace(/\D/g, '');
-        if (nums.length >= 8) {
-          const year1 = parseInt(nums.slice(0, 4), 10);
-          const year2 = parseInt(nums.slice(4, 8), 10);
-          return year2 === year1 || year2 === year1 + 1;
-        }
-        return true;
-      },
-      {
-        message: 'O modelo deve ser do mesmo ano ou até 1 ano à frente.',
-      },
-    ),
-  categoria: z.string().optional(),
-  cor: z
-    .string()
-    .min(1, 'Cor é obrigatória.')
-    .transform((val) => val.trim())
-    .refine((val) => val.length >= 2 && val.length <= 40, {
-      message: 'Cor deve ter entre 2 e 40 caracteres.',
+    .refine((val) => val === undefined || (!isNaN(val) && Number.isInteger(val)), {
+      message: 'Ano deve ser um número inteiro.',
+    })
+    .refine((val) => val === undefined || (val >= 1930 && val <= 2027), {
+      message: 'O ano deve ser entre 1930 e 2027.',
     }),
-  corHex: z.string().optional(),
-  observacoesAtendimento: z.string().max(500, 'Máximo 500 caracteres.').optional(),
 });
 
 export const filiadoSchema = z.object({
@@ -349,6 +308,7 @@ export const editarClienteSchema = clienteSchema.omit({
 
 export type VeiculoLocalFormData = z.infer<typeof veiculoItemSchema>;
 export type FiliadoFormData = z.infer<typeof filiadoSchema>;
+export type ClienteFormInput = z.input<typeof clienteSchema>;
 export type ClienteFormData = z.infer<typeof clienteSchema>;
 export type EditarClienteFormData = z.infer<typeof editarClienteSchema>;
 export type LembreteValue = (typeof LEMBRETES_VALUES)[number];

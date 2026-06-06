@@ -22,6 +22,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { getCorCSS } from '@/lib/colors';
 import { clienteService, type ClienteDetalhe } from '@/services/clienteService';
 
 export function ClienteDetalhePage() {
@@ -316,7 +317,15 @@ export function ClienteDetalhePage() {
                       <h4 className="text-sm font-semibold text-zinc-200">
                         {veiculo.fabricante} {veiculo.modelo}
                       </h4>
-                      <p className="text-xs text-zinc-500">{veiculo.cor}</p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        {veiculo.cor && (
+                          <span
+                            className="inline-block h-4 w-4 rounded-full border border-zinc-600 shadow-sm"
+                            style={{ backgroundColor: getCorCSS(veiculo.cor) }}
+                            title={`Cor: ${veiculo.cor}`}
+                          />
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div className="rounded-md border border-zinc-700 bg-zinc-900 px-2.5 py-1 text-xs font-mono font-bold tracking-wider text-zinc-200 uppercase shadow-inner">

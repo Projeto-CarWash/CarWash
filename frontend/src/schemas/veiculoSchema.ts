@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 const VEICULO_TEXTO_PATTERN = /^[a-zA-ZáàãâäéèêëíïóôõöúüçñÁÀÃÂÄÉÈÊËÍÏÓÔÕÖÚÜÇÑ0-9\s.-]+$/;
 const FABRICANTE_PATTERN = /^[a-zA-ZáàãâäéèêëíïóôõöúüçñÁÀÃÂÄÉÈÊËÍÏÓÔÕÖÚÜÇÑ\s-]+$/;
-const COR_PATTERN = /^[a-zA-ZáàãâäéèêëíïóôõöúüçñÁÀÃÂÄÉÈÊËÍÏÓÔÕÖÚÜÇÑ\s]+$/;
+const COR_PATTERN = /^([a-zA-ZáàãâäéèêëíïóôõöúüçñÁÀÃÂÄÉÈÊËÍÏÓÔÕÖÚÜÇÑ\s]+|#[0-9a-fA-F]{3,6})$/;
 
 export const veiculoSchema = z.object({
   clienteId: z
@@ -57,7 +57,8 @@ export const veiculoSchema = z.object({
       message: 'Cor deve ter entre 2 e 40 caracteres.',
     })
     .refine((val) => COR_PATTERN.test(val), {
-      message: 'Cor não deve conter números ou caracteres especiais.',
+      message:
+        'Cor inválida. Use um nome sem números/caracteres especiais ou um código hexadecimal válido.',
     }),
 });
 
