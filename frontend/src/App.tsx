@@ -18,6 +18,7 @@ import { ServicosListaPage } from '@/pages/Servicos/ServicosListaPage';
 import { NovoUsuarioPage } from '@/pages/Usuarios/NovoUsuarioPage';
 import { UsuarioDetalhePage } from '@/pages/Usuarios/UsuarioDetalhePage';
 import { UsuariosListaPage } from '@/pages/Usuarios/UsuariosListaPage';
+import { VeiculosListaPage } from '@/pages/Veiculos/VeiculosListaPage';
 
 function App() {
   return (
@@ -80,6 +81,28 @@ function App() {
 
         <Route
           path="/clientes/:id/veiculos/novo"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <NovoVeiculoPage />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/veiculos"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <VeiculosListaPage />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/veiculos/novo"
           element={
             <PrivateRoute>
               <DashboardLayout>
