@@ -48,10 +48,9 @@ export function useServicos() {
 }
 
 /**
- * Lista de filiais.
+ * Lista de filiais ativas para o seletor obrigatório do agendamento (RF019).
  *
- * @remarks Depende de `GET /api/v1/filiais` — endpoint PENDENTE no backend
- * (ver `services/filialService.ts`).
+ * @remarks `GET /api/v1/filiais?ativo=true` (endpoint oficial — ADR-0007 §4).
  */
 export function useFiliais() {
   return useQuery({
