@@ -12,6 +12,7 @@ using CarWash.Application.Interfaces;
 using CarWash.Application.Responsaveis.Persistence;
 using CarWash.Application.Servicos.Persistence;
 using CarWash.Application.Usuarios.Persistence;
+using CarWash.Application.Usuarios.Preferencias.Persistence;
 using CarWash.Application.Veiculos.Persistence;
 using CarWash.Infrastructure.Agendamentos;
 using CarWash.Infrastructure.Auditing;
@@ -26,7 +27,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using CarWash.Application.Usuarios.Preferencias.Persistence;
 
 namespace CarWash.Infrastructure;
 

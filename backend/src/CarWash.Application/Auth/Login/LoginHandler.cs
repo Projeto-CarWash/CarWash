@@ -4,8 +4,8 @@ using CarWash.Application.Auth.Abstractions;
 using CarWash.Application.Common.Exceptions;
 using CarWash.Application.Common.Security;
 using CarWash.Application.Usuarios.Persistence;
-using Microsoft.Extensions.Logging;
 using CarWash.Application.Usuarios.Preferencias.Persistence;
+using Microsoft.Extensions.Logging;
 
 namespace CarWash.Application.Auth.Login;
 

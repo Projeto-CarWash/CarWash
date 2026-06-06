@@ -41,7 +41,7 @@ public static class UsuarioPreferenciasEndpoints
         HttpContext http,
         CancellationToken cancellationToken)
     {
-        Guid? usuarioId = ObterUsuarioId(http);
+        var usuarioId = ObterUsuarioId(http);
 
         if (!usuarioId.HasValue)
         {
@@ -50,7 +50,7 @@ public static class UsuarioPreferenciasEndpoints
 
         string traceId = ObterTraceId(http);
 
-        UsuarioPreferenciasResponse response = await handler
+        var response = await handler
             .HandleAsync(
                 new ConsultarMinhasPreferenciasQuery(usuarioId.Value, traceId),
                 cancellationToken)
@@ -65,7 +65,7 @@ public static class UsuarioPreferenciasEndpoints
         HttpContext http,
         CancellationToken cancellationToken)
     {
-        Guid? usuarioId = ObterUsuarioId(http);
+        var usuarioId = ObterUsuarioId(http);
 
         if (!usuarioId.HasValue)
         {
@@ -81,7 +81,7 @@ public static class UsuarioPreferenciasEndpoints
 
         try
         {
-            UsuarioPreferenciasResponse response = await handler
+            var response = await handler
                 .HandleAsync(command, cancellationToken)
                 .ConfigureAwait(false);
 
@@ -116,7 +116,7 @@ public static class UsuarioPreferenciasEndpoints
             ?? http.User.FindFirst("usuario_id")?.Value
             ?? http.User.FindFirst("uid")?.Value;
 
-        return Guid.TryParse(raw, out Guid usuarioId)
+        return Guid.TryParse(raw, out var usuarioId)
             ? usuarioId
             : null;
     }

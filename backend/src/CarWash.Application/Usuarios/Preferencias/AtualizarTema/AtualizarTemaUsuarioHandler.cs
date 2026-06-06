@@ -51,7 +51,7 @@ public sealed class AtualizarTemaUsuarioHandler
             throw new UnauthorizedAccessException("Usuário autenticado não encontrado.");
         }
 
-        TemaPreferencia temaNovo = TemaPreferenciaExtensions.FromApiValue(command.Theme!);
+        var temaNovo = TemaPreferenciaExtensions.FromApiValue(command.Theme!);
 
         var preferencia = await _repository
             .ObterPorUsuarioIdAsync(command.UsuarioId, cancellationToken)
