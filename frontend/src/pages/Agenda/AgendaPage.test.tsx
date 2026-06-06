@@ -223,4 +223,257 @@ describe('AgendaPage', () => {
 
     expect(await screen.findByText('Lavagem Completa')).toBeInTheDocument();
   });
+
+  it('fluxo de cancelamento feliz: atualiza status para CANCELADO', async () => {
+    const user = userEvent.setup();
+    renderComProviders(<AgendaPage />);
+
+    await preencherFiltros(user);
+    await user.click(screen.getByRole('button', { name: /buscar agenda/i }));
+
+    // Abre o modal de detalhes clicando no item
+    const item = await screen.findByText('Maria Souza');
+    await user.click(item);
+
+    // Clica em Cancelar agendamento no modal de detalhes
+    const modal = screen.getByRole('dialog', { name: /detalhe do agendamento/i });
+    const btnCancelar = within(modal).getByRole('button', { name: /cancelar agendamento/i });
+    await user.click(btnCancelar);
+
+    // Modal de cancelamento abre
+    expect(screen.getByText('Confirmar cancelamento do agendamento')).toBeInTheDocument();
+
+    const motivoInput = screen.getByLabelText(/motivo do cancelamento/i);
+    await user.type(motivoInput, 'Motivo de cancelamento para testes');
+
+    const btnConfirmar = screen.getByRole('button', { name: 'Confirmar cancelamento' });
+    expect(btnConfirmar).not.toBeDisabled();
+    await user.click(btnConfirmar);
+
+    // Deve fechar o modal e atualizar o status
+    await waitFor(() => {
+      expect(screen.queryByText('Confirmar cancelamento do agendamento')).not.toBeInTheDocument();
+    });
+
+    // O status no modal de detalhe e na listagem deve ser CANCELADO
+    expect(screen.getAllByText('CANCELADO').length).toBeGreaterThanOrEqual(2);
+    // O toast de sucesso deve aparecer
+    expect(screen.getByText('Agendamento cancelado com sucesso.')).toBeInTheDocument();
+  });
+
+  it('bloqueia o cancelamento se o motivo for inválido (< 5 caracteres)', async () => {
+    const user = userEvent.setup();
+    renderComProviders(<AgendaPage />);
+
+    await preencherFiltros(user);
+    await user.click(screen.getByRole('button', { name: /buscar agenda/i }));
+
+    const item = await screen.findByText('Maria Souza');
+    await user.click(item);
+
+    const modal = screen.getByRole('dialog', { name: /detalhe do agendamento/i });
+    const btnCancelar = within(modal).getByRole('button', { name: /cancelar agendamento/i });
+    await user.click(btnCancelar);
+
+    const motivoInput = screen.getByLabelText(/motivo do cancelamento/i);
+    await user.type(motivoInput, '123'); // < 5 caracteres
+
+    const btnConfirmar = screen.getByRole('button', { name: 'Confirmar cancelamento' });
+    expect(btnConfirmar).toBeDisabled();
+  });
+
+  it('exibe bloqueio de edição para agendamento CONCLUIDO', async () => {
+    // Mock agenda para retornar item CONCLUIDO
+    server.use(
+      http.get('/api/v1/agenda', () =>
+        HttpResponse.json({
+          message: 'Agenda consultada com sucesso.',
+          data: [
+            {
+              agendamentoId: 'concluido-id',
+              inicio: '2099-01-01T14:00:00.000Z',
+              fim: '2099-01-01T15:30:00.000Z',
+              titulo: 'Lavagem Completa',
+              status: 'CONCLUIDO',
+              clienteNome: 'Maria Souza',
+              veiculoPlaca: 'ABC1D23',
+              servicosResumo: 'Lavagem Completa + 1',
+            },
+          ],
+          traceId: 'trace-concluido',
+        }),
+      ),
+    );
+
+    const user = userEvent.setup();
+    renderComProviders(<AgendaPage />);
+
+    await preencherFiltros(user);
+    await user.click(screen.getByRole('button', { name: /buscar agenda/i }));
+
+    const item = await screen.findByText('Maria Souza');
+    await user.click(item);
+
+    // O botão de editar deve estar desabilitado
+    const modal = screen.getByRole('dialog', { name: /detalhe do agendamento/i });
+    const btnEditar = within(modal).getByRole('button', { name: /editar agendamento/i });
+    expect(btnEditar).toBeDisabled();
+
+    // Deve exibir a mensagem de bloqueio correspondente
+    expect(screen.getByText('Agendamento finalizado não pode ser editado.')).toBeInTheDocument();
+  });
+
+  it('exibe bloqueio de edição para agendamento EM_ANDAMENTO', async () => {
+    // Mock agenda para retornar item EM_ANDAMENTO
+    server.use(
+      http.get('/api/v1/agenda', () =>
+        HttpResponse.json({
+          message: 'Agenda consultada com sucesso.',
+          data: [
+            {
+              agendamentoId: 'andamento-id',
+              inicio: '2099-01-01T14:00:00.000Z',
+              fim: '2099-01-01T15:30:00.000Z',
+              titulo: 'Lavagem Completa',
+              status: 'EM_ANDAMENTO',
+              clienteNome: 'Maria Souza',
+              veiculoPlaca: 'ABC1D23',
+              servicosResumo: 'Lavagem Completa + 1',
+            },
+          ],
+          traceId: 'trace-andamento',
+        }),
+      ),
+    );
+
+    const user = userEvent.setup();
+    renderComProviders(<AgendaPage />);
+
+    await preencherFiltros(user);
+    await user.click(screen.getByRole('button', { name: /buscar agenda/i }));
+
+    const item = await screen.findByText('Maria Souza');
+    await user.click(item);
+
+    const modal = screen.getByRole('dialog', { name: /detalhe do agendamento/i });
+    const btnEditar = within(modal).getByRole('button', { name: /editar agendamento/i });
+    expect(btnEditar).toBeDisabled();
+
+    expect(screen.getByText('Agendamento no status atual não permite edição.')).toBeInTheDocument();
+  });
+
+  it('trata erro 409 (conflito) no cancelamento', async () => {
+    const user = userEvent.setup();
+    renderComProviders(<AgendaPage />);
+
+    await preencherFiltros(user);
+    await user.click(screen.getByRole('button', { name: /buscar agenda/i }));
+
+    const item = await screen.findByText('Maria Souza');
+    await user.click(item);
+
+    const modal = screen.getByRole('dialog', { name: /detalhe do agendamento/i });
+    const btnCancelar = within(modal).getByRole('button', { name: /cancelar agendamento/i });
+    await user.click(btnCancelar);
+
+    const motivoInput = screen.getByLabelText(/motivo do cancelamento/i);
+    // digita trigger-409 para simular HTTP 409
+    await user.type(motivoInput, 'trigger-409');
+
+    const btnConfirmar = screen.getByRole('button', { name: 'Confirmar cancelamento' });
+    await user.click(btnConfirmar);
+
+    // Deve exibir o toast com erro do backend e manter modal aberto
+    expect(
+      await screen.findByText('Conflito de estado inválido para operação.'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Confirmar cancelamento do agendamento')).toBeInTheDocument();
+  });
+
+  it('trata erro 401 (sem login) redirecionando para login', async () => {
+    const user = userEvent.setup();
+    renderComProviders(<AgendaPage />);
+
+    await preencherFiltros(user);
+    await user.click(screen.getByRole('button', { name: /buscar agenda/i }));
+
+    const item = await screen.findByText('Maria Souza');
+    await user.click(item);
+
+    const modal = screen.getByRole('dialog', { name: /detalhe do agendamento/i });
+    const btnCancelar = within(modal).getByRole('button', { name: /cancelar agendamento/i });
+    await user.click(btnCancelar);
+
+    const motivoInput = screen.getByLabelText(/motivo do cancelamento/i);
+    // digita trigger-401 para simular HTTP 401
+    await user.type(motivoInput, 'trigger-401');
+
+    const btnConfirmar = screen.getByRole('button', { name: 'Confirmar cancelamento' });
+    await user.click(btnConfirmar);
+
+    // Deve fechar modal e exibir mensagem de erro de autenticação
+    await waitFor(() => {
+      expect(screen.queryByText('Confirmar cancelamento do agendamento')).not.toBeInTheDocument();
+    });
+    expect(
+      screen.getByText('Autenticação obrigatória para executar esta operação.'),
+    ).toBeInTheDocument();
+  });
+
+  it('trata erro 403 (sem permissão) exibindo toast de erro', async () => {
+    const user = userEvent.setup();
+    renderComProviders(<AgendaPage />);
+
+    await preencherFiltros(user);
+    await user.click(screen.getByRole('button', { name: /buscar agenda/i }));
+
+    const item = await screen.findByText('Maria Souza');
+    await user.click(item);
+
+    const modal = screen.getByRole('dialog', { name: /detalhe do agendamento/i });
+    const btnCancelar = within(modal).getByRole('button', { name: /cancelar agendamento/i });
+    await user.click(btnCancelar);
+
+    const motivoInput = screen.getByLabelText(/motivo do cancelamento/i);
+    // digita trigger-403 para simular HTTP 403
+    await user.type(motivoInput, 'trigger-403');
+
+    const btnConfirmar = screen.getByRole('button', { name: 'Confirmar cancelamento' });
+    await user.click(btnConfirmar);
+
+    await waitFor(() => {
+      expect(screen.queryByText('Confirmar cancelamento do agendamento')).not.toBeInTheDocument();
+    });
+    expect(
+      screen.getByText('Você não possui permissão para cancelar ou editar agendamentos.'),
+    ).toBeInTheDocument();
+  });
+
+  it('trata erro 404 (não encontrado) fechando modal e exibindo toast', async () => {
+    const user = userEvent.setup();
+    renderComProviders(<AgendaPage />);
+
+    await preencherFiltros(user);
+    await user.click(screen.getByRole('button', { name: /buscar agenda/i }));
+
+    const item = await screen.findByText('Maria Souza');
+    await user.click(item);
+
+    const modal = screen.getByRole('dialog', { name: /detalhe do agendamento/i });
+    const btnCancelar = within(modal).getByRole('button', { name: /cancelar agendamento/i });
+    await user.click(btnCancelar);
+
+    const motivoInput = screen.getByLabelText(/motivo do cancelamento/i);
+    // digita trigger-404 para simular HTTP 404
+    await user.type(motivoInput, 'trigger-404');
+
+    const btnConfirmar = screen.getByRole('button', { name: 'Confirmar cancelamento' });
+    await user.click(btnConfirmar);
+
+    await waitFor(() => {
+      expect(screen.queryByText('Confirmar cancelamento do agendamento')).not.toBeInTheDocument();
+      expect(screen.queryByText('Detalhe do Agendamento')).not.toBeInTheDocument();
+    });
+    expect(screen.getByText('Agendamento não encontrado.')).toBeInTheDocument();
+  });
 });

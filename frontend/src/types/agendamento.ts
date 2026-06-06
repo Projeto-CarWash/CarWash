@@ -129,3 +129,17 @@ export interface PreConfirmacaoResponse {
   resumo: ResumoConfirmacao;
   traceId: string;
 }
+
+export interface CancelarAgendamentoData {
+  id: string;
+  status: string;
+  canceladoEm: string | null;
+  canceladoPor: string | null;
+  motivoCancelamento: string | null;
+}
+
+export interface CancelarAgendamentoResponse {
+  message: string;
+  data: CancelarAgendamentoData;
+  traceId: string;
+}

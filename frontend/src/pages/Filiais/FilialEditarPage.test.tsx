@@ -43,7 +43,8 @@ describe('FilialEditarPage (RF018)', () => {
 
     expect(await screen.findByText('Unidade Centro')).toBeInTheDocument();
     const campo = await screen.findByLabelText(/células ativas/i);
-    expect(campo).toHaveValue(4);
+    // Campo `type="text"` (controle estrito de inteiros) — valor como string.
+    expect(campo).toHaveValue('4');
     // Status exibido somente leitura (sem botão de ativar/desativar).
     expect(screen.getByText(/^ativa$/i)).toBeInTheDocument();
   });
@@ -66,7 +67,10 @@ describe('FilialEditarPage (RF018)', () => {
     await user.type(campo, '8');
     await user.click(screen.getByRole('button', { name: /salvar alterações/i }));
 
-    expect(await screen.findByText(/filial atualizada com sucesso/i)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/configuração de células ativas atualizada com sucesso/i),
+    ).toBeInTheDocument();
+    // Enviado como Number inteiro — nunca string.
     expect(recebido).toHaveBeenCalledWith({ celulasAtivas: 8 });
   });
 
@@ -99,6 +103,9 @@ describe('FilialEditarPage (RF018)', () => {
     await waitFor(() => {
       expect(screen.getByText(/valor de células ativas inválido/i)).toBeInTheDocument();
     });
+    // Campo destacado e valor digitado preservado para correção.
+    expect(campo).toHaveAttribute('aria-invalid', 'true');
+    expect(campo).toHaveValue('50');
   });
 
   it('exibe erro de carga quando a filial não existe (404)', async () => {
