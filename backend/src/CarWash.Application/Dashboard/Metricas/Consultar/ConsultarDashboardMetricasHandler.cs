@@ -36,7 +36,7 @@ public sealed class ConsultarDashboardMetricasHandler
             throw new ValidationException(validation.Errors);
         }
 
-        DashboardMetricasDataResponse data = await repository.ConsultarAsync(
+        var data = await repository.ConsultarAsync(
             query.DataInicio,
             query.DataFim,
             query.FilialId,

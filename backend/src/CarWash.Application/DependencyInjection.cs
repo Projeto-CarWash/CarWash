@@ -2,13 +2,12 @@ using System.Reflection;
 using CarWash.Application.Abstractions;
 using CarWash.Application.Abstractions.Messaging;
 using CarWash.Application.Agendamentos.Common;
+using CarWash.Application.Dashboard.Metricas.Common;
+using CarWash.Application.Dashboard.Metricas.Consultar;
 using CarWash.Application.Interfaces;
 using CarWash.Application.Services;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
-using CarWash.Application.Abstractions.Messaging;
-using CarWash.Application.Dashboard.Metricas.Common;
-using CarWash.Application.Dashboard.Metricas.Consultar;
 
 namespace CarWash.Application;
 
