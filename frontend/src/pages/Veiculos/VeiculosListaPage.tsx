@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { getCorCSS } from '@/lib/colors';
 import { veiculoService } from '@/services/veiculoService';
 
 import type { VeiculoListaItem } from '@/types/veiculo';
@@ -191,7 +192,17 @@ export function VeiculosListaPage() {
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-zinc-400">{v.cor}</td>
+                  <td className="px-4 py-3">
+                    {v.cor ? (
+                      <span
+                        className="inline-block h-4 w-4 rounded-full border border-zinc-600 shadow-sm"
+                        style={{ backgroundColor: getCorCSS(v.cor) }}
+                        title={`Cor: ${v.cor}`}
+                      />
+                    ) : (
+                      <span className="text-zinc-600">—</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3">
                     <button
                       type="button"
