@@ -5,6 +5,7 @@ import { useCallback, useState } from 'react';
 import { Controller, useForm, type Control } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 
+import { CelulasAtivasField } from '@/components/filiais/CelulasAtivasField';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -283,15 +284,20 @@ export function FilialFormPage() {
               transform={(v) => maskCnpj(v)}
             />
 
-            <CampoFilial
+            <Controller
               control={form.control}
               name="celulasAtivas"
-              id="filial-celulas"
-              label="Células ativas"
-              placeholder="Ex: 4"
-              type="number"
-              inputMode="numeric"
-              hint="Número inteiro entre 1 e 100."
+              render={({ field, fieldState }) => (
+                <CelulasAtivasField
+                  id="filial-celulas"
+                  value={field.value as string | number | undefined}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  inputRef={field.ref}
+                  error={fieldState.error?.message}
+                  disabled={isPending}
+                />
+              )}
             />
 
             <div className="mt-2 md:col-span-2">
