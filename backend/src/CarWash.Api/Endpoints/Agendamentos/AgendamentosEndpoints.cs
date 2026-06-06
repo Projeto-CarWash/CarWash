@@ -119,11 +119,14 @@ public static class AgendamentosEndpoints
 
         logger.LogInformation(
             "Agendamento criado com sucesso. TraceId: {TraceId}. AgendamentoId: {AgendamentoId}. "
-            + "VeiculoId: {VeiculoId}. FilialId: {FilialId}. UsuarioId: {UsuarioId}",
+            + "VeiculoId: {VeiculoId}. FilialId: {FilialId}. ClienteId: {ClienteId}. "
+            + "ResponsavelId: {ResponsavelId}. UsuarioId: {UsuarioId}",
             traceId,
             resposta.Id,
             resposta.VeiculoId,
             resposta.FilialId,
+            resposta.ClienteId,
+            resposta.ResponsavelId,
             usuarioId);
 
         return TypedResults.Created($"/api/v1/agendamentos/{resposta.Id}", resposta);
@@ -165,10 +168,13 @@ public static class AgendamentosEndpoints
 
         logger.LogInformation(
             "Pré-confirmação de agendamento gerada. TraceId: {TraceId}. FilialId: {FilialId}. "
-            + "VeiculoId: {VeiculoId}. UsuarioId: {UsuarioId}. ExpiraEm: {ExpiraEm:o}",
+            + "VeiculoId: {VeiculoId}. ClienteId: {ClienteId}. ResponsavelId: {ResponsavelId}. "
+            + "UsuarioId: {UsuarioId}. ExpiraEm: {ExpiraEm:o}",
             traceId,
             resposta.Resumo.Filial.Id,
             resposta.Resumo.Veiculo.Id,
+            resposta.Resumo.Cliente.Id,
+            resposta.Resumo.Responsavel.Id,
             usuarioId,
             resposta.ExpiraEm);
 
@@ -227,11 +233,14 @@ public static class AgendamentosEndpoints
         {
             logger.LogInformation(
                 "Agendamento confirmado com sucesso. TraceId: {TraceId}. AgendamentoId: {AgendamentoId}. "
-                + "VeiculoId: {VeiculoId}. FilialId: {FilialId}. UsuarioId: {UsuarioId}",
+                + "VeiculoId: {VeiculoId}. FilialId: {FilialId}. ClienteId: {ClienteId}. "
+                + "ResponsavelId: {ResponsavelId}. UsuarioId: {UsuarioId}",
                 traceId,
                 resposta.Id,
                 resposta.VeiculoId,
                 resposta.FilialId,
+                resposta.ClienteId,
+                resposta.ResponsavelId,
                 usuarioId);
         }
 

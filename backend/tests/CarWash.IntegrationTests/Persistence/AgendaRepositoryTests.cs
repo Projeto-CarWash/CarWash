@@ -1,5 +1,6 @@
 using System.Data.Common;
 using CarWash.Domain.Entities;
+using CarWash.Domain.Enums;
 using CarWash.Domain.ValueObjects;
 using CarWash.Infrastructure.Persistence;
 using CarWash.Infrastructure.Persistence.Repositories;
@@ -166,6 +167,8 @@ public class AgendaRepositoryTests : IAsyncDisposable
             valorTotal += 55m;
         }
 
+        var responsavel = ResponsavelValido(cliente.Id);
+
         var agendamento = Agendamento.Criar(
             id: agendamentoId,
             filialId: filialId,
@@ -174,7 +177,7 @@ public class AgendaRepositoryTests : IAsyncDisposable
             criadoPor: AdminId,
             inicio: inicio,
             fim: inicio.AddMinutes(Math.Max(duracaoTotal, 30)),
-            responsavelId: null,
+            responsavelId: responsavel.Id,
             observacoes: null,
             duracaoTotalMin: duracaoTotal,
             valorTotal: valorTotal);
@@ -186,11 +189,19 @@ public class AgendaRepositoryTests : IAsyncDisposable
 
         db.Clientes.Add(cliente);
         db.Veiculos.Add(veiculo);
+        db.Responsaveis.Add(responsavel);
         db.Servicos.AddRange(catalogos);
         db.Agendamentos.Add(agendamento);
         db.AgendamentoItens.AddRange(itens);
         await db.SaveChangesAsync();
     }
+
+    private static Responsavel ResponsavelValido(Guid clienteTitularId) => Responsavel.Criar(
+        id: Guid.NewGuid(),
+        clienteTitularId: clienteTitularId,
+        nome: "Responsável Teste",
+        documento: GerarCpfValido(),
+        grauVinculo: GrauVinculo.ResponsavelFinanceiro);
 
     private static Cliente ClienteValido() => Cliente.Criar(
         id: Guid.NewGuid(),

@@ -12,7 +12,7 @@ public sealed class CriarAgendamentoRequest
 
     public Guid VeiculoId { get; set; }
 
-    public Guid? ResponsavelId { get; set; }
+    public Guid ResponsavelId { get; set; }
 
     public DateTime? Inicio { get; set; }
 

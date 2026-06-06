@@ -110,10 +110,13 @@ public sealed class PreConfirmarAgendamentoHandler
 
         _logger.LogInformation(
             "Pré-confirmação gerada. UsuarioId: {UsuarioId}. FilialId: {FilialId}. VeiculoId: {VeiculoId}. "
+            + "ClienteId: {ClienteId}. ResponsavelId: {ResponsavelId}. "
             + "Janela: [{Inicio:o}, {Fim:o}). HashResumo: {HashResumo}. ExpiraEm: {ExpiraEm:o}. TraceId: {TraceId}",
             usuarioId,
             command.FilialId,
             command.VeiculoId,
+            command.ClienteId,
+            command.ResponsavelId,
             calculado.Inicio,
             calculado.Fim,
             calculado.HashResumo,

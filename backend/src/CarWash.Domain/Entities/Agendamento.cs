@@ -24,7 +24,7 @@ public sealed class Agendamento : IAuditable, IAuditableSetter
 
     public Guid VeiculoId { get; private set; }
 
-    public Guid? ResponsavelId { get; private set; }
+    public Guid ResponsavelId { get; private set; }
 
     public Guid CriadoPor { get; private set; }
 
@@ -72,7 +72,7 @@ public sealed class Agendamento : IAuditable, IAuditableSetter
         Guid criadoPor,
         DateTime inicio,
         DateTime fim,
-        Guid? responsavelId = null,
+        Guid responsavelId,
         string? observacoes = null,
         int duracaoTotalMin = 0,
         decimal valorTotal = 0m)
@@ -100,6 +100,11 @@ public sealed class Agendamento : IAuditable, IAuditableSetter
         if (criadoPor == Guid.Empty)
         {
             throw new DomainException("Agendamento exige usuário criador.");
+        }
+
+        if (responsavelId == Guid.Empty)
+        {
+            throw new DomainException("Agendamento exige responsável (RF024).");
         }
 
         if (inicio >= fim)
