@@ -38,7 +38,8 @@ export interface CriarAgendamentoPayload {
   clienteId: string;
   veiculoId: string;
   filialId: string;
-  responsavelId: string;
+  /** Opcional (RF024) — omitido enquanto não há seleção de responsável no fluxo. */
+  responsavelId?: string | null;
   inicio: string;
   servicoIds: string[];
   observacoes?: string;

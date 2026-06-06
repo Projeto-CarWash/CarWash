@@ -142,7 +142,7 @@ export const handlersPadrao = [
           id: IDS.veiculo,
           clienteId: IDS.cliente,
           placa: 'ABC1D23',
-          marca: 'Fiat',
+          fabricante: 'Fiat',
           modelo: 'Uno',
           ativo: true,
         },

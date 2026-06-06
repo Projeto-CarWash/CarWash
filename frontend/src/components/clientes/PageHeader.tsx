@@ -1,5 +1,5 @@
-import { ArrowLeft, Save } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { ArrowLeft } from 'lucide-react';
+import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { Badge } from '@/components/ui/badge';
@@ -7,23 +7,15 @@ import { Button } from '@/components/ui/button';
 
 interface PageHeaderProps {
   onClearForm?: () => void;
-  onSaveDraft?: () => void;
   step?: number;
 }
 
-export function PageHeader({ onClearForm, onSaveDraft, step = 1 }: PageHeaderProps) {
+export function PageHeader({ onClearForm, step = 1 }: PageHeaderProps) {
   const navigate = useNavigate();
-  const [draftSaved, setDraftSaved] = useState(false);
 
   const handleGoBack = useCallback(() => {
     void navigate('/clientes');
   }, [navigate]);
-
-  const handleSaveDraft = useCallback(() => {
-    onSaveDraft?.();
-    setDraftSaved(true);
-    setTimeout(() => setDraftSaved(false), 2500);
-  }, [onSaveDraft]);
 
   return (
     <div className="flex items-center justify-between px-8 py-6">
@@ -54,18 +46,6 @@ export function PageHeader({ onClearForm, onSaveDraft, step = 1 }: PageHeaderPro
           className="h-9 rounded-full border-zinc-700/60 bg-transparent text-sm text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200"
         >
           Limpar Formulário
-        </Button>
-        <Button
-          type="button"
-          onClick={handleSaveDraft}
-          className={`h-9 rounded-full px-5 text-sm font-semibold shadow-lg transition-all duration-300 ${
-            draftSaved
-              ? 'bg-green-600 text-white shadow-green-600/25'
-              : 'bg-red-600 text-white shadow-red-600/25 hover:bg-red-700'
-          }`}
-        >
-          <Save className="mr-1.5 h-4 w-4" />
-          {draftSaved ? 'Rascunho salvo!' : 'Salvar Rascunho'}
         </Button>
       </div>
     </div>

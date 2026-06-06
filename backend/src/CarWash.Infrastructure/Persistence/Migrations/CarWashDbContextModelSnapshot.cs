@@ -1115,6 +1115,43 @@ namespace CarWash.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("CarWash.Domain.Entities.Session", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<bool>("IsRevoked")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_revoked");
+
+                    b.Property<string>("RefreshTokenHash")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("refresh_token_hash");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_sessions");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_sessions_user_id");
+
+                    b.ToTable("sessions", "public");
+                });
+
             modelBuilder.Entity("CarWash.Domain.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1256,7 +1293,7 @@ namespace CarWash.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(10)
                         .HasColumnType("character varying(10)")
-                        .HasDefaultValue("claro")
+                        .HasDefaultValue("light")
                         .HasColumnName("tema");
 
                     b.Property<Guid>("UsuarioId")
@@ -1272,7 +1309,7 @@ namespace CarWash.Infrastructure.Persistence.Migrations
 
                     b.ToTable("usuario_preferencias", "public", t =>
                         {
-                            t.HasCheckConstraint("ck_pref_tema", "tema IN ('claro','escuro')");
+                            t.HasCheckConstraint("ck_pref_tema", "tema IN ('light','dark')");
                         });
                 });
 
@@ -1529,6 +1566,18 @@ namespace CarWash.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_responsaveis_cliente_titular");
+                });
+
+            modelBuilder.Entity("CarWash.Domain.Entities.Session", b =>
+                {
+                    b.HasOne("CarWash.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_sessions_users_user_id");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("CarWash.Domain.Entities.UsuarioPreferencia", b =>
