@@ -32,7 +32,7 @@ public sealed class DashboardMetricasRepository : IDashboardMetricasRepository
             await connection.OpenAsync(cancellationToken);
         }
 
-        DashboardOperacionalResponse operacional = await ConsultarOperacionalAsync(
+        var operacional = await ConsultarOperacionalAsync(
             connection,
             dataInicio,
             dataFim,
@@ -41,7 +41,7 @@ public sealed class DashboardMetricasRepository : IDashboardMetricasRepository
             statusNormalizado,
             cancellationToken);
 
-        DashboardFinanceiroResponse financeiro = await ConsultarFinanceiroAsync(
+        var financeiro = await ConsultarFinanceiroAsync(
             connection,
             dataInicio,
             dataFim,

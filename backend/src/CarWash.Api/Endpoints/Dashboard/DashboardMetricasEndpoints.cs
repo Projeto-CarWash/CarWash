@@ -11,7 +11,7 @@ public static class DashboardMetricasEndpoints
 {
     public static IEndpointRouteBuilder MapDashboardMetricas(this IEndpointRouteBuilder app)
     {
-        RouteGroupBuilder group = app
+        var group = app
             .MapGroup("/api/v1/dashboard")
             .WithTags("Dashboard")
             .RequireAuthorization();
@@ -38,7 +38,7 @@ public static class DashboardMetricasEndpoints
         CancellationToken cancellationToken)
     {
         string traceId = ObterTraceId(httpContext);
-        Guid? usuarioId = ObterUsuarioId(httpContext);
+        var usuarioId = ObterUsuarioId(httpContext);
 
         var details = new List<object>();
 
@@ -63,7 +63,7 @@ public static class DashboardMetricasEndpoints
         Guid? filialGuid = null;
         if (!string.IsNullOrWhiteSpace(filialId))
         {
-            if (!Guid.TryParse(filialId, out Guid parsedFilialId))
+            if (!Guid.TryParse(filialId, out var parsedFilialId))
             {
                 details.Add(new
                 {
@@ -80,7 +80,7 @@ public static class DashboardMetricasEndpoints
         Guid? clienteGuid = null;
         if (!string.IsNullOrWhiteSpace(clienteId))
         {
-            if (!Guid.TryParse(clienteId, out Guid parsedClienteId))
+            if (!Guid.TryParse(clienteId, out var parsedClienteId))
             {
                 details.Add(new
                 {
@@ -116,7 +116,7 @@ public static class DashboardMetricasEndpoints
 
         try
         {
-            DashboardMetricasResponse response =
+            var response =
                 await handler.HandleAsync(query, cancellationToken);
 
             return Results.Ok(response);
@@ -148,7 +148,7 @@ public static class DashboardMetricasEndpoints
         string? raw = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
             ?? httpContext.User.FindFirst("sub")?.Value;
 
-        return Guid.TryParse(raw, out Guid usuarioId)
+        return Guid.TryParse(raw, out var usuarioId)
             ? usuarioId
             : null;
     }
