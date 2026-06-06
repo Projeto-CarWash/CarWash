@@ -39,6 +39,7 @@ export function UsuariosListaPage() {
   const [total, setTotal] = useState(0);
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [erroStatus, setErroStatus] = useState<string | null>(null);
   const [usuarioAtivacao, setUsuarioAtivacao] = useState<UsuarioResponse | null>(null);
   const [modalStatusAberto, setModalStatusAberto] = useState(false);
   const [salvandoStatus, setSalvandoStatus] = useState(false);
@@ -76,6 +77,7 @@ export function UsuariosListaPage() {
 
   const abrirModalStatus = useCallback((usuario: UsuarioResponse) => {
     setUsuarioAtivacao(usuario);
+    setErroStatus(null);
     setModalStatusAberto(true);
   }, []);
 
@@ -84,6 +86,7 @@ export function UsuariosListaPage() {
     const novoAtivo = !usuarioAtivacao.ativo;
     setSalvandoStatus(true);
     setErro(null);
+    setErroStatus(null);
     try {
       await userService.updateStatus(usuarioAtivacao.id, novoAtivo);
       // Atualiza o item local para feedback imediato
@@ -93,7 +96,9 @@ export function UsuariosListaPage() {
       setModalStatusAberto(false);
       setUsuarioAtivacao(null);
     } catch {
-      setErro(
+      // O modal permanece aberto: a mensagem precisa aparecer DENTRO do dialog,
+      // pois o restante da página fica aria-hidden enquanto o modal está aberto.
+      setErroStatus(
         `Não foi possível ${novoAtivo ? 'ativar' : 'inativar'} o usuário "${usuarioAtivacao.nome}".`,
       );
     } finally {
@@ -291,7 +296,10 @@ export function UsuariosListaPage() {
         onOpenChange={(aberto) => {
           if (salvandoStatus) return;
           setModalStatusAberto(aberto);
-          if (!aberto) setUsuarioAtivacao(null);
+          if (!aberto) {
+            setUsuarioAtivacao(null);
+            setErroStatus(null);
+          }
         }}
       >
         <DialogContent className="sm:max-w-[425px] bg-zinc-950 border-zinc-800">
@@ -305,6 +313,14 @@ export function UsuariosListaPage() {
                 : `Deseja reativar o usuário "${usuarioAtivacao?.nome}"? O acesso dele ao sistema será restaurado.`}
             </DialogDescription>
           </DialogHeader>
+          {erroStatus && (
+            <div
+              role="alert"
+              className="rounded-xl border border-red-500/30 bg-red-950/30 px-4 py-3 text-sm text-red-400"
+            >
+              {erroStatus}
+            </div>
+          )}
           <DialogFooter className="mt-4 gap-2 sm:gap-0">
             <Button
               type="button"
@@ -312,6 +328,7 @@ export function UsuariosListaPage() {
               onClick={() => {
                 setModalStatusAberto(false);
                 setUsuarioAtivacao(null);
+                setErroStatus(null);
               }}
               disabled={salvandoStatus}
               className="border-zinc-700 bg-transparent text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100"

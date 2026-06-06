@@ -14,9 +14,12 @@ import type { UsuarioResponse } from '@/types/user';
 /**
  * Suíte da listagem de Usuários internos (RF014).
  *
- * Estratégia de render: a página usa `useNavigate` (/usuarios/novo) e `<Link>`
- * (/usuarios/:id). Para asserir os REDIRECTS pelo comportamento real (sem mockar
- * o router), montamos rotas reais com marcadores nas rotas-alvo.
+ * Estratégia de render: a página usa `useNavigate` para TODAS as navegações
+ * (/usuarios/novo, /usuarios/:id via botões de ação Visualizar/Editar — padrão
+ * #173). O nome NÃO é mais um `<Link>`: é um `<span>`. O toggle de status é um
+ * botão com ícone Power que abre um modal de confirmação antes do PATCH. Para
+ * asserir os REDIRECTS pelo comportamento real (sem mockar o router), montamos
+ * rotas reais com marcadores nas rotas-alvo.
  *
  * Paths COM prefixo `/api/v1` — o `userService` usa os caminhos corretos; os
  * handlers MSW abaixo replicam EXATAMENTE: GET/POST/PUT/PATCH em
@@ -111,24 +114,29 @@ function renderLista() {
 }
 
 describe('UsuariosListaPage (RF014) — carregamento e render', () => {
-  it('1. exibe "Carregando…" e depois as linhas (nome como link, email, perfil, badge) + total no cabeçalho', async () => {
+  it('1. exibe "Carregando…" e depois as linhas (nome em texto, email, perfil, badge) + total no cabeçalho', async () => {
     mockListar(() => ({ itens: [ADMIN, FUNC_INATIVO], total: 2 }));
     renderLista();
 
     // Loading inicial enquanto o GET não resolve.
     expect(screen.getByText('Carregando…')).toBeInTheDocument();
 
-    // Linhas renderizadas.
-    expect(await screen.findByRole('link', { name: 'Ana Admin' })).toBeInTheDocument();
+    // Linhas renderizadas — nome é texto simples (não há mais Link no nome).
+    expect(await screen.findByText('Ana Admin')).toBeInTheDocument();
     expect(screen.getByText('ana@carwash.com')).toBeInTheDocument();
     expect(screen.getByText('Admin')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Bruno Func' })).toBeInTheDocument();
+    expect(screen.getByText('Bruno Func')).toBeInTheDocument();
     expect(screen.getByText('Funcionario')).toBeInTheDocument();
     // Badges de status.
     expect(screen.getByText('ATIVO')).toBeInTheDocument();
     expect(screen.getByText('INATIVO')).toBeInTheDocument();
     // Cabeçalho com total.
     expect(screen.getByText('2 usuário(s) no total')).toBeInTheDocument();
+    // Ações por linha: Visualizar, Editar e o toggle de status (padrão #173).
+    expect(screen.getByRole('button', { name: /visualizar Ana Admin/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /editar Ana Admin/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Inativar Ana Admin' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Ativar Bruno Func' })).toBeInTheDocument();
   });
 
   it('2. lista vazia exibe "Nenhum usuário encontrado." e cabeçalho "Nenhum usuário cadastrado"', async () => {
@@ -154,7 +162,7 @@ describe('UsuariosListaPage (RF014) — busca e filtro de status', () => {
     mockListar(() => ({ itens: [ADMIN], total: 1 }), calls);
     const user = userEvent.setup();
     renderLista();
-    await screen.findByRole('link', { name: 'Ana Admin' });
+    await screen.findByText('Ana Admin');
 
     await user.type(screen.getByPlaceholderText(/buscar por nome/i), 'ana');
 
@@ -171,7 +179,7 @@ describe('UsuariosListaPage (RF014) — busca e filtro de status', () => {
     mockListar(() => ({ itens: [ADMIN], total: 1 }), calls);
     const user = userEvent.setup();
     renderLista();
-    await screen.findByRole('link', { name: 'Ana Admin' });
+    await screen.findByText('Ana Admin');
 
     // Default (Todos): sem param `ativo`.
     expect(calls.at(-1)!.ativo).toBeNull();
@@ -199,7 +207,7 @@ describe('UsuariosListaPage (RF014) — paginação', () => {
     }, calls);
     const user = userEvent.setup();
     renderLista();
-    await screen.findByRole('link', { name: 'Ana Admin' });
+    await screen.findByText('Ana Admin');
 
     expect(screen.getByText('Página 1 de 2')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /anterior/i })).toBeDisabled();
@@ -208,7 +216,7 @@ describe('UsuariosListaPage (RF014) — paginação', () => {
     await user.click(screen.getByRole('button', { name: /próxima/i }));
 
     // Refaz a query com pagina=2 e renderiza o item da página 2.
-    expect(await screen.findByRole('link', { name: 'Bruno Func' })).toBeInTheDocument();
+    expect(await screen.findByText('Bruno Func')).toBeInTheDocument();
     await waitFor(() => expect(calls.at(-1)!.pagina).toBe('2'));
     expect(screen.getByText('Página 2 de 2')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /anterior/i })).toBeEnabled();
@@ -216,8 +224,8 @@ describe('UsuariosListaPage (RF014) — paginação', () => {
   });
 });
 
-describe('UsuariosListaPage (RF014) — switch inline de status', () => {
-  it('6a. alterna o status via PATCH e atualiza o badge da linha', async () => {
+describe('UsuariosListaPage (RF014) — toggle de status via modal de confirmação', () => {
+  it('6a. confirmar no modal alterna o status via PATCH e atualiza o badge da linha', async () => {
     mockListar(() => ({ itens: [ADMIN], total: 1 }));
     let patchId: string | null = null;
     let patchBody: { ativo?: boolean } | null = null;
@@ -234,16 +242,22 @@ describe('UsuariosListaPage (RF014) — switch inline de status', () => {
     );
     const user = userEvent.setup();
     renderLista();
-    await screen.findByRole('link', { name: 'Ana Admin' });
+    await screen.findByText('Ana Admin');
 
     expect(screen.getByText('ATIVO')).toBeInTheDocument();
 
-    // Switch da linha do admin (ativo => aria-label "Inativar Ana Admin").
-    await user.click(screen.getByRole('switch', { name: 'Inativar Ana Admin' }));
+    // Botão de toggle da linha do admin (ativo => aria-label "Inativar Ana Admin").
+    await user.click(screen.getByRole('button', { name: 'Inativar Ana Admin' }));
 
-    // Badge atualiza para INATIVO (item local atualizado).
+    // Abre o modal de confirmação — só então o PATCH é disparado ao confirmar.
+    const dialog = await screen.findByRole('dialog');
+    expect(dialog).toHaveTextContent('Inativar usuário');
+    await user.click(screen.getByRole('button', { name: /confirmar/i }));
+
+    // Badge atualiza para INATIVO (item local atualizado) e o modal fecha.
     expect(await screen.findByText('INATIVO')).toBeInTheDocument();
     expect(screen.queryByText('ATIVO')).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(patchId).toBe(ADMIN.id);
     expect(patchBody).toEqual({ ativo: false });
   });
@@ -255,9 +269,11 @@ describe('UsuariosListaPage (RF014) — switch inline de status', () => {
     );
     const user = userEvent.setup();
     renderLista();
-    await screen.findByRole('link', { name: 'Ana Admin' });
+    await screen.findByText('Ana Admin');
 
-    await user.click(screen.getByRole('switch', { name: 'Inativar Ana Admin' }));
+    await user.click(screen.getByRole('button', { name: 'Inativar Ana Admin' }));
+    await screen.findByRole('dialog');
+    await user.click(screen.getByRole('button', { name: /confirmar/i }));
 
     const alerta = await screen.findByRole('alert');
     expect(alerta).toHaveTextContent('Não foi possível inativar o usuário "Ana Admin".');
@@ -265,7 +281,7 @@ describe('UsuariosListaPage (RF014) — switch inline de status', () => {
     expect(screen.getByText('ATIVO')).toBeInTheDocument();
   });
 
-  it('6c. switch fica disabled durante a chamada (alterandoStatusId)', async () => {
+  it('6c. botão Confirmar fica disabled durante a chamada (salvandoStatus)', async () => {
     mockListar(() => ({ itens: [ADMIN], total: 1 }));
     // PATCH pendurado até liberarmos — para observar o estado disabled.
     let liberar: (() => void) | undefined;
@@ -284,18 +300,47 @@ describe('UsuariosListaPage (RF014) — switch inline de status', () => {
     );
     const user = userEvent.setup();
     renderLista();
-    await screen.findByRole('link', { name: 'Ana Admin' });
+    await screen.findByText('Ana Admin');
 
-    const sw = screen.getByRole('switch', { name: 'Inativar Ana Admin' });
-    await user.click(sw);
+    await user.click(screen.getByRole('button', { name: 'Inativar Ana Admin' }));
+    await screen.findByRole('dialog');
+    const confirmar = screen.getByRole('button', { name: /confirmar/i });
+    await user.click(confirmar);
 
-    // Enquanto o PATCH não resolve, o switch fica desabilitado.
-    await waitFor(() => expect(screen.getByRole('switch')).toBeDisabled());
+    // Enquanto o PATCH não resolve, Confirmar e Cancelar ficam desabilitados.
+    await waitFor(() => expect(screen.getByRole('button', { name: /confirmar/i })).toBeDisabled());
+    expect(screen.getByRole('button', { name: /cancelar/i })).toBeDisabled();
 
     liberar!();
-    // Após resolver, badge muda e o switch reabilita.
+    // Após resolver, badge muda e o modal fecha.
     expect(await screen.findByText('INATIVO')).toBeInTheDocument();
-    await waitFor(() => expect(screen.getByRole('switch')).toBeEnabled());
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  });
+
+  it('6d. cancelar no modal não dispara PATCH e mantém o status', async () => {
+    mockListar(() => ({ itens: [ADMIN], total: 1 }));
+    let patchChamado = false;
+    server.use(
+      http.patch('/api/v1/usuarios/:id/status', () => {
+        patchChamado = true;
+        return HttpResponse.json({
+          id: ADMIN.id,
+          ativo: false,
+          atualizadoEm: '2026-01-03T00:00:00.000Z',
+        });
+      }),
+    );
+    const user = userEvent.setup();
+    renderLista();
+    await screen.findByText('Ana Admin');
+
+    await user.click(screen.getByRole('button', { name: 'Inativar Ana Admin' }));
+    await screen.findByRole('dialog');
+    await user.click(screen.getByRole('button', { name: /cancelar/i }));
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(patchChamado).toBe(false);
+    expect(screen.getByText('ATIVO')).toBeInTheDocument();
   });
 });
 
@@ -304,22 +349,31 @@ describe('UsuariosListaPage (RF014) — navegação', () => {
     mockListar(() => ({ itens: [ADMIN], total: 1 }));
     const user = userEvent.setup();
     renderLista();
-    await screen.findByRole('link', { name: 'Ana Admin' });
+    await screen.findByText('Ana Admin');
 
     await user.click(screen.getByRole('button', { name: /novo usuário/i }));
 
     expect(await screen.findByText('Pagina Novo Usuario')).toBeInTheDocument();
   });
 
-  it('7b. clicar no nome (Link) navega para /usuarios/:id', async () => {
+  it('7b. botão "Visualizar" da linha navega para /usuarios/:id', async () => {
     mockListar(() => ({ itens: [ADMIN], total: 1 }));
     const user = userEvent.setup();
     renderLista();
+    await screen.findByText('Ana Admin');
 
-    const link = await screen.findByRole('link', { name: 'Ana Admin' });
-    // Confere o href do Link e exercita a navegação real.
-    expect(link).toHaveAttribute('href', `/usuarios/${ADMIN.id}`);
-    await user.click(link);
+    await user.click(screen.getByRole('button', { name: /visualizar Ana Admin/i }));
+
+    expect(await screen.findByText('Pagina Detalhe Usuario')).toBeInTheDocument();
+  });
+
+  it('7c. botão "Editar" da linha navega para /usuarios/:id', async () => {
+    mockListar(() => ({ itens: [ADMIN], total: 1 }));
+    const user = userEvent.setup();
+    renderLista();
+    await screen.findByText('Ana Admin');
+
+    await user.click(screen.getByRole('button', { name: /editar Ana Admin/i }));
 
     expect(await screen.findByText('Pagina Detalhe Usuario')).toBeInTheDocument();
   });

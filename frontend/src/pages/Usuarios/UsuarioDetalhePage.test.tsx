@@ -150,9 +150,10 @@ describe('UsuarioDetalhePage (RF014) — editar e salvar', () => {
     const salvar = screen.getByRole('button', { name: /salvar alterações/i });
     await user.click(salvar);
 
-    // Enquanto o PUT não resolve: botão Salvar e Switch desabilitados.
+    // Enquanto o PUT não resolve (isBusy): botão Salvar e o de toggle de status
+    // ficam desabilitados.
     await waitFor(() => expect(screen.getByRole('button', { name: /salvando/i })).toBeDisabled());
-    expect(screen.getByRole('switch')).toBeDisabled();
+    expect(screen.getByRole('button', { name: /inativar usuário/i })).toBeDisabled();
 
     liberar!();
     await screen.findByRole('status');
@@ -185,7 +186,10 @@ describe('UsuarioDetalhePage (RF014) — toggle de status', () => {
     await screen.findByDisplayValue('Carlos Lima');
     expect(screen.getByText('ATIVO')).toBeInTheDocument();
 
-    await user.click(screen.getByRole('switch', { name: 'Inativar usuário' }));
+    // Abre o modal de confirmação e confirma — só então o PATCH é disparado.
+    await user.click(screen.getByRole('button', { name: /inativar usuário/i }));
+    await screen.findByRole('dialog');
+    await user.click(screen.getByRole('button', { name: /confirmar/i }));
 
     const status = await screen.findByRole('status');
     expect(status).toHaveTextContent(
@@ -219,7 +223,9 @@ describe('UsuarioDetalhePage (RF014) — toggle de status', () => {
     await screen.findByDisplayValue('Carlos Lima');
     expect(screen.getByText('INATIVO')).toBeInTheDocument();
 
-    await user.click(screen.getByRole('switch', { name: 'Ativar usuário' }));
+    await user.click(screen.getByRole('button', { name: /ativar usuário/i }));
+    await screen.findByRole('dialog');
+    await user.click(screen.getByRole('button', { name: /confirmar/i }));
 
     const status = await screen.findByRole('status');
     expect(status).toHaveTextContent(
@@ -236,7 +242,9 @@ describe('UsuarioDetalhePage (RF014) — toggle de status', () => {
     renderDetalhe();
     await screen.findByDisplayValue('Carlos Lima');
 
-    await user.click(screen.getByRole('switch', { name: 'Inativar usuário' }));
+    await user.click(screen.getByRole('button', { name: /inativar usuário/i }));
+    await screen.findByRole('dialog');
+    await user.click(screen.getByRole('button', { name: /confirmar/i }));
 
     const alerta = await screen.findByRole('alert');
     expect(alerta).toHaveTextContent('Não foi possível alterar o status do usuário.');
@@ -263,7 +271,9 @@ describe('UsuarioDetalhePage (RF014) — toggle de status', () => {
     renderDetalhe();
     await screen.findByDisplayValue('Carlos Lima');
 
-    await user.click(screen.getByRole('switch', { name: 'Inativar usuário' }));
+    await user.click(screen.getByRole('button', { name: /inativar usuário/i }));
+    await screen.findByRole('dialog');
+    await user.click(screen.getByRole('button', { name: /confirmar/i }));
     await screen.findByRole('status');
 
     await user.click(screen.getByRole('button', { name: /fechar mensagem de sucesso/i }));

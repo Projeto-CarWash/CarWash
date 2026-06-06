@@ -99,16 +99,12 @@ describe('Login (RF001) — caminho feliz', () => {
 
     expect(screen.getByLabelText(/^e-mail$/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^senha$/i)).toBeInTheDocument();
-    expect(
-      screen.getByRole('checkbox', { name: /lembrar meu e-mail/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: /lembrar meu e-mail/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^entrar$/i })).toBeInTheDocument();
   });
 
   it('2. submit com credenciais válidas chama login e redireciona para /dashboard', async () => {
-    server.use(
-      http.post('/api/v1/auth/login', () => HttpResponse.json(loginResponseFixture)),
-    );
+    server.use(http.post('/api/v1/auth/login', () => HttpResponse.json(loginResponseFixture)));
     const user = userEvent.setup();
     renderLogin();
 
@@ -141,9 +137,7 @@ describe('Login (RF001) — caminho feliz', () => {
   });
 
   it('4a. "Lembrar" marcado grava o e-mail normalizado no localStorage', async () => {
-    server.use(
-      http.post('/api/v1/auth/login', () => HttpResponse.json(loginResponseFixture)),
-    );
+    server.use(http.post('/api/v1/auth/login', () => HttpResponse.json(loginResponseFixture)));
     const user = userEvent.setup();
     renderLogin();
 
@@ -159,9 +153,7 @@ describe('Login (RF001) — caminho feliz', () => {
   it('4b. "Lembrar" desmarcado remove a chave do localStorage', async () => {
     // Pré-condição: chave existente que deve ser removida no submit sem lembrar.
     localStorage.setItem(STORAGE_REMEMBER_EMAIL, 'antigo@carwash.local');
-    server.use(
-      http.post('/api/v1/auth/login', () => HttpResponse.json(loginResponseFixture)),
-    );
+    server.use(http.post('/api/v1/auth/login', () => HttpResponse.json(loginResponseFixture)));
     const user = userEvent.setup();
     renderLogin();
 
@@ -207,9 +199,7 @@ describe('Login (RF001) — caminho feliz', () => {
 
   it('6. sessão restaurada (refresh 200 no mount) redireciona direto sem submit', async () => {
     // Sobrescreve o refresh default para devolver sessão válida.
-    server.use(
-      http.post('/api/v1/auth/refresh', () => HttpResponse.json(loginResponseFixture)),
-    );
+    server.use(http.post('/api/v1/auth/refresh', () => HttpResponse.json(loginResponseFixture)));
     renderLogin();
 
     expect(await screen.findByText('Painel do Dashboard')).toBeInTheDocument();
@@ -286,27 +276,21 @@ describe('Login (RF001) — casos infelizes (erros do backend)', () => {
     await submeterComErro(401, { title: 'Conta temporariamente bloqueada.', status: 401 });
 
     const alerta = await screen.findByRole('alert');
-    expect(
-      within(alerta).getByText('Conta temporariamente bloqueada.'),
-    ).toBeInTheDocument();
+    expect(within(alerta).getByText('Conta temporariamente bloqueada.')).toBeInTheDocument();
   });
 
   it('9a. 403 exibe "Acesso bloqueado. Usuário inativo."', async () => {
     await submeterComErro(403);
 
     const alerta = await screen.findByRole('alert');
-    expect(
-      within(alerta).getByText('Acesso bloqueado. Usuário inativo.'),
-    ).toBeInTheDocument();
+    expect(within(alerta).getByText('Acesso bloqueado. Usuário inativo.')).toBeInTheDocument();
   });
 
   it('9b. 400 exibe "E-mail e senha são obrigatórios."', async () => {
     await submeterComErro(400);
 
     const alerta = await screen.findByRole('alert');
-    expect(
-      within(alerta).getByText('E-mail e senha são obrigatórios.'),
-    ).toBeInTheDocument();
+    expect(within(alerta).getByText('E-mail e senha são obrigatórios.')).toBeInTheDocument();
   });
 
   it('9c. 500 ignora o title do backend e usa a mensagem genérica', async () => {
@@ -314,9 +298,7 @@ describe('Login (RF001) — casos infelizes (erros do backend)', () => {
 
     const alerta = await screen.findByRole('alert');
     expect(
-      within(alerta).getByText(
-        'Não foi possível autenticar agora. Tente novamente em instantes.',
-      ),
+      within(alerta).getByText('Não foi possível autenticar agora. Tente novamente em instantes.'),
     ).toBeInTheDocument();
     expect(within(alerta).queryByText('Stacktrace vazado!')).not.toBeInTheDocument();
   });
@@ -331,9 +313,7 @@ describe('Login (RF001) — casos infelizes (erros do backend)', () => {
 
     const alerta = await screen.findByRole('alert');
     expect(
-      within(alerta).getByText(
-        'Não foi possível contatar o servidor. Verifique sua conexão.',
-      ),
+      within(alerta).getByText('Não foi possível contatar o servidor. Verifique sua conexão.'),
     ).toBeInTheDocument();
   });
 
