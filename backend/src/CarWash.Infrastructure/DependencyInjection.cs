@@ -84,6 +84,7 @@ public static class DependencyInjection
         // Limpeza diária dos registros de idempotência expirados (janela 24h).
         services.AddHostedService<IdempotenciaCleanupService>();
 
+        services.AddScoped<IDashboardMetricasRepository, DashboardMetricasRepository>();
         services.AddScoped<IUsuarioPreferenciaRepository, UsuarioPreferenciaRepository>();
 
         services.AddDbContext<CarWashDbContext>((sp, opt) =>
