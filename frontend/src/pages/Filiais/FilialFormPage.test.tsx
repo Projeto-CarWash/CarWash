@@ -45,9 +45,18 @@ describe('FilialFormPage (RF017/RF018)', () => {
     expect(
       await screen.findByText('Nome da filial deve ter entre 3 e 120 caracteres.'),
     ).toBeInTheDocument();
-    expect(
-      screen.getByText('Células ativas deve ser um número inteiro entre 1 e 100.'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Células ativas deve estar entre 1 e 100.')).toBeInTheDocument();
+  });
+
+  it('bloqueia caracteres não inteiros no campo de células ativas (e, +, -, ., ,)', async () => {
+    const user = userEvent.setup();
+    renderComProviders(<FilialFormPage />);
+
+    const campo = screen.getByLabelText(/células ativas/i);
+    await user.type(campo, '1e2E.3+-,');
+
+    // Apenas os dígitos sobrevivem ao bloqueio de tecla / higienização.
+    expect(campo).toHaveValue('123');
   });
 
   it('envia o payload normalizado (endereço estruturado) e exibe sucesso (201)', async () => {

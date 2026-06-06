@@ -9,8 +9,8 @@ import { renderComProviders } from '@/test/renderComProviders';
 /**
  * Testes de integração da listagem de filiais (RF017/RF018).
  *
- * Cobertura: carregamento via GET /api/v1/filiais, colunas (código, cidade, UF,
- * células ativas), badge de status (Ativa/Inativa), estado vazio e erro.
+ * Cobertura: carregamento via GET /api/v1/filiais, colunas (código, cidade,
+ * UF), badge de status (Ativa/Inativa), estado vazio e erro.
  */
 
 const FILIAIS = [
