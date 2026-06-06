@@ -5,10 +5,9 @@ import { useCallback, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
 
+import { CelulasAtivasField } from '@/components/filiais/CelulasAtivasField';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useAlterarCelulasAtivas, useFilial } from '@/hooks/useFilialQueries';
 import {
   editarFilialSchema,
@@ -19,9 +18,9 @@ import {
 import type { ProblemDetails } from '@/types/auth';
 
 const HTTP_ERROR_MESSAGES: Record<number, string> = {
-  400: 'Dados da filial inválidos. Verifique os campos e tente novamente.',
+  400: 'Valor de células ativas inválido. Informe um número inteiro entre 1 e 100.',
   401: 'Autenticação obrigatória para executar esta operação.',
-  403: 'Você não possui permissão para editar filiais.',
+  403: 'Você não possui permissão para alterar configuração da filial.',
   404: 'Filial não encontrada.',
   500: 'Não foi possível concluir a operação no momento. Tente novamente.',
 };
@@ -72,7 +71,7 @@ export function FilialEditarPage() {
         { id, celulasAtivas: data.celulasAtivas },
         {
           onSuccess: () => {
-            setSuccessMsg('Filial atualizada com sucesso.');
+            setSuccessMsg('Configuração de células ativas atualizada com sucesso.');
             setTimeout(() => void navigate('/filiais'), 1000);
           },
           onError: (err) => {
@@ -87,12 +86,20 @@ export function FilialEditarPage() {
               setTimeout(() => void navigate('/login'), 1500);
               return;
             }
+            // 400 — destaca o campo e mantém o valor digitado para correção.
+            if (status === 400) {
+              const msg = mensagemErro(err);
+              form.setError('celulasAtivas', { type: 'server', message: msg });
+              form.setFocus('celulasAtivas');
+              return;
+            }
+            // 403, 500 e rede: preserva o valor digitado e permite nova tentativa.
             setGlobalError(mensagemErro(err));
           },
         },
       );
     },
-    [id, salvando, salvarCelulas, navigate],
+    [id, salvando, salvarCelulas, navigate, form],
   );
 
   const errors = form.formState.errors;
@@ -217,48 +224,21 @@ export function FilialEditarPage() {
             aria-busy={salvando}
             noValidate
           >
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="filial-celulas" className="text-zinc-300">
-                Células ativas
-              </Label>
-              <Controller
-                control={form.control}
-                name="celulasAtivas"
-                render={({ field, fieldState }) => (
-                  <>
-                    <Input
-                      id="filial-celulas"
-                      type="number"
-                      inputMode="numeric"
-                      min={1}
-                      max={100}
-                      value={(field.value as string | number | undefined) ?? ''}
-                      onChange={field.onChange}
-                      onBlur={field.onBlur}
-                      ref={field.ref}
-                      aria-invalid={!!fieldState.error}
-                      aria-describedby={
-                        fieldState.error ? 'filial-celulas-error' : 'filial-celulas-hint'
-                      }
-                      className={`h-10 rounded-lg border px-3 text-sm text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-0 ${
-                        fieldState.error
-                          ? 'border-red-500/60 bg-red-950/20 focus-visible:border-red-500'
-                          : 'border-zinc-700/60 bg-zinc-950/40 focus-visible:border-zinc-600'
-                      }`}
-                    />
-                    {fieldState.error ? (
-                      <p id="filial-celulas-error" role="alert" className="text-xs text-red-400">
-                        {fieldState.error.message}
-                      </p>
-                    ) : (
-                      <p id="filial-celulas-hint" className="text-xs text-zinc-500">
-                        Número inteiro entre 1 e 100.
-                      </p>
-                    )}
-                  </>
-                )}
-              />
-            </div>
+            <Controller
+              control={form.control}
+              name="celulasAtivas"
+              render={({ field, fieldState }) => (
+                <CelulasAtivasField
+                  id="filial-celulas"
+                  value={field.value as string | number | undefined}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  inputRef={field.ref}
+                  error={fieldState.error?.message}
+                  disabled={salvando}
+                />
+              )}
+            />
 
             <div className="mt-4 flex items-center justify-end gap-3 md:col-span-2">
               <Button
