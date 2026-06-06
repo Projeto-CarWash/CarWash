@@ -26,7 +26,7 @@ const operacaoLinks: NavLinkItem[] = [
   { icon: LayoutDashboard, label: 'Painel', to: '/dashboard' },
   { icon: Wrench, label: 'Serviços', to: '/servicos' },
   { icon: Users, label: 'Clientes', to: '/clientes' },
-  { icon: CarFront, label: 'Veículos' },
+  { icon: CarFront, label: 'Veículos', to: '/veiculos' },
 ];
 
 const gestaoLinks: NavLinkItem[] = [

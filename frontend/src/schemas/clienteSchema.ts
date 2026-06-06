@@ -280,13 +280,15 @@ export const clienteSchema = z.object({
     .min(3, 'Logradouro deve ter no mínimo 3 caracteres.')
     .max(150, 'Logradouro deve ter no máximo 150 caracteres.'),
 
+  // Número do endereço aceita valores alfanuméricos (ex.: 123, 123A, 12-F,
+  // 100 Fundos, 25 Casa 2, A-15). Apenas espaços em branco são inválidos.
   numero: z
     .string()
     .trim()
     .min(1, 'Número é obrigatório.')
     .max(20, 'Número deve ter no máximo 20 caracteres.')
-    .refine((val) => /^\d+$/.test(val), {
-      message: 'Número deve conter apenas dígitos numéricos.',
+    .refine((val) => /^[\p{L}\p{N}][\p{L}\p{N}\s/.,-]*$/u.test(val), {
+      message: 'Número inválido. Use letras, números e separadores (ex: 123A, 12-F, 100 Fundos).',
     }),
 
   complemento: z
@@ -327,8 +329,27 @@ export const clienteSchema = z.object({
   filiados: z.array(filiadoSchema),
 });
 
+/**
+ * Schema de EDIÇÃO de cliente (PUT /api/v1/clientes/{id}).
+ *
+ * Reaproveita as mesmas regras de identificação, contato e endereço do cadastro,
+ * mas remove os campos que o endpoint de atualização não aceita:
+ * - cpfCnpj: imutável por decisão de produto (backend ignora e apenas loga warning);
+ * - veiculos: possuem fluxo próprio na tela de detalhe do cliente;
+ * - preferências/filiados: não fazem parte do contrato do PUT.
+ */
+export const editarClienteSchema = clienteSchema.omit({
+  cpfCnpj: true,
+  veiculos: true,
+  lembretes: true,
+  canaisPreferenciais: true,
+  observacoesGerais: true,
+  filiados: true,
+});
+
 export type VeiculoLocalFormData = z.infer<typeof veiculoItemSchema>;
 export type FiliadoFormData = z.infer<typeof filiadoSchema>;
 export type ClienteFormData = z.infer<typeof clienteSchema>;
+export type EditarClienteFormData = z.infer<typeof editarClienteSchema>;
 export type LembreteValue = (typeof LEMBRETES_VALUES)[number];
 export type CanalValue = (typeof CANAIS_VALUES)[number];

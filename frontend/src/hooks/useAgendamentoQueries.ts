@@ -4,7 +4,6 @@ import { agendamentoService } from '@/services/agendamentoService';
 import { clienteService } from '@/services/clienteService';
 import { filialService } from '@/services/filialService';
 import { servicoService } from '@/services/servicoService';
-import { veiculoService } from '@/services/veiculoService';
 
 import type {
   AgendamentoResponse,
@@ -32,20 +31,6 @@ export function useClientesParaAgendamento(busca: string) {
         pagina: 1,
         tamanhoPagina: 50,
       }),
-  });
-}
-
-/**
- * Lista de veículos do cliente selecionado.
- *
- * @remarks Depende de `GET /api/v1/veiculos` — endpoint PENDENTE no backend
- * (ver `services/veiculoService.ts`). A query só dispara quando há cliente.
- */
-export function useVeiculosDoCliente(clienteId: string | undefined) {
-  return useQuery({
-    queryKey: ['agendamento', 'veiculos', clienteId],
-    queryFn: () => veiculoService.listarPorCliente(clienteId!),
-    enabled: Boolean(clienteId),
   });
 }
 

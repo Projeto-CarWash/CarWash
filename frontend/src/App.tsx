@@ -9,6 +9,7 @@ import { AgendamentosCalendarioPage } from '@/pages/Agendamentos/AgendamentosCal
 import { AgendamentosDashboardPage } from '@/pages/Agendamentos/AgendamentosDashboardPage';
 import { ClienteDetalhePage } from '@/pages/Clientes/ClienteDetalhePage';
 import { ClientesListaPage } from '@/pages/Clientes/ClientesListaPage';
+import { EditarClientePage } from '@/pages/Clientes/EditarClientePage';
 import { NovoVeiculoPage } from '@/pages/Clientes/NovoVeiculoPage';
 import Dashboard from '@/pages/Dashboard/Dashboard';
 import Login from '@/pages/Login/Login';
@@ -17,6 +18,7 @@ import { ServicosListaPage } from '@/pages/Servicos/ServicosListaPage';
 import { NovoUsuarioPage } from '@/pages/Usuarios/NovoUsuarioPage';
 import { UsuarioDetalhePage } from '@/pages/Usuarios/UsuarioDetalhePage';
 import { UsuariosListaPage } from '@/pages/Usuarios/UsuariosListaPage';
+import { VeiculosListaPage } from '@/pages/Veiculos/VeiculosListaPage';
 
 function App() {
   return (
@@ -67,7 +69,40 @@ function App() {
         />
 
         <Route
+          path="/clientes/:id/editar"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <EditarClientePage />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
           path="/clientes/:id/veiculos/novo"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <NovoVeiculoPage />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/veiculos"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <VeiculosListaPage />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/veiculos/novo"
           element={
             <PrivateRoute>
               <DashboardLayout>
