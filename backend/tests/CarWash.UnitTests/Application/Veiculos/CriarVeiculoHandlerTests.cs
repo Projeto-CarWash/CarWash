@@ -50,15 +50,87 @@ public class CriarVeiculoHandlerTests
     }
 
     [Fact]
-    public async Task Placa_invalida_propaga_DomainException()
+    public async Task Placa_com_caractere_especial_lanca_DomainException()
     {
         var cliente = NovoCliente();
         _clientes.ObterPorIdAsync(cliente.Id, Arg.Any<CancellationToken>()).Returns(cliente);
 
         var handler = NovoHandler();
-        var act = () => handler.HandleAsync(NovoComando(cliente.Id) with { Placa = "XX-INVALIDA" }, CancellationToken.None);
+        var act = () => handler.HandleAsync(NovoComando(cliente.Id) with { Placa = "ABC-123" }, CancellationToken.None);
 
-        await act.Should().ThrowAsync<DomainException>();
+        await act.Should().ThrowAsync<DomainException>().WithMessage("A placa informada não está em um formato válido.");
+    }
+
+    [Fact]
+    public async Task Placa_menos_de_7_caracteres_lanca_DomainException()
+    {
+        var cliente = NovoCliente();
+        _clientes.ObterPorIdAsync(cliente.Id, Arg.Any<CancellationToken>()).Returns(cliente);
+
+        var handler = NovoHandler();
+        var act = () => handler.HandleAsync(NovoComando(cliente.Id) with { Placa = "ABC12" }, CancellationToken.None);
+
+        await act.Should().ThrowAsync<DomainException>().WithMessage("A placa informada não está em um formato válido.");
+    }
+
+    [Fact]
+    public async Task Placa_mais_de_7_caracteres_lanca_DomainException()
+    {
+        var cliente = NovoCliente();
+        _clientes.ObterPorIdAsync(cliente.Id, Arg.Any<CancellationToken>()).Returns(cliente);
+
+        var handler = NovoHandler();
+        var act = () => handler.HandleAsync(NovoComando(cliente.Id) with { Placa = "ABC12345" }, CancellationToken.None);
+
+        await act.Should().ThrowAsync<DomainException>().WithMessage("A placa informada não está em um formato válido.");
+    }
+
+    [Fact]
+    public async Task Placa_somente_numeros_lanca_DomainException()
+    {
+        var cliente = NovoCliente();
+        _clientes.ObterPorIdAsync(cliente.Id, Arg.Any<CancellationToken>()).Returns(cliente);
+
+        var handler = NovoHandler();
+        var act = () => handler.HandleAsync(NovoComando(cliente.Id) with { Placa = "1234567" }, CancellationToken.None);
+
+        await act.Should().ThrowAsync<DomainException>().WithMessage("A placa informada não está em um formato válido.");
+    }
+
+    [Fact]
+    public async Task Placa_somente_letras_lanca_DomainException()
+    {
+        var cliente = NovoCliente();
+        _clientes.ObterPorIdAsync(cliente.Id, Arg.Any<CancellationToken>()).Returns(cliente);
+
+        var handler = NovoHandler();
+        var act = () => handler.HandleAsync(NovoComando(cliente.Id) with { Placa = "ABCDEFG" }, CancellationToken.None);
+
+        await act.Should().ThrowAsync<DomainException>().WithMessage("A placa informada não está em um formato válido.");
+    }
+
+    [Fact]
+    public async Task Placa_nula_lanca_DomainException()
+    {
+        var cliente = NovoCliente();
+        _clientes.ObterPorIdAsync(cliente.Id, Arg.Any<CancellationToken>()).Returns(cliente);
+
+        var handler = NovoHandler();
+        var act = () => handler.HandleAsync(NovoComando(cliente.Id) with { Placa = null }, CancellationToken.None);
+
+        await act.Should().ThrowAsync<DomainException>().WithMessage("O campo placa é obrigatório.");
+    }
+
+    [Fact]
+    public async Task Placa_vazia_lanca_DomainException()
+    {
+        var cliente = NovoCliente();
+        _clientes.ObterPorIdAsync(cliente.Id, Arg.Any<CancellationToken>()).Returns(cliente);
+
+        var handler = NovoHandler();
+        var act = () => handler.HandleAsync(NovoComando(cliente.Id) with { Placa = string.Empty }, CancellationToken.None);
+
+        await act.Should().ThrowAsync<DomainException>().WithMessage("O campo placa é obrigatório.");
     }
 
     [Fact]
@@ -73,6 +145,7 @@ public class CriarVeiculoHandlerTests
 
         var ex = await act.Should().ThrowAsync<PlacaJaCadastradaException>();
         ex.Which.Slug.Should().Be(PlacaJaCadastradaException.SlugPadrao);
+        ex.Which.Message.Should().Be("Já existe um veículo cadastrado com a placa informada.");
     }
 
     [Fact]
@@ -90,14 +163,40 @@ public class CriarVeiculoHandlerTests
     }
 
     [Fact]
-    public async Task Placa_eh_normalizada_em_uppercase_sem_espacos_antes_da_persistencia()
+    public async Task Placa_eh_normalizada_em_uppercase_com_trim_antes_da_persistencia()
     {
         var cliente = NovoCliente();
         _clientes.ObterPorIdAsync(cliente.Id, Arg.Any<CancellationToken>()).Returns(cliente);
         _veiculos.ExistePlacaAsync("ABC1D23", Arg.Any<CancellationToken>()).Returns(false);
 
         var handler = NovoHandler();
-        var resposta = await handler.HandleAsync(NovoComando(cliente.Id) with { Placa = " abc-1d23 " }, CancellationToken.None);
+        var resposta = await handler.HandleAsync(NovoComando(cliente.Id) with { Placa = " abc1d23 " }, CancellationToken.None);
+
+        resposta.Placa.Should().Be("ABC1D23");
+    }
+
+    [Fact]
+    public async Task Placa_padrao_antigo_eh_aceita()
+    {
+        var cliente = NovoCliente();
+        _clientes.ObterPorIdAsync(cliente.Id, Arg.Any<CancellationToken>()).Returns(cliente);
+        _veiculos.ExistePlacaAsync("ABC1234", Arg.Any<CancellationToken>()).Returns(false);
+
+        var handler = NovoHandler();
+        var resposta = await handler.HandleAsync(NovoComando(cliente.Id) with { Placa = "ABC1234" }, CancellationToken.None);
+
+        resposta.Placa.Should().Be("ABC1234");
+    }
+
+    [Fact]
+    public async Task Placa_padrao_mercosul_eh_aceita()
+    {
+        var cliente = NovoCliente();
+        _clientes.ObterPorIdAsync(cliente.Id, Arg.Any<CancellationToken>()).Returns(cliente);
+        _veiculos.ExistePlacaAsync("ABC1D23", Arg.Any<CancellationToken>()).Returns(false);
+
+        var handler = NovoHandler();
+        var resposta = await handler.HandleAsync(NovoComando(cliente.Id) with { Placa = "ABC1D23" }, CancellationToken.None);
 
         resposta.Placa.Should().Be("ABC1D23");
     }

@@ -3,6 +3,7 @@ using CarWash.Application.Clientes.Common;
 using CarWash.Application.Clientes.Persistence;
 using CarWash.Application.Common;
 using CarWash.Application.Common.Exceptions;
+using CarWash.Application.Interfaces;
 using CarWash.Domain.Entities;
 using CarWash.Domain.ValueObjects;
 
@@ -16,12 +17,15 @@ namespace CarWash.Application.Clientes.Criar;
 public sealed class CriarClienteHandler : ICommandHandler<CriarClienteCommand, CriarClienteResponse>
 {
     private readonly IClienteRepository _repositorio;
+    private readonly IVeiculoService _veiculoService;
 
-    public CriarClienteHandler(IClienteRepository repositorio)
+    public CriarClienteHandler(IClienteRepository repositorio, IVeiculoService veiculoService)
     {
         _repositorio = repositorio;
+        _veiculoService = veiculoService;
     }
 
+    /// <inheritdoc/>
     public async Task<CriarClienteResponse> HandleAsync(CriarClienteCommand command, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(command);
@@ -39,13 +43,14 @@ public sealed class CriarClienteHandler : ICommandHandler<CriarClienteCommand, C
                 });
         }
 
-        var nome = InputNormalizer.SanitizeTextOrNull(command.Nome)!;
-        var cpfDigits = InputNormalizer.OnlyDigitsOrNull(command.Cpf);
-        var cnpjDigits = InputNormalizer.OnlyDigitsOrNull(command.Cnpj);
-        var telefoneDigits = InputNormalizer.OnlyDigitsOrNull(command.Telefone);
-        var celularDigits = InputNormalizer.OnlyDigitsOrNull(command.Celular)!;
-        var emailNormalizado = InputNormalizer.EmailOrNull(command.Email);
+        string nome = InputNormalizer.SanitizeTextOrNull(command.Nome)!;
+        string? cpfDigits = InputNormalizer.OnlyDigitsOrNull(command.Cpf);
+        string? cnpjDigits = InputNormalizer.OnlyDigitsOrNull(command.Cnpj);
+        string? telefoneDigits = InputNormalizer.OnlyDigitsOrNull(command.Telefone);
+        string celularDigits = InputNormalizer.OnlyDigitsOrNull(command.Celular)!;
+        string? emailNormalizado = InputNormalizer.EmailOrNull(command.Email);
         var endereco = MontarEndereco(command.Endereco!);
+        string? observacoes = InputNormalizer.SanitizeTextOrNull(command.Observacoes);
 
         if (cpfDigits is not null && await _repositorio.ExisteCpfAsync(cpfDigits, cancellationToken).ConfigureAwait(false))
         {
@@ -74,12 +79,25 @@ public sealed class CriarClienteHandler : ICommandHandler<CriarClienteCommand, C
             cpf: cpfDigits is null ? null : new Cpf(cpfDigits),
             cnpj: cnpjDigits is null ? null : new Cnpj(cnpjDigits),
             telefone: telefoneDigits is null ? null : new Telefone(telefoneDigits),
-            email: emailNormalizado is null ? null : new Email(emailNormalizado));
+            email: emailNormalizado is null ? null : new Email(emailNormalizado),
+            observacoes: observacoes);
 
-        // GAP-CW-CLI-AUDIT-CREATE: registra o ator do cadastro.
+        // GAP-CW-CLI-AUDIT-CREATE: registra o actor do cadastro.
         cliente.RegistrarCriadoPor(command.UsuarioId);
 
         await _repositorio.AdicionarAsync(cliente, command.TraceId, command.UsuarioId, cancellationToken).ConfigureAwait(false);
+
+        if (command.Veiculos is not null && command.Veiculos.Count > 0)
+        {
+            foreach (var veiculoReq in command.Veiculos)
+            {
+                await _veiculoService.CriarVeiculoAsync(
+                    cliente.Id,
+                    veiculoReq,
+                    command.TraceId,
+                    cancellationToken).ConfigureAwait(false);
+            }
+        }
 
         return new CriarClienteResponse
         {

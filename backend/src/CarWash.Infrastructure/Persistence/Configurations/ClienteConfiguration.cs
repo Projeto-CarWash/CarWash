@@ -6,6 +6,7 @@ namespace CarWash.Infrastructure.Persistence.Configurations;
 
 public sealed class ClienteConfiguration : IEntityTypeConfiguration<Cliente>
 {
+    /// <inheritdoc/>
     public void Configure(EntityTypeBuilder<Cliente> builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
@@ -33,6 +34,8 @@ public sealed class ClienteConfiguration : IEntityTypeConfiguration<Cliente>
         builder.Property(x => x.EnderecoBairro).IsRequired().HasMaxLength(100);
         builder.Property(x => x.EnderecoCidade).IsRequired().HasMaxLength(100);
         builder.Property(x => x.EnderecoUf).IsRequired().HasMaxLength(2).IsFixedLength();
+
+        builder.Property(x => x.Observacoes).HasColumnName("observacoes").HasMaxLength(500);
 
         builder.Ignore(x => x.Endereco);
 

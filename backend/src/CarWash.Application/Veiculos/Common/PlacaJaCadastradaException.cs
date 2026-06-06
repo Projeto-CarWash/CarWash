@@ -14,12 +14,12 @@ public sealed class PlacaJaCadastradaException : ConflictException
     public const string SlugPadrao = "placa-ja-cadastrada";
 
     public PlacaJaCadastradaException()
-        : base("Placa já cadastrada para outro veículo no sistema.", SlugPadrao)
+        : base("Já existe um veículo cadastrado com a placa informada.", SlugPadrao)
     {
     }
 
     public PlacaJaCadastradaException(Exception innerException)
-        : base("Placa já cadastrada para outro veículo no sistema.", SlugPadrao, innerException)
+        : base("Já existe um veículo cadastrado com a placa informada.", SlugPadrao, innerException)
     {
     }
 }

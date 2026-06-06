@@ -5,7 +5,7 @@ namespace CarWash.Domain.Entities;
 
 /// <summary>
 /// Veículo do cliente (RF005). Placa única em todo o sistema (RN003) — value object
-/// <see cref="Placa"/> normaliza para uppercase sem espaços antes da persistência. (RN003)
+/// <see cref="Placa"/> normaliza para uppercase sem espaços antes da persistência. (RN003).
 /// </summary>
 public sealed class Veiculo : IAuditable, IAuditableSetter
 {
@@ -36,8 +36,10 @@ public sealed class Veiculo : IAuditable, IAuditableSetter
 
     public bool Ativo { get; private set; }
 
+    /// <inheritdoc/>
     public DateTime CriadoEm { get; private set; }
 
+    /// <inheritdoc/>
     public DateTime AtualizadoEm { get; private set; }
 
     public static Veiculo Criar(
@@ -97,11 +99,50 @@ public sealed class Veiculo : IAuditable, IAuditableSetter
         };
     }
 
+    public void Atualizar(
+        Placa placa,
+        string modelo,
+        string fabricante,
+        string cor,
+        int? ano = null)
+    {
+        ArgumentNullException.ThrowIfNull(placa);
+
+        if (string.IsNullOrWhiteSpace(modelo) || modelo.Length > 80)
+        {
+            throw new DomainException("Modelo é obrigatório e deve ter no máximo 80 caracteres.");
+        }
+
+        if (string.IsNullOrWhiteSpace(fabricante) || fabricante.Length > 80)
+        {
+            throw new DomainException("Fabricante é obrigatório e deve ter no máximo 80 caracteres.");
+        }
+
+        if (string.IsNullOrWhiteSpace(cor) || cor.Length > 40)
+        {
+            throw new DomainException("Cor é obrigatória e deve ter no máximo 40 caracteres.");
+        }
+
+        if (ano is < AnoMinimo or > AnoMaximo)
+        {
+            throw new DomainException($"Ano deve estar entre {AnoMinimo} e {AnoMaximo}.");
+        }
+
+        Placa = placa.Valor;
+        Modelo = modelo;
+        Fabricante = fabricante;
+        Cor = cor;
+        Ano = ano;
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
     public void Inativar() => Ativo = false;
 
     public void Ativar() => Ativo = true;
 
+    /// <inheritdoc/>
     void IAuditableSetter.SetCriadoEm(DateTime valor) => CriadoEm = valor;
 
+    /// <inheritdoc/>
     void IAuditableSetter.SetAtualizadoEm(DateTime valor) => AtualizadoEm = valor;
 }

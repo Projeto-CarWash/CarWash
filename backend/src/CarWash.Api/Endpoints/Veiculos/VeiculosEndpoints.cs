@@ -2,6 +2,7 @@ using CarWash.Api.Filters;
 using CarWash.Application.Abstractions.Messaging;
 using CarWash.Application.Veiculos.Common;
 using CarWash.Application.Veiculos.Criar;
+using CarWash.Application.Veiculos.CriarBatch;
 using FluentValidation;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -18,6 +19,9 @@ public static class VeiculosEndpoints
     private const string MensagemPayloadInvalido =
         "Dados do veículo inválidos. Verifique os campos e tente novamente.";
 
+    private const string MensagemBatchInvalido =
+        "Dados dos veículos inválidos. Verifique os campos e tente novamente.";
+
     public static IEndpointRouteBuilder MapVeiculos(this IEndpointRouteBuilder app)
     {
         ArgumentNullException.ThrowIfNull(app);
@@ -27,6 +31,17 @@ public static class VeiculosEndpoints
             .WithTags("Veiculos")
             .WithName("CriarVeiculo")
             .Produces<VeiculoResponse>(StatusCodes.Status201Created)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict)
+            .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
+
+        app.MapPost("/api/v1/clientes/{clienteId:guid}/veiculos/batch", CriarBatchAsync)
+            .RequireAuthorization()
+            .WithTags("Veiculos")
+            .WithName("CriarVeiculosBatch")
+            .Produces<IReadOnlyList<VeiculoResponse>>(StatusCodes.Status201Created)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status404NotFound)
@@ -52,7 +67,7 @@ public static class VeiculosEndpoints
                 "Corpo da requisição ausente ou malformado.");
         }
 
-        var traceId = http.TraceIdentifier;
+        string traceId = http.TraceIdentifier;
         var usuarioId = ObterUsuarioId(http);
 
         var command = new CriarVeiculoCommand(
@@ -80,9 +95,56 @@ public static class VeiculosEndpoints
         return TypedResults.Created($"/api/v1/clientes/{clienteId}/veiculos/{resposta.Id}", resposta);
     }
 
+    private static async Task<Created<IReadOnlyList<VeiculoResponse>>> CriarBatchAsync(
+        Guid clienteId,
+        [FromBody] CriarVeiculosBatchRequest? request,
+        [FromServices] ICommandHandler<CriarVeiculosBatchCommand, IReadOnlyList<VeiculoResponse>> handler,
+        [FromServices] IValidator<CriarVeiculosBatchCommand> validator,
+        [FromServices] ILogger<CriarVeiculoEndpointMarker> logger,
+        HttpContext http,
+        CancellationToken cancellationToken)
+    {
+        if (request is null)
+        {
+            throw ValidationProblems.BodyAusente(
+                MensagemBatchInvalido,
+                "Corpo da requisição ausente ou malformado.");
+        }
+
+        string traceId = http.TraceIdentifier;
+        var usuarioId = ObterUsuarioId(http);
+
+        var itens = request.Veiculos.Select(v => new VeiculoItemCommand(
+            Placa: v.Placa,
+            Modelo: v.Modelo,
+            Fabricante: v.Fabricante,
+            Cor: v.Cor,
+            Ano: v.Ano)).ToList();
+
+        var command = new CriarVeiculosBatchCommand(
+            ClienteId: clienteId,
+            Veiculos: itens,
+            TraceId: traceId,
+            UsuarioId: usuarioId);
+
+        var resultado = await validator.ValidateAsync(command, cancellationToken).ConfigureAwait(false);
+        ValidationProblems.EnsureValid(resultado, MensagemBatchInvalido);
+
+        var resposta = await handler.HandleAsync(command, cancellationToken).ConfigureAwait(false);
+
+        logger.LogInformation(
+            "Batch de veículos cadastrado com sucesso. TraceId: {TraceId}. QtdVeiculos: {Qtd}. ClienteId: {ClienteId}. UsuarioId: {UsuarioId}",
+            traceId,
+            resposta.Count,
+            clienteId,
+            usuarioId);
+
+        return TypedResults.Created($"/api/v1/clientes/{clienteId}/veiculos/batch", resposta);
+    }
+
     private static Guid? ObterUsuarioId(HttpContext http)
     {
-        var sub = http.User.FindFirst("sub")?.Value
+        string? sub = http.User.FindFirst("sub")?.Value
             ?? http.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         return Guid.TryParse(sub, out var id) ? id : null;
     }

@@ -32,6 +32,7 @@ public static class ValidationProblems
     /// Lança <see cref="ValidationException"/> com <c>body</c> mapeado para a
     /// mensagem informada. Usado quando o request chega <c>null</c>/malformado.
     /// </summary>
+    /// <returns></returns>
     public static ValidationException BodyAusente(string mensagem, string detalhe)
     {
         return new ValidationException(

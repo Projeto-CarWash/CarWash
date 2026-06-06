@@ -6,7 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { agendamentoService } from '@/services/agendamentoService';
 
+import { SeletorFilial } from './SeletorFilial';
+
 import type { ClienteResumido, VeiculoResumido } from '@/types/agendamento';
+import type { FilialResumo } from '@/types/filial';
 
 function formatarDoc(cpf?: string, cnpj?: string): string {
   if (cpf?.length === 11) {
@@ -27,6 +30,12 @@ function getMinDate(): string {
 }
 
 interface ClienteVeiculoStepProps {
+  filialId: string;
+  onFilialChange: (filialId: string, filialNome: string) => void;
+  filiais: FilialResumo[];
+  filiaisCarregando: boolean;
+  filiaisErro: boolean;
+  onRetryFiliais: () => void;
   cliente: ClienteResumido | null;
   veiculo: VeiculoResumido | null;
   dataAgendamento: string;
@@ -39,6 +48,12 @@ interface ClienteVeiculoStepProps {
 }
 
 export function ClienteVeiculoStep({
+  filialId,
+  onFilialChange,
+  filiais,
+  filiaisCarregando,
+  filiaisErro,
+  onRetryFiliais,
   cliente,
   veiculo,
   dataAgendamento,
@@ -189,7 +204,8 @@ export function ClienteVeiculoStep({
 
   const isDataValida = !!dataAgendamento && !isDomingo;
   const isHoraValida = !!horaInicio && !erroHora;
-  const isStepValid = !!cliente && !!veiculo && isDataValida && isHoraValida;
+  const isFilialValida = !!filialId;
+  const isStepValid = isFilialValida && !!cliente && !!veiculo && isDataValida && isHoraValida;
 
   const handleNext = useCallback(() => {
     setTentouAvancar(true);
@@ -208,6 +224,16 @@ export function ClienteVeiculoStep({
       </div>
 
       <div className="space-y-6">
+        <SeletorFilial
+          filialId={filialId}
+          onChange={onFilialChange}
+          filiais={filiais}
+          carregando={filiaisCarregando}
+          erro={filiaisErro}
+          onRetry={onRetryFiliais}
+          tentouAvancar={tentouAvancar}
+        />
+
         <div className="space-y-1.5">
           <Label className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">
             CLIENTE <span className="text-red-500">*</span>

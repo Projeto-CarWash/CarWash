@@ -49,7 +49,7 @@ public class SchemaShapeTests
             + "WHERE table_schema = 'public' AND table_type = 'BASE TABLE' "
             + "ORDER BY table_name;").ConfigureAwait(false);
 
-        foreach (var t in TabelasEsperadas)
+        foreach (string t in TabelasEsperadas)
         {
             encontradas.Should().Contain(t, $"a tabela {t} deve existir após a migration");
         }
@@ -65,7 +65,7 @@ public class SchemaShapeTests
             "SELECT count(*) FROM information_schema.columns "
             + "WHERE column_name = 'id' AND table_schema = 'public' "
             + "AND column_default IS NOT NULL;";
-        var result = (long)(await cmd.ExecuteScalarAsync().ConfigureAwait(false))!;
+        long result = (long)(await cmd.ExecuteScalarAsync().ConfigureAwait(false))!;
         result.Should().Be(0, "ADR 0001: UUID é gerado em C#, sem DEFAULT no banco");
     }
 
@@ -88,7 +88,7 @@ public class SchemaShapeTests
         cmd.CommandText =
             "SELECT pg_get_constraintdef(oid) "
             + "FROM pg_constraint WHERE conname = 'ex_ag_veiculo_janela';";
-        var def = (string?)await cmd.ExecuteScalarAsync().ConfigureAwait(false);
+        string? def = (string?)await cmd.ExecuteScalarAsync().ConfigureAwait(false);
 
         def.Should().NotBeNullOrWhiteSpace();
         def.Should().Contain("EXCLUDE USING gist");
@@ -104,27 +104,57 @@ public class SchemaShapeTests
 
         string[] esperados =
         [
-            "uk_usuarios_email", "idx_usuarios_ativo",
-            "idx_sessoes_usuario_id", "idx_sessoes_expira_em", "idx_sessoes_revogado_em",
-            "uk_filiais_nome", "idx_filiais_ativa",
+            "uk_usuarios_email",
+            "idx_usuarios_ativo",
+            "idx_sessoes_usuario_id",
+            "idx_sessoes_expira_em",
+            "idx_sessoes_revogado_em",
+
+            // uk_filiais_nome substituído por uk_filiais_nome_lower (índice
+            // funcional case-insensitive em LOWER(nome)) na migration
+            // AdicionaCadastroFilial (RF017 / ADR-0007 §3.2 / L1=b).
+            "uk_filiais_nome_lower",
+            "idx_filiais_ativa",
+            "uk_filiais_codigo",
+            "uk_filiais_cnpj",
+            "idx_filiais_cidade_uf",
 
             // ux_clientes_email substituiu idx_clientes_email no commit 3989691
             // (migration AdicionaAuditoriaUsuarioCliente — índice parcial por ativo).
-            "idx_clientes_nome", "ux_clientes_email", "uk_clientes_cpf", "uk_clientes_cnpj",
-            "idx_filiados_cliente_id", "idx_filiados_cpf", "uk_filiados_cliente_cpf",
-            "uk_veiculos_placa", "idx_veiculos_cliente_id",
-            "uk_servicos_nome", "idx_servicos_ativo",
-            "idx_ag_filial_inicio", "idx_ag_status", "idx_ag_cliente", "idx_ag_veiculo",
-            "idx_item_agendamento", "idx_item_servico", "uk_item_agendamento_servico",
-            "idx_hist_agendamento", "idx_hist_evento", "idx_hist_ocorrido_em",
-            "idx_audit_evento", "idx_audit_entidade", "idx_audit_criado_em", "idx_audit_correlation",
+            "idx_clientes_nome",
+            "ux_clientes_email",
+            "uk_clientes_cpf",
+            "uk_clientes_cnpj",
+            "idx_filiados_cliente_id",
+            "idx_filiados_cpf",
+            "uk_filiados_cliente_cpf",
+            "uk_veiculos_placa",
+            "idx_veiculos_cliente_id",
+            "uk_servicos_nome",
+            "idx_servicos_ativo",
+            "idx_ag_filial_inicio",
+            "idx_ag_status",
+            "idx_ag_cliente",
+            "idx_ag_veiculo",
+            "idx_item_agendamento",
+            "idx_item_servico",
+            "uk_item_agendamento_servico",
+            "idx_hist_agendamento",
+            "idx_hist_evento",
+            "idx_hist_ocorrido_em",
+            "idx_audit_evento",
+            "idx_audit_entidade",
+            "idx_audit_criado_em",
+            "idx_audit_correlation",
             "uk_pref_usuario_id",
-            "uk_outbox_idempotency", "idx_outbox_status_disponivel",
-            "uk_notif_dedupe", "idx_notif_status",
+            "uk_outbox_idempotency",
+            "idx_outbox_status_disponivel",
+            "uk_notif_dedupe",
+            "idx_notif_status",
             "uk_flag_nome_ambiente_filial",
         ];
 
-        foreach (var idx in esperados)
+        foreach (string idx in esperados)
         {
             indices.Should().Contain(idx, $"o índice {idx} é exigido pela DoD §6");
         }

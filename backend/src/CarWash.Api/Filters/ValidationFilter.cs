@@ -27,6 +27,7 @@ public sealed class ValidationFilter<T> : IEndpointFilter
         _validator = validator;
     }
 
+    /// <inheritdoc/>
     public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
     {
         ArgumentNullException.ThrowIfNull(context);

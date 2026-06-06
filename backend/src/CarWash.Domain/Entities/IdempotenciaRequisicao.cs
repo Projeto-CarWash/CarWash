@@ -24,34 +24,35 @@ public sealed class IdempotenciaRequisicao : IAuditable, IAuditableSetter
 
     public Guid Id { get; private set; }
 
-    /// <summary>Chave de idempotência informada pelo cliente.</summary>
+    /// <summary>Gets chave de idempotência informada pelo cliente.</summary>
     public Guid IdempotencyKey { get; private set; }
 
-    /// <summary>Escopo lógico da operação — segmenta a chave por caso de uso.</summary>
+    /// <summary>Gets escopo lógico da operação — segmenta a chave por caso de uso.</summary>
     public string Escopo { get; private set; }
 
-    /// <summary>Usuário autenticado que originou a requisição.</summary>
+    /// <summary>Gets usuário autenticado que originou a requisição.</summary>
     public Guid UsuarioId { get; private set; }
 
-    /// <summary>SHA-256 (hex) do payload de negócio — o mesmo <c>hashResumo</c> da confirmação.</summary>
+    /// <summary>Gets sHA-256 (hex) do payload de negócio — o mesmo <c>hashResumo</c> da confirmação.</summary>
     public string PayloadHash { get; private set; }
 
-    /// <summary>Status HTTP da resposta original gravada.</summary>
+    /// <summary>Gets status HTTP da resposta original gravada.</summary>
     public int StatusHttp { get; private set; }
 
-    /// <summary>Corpo serializado da resposta original — devolvido no replay.</summary>
+    /// <summary>Gets corpo serializado da resposta original — devolvido no replay.</summary>
     public string RespostaJson { get; private set; }
 
-    /// <summary>Id do recurso criado pela requisição original (quando aplicável).</summary>
+    /// <summary>Gets id do recurso criado pela requisição original (quando aplicável).</summary>
     public Guid? RecursoId { get; private set; }
 
+    /// <inheritdoc/>
     public DateTime CriadoEm { get; private set; }
 
-    /// <summary>Momento a partir do qual o registro pode ser descartado pelo job de limpeza.</summary>
+    /// <summary>Gets momento a partir do qual o registro pode ser descartado pelo job de limpeza.</summary>
     public DateTime ExpiraEm { get; private set; }
 
     /// <summary>
-    /// <see cref="IAuditable.AtualizadoEm"/> — o registro é imutável após criado;
+    /// <see cref="IAuditable.AtualizadoEm"/> Gets — o registro é imutável após criado;
     /// mantido por convenção de auditoria (DB001 §07).
     /// </summary>
     public DateTime AtualizadoEm { get; private set; }
@@ -60,6 +61,7 @@ public sealed class IdempotenciaRequisicao : IAuditable, IAuditableSetter
     /// Cria um registro de idempotência já com a resposta original capturada. A
     /// expiração é derivada de <see cref="JanelaValidade"/> a partir de agora (UTC).
     /// </summary>
+    /// <returns></returns>
     public static IdempotenciaRequisicao Registrar(
         Guid id,
         Guid idempotencyKey,
@@ -121,7 +123,9 @@ public sealed class IdempotenciaRequisicao : IAuditable, IAuditableSetter
         };
     }
 
+    /// <inheritdoc/>
     void IAuditableSetter.SetCriadoEm(DateTime valor) => CriadoEm = valor;
 
+    /// <inheritdoc/>
     void IAuditableSetter.SetAtualizadoEm(DateTime valor) => AtualizadoEm = valor;
 }

@@ -1,95 +1,132 @@
 import { AxiosError } from 'axios';
-import { ArrowLeft, Car, Loader2, Plus, Power } from 'lucide-react';
+import {
+  ArrowLeft,
+  Car,
+  CheckCircle2,
+  Loader2,
+  Pencil,
+  Plus,
+  Power,
+  ShieldOff,
+} from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { getCorCSS } from '@/lib/colors';
 import { clienteService, type ClienteDetalhe } from '@/services/clienteService';
-import { veiculoService, type Veiculo } from '@/services/veiculoService';
 
 export function ClienteDetalhePage() {
   const { id = '' } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+
   const [cliente, setCliente] = useState<ClienteDetalhe | null>(null);
-  const [veiculos, setVeiculos] = useState<Veiculo[]>([]);
   const [erro, setErro] = useState<string | null>(null);
   const [erroHttp, setErroHttp] = useState<number | null>(null);
   const [carregando, setCarregando] = useState(true);
-  const [carregandoVeiculos, setCarregandoVeiculos] = useState(true);
   const [salvando, setSalvando] = useState(false);
+  const [sucesso, setSucesso] = useState<string | null>(null);
+  const [modalStatusAberto, setModalStatusAberto] = useState(false);
 
+  // Os veículos já chegam no detalhe do cliente (GET /api/v1/clientes/{id}).
+  // Não há chamada adicional para buscá-los (RF004 / RF022).
+  const veiculos = cliente?.veiculos ?? [];
+
+  // Detecta se voltamos de um cadastro de veículo bem-sucedido (RF004 / RF022)
+  const veiculoCriado = (location.state as { veiculoCriado?: boolean } | null)?.veiculoCriado;
+
+  // ─── Reset imediato ao trocar de cliente (evita flash de dados antigos) ───
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    let cancelado = false;
+    setCliente(null);
+    setErro(null);
+    setErroHttp(null);
+    setCarregando(true);
+    setSucesso(null);
+    setModalStatusAberto(false);
+  }, [id]);
 
-    const carregarCliente = async () => {
-      if (!cancelado) {
-        setCarregando(true);
-        setErro(null);
-        setErroHttp(null);
-      }
-      try {
-        const c = await clienteService.obterPorId(id);
-        if (!cancelado) setCliente(c);
-      } catch (error) {
-        if (cancelado) return;
-        if (error instanceof AxiosError && error.response) {
-          const status = error.response.status;
-          setErroHttp(status);
-          if (status === 401) {
-            void navigate('/login', { replace: true });
-          } else if (status === 403) {
-            setErro('Você não possui permissão para consultar clientes.');
-          } else if (status === 404) {
-            setErro('Cliente não encontrado.');
-          } else {
-            setErro('Não foi possível concluir a consulta no momento. Tente novamente.');
-          }
+  // ─── Fetch do cliente (traz também os veículos vinculados) ───
+  const carregarCliente = useCallback(async () => {
+    if (!id) return;
+    setCarregando(true);
+    setErro(null);
+    setErroHttp(null);
+    try {
+      const c = await clienteService.obterPorId(id);
+      setCliente(c);
+    } catch (error) {
+      if (error instanceof AxiosError && error.response) {
+        const status = error.response.status;
+        setErroHttp(status);
+        if (status === 401) {
+          void navigate('/login', { replace: true });
+        } else if (status === 403) {
+          setErro('Você não possui permissão para consultar clientes.');
+        } else if (status === 404) {
+          setErro('Cliente não encontrado.');
         } else {
           setErro('Não foi possível concluir a consulta no momento. Tente novamente.');
-          setErroHttp(500);
         }
-      } finally {
-        if (!cancelado) setCarregando(false);
+      } else {
+        setErro('Não foi possível concluir a consulta no momento. Tente novamente.');
+        setErroHttp(500);
       }
-    };
-
-    const carregarVeiculos = async () => {
-      if (!cancelado) setCarregandoVeiculos(true);
-      try {
-        const v = await veiculoService.listarPorCliente(id);
-        if (!cancelado) setVeiculos(v);
-      } catch (err) {
-        // Falha na busca de veículos é não-bloqueante para a visualização do cliente.
-        console.error('Erro ao buscar veículos do cliente:', err);
-      } finally {
-        if (!cancelado) setCarregandoVeiculos(false);
-      }
-    };
-
-    void carregarCliente();
-    void carregarVeiculos();
-
-    return () => {
-      cancelado = true;
-    };
+    } finally {
+      setCarregando(false);
+    }
   }, [id, navigate]);
+
+  useEffect(() => {
+    void carregarCliente();
+  }, [carregarCliente]);
+
+  // ─── Refetch automático quando voltamos de cadastro de veículo (RF004 / RF022) ───
+  useEffect(() => {
+    if (veiculoCriado) {
+      // Limpa o state para não reprocessar em navegações futuras
+      void navigate(location.pathname, { replace: true, state: {} });
+      void carregarCliente();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [veiculoCriado]);
 
   const toggleStatus = useCallback(async () => {
     if (!cliente) return;
+    const novoAtivo = !cliente.ativo;
     setSalvando(true);
     setErro(null);
     try {
-      const novo = await clienteService.alterarStatus(cliente.id, !cliente.ativo);
+      const novo = await clienteService.alterarStatus(cliente.id, novoAtivo);
       setCliente((prev) => (prev ? { ...prev, ativo: novo.ativo } : null));
+      setSucesso(`Cliente ${novo.ativo ? 'reativado' : 'inativado'} com sucesso.`);
+      setModalStatusAberto(false);
     } catch {
-      setErro('Não foi possível alterar o status do cliente.');
+      setErro(`Não foi possível ${novoAtivo ? 'reativar' : 'inativar'} o cliente.`);
     } finally {
       setSalvando(false);
     }
   }, [cliente]);
 
-  if (erro && !cliente && erroHttp === 404) {
+  // ─── Mensagem de sucesso transitória ───
+  useEffect(() => {
+    if (!sucesso) return;
+    const timer = setTimeout(() => setSucesso(null), 4000);
+    return () => clearTimeout(timer);
+  }, [sucesso]);
+
+  // ─── 404 / 403 global: exibe tela simplificada ───
+  if (erro && !cliente && (erroHttp === 404 || erroHttp === 403)) {
     return (
       <div className="px-8 py-8">
         <Button
@@ -100,9 +137,12 @@ export function ClienteDetalhePage() {
         >
           <ArrowLeft className="mr-1 h-4 w-4" /> Voltar
         </Button>
-        <p role="alert" className="text-sm text-red-400">
-          {erro}
-        </p>
+        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-zinc-800 bg-zinc-950/20 py-12 text-center">
+          <ShieldOff className="mb-3 h-10 w-10 text-zinc-600" />
+          <p role="alert" className="text-sm text-red-400">
+            {erro}
+          </p>
+        </div>
       </div>
     );
   }
@@ -118,17 +158,43 @@ export function ClienteDetalhePage() {
         >
           <ArrowLeft className="mr-1 h-4 w-4" /> Voltar
         </Button>
-        <Button
-          type="button"
-          variant="outline"
-          disabled={salvando || carregando || !cliente}
-          onClick={toggleStatus}
-          className="h-9 rounded-full border-zinc-700/60 bg-transparent px-4 text-sm hover:bg-zinc-800/50 hover:text-zinc-200 text-zinc-400"
-        >
-          <Power className="mr-1 h-4 w-4" />
-          {cliente?.ativo ? 'Inativar cliente' : 'Reativar cliente'}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={carregando || !cliente}
+            onClick={() => void navigate(`/clientes/${id}/editar`)}
+            className="h-9 rounded-full border-zinc-700/60 bg-transparent px-4 text-sm hover:bg-zinc-800/50 hover:text-zinc-200 text-zinc-400"
+          >
+            <Pencil className="mr-1 h-4 w-4" /> Editar
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={salvando || carregando || !cliente}
+            onClick={() => setModalStatusAberto(true)}
+            className="h-9 rounded-full border-zinc-700/60 bg-transparent px-4 text-sm hover:bg-zinc-800/50 hover:text-zinc-200 text-zinc-400"
+          >
+            {salvando ? (
+              <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+            ) : (
+              <Power className="mr-1 h-4 w-4" />
+            )}
+            {cliente?.ativo ? 'Inativar cliente' : 'Reativar cliente'}
+          </Button>
+        </div>
       </div>
+
+      {sucesso && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="flex items-center gap-2 rounded-xl border border-green-500/30 bg-green-950/30 px-4 py-3 text-sm text-green-400"
+        >
+          <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
+          {sucesso}
+        </div>
+      )}
 
       <Card className="border-zinc-800/60 bg-zinc-900/30">
         <CardHeader>
@@ -176,18 +242,20 @@ export function ClienteDetalhePage() {
         </CardContent>
       </Card>
 
+      {/* ─── Seção de Veículos ─────────────────────────────────────────────── */}
       <Card className="border-zinc-800/60 bg-zinc-900/30">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <div>
-            <CardTitle className="text-lg text-zinc-100 flex items-center gap-2">
+            <CardTitle className="text-lg text-zinc-100 flex items-center gap-2 font-semibold">
               <Car className="h-5 w-5 text-red-500" />
-              Veículos
+              Veículos do cliente{' '}
+              <span className="text-sm font-normal text-zinc-400">({veiculos.length})</span>
             </CardTitle>
             <p className="text-xs text-zinc-400 mt-1">
               Veículos associados a este cliente para ordens de serviço.
             </p>
           </div>
-          {veiculos.length > 0 && (
+          {!carregando && veiculos.length > 0 && (
             <Button
               type="button"
               onClick={() => void navigate(`/clientes/${id}/veiculos/novo`)}
@@ -198,12 +266,25 @@ export function ClienteDetalhePage() {
           )}
         </CardHeader>
         <CardContent>
-          {carregandoVeiculos ? (
-            <div className="flex items-center justify-center py-6 text-sm text-zinc-500">
-              <Loader2 className="mr-2 h-4 w-4 animate-spin text-zinc-400" />
-              Carregando veículos…
-            </div>
+          {carregando && !cliente ? (
+            <ul aria-busy="true" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3].map((skeleton) => (
+                <li
+                  key={skeleton}
+                  className="flex h-20 items-center justify-between rounded-xl border border-zinc-800/40 bg-zinc-900/20 p-4 animate-pulse"
+                >
+                  <div className="flex items-center gap-3 w-full">
+                    <div className="h-9 w-9 rounded-lg bg-zinc-800/50" />
+                    <div className="space-y-2 w-full">
+                      <div className="h-4 w-1/2 rounded bg-zinc-800/50" />
+                      <div className="h-3 w-1/3 rounded bg-zinc-800/50" />
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
           ) : veiculos.length === 0 ? (
+            /* ── Empty State ── */
             <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-zinc-800 bg-zinc-950/20 py-8 text-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-800/40 text-zinc-500 mb-3">
                 <Car className="h-6 w-6" />
@@ -221,10 +302,11 @@ export function ClienteDetalhePage() {
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {veiculos.map((veiculo) => (
-                <div
-                  key={veiculo.id}
+            /* ── Lista de Veículos ── */
+            <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {[...veiculos].reverse().map((veiculo) => (
+                <li
+                  key={veiculo.id || veiculo.placa}
                   className="flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-950/30 p-4 hover:border-zinc-700 transition-colors"
                 >
                   <div className="flex items-center gap-3">
@@ -235,27 +317,74 @@ export function ClienteDetalhePage() {
                       <h4 className="text-sm font-semibold text-zinc-200">
                         {veiculo.fabricante} {veiculo.modelo}
                       </h4>
-                      <p className="text-xs text-zinc-500">
-                        {veiculo.cor}
-                        {veiculo.ano ? ` • ${veiculo.ano}` : ''}
-                      </p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        {veiculo.cor && (
+                          <span
+                            className="inline-block h-4 w-4 rounded-full border border-zinc-600 shadow-sm"
+                            style={{ backgroundColor: getCorCSS(veiculo.cor) }}
+                            title={`Cor: ${veiculo.cor}`}
+                          />
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div className="rounded-md border border-zinc-700 bg-zinc-900 px-2.5 py-1 text-xs font-mono font-bold tracking-wider text-zinc-200 uppercase shadow-inner">
                     {formatarPlacaExibicao(veiculo.placa)}
                   </div>
-                </div>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </CardContent>
       </Card>
 
-      {erro && erroHttp !== 404 && (
+      {erro && erroHttp !== 404 && erroHttp !== 403 && (
         <p role="alert" className="text-sm text-red-400">
           {erro}
         </p>
       )}
+
+      {/* ─── Modal de confirmação de inativação/reativação ─── */}
+      <Dialog
+        open={modalStatusAberto}
+        onOpenChange={(aberto) => {
+          if (salvando) return;
+          setModalStatusAberto(aberto);
+        }}
+      >
+        <DialogContent className="sm:max-w-[425px] bg-zinc-950 border-zinc-800">
+          <DialogHeader>
+            <DialogTitle className="text-zinc-100">
+              {cliente?.ativo ? 'Inativar cliente' : 'Reativar cliente'}
+            </DialogTitle>
+            <DialogDescription className="text-zinc-400">
+              {cliente?.ativo
+                ? `Deseja realmente inativar o cliente "${cliente?.nome}"? Ele não estará mais disponível para novos agendamentos.`
+                : `Deseja reativar o cliente "${cliente?.nome}"? Ele voltará a estar disponível para novos agendamentos.`}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4 gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setModalStatusAberto(false)}
+              disabled={salvando}
+              className="border-zinc-700 bg-transparent text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              onClick={() => void toggleStatus()}
+              disabled={salvando}
+              className="bg-red-600 text-white hover:bg-red-700"
+            >
+              {salvando ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Confirmar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

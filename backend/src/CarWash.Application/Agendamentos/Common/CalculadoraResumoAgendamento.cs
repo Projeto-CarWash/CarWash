@@ -1,9 +1,11 @@
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
+using CarWash.Application.Abstractions;
 using CarWash.Application.Agendamentos.Persistence;
 using CarWash.Application.Common;
 using CarWash.Application.Common.Exceptions;
+using Microsoft.Extensions.Logging;
 
 namespace CarWash.Application.Agendamentos.Common;
 
@@ -20,11 +22,26 @@ public sealed class CalculadoraResumoAgendamento
     private const string MensagemPayloadInvalido =
         "Dados do agendamento inválidos. Verifique os campos e tente novamente.";
 
-    private readonly IAgendamentoCatalogoRepository _catalogo;
+    /// <summary>
+    /// Evento de auditoria das falhas de filial (RF019). entidadeId = null (ainda
+    /// não há agendamento), dados = { motivo, filialId }.
+    /// </summary>
+    public const string EventoFilialRejeitada = "AgendamentoFilialRejeitada";
 
-    public CalculadoraResumoAgendamento(IAgendamentoCatalogoRepository catalogo)
+    public const string EntidadeAuditoria = "Agendamento";
+
+    private readonly IAgendamentoCatalogoRepository _catalogo;
+    private readonly IAuditLogger _audit;
+    private readonly ILogger<CalculadoraResumoAgendamento> _log;
+
+    public CalculadoraResumoAgendamento(
+        IAgendamentoCatalogoRepository catalogo,
+        IAuditLogger audit,
+        ILogger<CalculadoraResumoAgendamento> log)
     {
         _catalogo = catalogo;
+        _audit = audit;
+        _log = log;
     }
 
     /// <summary>
@@ -33,6 +50,7 @@ public sealed class CalculadoraResumoAgendamento
     /// <see cref="RecursoInativoException"/> (recurso inativo) ou
     /// <see cref="ValidationException"/> (vínculo inconsistente — RN002/CA009).
     /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     public async Task<ResumoAgendamentoCalculado> CalcularAsync(
         Guid filialId,
         Guid clienteId,
@@ -56,7 +74,7 @@ public sealed class CalculadoraResumoAgendamento
         }
 
         var inicioUtc = DateTime.SpecifyKind(inicio.ToUniversalTime(), DateTimeKind.Utc);
-        var observacoesNormalizadas = InputNormalizer.SanitizeTextOrNull(observacoes);
+        string? observacoesNormalizadas = InputNormalizer.SanitizeTextOrNull(observacoes);
 
         var filial = await GarantirFilialAsync(filialId, cancellationToken).ConfigureAwait(false);
         var veiculo = await GarantirVeiculoAsync(veiculoId, cancellationToken).ConfigureAwait(false);
@@ -66,11 +84,16 @@ public sealed class CalculadoraResumoAgendamento
 
         var servicos = await GarantirServicosAsync(servicoIds, cancellationToken).ConfigureAwait(false);
 
-        var duracaoTotal = servicos.Sum(s => s.DuracaoMin);
-        var valorTotal = servicos.Sum(s => s.Preco);
+        int duracaoTotal = servicos.Sum(s => s.DuracaoMin);
+        decimal valorTotal = servicos.Sum(s => s.Preco);
         var fim = inicioUtc.AddMinutes(duracaoTotal);
 
-        var hashResumo = CalcularHashResumo(
+        // RF008/RF018: a filial deve ter células livres na janela [inicio, fim).
+        // Defesa server-side compartilhada por criação e confirmação — evita
+        // duplicação entre CriarAgendamentoHandler e ConfirmarAgendamentoHandler.
+        await GarantirCapacidadeFilialAsync(filialId, inicioUtc, fim, cancellationToken).ConfigureAwait(false);
+
+        string hashResumo = CalcularHashResumo(
             filialId,
             clienteId,
             veiculoId,
@@ -130,6 +153,7 @@ public sealed class CalculadoraResumoAgendamento
     /// derivado de <c>inicio</c> + duração total. Determinístico e independente
     /// de cultura/ordenação de entrada.
     /// </summary>
+    /// <returns></returns>
     public static string CalcularHashResumo(
         Guid filialId,
         Guid clienteId,
@@ -143,19 +167,19 @@ public sealed class CalculadoraResumoAgendamento
     {
         ArgumentNullException.ThrowIfNull(servicoIds);
 
-        var inicioCanonico = DateTime
+        string inicioCanonico = DateTime
             .SpecifyKind(inicioUtc.ToUniversalTime(), DateTimeKind.Utc)
             .ToString("yyyy-MM-ddTHH:mm:ss.fffZ", CultureInfo.InvariantCulture);
 
-        var servicosCanonicos = string.Join(
+        string servicosCanonicos = string.Join(
             ',',
             servicoIds
                 .Select(id => id.ToString("D", CultureInfo.InvariantCulture))
                 .OrderBy(s => s, StringComparer.Ordinal));
 
-        var observacoesCanonicas = InputNormalizer.SanitizeTextOrNull(observacoes) ?? "null";
+        string observacoesCanonicas = InputNormalizer.SanitizeTextOrNull(observacoes) ?? "null";
 
-        var canonico = string.Join(
+        string canonico = string.Join(
             '|',
             filialId.ToString("D", CultureInfo.InvariantCulture),
             clienteId.ToString("D", CultureInfo.InvariantCulture),
@@ -167,7 +191,7 @@ public sealed class CalculadoraResumoAgendamento
             valorTotal.ToString("F2", CultureInfo.InvariantCulture),
             observacoesCanonicas);
 
-        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(canonico));
+        byte[] bytes = SHA256.HashData(Encoding.UTF8.GetBytes(canonico));
         return Convert.ToHexString(bytes).ToLowerInvariant();
     }
 
@@ -187,15 +211,49 @@ public sealed class CalculadoraResumoAgendamento
 
     private async Task<FilialResumoSnapshot> GarantirFilialAsync(Guid filialId, CancellationToken cancellationToken)
     {
-        var filial = await _catalogo.ObterFilialResumoAsync(filialId, cancellationToken).ConfigureAwait(false)
-            ?? throw new NotFoundException("Filial informada não foi encontrada.");
+        // RF019: a filial é a única dependência cujo card pede 409 (inativa) — as
+        // demais (veículo/cliente/serviço/responsável) seguem 422 via
+        // RecursoInativoException. 404 e 409 têm mensagens próprias do card.
+        var filial = await _catalogo.ObterFilialResumoAsync(filialId, cancellationToken).ConfigureAwait(false);
+
+        if (filial is null)
+        {
+            await AuditarFalhaFilialAsync(filialId, MotivosFalhaFilial.Inexistente, cancellationToken)
+                .ConfigureAwait(false);
+            throw new NotFoundException(MensagensFilialAgendamento.NaoEncontrada);
+        }
 
         if (!filial.Ativa)
         {
-            throw new RecursoInativoException("A filial selecionada está inativa e não aceita agendamentos.");
+            await AuditarFalhaFilialAsync(filialId, MotivosFalhaFilial.Inativa, cancellationToken)
+                .ConfigureAwait(false);
+            throw new FilialInativaException();
         }
 
         return filial;
+    }
+
+    /// <summary>
+    /// RF019/DAT §9.1: audita a rejeição de filial no ponto único compartilhado
+    /// pelos três fluxos (criação/pré-confirmação/confirmação), imediatamente
+    /// antes de lançar a exceção. O <c>motivo</c> vai apenas para
+    /// <c>audit_logs</c>/log de aplicação — nunca para a resposta HTTP.
+    /// CorrelationId/UsuarioId são preenchidos automaticamente pelo
+    /// <see cref="IAuditLogger"/> via <c>ICurrentRequestContext</c>.
+    /// </summary>
+    private async Task AuditarFalhaFilialAsync(Guid filialId, string motivo, CancellationToken cancellationToken)
+    {
+        await _audit.LogAsync(
+            evento: EventoFilialRejeitada,
+            entidade: EntidadeAuditoria,
+            entidadeId: null,
+            dados: new { motivo, filialId },
+            cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        _log.LogWarning(
+            "Agendamento rejeitado por falha de filial. FilialId={FilialId}, Motivo={Motivo}",
+            filialId,
+            motivo);
     }
 
     private async Task<VeiculoResumoSnapshot> GarantirVeiculoAsync(Guid veiculoId, CancellationToken cancellationToken)
@@ -248,6 +306,43 @@ public sealed class CalculadoraResumoAgendamento
                 {
                     ["responsavelId"] = ["O responsável não pertence ao titular do veículo."],
                 });
+        }
+    }
+
+    private async Task GarantirCapacidadeFilialAsync(
+        Guid filialId,
+        DateTime inicioUtc,
+        DateTime fimUtc,
+        CancellationToken cancellationToken)
+    {
+        // RN009 — celulas_ativas é o teto de agendamentos simultâneos de uma
+        // filial (RF008/RF018). Estratégia best-effort no MVP: contamos
+        // sobreposições com status 'agendado' na mesma filial e na mesma janela
+        // [inicio, fim) e comparamos com celulas_ativas. A race condition
+        // residual entre o pré-check e o INSERT é aceita no MVP — o impacto
+        // máximo é simultaneidade igual a celulas_ativas + 1 por poucos ms
+        // (sem perda de dado, sem corrupção). A versão "hard" (advisory lock
+        // por filial ou EXCLUDE com count) está mapeada como evolução pós-MVP.
+        // Mais detalhes em docs/adrs/rf018-celulas-ativas-filial.md §9.4.
+        int? celulasAtivas = await _catalogo
+            .ObterCelulasAtivasFilialAsync(filialId, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (celulasAtivas is null or 0)
+        {
+            // 0 não deveria existir (CHECK 1..100) — defesa em profundidade.
+            // null já foi coberto pelo GarantirFilialAsync, mas mantemos a
+            // verificação por segurança.
+            throw new CapacidadeFilialEsgotadaException();
+        }
+
+        int simultaneos = await _catalogo
+            .ContarSobreposicoesNaFilialAsync(filialId, inicioUtc, fimUtc, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (simultaneos >= celulasAtivas.Value)
+        {
+            throw new CapacidadeFilialEsgotadaException();
         }
     }
 

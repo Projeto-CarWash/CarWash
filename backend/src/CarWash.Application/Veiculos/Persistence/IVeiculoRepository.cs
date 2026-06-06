@@ -13,11 +13,27 @@ public interface IVeiculoRepository
     /// Verifica se a placa (normalizada) já está cadastrada no sistema.
     /// Pré-check do RN011 — placa única global.
     /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task<bool> ExistePlacaAsync(string placaNormalizada, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Verifica se qualquer uma das placas (normalizadas) já está cadastrada no sistema.
+    /// Retorna a lista de placas que já existem no banco.
+    /// </summary>
+    Task<IReadOnlyCollection<string>> PlacasExistentesAsync(IEnumerable<string> placasNormalizadas, CancellationToken cancellationToken);
 
     /// <summary>
     /// Persiste o veículo. Em violação concorrente da <c>uk_veiculos_placa</c>,
     /// converte para <c>PlacaJaCadastradaException</c> (defesa em profundidade).
     /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task AdicionarAsync(Veiculo veiculo, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Persiste múltiplos veículos dentro de uma transação única.
+    /// Se qualquer item falhar (inválido ou duplicado), realiza rollback integral.
+    /// Em violação concorrente da <c>uk_veiculos_placa</c>, converte para
+    /// <c>PlacaJaCadastradaException</c>.
+    /// </summary>
+    Task AdicionarRangeAsync(IEnumerable<Veiculo> veiculos, CancellationToken cancellationToken);
 }

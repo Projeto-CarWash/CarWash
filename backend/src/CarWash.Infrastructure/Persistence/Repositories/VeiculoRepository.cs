@@ -21,6 +21,7 @@ public sealed class VeiculoRepository : IVeiculoRepository
         _context = context;
     }
 
+    /// <inheritdoc/>
     public Task<bool> ExistePlacaAsync(string placaNormalizada, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(placaNormalizada);
@@ -30,6 +31,29 @@ public sealed class VeiculoRepository : IVeiculoRepository
             .AnyAsync(v => v.Placa == placaNormalizada, cancellationToken);
     }
 
+    public async Task<IReadOnlyCollection<string>> PlacasExistentesAsync(
+        IEnumerable<string> placasNormalizadas, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(placasNormalizadas);
+
+        var lista = placasNormalizadas.ToList();
+
+        if (lista.Count == 0)
+        {
+            return Array.Empty<string>();
+        }
+
+        var existentes = await _context.Veiculos
+            .AsNoTracking()
+            .Where(v => lista.Contains(v.Placa))
+            .Select(v => v.Placa)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        return existentes;
+    }
+
+    /// <inheritdoc/>
     public async Task AdicionarAsync(Veiculo veiculo, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(veiculo);
@@ -43,6 +67,32 @@ public sealed class VeiculoRepository : IVeiculoRepository
         catch (DbUpdateException ex) when (IsUniqueViolation(ex))
         {
             throw new PlacaJaCadastradaException(ex);
+        }
+    }
+
+    public async Task AdicionarRangeAsync(IEnumerable<Veiculo> veiculos, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(veiculos);
+
+        await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+
+        try
+        {
+            await _context.Veiculos.AddRangeAsync(veiculos, cancellationToken).ConfigureAwait(false);
+            await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (DbUpdateException ex) when (IsUniqueViolation(ex))
+        {
+            await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
+            throw new PlacaJaCadastradaException(ex);
+        }
+#pragma warning disable CA1031
+        catch (Exception)
+#pragma warning restore CA1031
+        {
+            await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
+            throw;
         }
     }
 

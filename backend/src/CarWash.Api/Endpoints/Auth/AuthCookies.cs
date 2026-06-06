@@ -50,7 +50,7 @@ public static class AuthCookies
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        if (context.Request.Cookies.TryGetValue(RefreshTokenCookieName, out var token)
+        if (context.Request.Cookies.TryGetValue(RefreshTokenCookieName, out string? token)
             && !string.IsNullOrWhiteSpace(token))
         {
             return token;

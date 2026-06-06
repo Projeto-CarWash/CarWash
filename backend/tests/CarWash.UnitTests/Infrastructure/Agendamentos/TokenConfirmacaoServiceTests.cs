@@ -20,7 +20,7 @@ public class TokenConfirmacaoServiceTests
     {
         var servico = NovoServico(ChaveValida);
 
-        var token = servico.Gerar(HashResumo, Usuario, "trace-1");
+        string token = servico.Gerar(HashResumo, Usuario, "trace-1");
         var payload = servico.Validar(token, Usuario);
 
         payload.HashResumo.Should().Be(HashResumo);
@@ -35,7 +35,7 @@ public class TokenConfirmacaoServiceTests
     {
         var servico = NovoServico(ChaveValida);
 
-        var token = servico.Gerar(HashResumo, Usuario, "trace-1");
+        string token = servico.Gerar(HashResumo, Usuario, "trace-1");
 
         token.Split('.').Should().HaveCount(2);
         token.Should().NotContain("+").And.NotContain("/").And.NotContain("=");
@@ -73,7 +73,7 @@ public class TokenConfirmacaoServiceTests
         var emissor = NovoServico(ChaveValida);
         var verificador = NovoServico(ChaveAlternativa);
 
-        var token = emissor.Gerar(HashResumo, Usuario, "trace-1");
+        string token = emissor.Gerar(HashResumo, Usuario, "trace-1");
         var act = () => verificador.Validar(token, Usuario);
 
         act.Should().Throw<TokenConfirmacaoInvalidoException>();
@@ -84,11 +84,11 @@ public class TokenConfirmacaoServiceTests
     {
         var servico = NovoServico(ChaveValida);
 
-        var token = servico.Gerar(HashResumo, Usuario, "trace-1");
-        var partes = token.Split('.');
+        string token = servico.Gerar(HashResumo, Usuario, "trace-1");
+        string[] partes = token.Split('.');
 
         // Adultera o payload mantendo a assinatura original — HMAC deve falhar.
-        var adulterado = partes[0][..^2] + "XY." + partes[1];
+        string adulterado = partes[0][..^2] + "XY." + partes[1];
 
         var act = () => servico.Validar(adulterado, Usuario);
 
@@ -100,7 +100,7 @@ public class TokenConfirmacaoServiceTests
     {
         var servico = NovoServico(ChaveValida);
 
-        var token = servico.Gerar(HashResumo, Usuario, "trace-1");
+        string token = servico.Gerar(HashResumo, Usuario, "trace-1");
         var act = () => servico.Validar(token, Guid.NewGuid());
 
         act.Should().Throw<TokenConfirmacaoInvalidoException>();
@@ -112,7 +112,7 @@ public class TokenConfirmacaoServiceTests
         // Token assinado corretamente, porém com exp no passado: a assinatura
         // confere primeiro e só então a expiração é avaliada → 410, não 400.
         var servico = NovoServico(ChaveValida);
-        var tokenExpirado = TokenExpiradoSintetico(ChaveValida, Usuario);
+        string tokenExpirado = TokenExpiradoSintetico(ChaveValida, Usuario);
 
         var act = () => servico.Validar(tokenExpirado, Usuario);
 
@@ -125,7 +125,7 @@ public class TokenConfirmacaoServiceTests
         // Mesmo expirado, a assinatura é verificada ANTES da expiração. Chave
         // errada → 400 (inválido), nunca 410.
         var verificador = NovoServico(ChaveAlternativa);
-        var tokenExpirado = TokenExpiradoSintetico(ChaveValida, Usuario);
+        string tokenExpirado = TokenExpiradoSintetico(ChaveValida, Usuario);
 
         var act = () => verificador.Validar(tokenExpirado, Usuario);
 
@@ -164,14 +164,14 @@ public class TokenConfirmacaoServiceTests
     /// </summary>
     private static string TokenExpiradoSintetico(string chave, Guid usuario)
     {
-        var ontem = DateTimeOffset.UtcNow.AddDays(-1).ToUnixTimeSeconds();
-        var payloadJson =
+        long ontem = DateTimeOffset.UtcNow.AddDays(-1).ToUnixTimeSeconds();
+        string payloadJson =
             $"{{\"v\":1,\"hashResumo\":\"{HashResumo}\",\"usuarioId\":\"{usuario}\","
             + $"\"traceId\":\"trace-old\",\"iat\":{ontem},\"exp\":{ontem + 900}}}";
 
-        var payloadEncoded = Base64UrlEncode(System.Text.Encoding.UTF8.GetBytes(payloadJson));
+        string payloadEncoded = Base64UrlEncode(System.Text.Encoding.UTF8.GetBytes(payloadJson));
         using var hmac = new System.Security.Cryptography.HMACSHA256(System.Text.Encoding.UTF8.GetBytes(chave));
-        var assinatura = Base64UrlEncode(hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(payloadEncoded)));
+        string assinatura = Base64UrlEncode(hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(payloadEncoded)));
         return payloadEncoded + "." + assinatura;
     }
 

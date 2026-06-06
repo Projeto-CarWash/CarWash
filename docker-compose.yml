@@ -52,7 +52,7 @@ services:
       ConnectionStrings__Default: 'Host=postgres;Port=5432;Database=${POSTGRES_DB:-carwash};Username=${POSTGRES_USER:-carwash_owner};Password=${POSTGRES_PASSWORD}'
       # Necessária para a migration InitialSchema (decisão P12 / SeedPasswordResolver).
       # Sem fallback: migration falha se ausente/vazia.
-      CARWASH_SEED_ADMIN_PASSWORD: ${CARWASH_SEED_ADMIN_PASSWORD:?precisa estar em .env}
+      CARWASH_SEED_ADMIN_PASSWORD: ${CARWASH_SEED_ADMIN_PASSWORD:-carwash123}
     networks:
       - internal
 
@@ -68,10 +68,12 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
       ConnectionStrings__Default: 'Host=postgres;Port=5432;Database=${POSTGRES_DB:-carwash};Username=${POSTGRES_USER:-carwash_owner};Password=${POSTGRES_PASSWORD}'
-      Jwt__Secret: ${Jwt__Secret:?precisa estar em .env}
-      Jwt__ConfirmacaoSigningKey: ${Jwt__ConfirmacaoSigningKey:?precisa estar em .env}
+      Jwt__Secret: ${Jwt__Secret:-carwash123}
       Jwt__Issuer: ${Jwt__Issuer:-carwash}
       Jwt__Audience: ${Jwt__Audience:-carwash-web}
+      # RF015 / ADR 0004: chave dedicada do token de confirmação (≥ 32 bytes, distinta de Jwt__Secret).
+      # Sem fallback — o Program.cs faz fail-fast no startup se ausente/vazia.
+      Jwt__ConfirmacaoSigningKey: ${Jwt__ConfirmacaoSigningKey}
     networks:
       - internal
       - public

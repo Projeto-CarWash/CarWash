@@ -1,4 +1,5 @@
 using CarWash.Application.Abstractions;
+using CarWash.Application.Abstractions.Messaging;
 using CarWash.Application.Agenda.Persistence;
 using CarWash.Application.Agendamentos.Abstractions;
 using CarWash.Application.Agendamentos.Persistence;
@@ -6,8 +7,12 @@ using CarWash.Application.Auth.Abstractions;
 using CarWash.Application.Auth.Persistence;
 using CarWash.Application.Clientes.Persistence;
 using CarWash.Application.Common.Security;
+using CarWash.Application.Filiais.Persistence;
+using CarWash.Application.Interfaces;
+using CarWash.Application.Responsaveis.Persistence;
 using CarWash.Application.Servicos.Persistence;
 using CarWash.Application.Usuarios.Persistence;
+using CarWash.Application.Usuarios.Preferencias.Persistence;
 using CarWash.Application.Veiculos.Persistence;
 using CarWash.Infrastructure.Agendamentos;
 using CarWash.Infrastructure.Auditing;
@@ -16,6 +21,7 @@ using CarWash.Infrastructure.Persistence;
 using CarWash.Infrastructure.Persistence.Interceptors;
 using CarWash.Infrastructure.Persistence.Maintenance;
 using CarWash.Infrastructure.Persistence.Repositories;
+using CarWash.Infrastructure.Repositories;
 using CarWash.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -33,7 +39,7 @@ public static class DependencyInjection
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configuration);
 
-        var conn = configuration.GetConnectionString("Default")
+        string conn = configuration.GetConnectionString("Default")
             ?? throw new InvalidOperationException("ConnectionStrings:Default não configurada");
 
         services.AddSingleton<IPasswordHasher, Argon2idPasswordHasher>();
@@ -61,12 +67,15 @@ public static class DependencyInjection
 
         services.AddScoped<IUsuarioRepository, UsuarioRepository>();
         services.AddScoped<IClienteRepository, ClienteRepository>();
+        services.AddScoped<IFilialRepository, FilialRepository>();
         services.AddScoped<IAgendamentoRepository, AgendamentoRepository>();
         services.AddScoped<IAgendamentoCatalogoRepository, AgendamentoCatalogoRepository>();
         services.AddScoped<IIdempotenciaRepository, IdempotenciaRepository>();
         services.AddScoped<IServicoRepository, ServicoRepository>();
         services.AddScoped<IAgendaRepository, AgendaRepository>();
         services.AddScoped<IVeiculoRepository, VeiculoRepository>();
+        services.AddScoped<IResponsavelRepository, ResponsavelRepository>();
+        services.AddScoped<IAgendamentoObservacaoRepository, AgendamentoObservacaoRepository>();
 
         // RF015 — confirmação de agendamento em duas etapas (ADR 0004).
         // Token de confirmação: singleton (sem estado mutável; só lê a chave HMAC).
@@ -74,6 +83,9 @@ public static class DependencyInjection
 
         // Limpeza diária dos registros de idempotência expirados (janela 24h).
         services.AddHostedService<IdempotenciaCleanupService>();
+
+        services.AddScoped<IDashboardMetricasRepository, DashboardMetricasRepository>();
+        services.AddScoped<IUsuarioPreferenciaRepository, UsuarioPreferenciaRepository>();
 
         services.AddDbContext<CarWashDbContext>((sp, opt) =>
         {
@@ -85,6 +97,8 @@ public static class DependencyInjection
                     sp.GetRequiredService<AuditableEntitiesInterceptor>(),
                     sp.GetRequiredService<AuditLogInterceptor>());
         });
+
+        services.AddScoped<IHistoricoAtendimentosClienteRepository, HistoricoAtendimentosClienteRepository>();
 
         // IDbContextFactory para casos que precisam de um DbContext fora do escopo
         // da request (ex.: AuditLogger). Construímos as options manualmente — sem
@@ -101,6 +115,8 @@ public static class DependencyInjection
 
         services.AddSingleton<IDbContextFactory<CarWashDbContext>>(
             new CarWashRuntimeDbContextFactory(factoryOptions));
+
+        services.AddScoped<ICarWashDbContext, CarWashDbContext>();
 
         return services;
     }
