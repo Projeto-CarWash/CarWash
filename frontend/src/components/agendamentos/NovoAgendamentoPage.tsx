@@ -189,7 +189,9 @@ export function NovoAgendamentoPage() {
           // Filial inativa: a seleção deixou de ser válida — volta à etapa 1.
           setWizardState((prev) => ({ ...prev, filialId: '', filialNome: '' }));
           setConfirmado(false);
-          setGlobalError('A filial selecionada está inativa e não pode receber novos agendamentos.');
+          setGlobalError(
+            'A filial selecionada está inativa e não pode receber novos agendamentos.',
+          );
           goToStep(1);
         } else if (texto.includes('capacidade')) {
           setGlobalError('Capacidade da filial atingida para o horário informado.');
