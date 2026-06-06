@@ -4,6 +4,7 @@ using CarWash.Application.Auth.Login;
 using CarWash.Application.Common.Exceptions;
 using CarWash.Application.Common.Security;
 using CarWash.Application.Usuarios.Persistence;
+using CarWash.Application.Usuarios.Preferencias.Persistence;
 using CarWash.Domain.Entities;
 using CarWash.Domain.Enums;
 using CarWash.Domain.ValueObjects;
@@ -25,6 +26,7 @@ public class LoginHandlerTests
     private readonly IAuditLogger _auditoria = Substitute.For<IAuditLogger>();
     private readonly ICurrentRequestContext _contexto = Substitute.For<ICurrentRequestContext>();
     private readonly DummyPasswordHash _dummy = new(DummyHash);
+    private readonly IUsuarioPreferenciaRepository _preferencias = Substitute.For<IUsuarioPreferenciaRepository>();
 
     [Fact]
     public async Task Email_inexistente_lanca_InvalidCredentials_e_audit_sem_usuarioId()
@@ -119,6 +121,7 @@ public class LoginHandlerTests
     public async Task Ativo_com_senha_correta_retorna_LoginResultado_com_access_e_refresh()
     {
         var usuario = NovoUsuario(ativo: true);
+        _preferencias.ObterPorUsuarioIdAsync(usuario.Id, Arg.Any<CancellationToken>()).Returns((UsuarioPreferencia?)null);
         _repo.ObterPorEmailAsync(usuario.EmailValor, Arg.Any<CancellationToken>()).Returns(usuario);
         _hasher.Verify("Senha1234", usuario.SenhaHash).Returns(true);
         _hasher.NeedsRehash(usuario.SenhaHash).Returns(false);
@@ -142,6 +145,7 @@ public class LoginHandlerTests
         resp.Usuario.Nome.Should().Be(usuario.Nome);
         resp.Usuario.Email.Should().Be(usuario.EmailValor);
         resp.Usuario.Perfil.Should().Be(usuario.Perfil);
+        resp.Usuario.Theme.Should().Be("light");
 
         await _auditoria.Received(1).LogAsync(
             LoginHandler.EventoSucesso,
@@ -314,7 +318,16 @@ public class LoginHandlerTests
     }
 
     private LoginHandler NovoHandler() =>
-        new(_repo, _hasher, _accessTokens, _refreshTokens, _auditoria, _contexto, _dummy, NullLogger<LoginHandler>.Instance);
+        new(
+            _repo,
+            _hasher,
+            _accessTokens,
+            _refreshTokens,
+            _auditoria,
+            _contexto,
+            _dummy,
+            _preferencias,
+            NullLogger<LoginHandler>.Instance);
 
     private static Usuario NovoUsuario(bool ativo)
     {

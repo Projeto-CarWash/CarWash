@@ -99,7 +99,7 @@ public class InsertValidoTests : IAsyncLifetime
         _db.UsuarioSessoes.Add(sessao);
 
         // Preferencia
-        var preferencia = UsuarioPreferencia.Criar(Guid.NewGuid(), usuario.Id, TemaPreferencia.Escuro);
+        var preferencia = UsuarioPreferencia.Criar(Guid.NewGuid(), usuario.Id, TemaPreferencia.Dark);
         _db.UsuarioPreferencias.Add(preferencia);
 
         await _db.SaveChangesAsync().ConfigureAwait(false);
