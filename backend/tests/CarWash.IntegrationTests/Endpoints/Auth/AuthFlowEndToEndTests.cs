@@ -46,11 +46,11 @@ public class AuthFlowEndToEndTests : IAsyncDisposable
         resp.StatusCode.Should().Be(HttpStatusCode.OK);
 
         // Body não deve conter o refresh.
-        var corpo = await resp.Content.ReadAsStringAsync();
+        string corpo = await resp.Content.ReadAsStringAsync();
         corpo.Should().NotContain("refresh", "o body do login não pode incluir o refresh token");
 
         // Cookie deve estar presente e httpOnly.
-        var setCookie = resp.Headers.GetValues("Set-Cookie").FirstOrDefault(c => c.StartsWith(RefreshCookieName, StringComparison.Ordinal));
+        string? setCookie = resp.Headers.GetValues("Set-Cookie").FirstOrDefault(c => c.StartsWith(RefreshCookieName, StringComparison.Ordinal));
         setCookie.Should().NotBeNull("login deve setar o cookie de refresh");
         setCookie!.Should().Contain("httponly", "cookie deve ser HttpOnly");
         setCookie.Should().Contain("samesite=strict", "cookie deve ser SameSite=Strict");
@@ -65,13 +65,13 @@ public class AuthFlowEndToEndTests : IAsyncDisposable
 
         var login = await client.PostAsJsonAsync(RotaLogin, new { email, senha }, _json);
         login.StatusCode.Should().Be(HttpStatusCode.OK);
-        var accessAntigo = (await login.Content.ReadFromJsonAsync<JsonElement>(_json)).GetProperty("accessToken").GetString();
+        string? accessAntigo = (await login.Content.ReadFromJsonAsync<JsonElement>(_json)).GetProperty("accessToken").GetString();
 
         var refresh = await client.PostAsync(RotaRefresh, content: null);
         refresh.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var corpoRefresh = await refresh.Content.ReadFromJsonAsync<JsonElement>(_json);
-        var accessNovo = corpoRefresh.GetProperty("accessToken").GetString();
+        string? accessNovo = corpoRefresh.GetProperty("accessToken").GetString();
         accessNovo.Should().NotBeNullOrWhiteSpace();
         accessNovo.Should().NotBe(accessAntigo, "rotação deve emitir novo access");
 
@@ -98,7 +98,7 @@ public class AuthFlowEndToEndTests : IAsyncDisposable
         var login = await client.PostAsJsonAsync(RotaLogin, new { email, senha }, _json);
         login.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var refreshCookie1 = ExtrairCookie(login, RefreshCookieName)
+        string refreshCookie1 = ExtrairCookie(login, RefreshCookieName)
             ?? throw new InvalidOperationException("Login não definiu o cookie de refresh.");
 
         // Primeira renovação usando o cookie 1 — deve funcionar.
@@ -123,7 +123,7 @@ public class AuthFlowEndToEndTests : IAsyncDisposable
         logout.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         // Cookie de "apagar" deve aparecer no Set-Cookie (Expires no passado).
-        var setCookie = logout.Headers.GetValues("Set-Cookie").FirstOrDefault(c => c.StartsWith(RefreshCookieName, StringComparison.Ordinal));
+        string? setCookie = logout.Headers.GetValues("Set-Cookie").FirstOrDefault(c => c.StartsWith(RefreshCookieName, StringComparison.Ordinal));
         setCookie.Should().NotBeNull();
         setCookie!.Should().Contain("expires=", "logout deve sinalizar expiração do cookie");
 
@@ -149,13 +149,13 @@ public class AuthFlowEndToEndTests : IAsyncDisposable
             return null;
         }
 
-        foreach (var cookie in cookies)
+        foreach (string cookie in cookies)
         {
-            var prefix = $"{name}=";
+            string prefix = $"{name}=";
             if (cookie.StartsWith(prefix, StringComparison.Ordinal))
             {
-                var rest = cookie.Substring(prefix.Length);
-                var semi = rest.IndexOf(';');
+                string rest = cookie.Substring(prefix.Length);
+                int semi = rest.IndexOf(';');
                 return semi < 0 ? rest : rest[..semi];
             }
         }
@@ -173,7 +173,7 @@ public class AuthFlowEndToEndTests : IAsyncDisposable
     private async Task<(string Email, string Senha)> CadastrarAsync(HttpClient client)
 #pragma warning restore S1172
     {
-        var email = $"flow-{Guid.NewGuid():N}@carwash.local";
+        string email = $"flow-{Guid.NewGuid():N}@carwash.local";
         const string senha = "Senha1234";
 
         // RF014 / RequireAuthorization: cadastro de usuário exige Authorization.
@@ -191,6 +191,7 @@ public class AuthFlowEndToEndTests : IAsyncDisposable
         return (email, senha);
     }
 
+    /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
         await _factory.DisposeAsync();

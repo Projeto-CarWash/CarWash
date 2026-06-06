@@ -21,15 +21,15 @@ public static class DocumentoValidator
             return false;
         }
 
-        var soma = 0;
+        int soma = 0;
 
-        for (var i = 0; i < 9; i++)
+        for (int i = 0; i < 9; i++)
         {
             soma += (cpf[i] - '0') * (10 - i);
         }
 
-        var resto = soma % 11;
-        var digito1 = resto < 2 ? 0 : 11 - resto;
+        int resto = soma % 11;
+        int digito1 = resto < 2 ? 0 : 11 - resto;
 
         if (digito1 != cpf[9] - '0')
         {
@@ -38,13 +38,13 @@ public static class DocumentoValidator
 
         soma = 0;
 
-        for (var i = 0; i < 10; i++)
+        for (int i = 0; i < 10; i++)
         {
             soma += (cpf[i] - '0') * (11 - i);
         }
 
         resto = soma % 11;
-        var digito2 = resto < 2 ? 0 : 11 - resto;
+        int digito2 = resto < 2 ? 0 : 11 - resto;
 
         return digito2 == cpf[10] - '0';
     }
@@ -71,15 +71,15 @@ public static class DocumentoValidator
         int[] peso1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
         int[] peso2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
 
-        var soma = 0;
+        int soma = 0;
 
-        for (var i = 0; i < 12; i++)
+        for (int i = 0; i < 12; i++)
         {
             soma += (cnpj[i] - '0') * peso1[i];
         }
 
-        var resto = soma % 11;
-        var digito1 = resto < 2 ? 0 : 11 - resto;
+        int resto = soma % 11;
+        int digito1 = resto < 2 ? 0 : 11 - resto;
 
         if (digito1 != cnpj[12] - '0')
         {
@@ -88,13 +88,13 @@ public static class DocumentoValidator
 
         soma = 0;
 
-        for (var i = 0; i < 13; i++)
+        for (int i = 0; i < 13; i++)
         {
             soma += (cnpj[i] - '0') * peso2[i];
         }
 
         resto = soma % 11;
-        var digito2 = resto < 2 ? 0 : 11 - resto;
+        int digito2 = resto < 2 ? 0 : 11 - resto;
 
         return digito2 == cnpj[13] - '0';
     }

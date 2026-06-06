@@ -1,3 +1,4 @@
+using CarWash.Application.Interfaces;
 using CarWash.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,12 +9,16 @@ namespace CarWash.Infrastructure.Persistence;
 /// por convenção (<see cref="ModelBuilder.ApplyConfigurationsFromAssembly"/>).
 /// Naming convertido para <c>snake_case</c> via <c>EFCore.NamingConventions</c>.
 /// </summary>
-public class CarWashDbContext : DbContext
+public class CarWashDbContext : DbContext, ICarWashDbContext
 {
     public CarWashDbContext(DbContextOptions<CarWashDbContext> options)
         : base(options)
     {
     }
+
+    public DbSet<User> Users => Set<User>();
+
+    public DbSet<Session> Sessions => Set<Session>();
 
     public DbSet<Usuario> Usuarios => Set<Usuario>();
 
@@ -49,6 +54,8 @@ public class CarWashDbContext : DbContext
 
     public DbSet<Notificacao> Notificacoes => Set<Notificacao>();
 
+    public DbSet<AgendamentoObservacao> AgendamentoObservacoes => Set<AgendamentoObservacao>();
+
     /// <summary>
     /// Stub C# mapeado para a função PostgreSQL <c>public.unaccent(text)</c>
     /// (extensão <c>unaccent</c>, instalada via migration <c>AdicionaAuditoriaUsuarioCliente</c>).
@@ -56,10 +63,12 @@ public class CarWashDbContext : DbContext
     /// para SQL — usado na busca de clientes (GAP-UNACCENT-ASSIM) para fechar a
     /// assimetria de busca por termos com/sem acento. Não deve ser chamado em C# puro.
     /// </summary>
+    /// <returns></returns>
     public static string Unaccent(string input)
         => throw new InvalidOperationException(
             "CarWashDbContext.Unaccent só pode ser usado dentro de expressões LINQ traduzidas para SQL.");
 
+    /// <inheritdoc/>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         ArgumentNullException.ThrowIfNull(modelBuilder);

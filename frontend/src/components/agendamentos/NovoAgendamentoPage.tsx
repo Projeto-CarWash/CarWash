@@ -1,9 +1,10 @@
 import { AxiosError } from 'axios';
 import { AlertCircle, Check, X } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { Separator } from '@/components/ui/separator';
+import { useFiliais } from '@/hooks/useAgendamentoQueries';
 import { agendamentoService } from '@/services/agendamentoService';
 
 import { AgendamentoPageHeader } from './AgendamentoPageHeader';
@@ -22,15 +23,17 @@ import type {
 import type { ProblemDetails } from '@/types/auth';
 
 const API_MESSAGES: Record<number, string> = {
-  400: 'Dados do agendamento invalidos. Revise as informacoes e tente novamente.',
-  401: 'Sessao expirada. Faca login novamente.',
-  403: 'Voce nao possui permissao para criar agendamentos.',
-  404: 'Cliente, veiculo ou servico nao encontrado. Revise os dados.',
-  409: 'Ja existe agendamento para o horario informado. Escolha outro horario.',
-  500: 'Nao foi possivel concluir o agendamento no momento. Tente novamente.',
+  400: 'Selecione uma filial válida para prosseguir.',
+  401: 'Sessão expirada. Faça login novamente.',
+  403: 'Você não possui permissão para realizar esta operação.',
+  404: 'Filial não encontrada.',
+  409: 'A filial selecionada está inativa e não pode receber novos agendamentos.',
+  500: 'Não foi possível concluir o agendamento no momento. Tente novamente.',
 };
 
 const INITIAL_STATE: AgendamentoWizardState = {
+  filialId: '',
+  filialNome: '',
   cliente: null,
   veiculo: null,
   dataAgendamento: '',
@@ -50,6 +53,20 @@ export function NovoAgendamentoPage() {
 
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  // RF019 — carrega filiais ativas para o seletor.
+  const {
+    data: filiaisData,
+    isLoading: filiaisCarregando,
+    isError: filiaisErro,
+    refetch: refetchFiliais,
+  } = useFiliais();
+  const filiais = useMemo(() => filiaisData?.itens ?? [], [filiaisData]);
+
+  const handleFilialChange = useCallback((filialId: string, filialNome: string) => {
+    setWizardState((prev) => ({ ...prev, filialId, filialNome }));
+    setGlobalError(null);
+  }, []);
 
   const handleClienteChange = useCallback((cliente: ClienteResumido | null) => {
     setWizardState((prev) => ({ ...prev, cliente }));
@@ -102,13 +119,28 @@ export function NovoAgendamentoPage() {
       return;
     }
 
+    // RF019 — filialId é obrigatório.
+    if (!wizardState.filialId) {
+      setGlobalError('Selecione uma filial para prosseguir.');
+      return;
+    }
+
+    // RF019 — revalidar que a filial selecionada ainda existe na lista atual.
+    const filialAindaValida = filiais.some((f) => f.id === wizardState.filialId && f.ativo);
+    if (filiais.length > 0 && !filialAindaValida) {
+      setWizardState((prev) => ({ ...prev, filialId: '', filialNome: '' }));
+      setGlobalError('A filial selecionada não está mais disponível. Selecione outra filial.');
+      return;
+    }
+
     const inicio = new Date(`${dataAgendamento}T${horaInicio}:00`);
 
+    // RF019/RF024 — payload real, sem valores mockados. `responsavelId` é
+    // opcional e omitido enquanto o fluxo não tem seleção de responsável.
     const payload: CriarAgendamentoPayload = {
       clienteId: cliente.id,
       veiculoId: veiculo.id,
-      filialId: 'mock-filial-id',
-      responsavelId: 'mock-responsavel-id',
+      filialId: wizardState.filialId,
       inicio: inicio.toISOString(),
       servicoIds: servicos.map((s) => s.id),
     };
@@ -125,6 +157,8 @@ export function NovoAgendamentoPage() {
         void navigate('/dashboard', { replace: true });
       }, 1200);
     } catch (error) {
+      // 401 (sessão expirada) é tratado pelo interceptor do axios: tenta refresh
+      // e, em falha, redireciona para /login (fluxo padrão de autenticação).
       if (!(error instanceof AxiosError) || !error.response) {
         setGlobalError(API_MESSAGES[500]!);
         return;
@@ -133,21 +167,47 @@ export function NovoAgendamentoPage() {
       const status = error.response.status;
       const problem = error.response.data as ProblemDetails | undefined;
 
-      if (status === 409) {
-        setGlobalError(API_MESSAGES[409]!);
+      // 404 (filial não encontrada) e 409 (filial inativa): a seleção atual não
+      // é mais válida — limpa o campo, volta à etapa 1 e pede nova escolha.
+      if (status === 404 || status === 409) {
+        setWizardState((prev) => ({ ...prev, filialId: '', filialNome: '' }));
+        setConfirmado(false);
+        setGlobalError(API_MESSAGES[status]!);
+        goToStep(1);
         return;
       }
 
-      if (status === 400 && problem?.title) {
-        setGlobalError(problem.title);
+      // 400: prioriza o erro por campo de `filialId` quando o backend o devolve;
+      // caso contrário, usa a mensagem padrão associada ao campo Filial.
+      if (status === 400) {
+        const erroFilial = problem?.errors?.filialId?.[0] ?? problem?.errors?.FilialId?.[0];
+        setGlobalError(erroFilial ?? problem?.title ?? API_MESSAGES[400]!);
         return;
       }
 
+      // 500 e demais: preserva todos os dados preenchidos e permite nova tentativa.
       setGlobalError(API_MESSAGES[status] ?? API_MESSAGES[500]!);
     } finally {
       setIsSubmitting(false);
     }
-  }, [isSubmitting, confirmado, wizardState, navigate]);
+  }, [isSubmitting, confirmado, wizardState, navigate, filiais, goToStep]);
+
+  // RF019 — integridade da seleção: se a lista de filiais for recarregada e a
+  // filial escolhida não existir mais (ou ficar inativa), limpa a seleção
+  // inválida e solicita nova escolha, bloqueando a finalização.
+  useEffect(() => {
+    if (!wizardState.filialId || filiais.length === 0) return;
+
+    const aindaValida = filiais.some((f) => f.id === wizardState.filialId && f.ativo);
+    if (!aindaValida) {
+      // Sincroniza o estado do formulário com a lista recarregada (fonte externa):
+      // a seleção deixou de ser válida e precisa ser limpa.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setWizardState((prev) => ({ ...prev, filialId: '', filialNome: '' }));
+      setConfirmado(false);
+      setGlobalError('A filial selecionada não está mais disponível. Selecione outra filial.');
+    }
+  }, [filiais, wizardState.filialId]);
 
   return (
     <>
@@ -197,6 +257,14 @@ export function NovoAgendamentoPage() {
 
           {currentStep === 1 && (
             <ClienteVeiculoStep
+              filialId={wizardState.filialId}
+              onFilialChange={handleFilialChange}
+              filiais={filiais}
+              filiaisCarregando={filiaisCarregando}
+              filiaisErro={filiaisErro}
+              onRetryFiliais={() => {
+                void refetchFiliais();
+              }}
               cliente={wizardState.cliente}
               veiculo={wizardState.veiculo}
               dataAgendamento={wizardState.dataAgendamento}

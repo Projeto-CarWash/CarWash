@@ -1,8 +1,9 @@
 namespace CarWash.Application.Agendamentos.Common;
 
 /// <summary>
-/// Representação HTTP de um agendamento criado (RF007/RF019/RF020/RF024).
+/// Representação HTTP de um agendamento criado (RF007/RF019/RF020/RF024/RF010).
 /// Inclui titular do veículo e responsável selecionado (RF024/CA009).
+/// RF010: campos de cancelamento preenchidos quando status = cancelado.
 /// </summary>
 public sealed class AgendamentoResponse
 {
@@ -31,6 +32,12 @@ public sealed class AgendamentoResponse
     public string? Observacoes { get; init; }
 
     public int Versao { get; init; }
+
+    public DateTime? CanceladoEm { get; init; }
+
+    public Guid? CanceladoPor { get; init; }
+
+    public string? MotivoCancelamento { get; init; }
 
     public IReadOnlyList<AgendamentoServicoResponse> Itens { get; init; } =
         Array.Empty<AgendamentoServicoResponse>();

@@ -26,12 +26,14 @@ public class SessaoTests : IAsyncLifetime
         _fixture = fixture;
     }
 
+    /// <inheritdoc/>
     public Task InitializeAsync()
     {
         _db = CarWashDbContextFactoryForTests.Create(_fixture);
         return Task.CompletedTask;
     }
 
+    /// <inheritdoc/>
     public async Task DisposeAsync() => await _db.DisposeAsync().ConfigureAwait(false);
 
     [Fact]

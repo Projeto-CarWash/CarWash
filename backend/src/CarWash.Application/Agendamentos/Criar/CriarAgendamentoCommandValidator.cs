@@ -1,3 +1,4 @@
+using CarWash.Application.Agendamentos.Common;
 using FluentValidation;
 
 namespace CarWash.Application.Agendamentos.Criar;
@@ -12,8 +13,9 @@ public sealed class CriarAgendamentoCommandValidator : AbstractValidator<CriarAg
 {
     public CriarAgendamentoCommandValidator()
     {
+        // RF019: filial obrigatória — mensagem do card 142.
         RuleFor(x => x.FilialId)
-            .NotEmpty().WithMessage("Filial é obrigatória para o agendamento (RF019).");
+            .NotEmpty().WithMessage(MensagensFilialAgendamento.Obrigatoria);
 
         RuleFor(x => x.ClienteId)
             .NotEmpty().WithMessage("Cliente é obrigatório para o agendamento.");

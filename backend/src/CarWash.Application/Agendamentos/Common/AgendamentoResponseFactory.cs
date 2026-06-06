@@ -1,5 +1,6 @@
 using System.Linq;
 using CarWash.Application.Agendamentos.Persistence;
+using CarWash.Application.Common;
 using CarWash.Domain.Entities;
 using CarWash.Domain.Enums;
 
@@ -37,7 +38,7 @@ public static class AgendamentoResponseFactory
             {
                 Id = responsavel.Id,
                 Nome = responsavel.Nome,
-                Documento = MascararDocumento(responsavel.Documento),
+                Documento = DocumentoMasker.Mascarar(responsavel.Documento),
                 GrauVinculo = responsavel.GrauVinculo,
             },
             Status = agendamento.Status.ToDbValue(),
@@ -47,46 +48,22 @@ public static class AgendamentoResponseFactory
             ValorTotal = agendamento.ValorTotal,
             Observacoes = agendamento.Observacoes,
             Versao = agendamento.Versao,
+            CanceladoEm = agendamento.CanceladoEm,
+            CanceladoPor = agendamento.CanceladoPor,
+            MotivoCancelamento = agendamento.MotivoCancelamento,
             Itens = itens
-                .Select(item => new AgendamentoServicoResponse
-                {
-                    Id = item.Id,
-                    ServicoId = item.ServicoId,
-                    NomeServico = servicos.First(s => s.Id == item.ServicoId).Nome,
-                    PrecoAplicado = item.PrecoAplicado,
-                    DuracaoAplicada = item.DuracaoAplicada,
-                })
-                .ToList(),
+                    .Select(item => new AgendamentoServicoResponse
+                    {
+                        Id = item.Id,
+                        ServicoId = item.ServicoId,
+                        NomeServico = servicos.First(s => s.Id == item.ServicoId).Nome,
+                        PrecoAplicado = item.PrecoAplicado,
+                        DuracaoAplicada = item.DuracaoAplicada,
+                    })
+                    .ToList(),
             CriadoEm = agendamento.CriadoEm,
             Mensagem = MensagemSucesso,
             TraceId = traceId,
         };
-    }
-
-    /// <summary>
-    /// Mascara o documento do responsável para o payload de resposta (RF024):
-    /// ex.: "123.456.789-00" → "123.***.***-**". CPF mantém os 3 primeiros
-    /// dígitos e o DV; CNPJ mantém os 2 primeiros e o DV.
-    /// </summary>
-    private static string MascararDocumento(string documento)
-    {
-        if (string.IsNullOrWhiteSpace(documento))
-        {
-            return documento;
-        }
-
-        var digitos = new string(documento.Where(char.IsDigit).ToArray());
-
-        if (digitos.Length == 11)
-        {
-            return $"{digitos[..3]}.***.***-{digitos[^2..]}";
-        }
-
-        if (digitos.Length == 14)
-        {
-            return $"{digitos[..2]}.***.***/{digitos[^6..4]}.{digitos[^2..]}";
-        }
-
-        return new string('*', documento.Length);
     }
 }

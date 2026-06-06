@@ -1,10 +1,27 @@
-import { ChevronLeft, ChevronRight, Filter, Plus, Search } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  Filter,
+  Loader2,
+  Pencil,
+  Plus,
+  Power,
+  Search,
+} from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
 import { userService } from '@/services/userService';
 
 import type { UsuarioResponse } from '@/types/user';
@@ -22,7 +39,9 @@ export function UsuariosListaPage() {
   const [total, setTotal] = useState(0);
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
-  const [alterandoStatusId, setAlterandoStatusId] = useState<string | null>(null);
+  const [usuarioAtivacao, setUsuarioAtivacao] = useState<UsuarioResponse | null>(null);
+  const [modalStatusAberto, setModalStatusAberto] = useState(false);
+  const [salvandoStatus, setSalvandoStatus] = useState(false);
 
   const carregarUsuarios = useCallback(async () => {
     setCarregando(true);
@@ -55,19 +74,32 @@ export function UsuariosListaPage() {
     };
   }, [carregarUsuarios]);
 
-  const toggleStatusInline = useCallback(async (usuario: UsuarioResponse, novoAtivo: boolean) => {
-    setAlterandoStatusId(usuario.id);
+  const abrirModalStatus = useCallback((usuario: UsuarioResponse) => {
+    setUsuarioAtivacao(usuario);
+    setModalStatusAberto(true);
+  }, []);
+
+  const confirmarAlteracaoStatus = useCallback(async () => {
+    if (!usuarioAtivacao) return;
+    const novoAtivo = !usuarioAtivacao.ativo;
+    setSalvandoStatus(true);
     setErro(null);
     try {
-      await userService.updateStatus(usuario.id, novoAtivo);
+      await userService.updateStatus(usuarioAtivacao.id, novoAtivo);
       // Atualiza o item local para feedback imediato
-      setItens((prev) => prev.map((u) => (u.id === usuario.id ? { ...u, ativo: novoAtivo } : u)));
+      setItens((prev) =>
+        prev.map((u) => (u.id === usuarioAtivacao.id ? { ...u, ativo: novoAtivo } : u)),
+      );
+      setModalStatusAberto(false);
+      setUsuarioAtivacao(null);
     } catch {
-      setErro(`Não foi possível ${novoAtivo ? 'ativar' : 'inativar'} o usuário "${usuario.nome}".`);
+      setErro(
+        `Não foi possível ${novoAtivo ? 'ativar' : 'inativar'} o usuário "${usuarioAtivacao.nome}".`,
+      );
     } finally {
-      setAlterandoStatusId(null);
+      setSalvandoStatus(false);
     }
-  }, []);
+  }, [usuarioAtivacao]);
 
   const totalPaginas = Math.max(1, Math.ceil(total / TAMANHO_PAGINA));
 
@@ -147,7 +179,7 @@ export function UsuariosListaPage() {
               <th className="px-4 py-3">E-mail</th>
               <th className="px-4 py-3">Perfil</th>
               <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3 text-center">Ativo</th>
+              <th className="px-4 py-3 text-center">Ações</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-800/60">
@@ -169,12 +201,7 @@ export function UsuariosListaPage() {
               itens.map((u) => (
                 <tr key={u.id} className="text-zinc-200 hover:bg-zinc-800/30">
                   <td className="px-4 py-3">
-                    <Link
-                      to={`/usuarios/${u.id}`}
-                      className="font-medium text-zinc-100 hover:text-red-400"
-                    >
-                      {u.nome}
-                    </Link>
+                    <span className="font-medium text-zinc-100">{u.nome}</span>
                   </td>
                   <td className="px-4 py-3 text-zinc-400">{u.email}</td>
                   <td className="px-4 py-3 text-zinc-400">{u.perfil}</td>
@@ -190,12 +217,41 @@ export function UsuariosListaPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-center">
-                    <Switch
-                      checked={u.ativo}
-                      onCheckedChange={(checked) => void toggleStatusInline(u, checked)}
-                      disabled={alterandoStatusId === u.id}
-                      aria-label={`${u.ativo ? 'Inativar' : 'Ativar'} ${u.nome}`}
-                    />
+                    <div className="flex justify-center gap-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => void navigate(`/usuarios/${u.id}`)}
+                        title="Visualizar usuário"
+                        className="h-8 w-8 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
+                      >
+                        <Eye className="h-4 w-4" />
+                        <span className="sr-only">Visualizar {u.nome}</span>
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => void navigate(`/usuarios/${u.id}`)}
+                        title="Editar usuário"
+                        className="h-8 w-8 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
+                      >
+                        <Pencil className="h-4 w-4" />
+                        <span className="sr-only">Editar {u.nome}</span>
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => abrirModalStatus(u)}
+                        title={u.ativo ? 'Inativar usuário' : 'Ativar usuário'}
+                        className="h-8 w-8 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
+                        aria-label={`${u.ativo ? 'Inativar' : 'Ativar'} ${u.nome}`}
+                      >
+                        <Power className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -228,6 +284,52 @@ export function UsuariosListaPage() {
           </Button>
         </div>
       </div>
+
+      {/* ── Modal de confirmação de ativação/inativação ── */}
+      <Dialog
+        open={modalStatusAberto}
+        onOpenChange={(aberto) => {
+          if (salvandoStatus) return;
+          setModalStatusAberto(aberto);
+          if (!aberto) setUsuarioAtivacao(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-[425px] bg-zinc-950 border-zinc-800">
+          <DialogHeader>
+            <DialogTitle className="text-zinc-100">
+              {usuarioAtivacao?.ativo ? 'Inativar usuário' : 'Ativar usuário'}
+            </DialogTitle>
+            <DialogDescription className="text-zinc-400">
+              {usuarioAtivacao?.ativo
+                ? `Deseja realmente inativar o usuário "${usuarioAtivacao?.nome}"? O acesso dele ao sistema será bloqueado.`
+                : `Deseja reativar o usuário "${usuarioAtivacao?.nome}"? O acesso dele ao sistema será restaurado.`}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4 gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setModalStatusAberto(false);
+                setUsuarioAtivacao(null);
+              }}
+              disabled={salvandoStatus}
+              className="border-zinc-700 bg-transparent text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              onClick={() => void confirmarAlteracaoStatus()}
+              disabled={salvandoStatus}
+              className="bg-red-600 text-white hover:bg-red-700"
+            >
+              {salvandoStatus ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Confirmar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

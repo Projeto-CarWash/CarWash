@@ -46,6 +46,7 @@ public sealed class ConfirmarAgendamentoHandler
         _logger = logger;
     }
 
+    /// <inheritdoc/>
     public async Task<ConfirmarAgendamentoResultado> HandleAsync(
         ConfirmarAgendamentoCommand command,
         CancellationToken cancellationToken)
@@ -127,6 +128,24 @@ public sealed class ConfirmarAgendamentoHandler
                 calculado.Fim,
                 command.TraceId);
             throw new AgendamentoConflitanteException(AgendamentoConflitanteException.MensagemConfirmacao);
+        }
+
+        // RF008/RN009: revalida o teto de células ativas da filial — entre a prévia
+        // e a confirmação outras requisições podem ter ocupado as células livres.
+        // Atendimentos simultâneos são permitidos até o limite (409 ao exceder).
+        if (await _agendamentos.CapacidadeAtingidaAsync(
+            command.FilialId,
+            calculado.Inicio,
+            calculado.Fim,
+            cancellationToken).ConfigureAwait(false))
+        {
+            _logger.LogWarning(
+                "Confirmação rejeitada por capacidade da filial atingida (RF008) — filial {FilialId} na janela [{Inicio:o}, {Fim:o}). TraceId: {TraceId}",
+                command.FilialId,
+                calculado.Inicio,
+                calculado.Fim,
+                command.TraceId);
+            throw new CapacidadeFilialAtingidaException();
         }
 
         // Etapa 6 do L7 — persistência: agendamento + itens + histórico +
@@ -232,22 +251,22 @@ public sealed class ConfirmarAgendamentoHandler
                 Desserializar(resultado.RespostaJsonOriginal!));
         }
 
-    _logger.LogInformation(
-        "Agendamento confirmado. AgendamentoId: {AgendamentoId}. UsuarioId: {UsuarioId}. "
-        + "FilialId: {FilialId}. VeiculoId: {VeiculoId}. ClienteId: {ClienteId}. ResponsavelId: {ResponsavelId}. "
-        + "Janela: [{Inicio:o}, {Fim:o}). "
-        + "ValorTotal: {ValorTotal}. IdempotencyKey: {IdempotencyKey}. TraceId: {TraceId}",
-        agendamentoId,
-        usuarioId,
-        command.FilialId,
-        command.VeiculoId,
-        command.ClienteId,
-        command.ResponsavelId,
-        calculado.Inicio,
-        calculado.Fim,
-        calculado.ValorTotal,
-        idempotencyKey,
-        command.TraceId);
+        _logger.LogInformation(
+            "Agendamento confirmado. AgendamentoId: {AgendamentoId}. UsuarioId: {UsuarioId}. "
+            + "FilialId: {FilialId}. VeiculoId: {VeiculoId}. ClienteId: {ClienteId}. ResponsavelId: {ResponsavelId}. "
+            + "Janela: [{Inicio:o}, {Fim:o}). "
+            + "ValorTotal: {ValorTotal}. IdempotencyKey: {IdempotencyKey}. TraceId: {TraceId}",
+            agendamentoId,
+            usuarioId,
+            command.FilialId,
+            command.VeiculoId,
+            command.ClienteId,
+            command.ResponsavelId,
+            calculado.Inicio,
+            calculado.Fim,
+            calculado.ValorTotal,
+            idempotencyKey,
+            command.TraceId);
 
         return ConfirmarAgendamentoResultado.Novo(resposta);
     }

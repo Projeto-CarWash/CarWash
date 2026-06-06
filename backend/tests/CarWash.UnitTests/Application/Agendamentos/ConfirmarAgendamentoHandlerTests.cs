@@ -1,4 +1,5 @@
 using System.Text.Json;
+using CarWash.Application.Abstractions;
 using CarWash.Application.Agendamentos.Abstractions;
 using CarWash.Application.Agendamentos.Common;
 using CarWash.Application.Agendamentos.Confirmar;
@@ -60,6 +61,15 @@ public class ConfirmarAgendamentoHandlerTests
         _agendamentos.ExisteConflitoVeiculoAsync(
             Arg.Any<Guid>(), Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
             .Returns(false);
+
+        // RF018/RF008: a CalculadoraResumoAgendamento valida capacidade da filial
+        // (RN009). Sem stub, o mock retornaria celulas_ativas=null/0 e lançaria
+        // CapacidadeFilialEsgotadaException nos caminhos felizes.
+        _catalogo.ObterCelulasAtivasFilialAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(50);
+        _catalogo.ContarSobreposicoesNaFilialAsync(
+            Arg.Any<Guid>(), Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+            .Returns(0);
         _agendamentos.AdicionarComIdempotenciaAsync(
             Arg.Any<Agendamento>(),
             Arg.Any<IReadOnlyCollection<AgendamentoItem>>(),
@@ -121,7 +131,7 @@ public class ConfirmarAgendamentoHandlerTests
     {
         // Token assina um hash; o payload da confirmação calcula outro (início diferente).
         var handler = NovoHandler();
-        var tokenComOutroHash = TokenValido(hashResumo: new string('f', 64));
+        string tokenComOutroHash = TokenValido(hashResumo: new string('f', 64));
 
         var act = () => handler.HandleAsync(
             NovoComando() with { TokenConfirmacao = tokenComOutroHash },
@@ -137,7 +147,7 @@ public class ConfirmarAgendamentoHandlerTests
         // O token foi emitido para o início original; a confirmação chega com
         // início deslocado em 1h → hash recalculado difere → 409.
         var handler = NovoHandler();
-        var tokenDaPrevia = TokenValido(HashOriginal());
+        string tokenDaPrevia = TokenValido(HashOriginal());
 
         var act = () => handler.HandleAsync(
             NovoComando() with { TokenConfirmacao = tokenDaPrevia, Inicio = Inicio.AddHours(1) },
@@ -264,6 +274,34 @@ public class ConfirmarAgendamentoHandlerTests
     }
 
     [Fact]
+    public async Task Filial_inativa_na_confirmacao_lanca_FilialInativaException()
+    {
+        // RF019/card 142: a confirmação re-valida a filial; se ela ficou inativa
+        // entre a prévia e a confirmação, o terceiro fluxo também devolve 409.
+        _catalogo.ObterFilialResumoAsync(FilialId, Arg.Any<CancellationToken>())
+            .Returns(new FilialResumoSnapshot(FilialId, "Filial Centro", false));
+
+        var handler = NovoHandler();
+        var act = () => handler.HandleAsync(NovoComando(), CancellationToken.None);
+
+        var ex = await act.Should().ThrowAsync<FilialInativaException>();
+        ex.Which.Slug.Should().Be(FilialInativaException.SlugPadrao);
+    }
+
+    [Fact]
+    public async Task Filial_inexistente_na_confirmacao_lanca_NotFound()
+    {
+        _catalogo.ObterFilialResumoAsync(FilialId, Arg.Any<CancellationToken>())
+            .Returns((FilialResumoSnapshot?)null);
+
+        var handler = NovoHandler();
+        var act = () => handler.HandleAsync(NovoComando(), CancellationToken.None);
+
+        var ex = await act.Should().ThrowAsync<NotFoundException>();
+        ex.Which.Message.Should().Be(MensagensFilialAgendamento.NaoEncontrada);
+    }
+
+    [Fact]
     public async Task Sem_usuario_autenticado_lanca_ValidationException()
     {
         var handler = NovoHandler();
@@ -274,7 +312,10 @@ public class ConfirmarAgendamentoHandlerTests
 
     private ConfirmarAgendamentoHandler NovoHandler() =>
         new(
-            new CalculadoraResumoAgendamento(_catalogo),
+            new CalculadoraResumoAgendamento(
+                _catalogo,
+                Substitute.For<IAuditLogger>(),
+                NullLogger<CalculadoraResumoAgendamento>.Instance),
             _agendamentos,
             _idempotencia,
             _tokens,
@@ -297,14 +338,14 @@ public class ConfirmarAgendamentoHandlerTests
 
     private static string TokenExpirado()
     {
-        var ontem = DateTimeOffset.UtcNow.AddDays(-1).ToUnixTimeSeconds();
-        var payloadJson =
+        long ontem = DateTimeOffset.UtcNow.AddDays(-1).ToUnixTimeSeconds();
+        string payloadJson =
             $"{{\"v\":1,\"hashResumo\":\"{HashOriginal()}\",\"usuarioId\":\"{UsuarioId}\","
             + $"\"traceId\":\"trace-old\",\"iat\":{ontem},\"exp\":{ontem + 900}}}";
-        var payloadEncoded = Base64UrlEncode(System.Text.Encoding.UTF8.GetBytes(payloadJson));
+        string payloadEncoded = Base64UrlEncode(System.Text.Encoding.UTF8.GetBytes(payloadJson));
         using var hmac = new System.Security.Cryptography.HMACSHA256(
             System.Text.Encoding.UTF8.GetBytes("chave-de-confirmacao-rf015-com-mais-de-32-bytes-aqui"));
-        var assinatura = Base64UrlEncode(hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(payloadEncoded)));
+        string assinatura = Base64UrlEncode(hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(payloadEncoded)));
         return payloadEncoded + "." + assinatura;
     }
 

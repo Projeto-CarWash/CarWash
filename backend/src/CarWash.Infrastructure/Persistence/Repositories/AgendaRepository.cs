@@ -21,6 +21,7 @@ public sealed class AgendaRepository : IAgendaRepository
         _db = db;
     }
 
+    /// <inheritdoc/>
     public async Task<IReadOnlyList<AgendaProjecao>> ConsultarAsync(
         Guid filialId,
         DateTime inicioUtc,

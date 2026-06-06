@@ -27,6 +27,7 @@ public sealed class IdempotenciaCleanupService : BackgroundService
         _logger = logger;
     }
 
+    /// <inheritdoc/>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         // Primeira limpeza logo no startup; depois 1×/dia.
@@ -47,7 +48,7 @@ public sealed class IdempotenciaCleanupService : BackgroundService
             var db = scope.ServiceProvider.GetRequiredService<CarWashDbContext>();
 
             var agora = DateTime.UtcNow;
-            var removidos = await db.IdempotenciaRequisicoes
+            int removidos = await db.IdempotenciaRequisicoes
                 .Where(r => r.ExpiraEm < agora)
                 .ExecuteDeleteAsync(cancellationToken)
                 .ConfigureAwait(false);

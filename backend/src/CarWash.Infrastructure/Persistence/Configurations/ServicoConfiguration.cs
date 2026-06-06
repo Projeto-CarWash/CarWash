@@ -6,6 +6,7 @@ namespace CarWash.Infrastructure.Persistence.Configurations;
 
 public sealed class ServicoConfiguration : IEntityTypeConfiguration<Servico>
 {
+    /// <inheritdoc/>
     public void Configure(EntityTypeBuilder<Servico> builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
