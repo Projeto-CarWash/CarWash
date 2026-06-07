@@ -250,6 +250,27 @@ public sealed class Agendamento : IAuditable, IAuditableSetter
 		}
 	}
 
+    public void DefinirResponsavel(Guid responsavelId)
+    {
+        GarantirEstadoEditavel();
+
+        if (responsavelId == Guid.Empty)
+        {
+            throw new DomainException("Identificador do responsável é obrigatório.");
+        }
+
+        ResponsavelId = responsavelId;
+        Versao++;
+    }
+
+    public void AlterarObservacoes(string observacoes)
+    {
+        GarantirEstadoEditavel();
+
+        Observacoes = string.IsNullOrWhiteSpace(observacoes) ? null : observacoes.Trim();
+        Versao++;
+    }
+
     void IAuditableSetter.SetCriadoEm(DateTime valor) => CriadoEm = valor;
 
     void IAuditableSetter.SetAtualizadoEm(DateTime valor) => AtualizadoEm = valor;

@@ -4,6 +4,8 @@ using CarWash.Application.Agendamentos.Cancelar;
 using CarWash.Application.Agendamentos.Common;
 using CarWash.Application.Agendamentos.Confirmar;
 using CarWash.Application.Agendamentos.Criar;
+using CarWash.Application.Agendamentos.Editar;
+using CarWash.Application.Agendamentos.ObterPorId;
 using CarWash.Application.Agendamentos.PreConfirmar;
 using FluentValidation;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -70,17 +72,36 @@ public static class AgendamentosEndpoints
 		.ProducesProblem(StatusCodes.Status410Gone)
 		.ProducesProblem(StatusCodes.Status500InternalServerError);
 
-	// RF010 — cancelamento de agendamento com motivo obrigatório.
-	grupo.MapPatch("/{id:guid}/cancelar", CancelarAsync)
-		.WithName("CancelarAgendamento")
-		.Produces<CancelarAgendamentoResponse>(StatusCodes.Status200OK)
-		.ProducesProblem(StatusCodes.Status400BadRequest)
-		.ProducesProblem(StatusCodes.Status401Unauthorized)
-		.ProducesProblem(StatusCodes.Status404NotFound)
-		.ProducesProblem(StatusCodes.Status409Conflict)
-		.ProducesProblem(StatusCodes.Status500InternalServerError);
+        // RF010 — cancelamento de agendamento com motivo obrigatório.
+        grupo.MapPatch("/{id:guid}/cancelar", CancelarAsync)
+        .WithName("CancelarAgendamento")
+        .Produces<CancelarAgendamentoResponse>(StatusCodes.Status200OK)
+        .ProducesProblem(StatusCodes.Status400BadRequest)
+        .ProducesProblem(StatusCodes.Status401Unauthorized)
+        .ProducesProblem(StatusCodes.Status404NotFound)
+        .ProducesProblem(StatusCodes.Status409Conflict)
+        .ProducesProblem(StatusCodes.Status500InternalServerError);
 
-	return app;
+        // RF010 — consulta detalhada de agendamento por id.
+        grupo.MapGet("/{id:guid}", ObterPorIdAsync)
+        .WithName("ObterAgendamentoPorId")
+        .Produces<AgendamentoDetalhadoResponse>(StatusCodes.Status200OK)
+        .ProducesProblem(StatusCodes.Status401Unauthorized)
+        .ProducesProblem(StatusCodes.Status404NotFound)
+        .ProducesProblem(StatusCodes.Status500InternalServerError);
+
+        // RF010 — edição de agendamento com bloqueio por status.
+        grupo.MapPatch("/{id:guid}", EditarAsync)
+        .WithName("EditarAgendamento")
+        .Produces<EditarAgendamentoResponse>(StatusCodes.Status200OK)
+        .ProducesProblem(StatusCodes.Status400BadRequest)
+        .ProducesProblem(StatusCodes.Status401Unauthorized)
+        .ProducesProblem(StatusCodes.Status403Forbidden)
+        .ProducesProblem(StatusCodes.Status404NotFound)
+        .ProducesProblem(StatusCodes.Status409Conflict)
+        .ProducesProblem(StatusCodes.Status500InternalServerError);
+
+        return app;
     }
 
     private static async Task<Created<AgendamentoResponse>> CriarAsync(
@@ -238,45 +259,108 @@ public static class AgendamentosEndpoints
 	return TypedResults.Created($"/api/v1/agendamentos/{resposta.Id}", resposta);
 	}
 
-	private static async Task<Ok<CancelarAgendamentoResponse>> CancelarAsync(
-		Guid id,
-		[FromBody] CancelarAgendamentoRequest? request,
-		[FromServices] ICommandHandler<CancelarAgendamentoCommand, CancelarAgendamentoResponse> handler,
-		[FromServices] IValidator<CancelarAgendamentoCommand> validator,
-		[FromServices] ILogger<CriarAgendamentoEndpointMarker> logger,
-		HttpContext http,
-		CancellationToken cancellationToken)
-	{
-		if (request is null)
-		{
-			throw ValidationProblems.BodyAusente(
-				MensagemPayloadInvalido,
-				"Corpo da requisição ausente ou malformado.");
-		}
+    private static async Task<Ok<CancelarAgendamentoResponse>> CancelarAsync(
+        Guid id,
+        [FromBody] CancelarAgendamentoRequest? request,
+        [FromServices] ICommandHandler<CancelarAgendamentoCommand, CancelarAgendamentoResponse> handler,
+        [FromServices] IValidator<CancelarAgendamentoCommand> validator,
+        [FromServices] ILogger<CriarAgendamentoEndpointMarker> logger,
+        HttpContext http,
+        CancellationToken cancellationToken)
+    {
+        if (request is null)
+        {
+            throw ValidationProblems.BodyAusente(
+                MensagemPayloadInvalido,
+                "Corpo da requisição ausente ou malformado.");
+        }
 
-		var traceId = http.TraceIdentifier;
-		var usuarioId = ObterUsuarioId(http);
+        var traceId = http.TraceIdentifier;
+        var usuarioId = ObterUsuarioId(http);
 
-		var command = new CancelarAgendamentoCommand(
-			AgendamentoId: id,
-			MotivoCancelamento: request.MotivoCancelamento ?? string.Empty,
-			Origem: request.Origem ?? string.Empty,
-			TraceId: traceId,
-			UsuarioId: usuarioId);
+        var command = new CancelarAgendamentoCommand(
+            AgendamentoId: id,
+            MotivoCancelamento: request.MotivoCancelamento ?? string.Empty,
+            Origem: request.Origem ?? string.Empty,
+            TraceId: traceId,
+            UsuarioId: usuarioId);
 
-		var resultado = await validator.ValidateAsync(command, cancellationToken).ConfigureAwait(false);
-		ValidationProblems.EnsureValid(resultado, MensagemPayloadInvalido);
+        var resultado = await validator.ValidateAsync(command, cancellationToken).ConfigureAwait(false);
+        ValidationProblems.EnsureValid(resultado, MensagemPayloadInvalido);
 
-		var resposta = await handler.HandleAsync(command, cancellationToken).ConfigureAwait(false);
+        var resposta = await handler.HandleAsync(command, cancellationToken).ConfigureAwait(false);
 
-		logger.LogInformation(
-			"Agendamento cancelado via endpoint. TraceId: {TraceId}. AgendamentoId: {AgendamentoId}. UsuarioId: {UsuarioId}",
-			traceId,
-			id,
-			usuarioId);
+        logger.LogInformation(
+            "Agendamento cancelado via endpoint. TraceId: {TraceId}. AgendamentoId: {AgendamentoId}. UsuarioId: {UsuarioId}",
+            traceId,
+            id,
+            usuarioId);
 
-		return TypedResults.Ok(resposta);
-	}
+        return TypedResults.Ok(resposta);
+    }
+
+    private static async Task<Ok<AgendamentoDetalhadoResponse>> ObterPorIdAsync(
+        Guid id,
+        [FromServices] IQueryHandler<ObterAgendamentoPorIdQuery, AgendamentoDetalhadoResponse> handler,
+        [FromServices] ILogger<CriarAgendamentoEndpointMarker> logger,
+        HttpContext http,
+        CancellationToken cancellationToken)
+    {
+        var traceId = http.TraceIdentifier;
+
+        var query = new ObterAgendamentoPorIdQuery(id, traceId);
+
+        var resposta = await handler.HandleAsync(query, cancellationToken).ConfigureAwait(false);
+
+        logger.LogInformation(
+            "Agendamento consultado via endpoint. TraceId: {TraceId}. AgendamentoId: {AgendamentoId}",
+            traceId,
+            id);
+
+        return TypedResults.Ok(resposta);
+    }
+
+    private static async Task<Ok<EditarAgendamentoResponse>> EditarAsync(
+        Guid id,
+        [FromBody] EditarAgendamentoRequest? request,
+        [FromServices] ICommandHandler<EditarAgendamentoCommand, EditarAgendamentoResponse> handler,
+        [FromServices] IValidator<EditarAgendamentoCommand> validator,
+        [FromServices] ILogger<CriarAgendamentoEndpointMarker> logger,
+        HttpContext http,
+        CancellationToken cancellationToken)
+    {
+        if (request is null)
+        {
+            throw ValidationProblems.BodyAusente(
+                MensagemPayloadInvalido,
+                "Corpo da requisição ausente ou malformado.");
+        }
+
+        var traceId = http.TraceIdentifier;
+        var usuarioId = ObterUsuarioId(http);
+
+        var command = new EditarAgendamentoCommand(
+            AgendamentoId: id,
+            Inicio: request.Inicio,
+            Fim: request.Fim,
+            ResponsavelId: request.ResponsavelId,
+            Observacoes: request.Observacoes,
+            TraceId: traceId,
+            UsuarioId: usuarioId);
+
+        var resultado = await validator.ValidateAsync(command, cancellationToken).ConfigureAwait(false);
+        ValidationProblems.EnsureValid(resultado, MensagemPayloadInvalido);
+
+        var resposta = await handler.HandleAsync(command, cancellationToken).ConfigureAwait(false);
+
+        logger.LogInformation(
+            "Agendamento editado via endpoint. TraceId: {TraceId}. AgendamentoId: {AgendamentoId}. UsuarioId: {UsuarioId}",
+            traceId,
+            id,
+            usuarioId);
+
+        return TypedResults.Ok(resposta);
+    }
 
 	private static Guid? ObterUsuarioId(HttpContext http)
     {
