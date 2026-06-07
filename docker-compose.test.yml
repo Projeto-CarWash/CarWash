@@ -155,6 +155,11 @@ services:
       # 10 logins/min pelo MESMO IP do proxy. Sobe o limite só nesta stack de teste
       # para não gerar 429 (falso-negativo). Produção mantém o default de 10/min.
       RateLimiting__AuthLoginPermitLimit: '200'
+      # O proxy E2E serve HTTP (sem TLS); sem isto o cookie httpOnly do refresh
+      # sairia com Secure=true (ASPNETCORE_ENVIRONMENT=Staging) e o browser o
+      # descartaria, quebrando a persistência de sessão (reload -> /login). Só
+      # nesta stack de teste. Hom/prod mantêm Secure=true (TLS no proxy).
+      CARWASH_AUTH_COOKIE_SECURE: 'false'
     networks:
       - test-internal
       - test-public
