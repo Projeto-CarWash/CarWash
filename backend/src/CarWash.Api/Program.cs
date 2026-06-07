@@ -115,12 +115,18 @@ builder.Services.AddRateLimiter(opt =>
             ct).ConfigureAwait(false);
     };
 
+    // Limite por janela configurável (RateLimiting:AuthLoginPermitLimit). Default 10/min
+    // em produção; o ambiente E2E sobe o valor para caber a suíte completa numa única
+    // execução sem 429 — a stack roda atrás de um único IP/proxy, então todos os logins
+    // dos specs caem na mesma partição.
+    int authLoginPermitLimit =
+        builder.Configuration.GetValue("RateLimiting:AuthLoginPermitLimit", 10);
     opt.AddPolicy("auth-login", http =>
     {
         string key = http.Connection.RemoteIpAddress?.ToString() ?? "anonimo";
         return RateLimitPartition.GetFixedWindowLimiter(key, _ => new FixedWindowRateLimiterOptions
         {
-            PermitLimit = 10,
+            PermitLimit = authLoginPermitLimit,
             Window = TimeSpan.FromMinutes(1),
             QueueLimit = 0,
             AutoReplenishment = true,

@@ -1,12 +1,19 @@
-import { AlertCircle, ArrowLeft, Save, X } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Loader2, Power, Save, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { userService } from '@/services/userService';
 
 import type { PerfilUsuario } from '@/types/auth';
@@ -25,6 +32,8 @@ export function UsuarioDetalhePage() {
   const [sucesso, setSucesso] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [alterandoStatus, setAlterandoStatus] = useState(false);
+  const [modalStatusAberto, setModalStatusAberto] = useState(false);
+  const [erroStatus, setErroStatus] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelado = false;
@@ -61,29 +70,31 @@ export function UsuarioDetalhePage() {
     }
   }, [usuario, nome, email, perfil]);
 
-  const toggleStatus = useCallback(
-    async (novoAtivo: boolean) => {
-      if (!usuario) return;
-      setAlterandoStatus(true);
-      setErro(null);
-      setSucesso(null);
-      try {
-        await userService.updateStatus(usuario.id, novoAtivo);
-        const refreshed = await userService.getById(usuario.id);
-        setUsuario(refreshed);
-        setSucesso(
-          novoAtivo
-            ? 'Usuário ativado com sucesso. O acesso ao sistema foi restaurado.'
-            : 'Usuário inativado com sucesso. O acesso ao sistema foi bloqueado.',
-        );
-      } catch {
-        setErro('Não foi possível alterar o status do usuário.');
-      } finally {
-        setAlterandoStatus(false);
-      }
-    },
-    [usuario],
-  );
+  const toggleStatus = useCallback(async () => {
+    if (!usuario) return;
+    const novoAtivo = !usuario.ativo;
+    setAlterandoStatus(true);
+    setErro(null);
+    setErroStatus(null);
+    setSucesso(null);
+    try {
+      await userService.updateStatus(usuario.id, novoAtivo);
+      const refreshed = await userService.getById(usuario.id);
+      setUsuario(refreshed);
+      setModalStatusAberto(false);
+      setSucesso(
+        novoAtivo
+          ? 'Usuário ativado com sucesso. O acesso ao sistema foi restaurado.'
+          : 'Usuário inativado com sucesso. O acesso ao sistema foi bloqueado.',
+      );
+    } catch {
+      // O modal segue aberto; o erro precisa aparecer DENTRO do dialog, pois o
+      // restante da página fica aria-hidden enquanto o modal está aberto.
+      setErroStatus('Não foi possível alterar o status do usuário.');
+    } finally {
+      setAlterandoStatus(false);
+    }
+  }, [usuario]);
 
   if (erro && !usuario) {
     return (
@@ -119,6 +130,23 @@ export function UsuarioDetalhePage() {
           className="h-9 rounded-full border-zinc-700/60 bg-transparent px-4 text-sm"
         >
           <ArrowLeft className="mr-1 h-4 w-4" /> Voltar
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={isBusy}
+          onClick={() => {
+            setErroStatus(null);
+            setModalStatusAberto(true);
+          }}
+          className="h-9 rounded-full border-zinc-700/60 bg-transparent px-4 text-sm hover:bg-zinc-800/50 hover:text-zinc-200 text-zinc-400"
+        >
+          {alterandoStatus ? (
+            <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+          ) : (
+            <Power className="mr-1 h-4 w-4" />
+          )}
+          {usuario.ativo ? 'Inativar usuário' : 'Ativar usuário'}
         </Button>
       </div>
 
@@ -196,47 +224,33 @@ export function UsuarioDetalhePage() {
           {/* ── Separador visual ── */}
           <div className="border-t border-zinc-800/60" />
 
-          {/* ── Controle de Status: Switch + Input ── */}
+          {/* ── Controle de Status ── */}
           <div className="rounded-xl border border-zinc-800/60 bg-zinc-950/30 p-4">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex-1 space-y-1.5">
-                <Label
-                  htmlFor="detalhe-status-input"
-                  className="text-[10px] font-bold tracking-[0.2em] text-zinc-500"
-                >
-                  STATUS DO USUÁRIO
-                </Label>
-                <Input
-                  id="detalhe-status-input"
-                  type="text"
-                  readOnly
-                  value={
-                    usuario.ativo
-                      ? 'Ativo — acesso ao sistema permitido'
-                      : 'Inativo — acesso ao sistema bloqueado'
-                  }
-                  className={`h-10 rounded-xl border-zinc-700/60 bg-zinc-900/50 text-sm font-medium focus-visible:ring-0 ${
-                    usuario.ativo ? 'text-green-400' : 'text-zinc-500'
-                  }`}
-                />
-                <p className="text-[11px] text-zinc-600">
-                  {usuario.ativo
-                    ? 'Desative o switch para bloquear o login deste usuário.'
-                    : 'Ative o switch para restaurar o acesso deste usuário ao sistema.'}
-                </p>
-              </div>
-              <div className="flex flex-col items-center gap-1.5 pt-5">
-                <Switch
-                  id="detalhe-status-switch"
-                  checked={usuario.ativo}
-                  onCheckedChange={(checked) => void toggleStatus(checked)}
-                  disabled={isBusy}
-                  aria-label={usuario.ativo ? 'Inativar usuário' : 'Ativar usuário'}
-                />
-                <span className="text-[10px] font-bold tracking-[0.15em] text-zinc-600">
-                  {alterandoStatus ? '...' : usuario.ativo ? 'ON' : 'OFF'}
-                </span>
-              </div>
+            <div className="space-y-1.5">
+              <Label
+                htmlFor="detalhe-status-input"
+                className="text-[10px] font-bold tracking-[0.2em] text-zinc-500"
+              >
+                STATUS DO USUÁRIO
+              </Label>
+              <Input
+                id="detalhe-status-input"
+                type="text"
+                readOnly
+                value={
+                  usuario.ativo
+                    ? 'Ativo — acesso ao sistema permitido'
+                    : 'Inativo — acesso ao sistema bloqueado'
+                }
+                className={`h-10 rounded-xl border-zinc-700/60 bg-zinc-900/50 text-sm font-medium focus-visible:ring-0 ${
+                  usuario.ativo ? 'text-green-400' : 'text-zinc-500'
+                }`}
+              />
+              <p className="text-[11px] text-zinc-600">
+                {usuario.ativo
+                  ? 'Use o botão "Inativar usuário" acima para bloquear o login deste usuário.'
+                  : 'Use o botão "Ativar usuário" acima para restaurar o acesso deste usuário ao sistema.'}
+              </p>
             </div>
           </div>
 
@@ -296,6 +310,60 @@ export function UsuarioDetalhePage() {
           </button>
         </div>
       )}
+
+      {/* ── Modal de confirmação de ativação/inativação ── */}
+      <Dialog
+        open={modalStatusAberto}
+        onOpenChange={(aberto) => {
+          if (alterandoStatus) return;
+          setModalStatusAberto(aberto);
+          if (!aberto) setErroStatus(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-[425px] bg-zinc-950 border-zinc-800">
+          <DialogHeader>
+            <DialogTitle className="text-zinc-100">
+              {usuario.ativo ? 'Inativar usuário' : 'Ativar usuário'}
+            </DialogTitle>
+            <DialogDescription className="text-zinc-400">
+              {usuario.ativo
+                ? `Deseja realmente inativar o usuário "${usuario.nome}"? O acesso dele ao sistema será bloqueado.`
+                : `Deseja reativar o usuário "${usuario.nome}"? O acesso dele ao sistema será restaurado.`}
+            </DialogDescription>
+          </DialogHeader>
+          {erroStatus && (
+            <div
+              role="alert"
+              className="rounded-xl border border-red-500/30 bg-red-950/30 px-4 py-3 text-sm text-red-400"
+            >
+              {erroStatus}
+            </div>
+          )}
+          <DialogFooter className="mt-4 gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setModalStatusAberto(false);
+                setErroStatus(null);
+              }}
+              disabled={alterandoStatus}
+              className="border-zinc-700 bg-transparent text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              onClick={() => void toggleStatus()}
+              disabled={alterandoStatus}
+              className="bg-red-600 text-white hover:bg-red-700"
+            >
+              {alterandoStatus ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Confirmar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

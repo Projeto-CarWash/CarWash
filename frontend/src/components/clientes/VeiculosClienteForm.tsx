@@ -3,6 +3,7 @@ import { useCallback, useState } from 'react';
 import { useFieldArray, useFormContext } from 'react-hook-form';
 
 import { Button } from '@/components/ui/button';
+import { getCorCSS } from '@/lib/colors';
 
 import { VeiculoModal } from './VeiculoModal';
 
@@ -59,12 +60,20 @@ export function VeiculosClienteForm() {
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-zinc-200">
-                      {field.marca && field.modelo
-                        ? `${field.marca} ${field.modelo}`
+                      {field.fabricante && field.modelo
+                        ? `${field.fabricante} ${field.modelo}`
                         : field.modelo || 'Veículo'}
                     </p>
-                    <p className="text-xs text-zinc-500">
-                      {[field.anoModelo, field.cor?.toUpperCase()].filter(Boolean).join(' · ')}
+                    <p className="flex items-center gap-1.5 text-xs text-zinc-500">
+                      {field.ano ? String(field.ano) : ''}
+                      {field.ano && field.cor ? ' · ' : ''}
+                      {field.cor && (
+                        <span
+                          className="inline-block h-3 w-3 rounded-full border border-zinc-600 shadow-sm"
+                          style={{ backgroundColor: getCorCSS(field.cor) }}
+                          title={`Cor: ${field.cor}`}
+                        />
+                      )}
                     </p>
                   </div>
                 </div>

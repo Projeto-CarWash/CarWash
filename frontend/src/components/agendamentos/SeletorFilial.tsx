@@ -43,9 +43,15 @@ export function SeletorFilial({
     onChange(id, filial?.nome ?? '');
   }
 
-  /** Formata o label de cada opção: nome + cidade/UF quando disponíveis. */
+  /**
+   * Formata o label de cada opção: nome, código/identificador e cidade/UF
+   * quando disponíveis (RF019 — exibir nome + código da filial).
+   */
   function formatarLabel(f: FilialResumo): string {
     const partes = [f.nome];
+    if (f.codigo) {
+      partes.push(`— ${f.codigo}`);
+    }
     if (f.cidade && f.uf) {
       partes.push(`(${f.cidade}/${f.uf})`);
     } else if (f.cidade) {

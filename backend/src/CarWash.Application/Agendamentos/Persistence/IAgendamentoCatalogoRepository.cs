@@ -74,6 +74,14 @@ public interface IAgendamentoCatalogoRepository
     Task<VeiculoResumoSnapshot?> ObterVeiculoResumoAsync(Guid veiculoId, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Snapshot rico do responsável (nome + documento + grau vínculo + titular +
+    /// estado) para o resumo de confirmação (RF015/RF024). <c>null</c> quando o
+    /// responsável não existe.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    Task<ResponsavelResumoSnapshot?> ObterResponsavelResumoAsync(Guid responsavelId, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Retorna <c>celulas_ativas</c> da filial (RN009/RF018). <c>null</c> se a
     /// filial não existir. AsNoTracking. Reaproveitado aqui (em vez de chamar
     /// <see cref="Filiais.Persistence.IFilialRepository"/>) para manter o slice
@@ -97,8 +105,17 @@ public interface IAgendamentoCatalogoRepository
 /// <summary>Projeção mínima de um veículo para validação de agendamento.</summary>
 public sealed record VeiculoSnapshot(Guid Id, Guid ClienteId, bool Ativo);
 
-/// <summary>Projeção mínima de um responsável (filiado) para validação de agendamento.</summary>
+/// <summary>Projeção mínima de um responsável para validação de agendamento.</summary>
 public sealed record ResponsavelSnapshot(Guid Id, Guid ClienteId, bool Ativo);
+
+/// <summary>Projeção rica do responsável para o resumo de confirmação (RF015/RF024).</summary>
+public sealed record ResponsavelResumoSnapshot(
+    Guid Id,
+    Guid ClienteId,
+    string Nome,
+    string Documento,
+    string GrauVinculo,
+    bool Ativo);
 
 /// <summary>Projeção da filial para o resumo de confirmação (RF015).</summary>
 public sealed record FilialResumoSnapshot(Guid Id, string Nome, bool Ativa);

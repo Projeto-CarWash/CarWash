@@ -1,12 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AxiosError } from 'axios';
 import { AlertCircle, Check, X } from 'lucide-react';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 
 import { clienteSchema } from '@/schemas/clienteSchema';
-import { clienteService } from '@/services/clienteService';
+import { CriacaoClienteRollbackError, clienteService } from '@/services/clienteService';
 
 import { ContatoEnderecoForm } from './ContatoEnderecoForm';
 import { IdentificacaoForm } from './IdentificacaoForm';
@@ -15,10 +15,8 @@ import { PreferenciasFidelidadeForm } from './PreferenciasFidelidadeForm';
 import { Stepper } from './Stepper';
 import { VeiculosClienteForm } from './VeiculosClienteForm';
 
-import type { ClienteFormData } from '@/schemas/clienteSchema';
+import type { ClienteFormData, ClienteFormInput } from '@/schemas/clienteSchema';
 import type { ProblemDetails } from '@/types/auth';
-
-const DRAFT_STORAGE_KEY = 'carwash-draft-novo-cliente';
 
 const API_MESSAGES: Record<number, string> = {
   400: 'Dados do cliente inválidos. Verifique os campos e tente novamente.',
@@ -33,10 +31,9 @@ export function NovoClientePage() {
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const isResettingRef = useRef(false);
 
   const getDefaultValues = useCallback(
-    (): ClienteFormData => ({
+    (): ClienteFormInput => ({
       cpfCnpj: '',
       dataNascimento: '',
       nome: '',
@@ -59,34 +56,16 @@ export function NovoClientePage() {
     [],
   );
 
-  const loadDraft = useCallback((): ClienteFormData | null => {
-    try {
-      const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
-      if (!raw) return null;
-      return JSON.parse(raw) as ClienteFormData;
-    } catch {
-      localStorage.removeItem(DRAFT_STORAGE_KEY);
-      return null;
-    }
-  }, []);
-
-  const form = useForm<ClienteFormData>({
+  const form = useForm<ClienteFormInput, unknown, ClienteFormData>({
     resolver: zodResolver(clienteSchema),
     mode: 'onBlur',
     shouldFocusError: true,
-    defaultValues: loadDraft() ?? getDefaultValues(),
+    defaultValues: getDefaultValues(),
   });
 
-  // Safe reset that prevents rapid consecutive calls from corrupting RHF state
-  const safeReset = useCallback(() => {
-    if (isResettingRef.current) return;
-    isResettingRef.current = true;
-    const defaults = getDefaultValues();
-    form.reset(defaults, { keepErrors: false, keepDirty: false, keepTouched: false });
-    // Allow next reset only after RHF finishes its internal state reconciliation
-    requestAnimationFrame(() => {
-      isResettingRef.current = false;
-    });
+  // form.reset é síncrono e idempotente: pode ser chamado quantas vezes for preciso.
+  const resetForm = useCallback(() => {
+    form.reset(getDefaultValues(), { keepErrors: false, keepDirty: false, keepTouched: false });
   }, [form, getDefaultValues]);
 
   // ── Reactive watches for sidebar + step validation ─────────────────────────
@@ -151,14 +130,49 @@ export function NovoClientePage() {
       setIsSubmitting(true);
 
       try {
-        const resp = await clienteService.criar(data);
+        // Usa o fluxo transacional com rollback compensatório:
+        // Fase 1: cria cliente sem veículos
+        // Fase 2: cria veículos um a um
+        // Rollback: se veículo falhar, desativa o cliente criado
+        const resp = await clienteService.criarComVeiculos(data);
         setSuccessMsg('Cliente cadastrado com sucesso! Redirecionando…');
-        localStorage.removeItem(DRAFT_STORAGE_KEY);
-        safeReset();
+        resetForm();
         setTimeout(() => {
           void navigate(`/clientes/${resp.id}`, { replace: true });
         }, 800);
       } catch (error) {
+        // ── Rollback executado: veículo falhou, cliente foi revertido ──
+        if (error instanceof CriacaoClienteRollbackError) {
+          const status = error.statusVeiculo;
+          const detail = error.problemDetails?.detail ?? '';
+
+          if (status === 409) {
+            const isPlaca =
+              detail.toLowerCase().includes('placa') ||
+              detail.toLowerCase().includes('veículo') ||
+              detail.toLowerCase().includes('veiculo');
+            setGlobalError(
+              isPlaca
+                ? 'Cadastro não concluído: já existe veículo com esta placa. ' +
+                    'Nenhum registro foi criado. Corrija a placa e tente novamente.'
+                : 'Cadastro não concluído: conflito na etapa de veículo. ' +
+                    'Nenhum registro foi criado. Verifique os dados e tente novamente.',
+            );
+          } else if (status === 400) {
+            setGlobalError(
+              'Cadastro não concluído: dados do veículo inválidos. ' +
+                'Nenhum registro foi criado. Verifique os campos do veículo e tente novamente.',
+            );
+          } else {
+            setGlobalError(
+              'Cadastro não concluído: ocorreu um erro na etapa de veículo. ' +
+                'Nenhum registro foi criado. Tente novamente.',
+            );
+          }
+          return;
+        }
+
+        // ── Erros da Fase 1 (criação do cliente) — sem rollback necessário ──
         if (!(error instanceof AxiosError) || !error.response) {
           setGlobalError(API_MESSAGES[500]!);
           return;
@@ -176,22 +190,10 @@ export function NovoClientePage() {
         }
 
         if (status === 409) {
-          // 409 pode vir de documento duplicado ou placa duplicada
-          const detail = problem?.detail ?? '';
-          const isPlaca =
-            detail.toLowerCase().includes('placa') ||
-            detail.toLowerCase().includes('veículo') ||
-            detail.toLowerCase().includes('veiculo');
-          if (isPlaca) {
-            setGlobalError(
-              'Já existe veículo cadastrado com esta placa. Verifique a lista de veículos.',
-            );
-          } else {
-            setGlobalError(API_MESSAGES[409]!);
-            form.setError('cpfCnpj', {
-              message: 'Já existe cliente cadastrado com este documento.',
-            });
-          }
+          setGlobalError(API_MESSAGES[409]!);
+          form.setError('cpfCnpj', {
+            message: 'Já existe cliente cadastrado com este documento.',
+          });
           return;
         }
 
@@ -211,28 +213,18 @@ export function NovoClientePage() {
         setIsSubmitting(false);
       }
     },
-    [form, navigate, safeReset],
+    [form, navigate, resetForm],
   );
 
   const handleClearForm = useCallback(() => {
-    safeReset();
+    resetForm();
     setGlobalError(null);
     setSuccessMsg(null);
-    localStorage.removeItem(DRAFT_STORAGE_KEY);
-  }, [safeReset]);
-
-  const handleSaveDraft = useCallback(() => {
-    const currentValues = form.getValues();
-    try {
-      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(currentValues));
-    } catch (e) {
-      console.warn('Failed to save draft:', e);
-    }
-  }, [form]);
+  }, [resetForm]);
 
   return (
     <>
-      <PageHeader onClearForm={handleClearForm} onSaveDraft={handleSaveDraft} step={currentStep} />
+      <PageHeader onClearForm={handleClearForm} step={currentStep} />
       <FormProvider {...form}>
         <form
           onSubmit={(e) => {
