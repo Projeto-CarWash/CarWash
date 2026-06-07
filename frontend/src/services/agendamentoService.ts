@@ -1,4 +1,6 @@
 import api from './api';
+import { agendaService } from './agendaService';
+import { filialService } from './filialService';
 
 import type {
   AgendamentoResponse,
@@ -10,88 +12,13 @@ import type {
   CriarAgendamentoResponse,
   EstatisticasMes,
   PreConfirmacaoResponse,
+  ResponsavelResumido,
   ServicoAtivo,
   VeiculoResumido,
   CancelarAgendamentoResponse,
 } from '@/types/agendamento';
 
-const MOCK_VEICULOS: Record<string, VeiculoResumido[]> = {
-  c1: [
-    { id: 'v1', placa: 'ABC-1D23', modelo: 'VW Golf GTI', cor: 'Preto', ano: 2023 },
-    { id: 'v2', placa: 'XYZ-9H87', modelo: 'Hyundai HB20', cor: 'Prata', ano: 2021 },
-  ],
-  c2: [{ id: 'v3', placa: 'DEF-4E56', modelo: 'Honda Civic', cor: 'Branco', ano: 2024 }],
-  c3: [
-    { id: 'v4', placa: 'GHI-7F89', modelo: 'Toyota Hilux', cor: 'Prata', ano: 2022 },
-    { id: 'v5', placa: 'JKL-2G34', modelo: 'Fiat Toro', cor: 'Vermelho', ano: 2023 },
-    { id: 'v6', placa: 'MNO-5A67', modelo: 'Chevrolet S10', cor: 'Preto', ano: 2021 },
-  ],
-  c4: [],
-  c5: [{ id: 'v7', placa: 'PQR-8B12', modelo: 'BMW 320i', cor: 'Azul', ano: 2024 }],
-};
-
-const MOCK_SERVICOS: ServicoAtivo[] = [
-  {
-    id: 's1',
-    nome: 'Lavagem Simples',
-    preco: 45.0,
-    duracao: 30,
-    descricao: 'Lavagem externa com agua e shampoo automotivo.',
-  },
-  {
-    id: 's2',
-    nome: 'Lavagem Completa',
-    preco: 89.9,
-    duracao: 60,
-    descricao: 'Lavagem externa + aspiracao interna + painel.',
-  },
-  {
-    id: 's3',
-    nome: 'Polimento',
-    preco: 180.0,
-    duracao: 120,
-    descricao: 'Polimento com massa de corte e finalizacao.',
-  },
-  {
-    id: 's4',
-    nome: 'Cristalizacao',
-    preco: 250.0,
-    duracao: 90,
-    descricao: 'Cristalizacao de pintura com protecao UV.',
-  },
-  {
-    id: 's5',
-    nome: 'Higienizacao Interna',
-    preco: 120.0,
-    duracao: 45,
-    descricao: 'Limpeza profunda de estofados e carpetes.',
-  },
-  {
-    id: 's6',
-    nome: 'Enceramento',
-    preco: 70.0,
-    duracao: 40,
-    descricao: 'Aplicacao de cera protetora com brilho intenso.',
-  },
-  {
-    id: 's7',
-    nome: 'Lavagem de Motor',
-    preco: 95.0,
-    duracao: 35,
-    descricao: 'Desengraxe e lavagem do compartimento do motor.',
-  },
-  {
-    id: 's8',
-    nome: 'Vitrificacao',
-    preco: 350.0,
-    duracao: 180,
-    descricao: 'Protecao ceramica de longa duracao na pintura.',
-  },
-];
-
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+import type { AgendaItemSimples } from '@/types/agenda';
 
 export const agendamentoService = {
   async buscarClientes(busca: string): Promise<ClienteResumido[]> {
@@ -106,14 +33,52 @@ export const agendamentoService = {
     return data.itens;
   },
 
+  /**
+   * Busca os veículos vinculados ao cliente via API real.
+   *
+   * <p>Consome `GET /api/v1/clientes/{id}` e extrai o array `veiculos`,
+   * mapeando para `VeiculoResumido`.</p>
+   */
   async buscarVeiculosPorCliente(clienteId: string): Promise<VeiculoResumido[]> {
-    await delay(400);
-    return MOCK_VEICULOS[clienteId] ?? [];
+    const { data } = await api.get<{
+      veiculos: { id: string; placa: string; modelo: string; fabricante: string; cor: string }[];
+    }>(`/api/v1/clientes/${clienteId}`);
+
+    return (data.veiculos ?? []).map((v) => ({
+      id: v.id,
+      placa: v.placa,
+      modelo: v.modelo,
+      cor: v.cor,
+    }));
   },
 
+  /**
+   * Lista os serviços ativos via API real.
+   *
+   * <p>Consome `GET /api/v1/servicos?ativo=true` e mapeia para `ServicoAtivo`.</p>
+   */
   async listarServicosAtivos(): Promise<ServicoAtivo[]> {
-    await delay(350);
-    return [...MOCK_SERVICOS];
+    const { data } = await api.get<{
+      itens: {
+        id: string;
+        nome: string;
+        preco: number;
+        duracaoMin: number;
+        ativo: boolean;
+        criadoEm: string;
+        atualizadoEm: string;
+      }[];
+    }>('/api/v1/servicos', {
+      params: { ativo: true },
+    });
+
+    return (data.itens ?? []).map((s) => ({
+      id: s.id,
+      nome: s.nome,
+      preco: s.preco,
+      duracao: s.duracaoMin,
+      descricao: undefined,
+    }));
   },
 
   /**
@@ -145,9 +110,14 @@ export const agendamentoService = {
     return data;
   },
 
-  async obterEstatisticasAno(_ano: number): Promise<EstatisticasMes[]> {
-    await delay(500);
-
+  /**
+   * Estatísticas do ano consultando a API real de agenda mês a mês.
+   *
+   * <p>Para cada mês do ano, faz uma consulta `GET /api/v1/agenda?formato=simples`
+   * com início e fim do mês, usando a primeira filial ativa como filtro obrigatório.
+   * Conta os itens por status para montar as estatísticas.</p>
+   */
+  async obterEstatisticasAno(ano: number): Promise<EstatisticasMes[]> {
     const nomesMeses = [
       'JANEIRO',
       'FEVEREIRO',
@@ -163,19 +133,141 @@ export const agendamentoService = {
       'DEZEMBRO',
     ];
 
-    return nomesMeses.map((nome, index) => ({
-      mes: index + 1,
-      nome,
-      confirmados: 0,
-      pendentes: 0,
-      cancelados: 0,
-      total: 0,
-    }));
+    // Busca a primeira filial ativa para usar como filtro obrigatório da agenda.
+    let filialId = '';
+    try {
+      const filiais = await filialService.listar();
+      filialId = filiais.itens?.[0]?.id ?? '';
+    } catch {
+      // Sem filial, retorna estatísticas zeradas.
+    }
+
+    if (!filialId) {
+      return nomesMeses.map((nome, index) => ({
+        mes: index + 1,
+        nome,
+        confirmados: 0,
+        pendentes: 0,
+        cancelados: 0,
+        total: 0,
+      }));
+    }
+
+    const resultados: EstatisticasMes[] = [];
+
+    for (let m = 0; m < 12; m++) {
+      const inicio = new Date(ano, m, 1);
+      const fim = new Date(ano, m + 1, 0, 23, 59, 59);
+
+      // A API tem janela máxima de 31 dias — cada mês está dentro desse limite.
+      let confirmados = 0;
+      let pendentes = 0;
+      let cancelados = 0;
+
+      try {
+        const resp = await agendaService.consultarSimples({
+          formato: 'simples',
+          inicio: inicio.toISOString().slice(0, 16),
+          fim: fim.toISOString().slice(0, 16),
+          filialId,
+        });
+
+        for (const item of resp.data) {
+          const s = item.status.toUpperCase();
+          if (s === 'AGENDADO' || s === 'EM_ANDAMENTO' || s === 'CONCLUIDO') {
+            confirmados++;
+          } else if (s === 'CANCELADO') {
+            cancelados++;
+          } else {
+            pendentes++;
+          }
+        }
+      } catch {
+        // Mês sem dados ou erro de rede — contagem zerada.
+      }
+
+      const total = confirmados + pendentes + cancelados;
+      resultados.push({
+        mes: m + 1,
+        nome: nomesMeses[m]!,
+        confirmados,
+        pendentes,
+        cancelados,
+        total,
+      });
+    }
+
+    return resultados;
   },
 
-  async listarAgendamentosSemana(_dataInicio: Date, _dataFim: Date): Promise<AgendamentoSemana[]> {
-    await delay(600);
+  /**
+   * Lista os agendamentos da semana via API real.
+   *
+   * <p>Consome `GET /api/v1/agenda?formato=simples` com a primeira filial ativa
+   * e mapeia os itens para `AgendamentoSemana`.</p>
+   */
+  async listarAgendamentosSemana(
+    dataInicio: Date,
+    dataFim: Date,
+  ): Promise<AgendamentoSemana[]> {
+    let filialId = '';
+    try {
+      const filiais = await filialService.listar();
+      filialId = filiais.itens?.[0]?.id ?? '';
+    } catch {
+      return [];
+    }
+
+    if (!filialId) return [];
+
+    try {
+      const resp = await agendaService.consultarSimples({
+        formato: 'simples',
+        inicio: dataInicio.toISOString().slice(0, 16),
+        fim: dataFim.toISOString().slice(0, 16),
+        filialId,
+      });
+
+      return resp.data.map((item: AgendaItemSimples) => ({
+        id: item.agendamentoId,
+        titulo: item.titulo,
+        cliente: item.clienteNome,
+        inicio: item.inicio,
+        fim: item.fim,
+        status: item.status.toLowerCase() as AgendamentoSemana['status'],
+      }));
+    } catch {
+      return [];
+    }
+  },
+
+  /**
+   * Busca responsáveis vinculados ao cliente (RF024).
+   *
+   * <p>Não existe endpoint GET dedicado; busca via detalhe do cliente que pode
+   * incluir responsáveis, ou retorna lista vazia para que a UI ofereça criação.</p>
+   */
+  async buscarResponsaveisPorCliente(_clienteId: string): Promise<ResponsavelResumido[]> {
+    // O backend não expõe GET /api/v1/clientes/{id}/responsaveis.
+    // Retorna lista vazia — a UI oferece a criação inline.
     return [];
+  },
+
+  /**
+   * Cria um responsável vinculado ao cliente — `POST /api/v1/clientes/{clienteId}/responsaveis`.
+   *
+   * <p>Usado pelo wizard de agendamento quando o cliente não possui responsável
+   * cadastrado. O responsável é obrigatório (RF024).</p>
+   */
+  async criarResponsavel(
+    clienteId: string,
+    dados: { nome: string; documento: string; grauVinculo: string },
+  ): Promise<ResponsavelResumido> {
+    const { data } = await api.post<{ id: string; nome: string }>(
+      `/api/v1/clientes/${clienteId}/responsaveis`,
+      dados,
+    );
+    return { id: data.id, nome: data.nome ?? dados.nome };
   },
 
   async cancelar(id: string, motivoCancelamento: string): Promise<CancelarAgendamentoResponse> {

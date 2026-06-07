@@ -16,6 +16,11 @@ export interface VeiculoResumido {
   ano?: number;
 }
 
+export interface ResponsavelResumido {
+  id: string;
+  nome: string;
+}
+
 export interface ServicoAtivo {
   id: string;
   nome: string;
@@ -29,6 +34,7 @@ export interface AgendamentoWizardState {
   filialNome: string;
   cliente: ClienteResumido | null;
   veiculo: VeiculoResumido | null;
+  responsavel: ResponsavelResumido | null;
   dataAgendamento: string;
   horaInicio: string;
   servicos: ServicoAtivo[];
@@ -38,8 +44,8 @@ export interface CriarAgendamentoPayload {
   clienteId: string;
   veiculoId: string;
   filialId: string;
-  /** Opcional (RF024) — omitido enquanto não há seleção de responsável no fluxo. */
-  responsavelId?: string | null;
+  /** Obrigatório (RF024) — responsável vinculado ao cliente. */
+  responsavelId: string;
   inicio: string;
   servicoIds: string[];
   observacoes?: string;

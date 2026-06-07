@@ -8,7 +8,7 @@ import { agendamentoService } from '@/services/agendamentoService';
 
 import { SeletorFilial } from './SeletorFilial';
 
-import type { ClienteResumido, VeiculoResumido } from '@/types/agendamento';
+import type { ClienteResumido, ResponsavelResumido, VeiculoResumido } from '@/types/agendamento';
 import type { FilialResumo } from '@/types/filial';
 
 function formatarDoc(cpf?: string, cnpj?: string): string {
@@ -42,6 +42,7 @@ interface ClienteVeiculoStepProps {
   horaInicio: string;
   onClienteChange: (cliente: ClienteResumido | null) => void;
   onVeiculoChange: (veiculo: VeiculoResumido | null) => void;
+  onResponsavelChange: (responsavel: ResponsavelResumido | null) => void;
   onDataChange: (data: string) => void;
   onHoraChange: (hora: string) => void;
   onNext: () => void;
@@ -60,6 +61,7 @@ export function ClienteVeiculoStep({
   horaInicio,
   onClienteChange,
   onVeiculoChange,
+  onResponsavelChange,
   onDataChange,
   onHoraChange,
   onNext,
@@ -76,6 +78,13 @@ export function ClienteVeiculoStep({
   const [erroVeiculos, setErroVeiculos] = useState<string | null>(null);
 
   const [tentouAvancar, setTentouAvancar] = useState(false);
+
+  // Responsável (RF024) — criação inline
+  const [responsavelNome, setResponsavelNome] = useState('');
+  const [responsavelDocumento, setResponsavelDocumento] = useState('');
+  const [criandoResponsavel, setCriandoResponsavel] = useState(false);
+  const [erroResponsavel, setErroResponsavel] = useState<string | null>(null);
+  const [responsavelCriado, setResponsavelCriado] = useState<ResponsavelResumido | null>(null);
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -133,6 +142,22 @@ export function ClienteVeiculoStep({
     };
   }, [cliente]);
 
+  // Ao selecionar um cliente, prepara o responsável com dados do próprio cliente.
+  useEffect(() => {
+    if (cliente) {
+      setResponsavelNome(cliente.nome);
+      setResponsavelDocumento(cliente.cpf ?? cliente.cnpj ?? '');
+      setResponsavelCriado(null);
+      onResponsavelChange(null);
+    } else {
+      setResponsavelNome('');
+      setResponsavelDocumento('');
+      setResponsavelCriado(null);
+      onResponsavelChange(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cliente]);
+
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -157,9 +182,13 @@ export function ClienteVeiculoStep({
   const handleClearCliente = useCallback(() => {
     onClienteChange(null);
     onVeiculoChange(null);
+    onResponsavelChange(null);
     setVeiculos([]);
     setBusca('');
-  }, [onClienteChange, onVeiculoChange]);
+    setResponsavelCriado(null);
+    setResponsavelNome('');
+    setResponsavelDocumento('');
+  }, [onClienteChange, onVeiculoChange, onResponsavelChange]);
 
   const handleSelectVeiculo = useCallback(
     (v: VeiculoResumido) => {
@@ -205,14 +234,39 @@ export function ClienteVeiculoStep({
   const isDataValida = !!dataAgendamento && !isDomingo;
   const isHoraValida = !!horaInicio && !erroHora;
   const isFilialValida = !!filialId;
-  const isStepValid = isFilialValida && !!cliente && !!veiculo && isDataValida && isHoraValida;
+  const isStepValid = isFilialValida && !!cliente && !!veiculo && !!responsavelCriado && isDataValida && isHoraValida;
 
   const handleNext = useCallback(() => {
     setTentouAvancar(true);
+
+    // Auto-criar responsável se ainda não criado
+    if (cliente && !responsavelCriado && responsavelNome.trim() && responsavelDocumento.trim()) {
+      setCriandoResponsavel(true);
+      setErroResponsavel(null);
+      agendamentoService
+        .criarResponsavel(cliente.id, {
+          nome: responsavelNome.trim(),
+          documento: responsavelDocumento.replace(/\D/g, ''),
+          grauVinculo: 'RESPONSAVEL_FINANCEIRO',
+        })
+        .then((resp) => {
+          setResponsavelCriado(resp);
+          onResponsavelChange(resp);
+          if (isFilialValida && !!veiculo && isDataValida && isHoraValida) {
+            onNext();
+          }
+        })
+        .catch(() => {
+          setErroResponsavel('Não foi possível cadastrar o responsável. Tente novamente.');
+        })
+        .finally(() => setCriandoResponsavel(false));
+      return;
+    }
+
     if (isStepValid) {
       onNext();
     }
-  }, [isStepValid, onNext]);
+  }, [isStepValid, onNext, cliente, responsavelCriado, responsavelNome, responsavelDocumento, onResponsavelChange, isFilialValida, veiculo, isDataValida, isHoraValida]);
 
   return (
     <div>
@@ -409,6 +463,77 @@ export function ClienteVeiculoStep({
           )}
         </div>
 
+        {/* Responsável (RF024) */}
+        {cliente && (
+          <div className="space-y-1.5">
+            <Label className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">
+              RESPONSÁVEL <span className="text-red-500">*</span>
+            </Label>
+
+            {responsavelCriado ? (
+              <div className="flex items-center gap-3 rounded-xl border border-emerald-500/30 bg-emerald-950/20 px-4 py-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-600/10">
+                  <User className="h-4 w-4 text-emerald-500" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-zinc-100">{responsavelCriado.nome}</p>
+                  <p className="text-xs text-emerald-400">Responsável vinculado</p>
+                </div>
+                <svg className="h-5 w-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+            ) : (
+              <div className="space-y-3 rounded-xl border border-zinc-700/60 bg-zinc-900/50 p-4">
+                <p className="text-xs text-zinc-400">
+                  Informe os dados do responsável pelo agendamento.
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="resp-nome" className="text-[10px] font-bold tracking-[0.15em] text-zinc-500">
+                      NOME
+                    </Label>
+                    <Input
+                      id="resp-nome"
+                      type="text"
+                      value={responsavelNome}
+                      onChange={(e) => setResponsavelNome(e.target.value)}
+                      placeholder="Nome do responsável"
+                      className="h-9 rounded-lg border-zinc-700/60 bg-zinc-900/50 text-sm text-zinc-200 placeholder:text-zinc-600"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="resp-doc" className="text-[10px] font-bold tracking-[0.15em] text-zinc-500">
+                      CPF/CNPJ
+                    </Label>
+                    <Input
+                      id="resp-doc"
+                      type="text"
+                      value={responsavelDocumento}
+                      onChange={(e) => setResponsavelDocumento(e.target.value)}
+                      placeholder="Documento"
+                      className="h-9 rounded-lg border-zinc-700/60 bg-zinc-900/50 text-sm text-zinc-200 placeholder:text-zinc-600"
+                    />
+                  </div>
+                </div>
+                {erroResponsavel && (
+                  <p className="flex items-center gap-1.5 text-xs text-red-500">
+                    <AlertCircle className="h-3.5 w-3.5" />
+                    {erroResponsavel}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {tentouAvancar && !responsavelCriado && (
+              <p className="flex items-center gap-1.5 text-xs text-red-500">
+                <AlertCircle className="h-3.5 w-3.5" />
+                O responsável é obrigatório para prosseguir.
+              </p>
+            )}
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <Label
@@ -500,11 +625,20 @@ export function ClienteVeiculoStep({
         <Button
           type="button"
           onClick={handleNext}
-          disabled={tentouAvancar && !isStepValid}
+          disabled={(tentouAvancar && !isStepValid) || criandoResponsavel}
           className="h-10 rounded-full bg-red-600 px-6 text-sm font-semibold text-white shadow-lg shadow-red-600/25 hover:bg-red-700 disabled:opacity-50"
         >
-          Próximo
-          <ChevronRight className="ml-1 h-4 w-4" />
+          {criandoResponsavel ? (
+            <>
+              <RefreshCw className="mr-1 h-4 w-4 animate-spin" />
+              Validando…
+            </>
+          ) : (
+            <>
+              Próximo
+              <ChevronRight className="ml-1 h-4 w-4" />
+            </>
+          )}
         </Button>
       </div>
     </div>
