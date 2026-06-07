@@ -83,7 +83,7 @@ namespace CarWash.Infrastructure.Persistence.Migrations
                         .HasColumnType("text")
                         .HasColumnName("observacoes");
 
-                    b.Property<Guid?>("ResponsavelId")
+                    b.Property<Guid>("ResponsavelId")
                         .HasColumnType("uuid")
                         .HasColumnName("responsavel_id");
 
@@ -1465,10 +1465,11 @@ namespace CarWash.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_ag_filial");
 
-                    b.HasOne("CarWash.Domain.Entities.Filiado", null)
+                    b.HasOne("CarWash.Domain.Entities.Responsavel", null)
                         .WithMany()
                         .HasForeignKey("ResponsavelId")
                         .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
                         .HasConstraintName("fk_ag_responsavel");
 
                     b.HasOne("CarWash.Domain.Entities.Veiculo", null)

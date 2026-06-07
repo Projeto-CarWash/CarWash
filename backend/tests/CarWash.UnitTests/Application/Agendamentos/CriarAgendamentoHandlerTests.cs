@@ -34,6 +34,8 @@ public class CriarAgendamentoHandlerTests
             .Returns(new VeiculoResumoSnapshot(VeiculoId, ClienteId, "ABC1D23", "Civic", "Preto", true));
         _catalogo.ObterClienteResumoAsync(ClienteId, Arg.Any<CancellationToken>())
             .Returns(new ClienteResumoSnapshot(ClienteId, "Cliente Teste", "12345678901", true));
+        _catalogo.ObterResponsavelResumoAsync(ResponsavelId, Arg.Any<CancellationToken>())
+            .Returns(new ResponsavelResumoSnapshot(ResponsavelId, ClienteId, "João", "12345678901", "Irmão", true));
         _catalogo.ObterServicosAsync(Arg.Any<IReadOnlyCollection<Guid>>(), Arg.Any<CancellationToken>())
             .Returns(new List<ServicoSnapshot>
             {
@@ -212,29 +214,25 @@ public class CriarAgendamentoHandlerTests
     }
 
     [Fact]
-    public async Task Responsavel_de_outro_titular_lanca_ValidationException_CA009()
+    public async Task Responsavel_de_outro_titular_lanca_ConflictException_CA009()
     {
-        _catalogo.ObterResponsavelAsync(ResponsavelId, Arg.Any<CancellationToken>())
-            .Returns(new ResponsavelSnapshot(ResponsavelId, Guid.NewGuid(), true));
+        _catalogo.ObterResponsavelResumoAsync(ResponsavelId, Arg.Any<CancellationToken>())
+            .Returns(new ResponsavelResumoSnapshot(ResponsavelId, Guid.NewGuid(), "João", "12345678901", "Irmão", true));
 
         var handler = NovoHandler();
-        var act = () => handler.HandleAsync(
-            NovoComando() with { ResponsavelId = ResponsavelId },
-            CancellationToken.None);
+        var act = () => handler.HandleAsync(NovoComando(), CancellationToken.None);
 
-        await act.Should().ThrowAsync<ValidationException>();
+        await act.Should().ThrowAsync<ConflictException>();
     }
 
     [Fact]
     public async Task Responsavel_inativo_lanca_RecursoInativo()
     {
-        _catalogo.ObterResponsavelAsync(ResponsavelId, Arg.Any<CancellationToken>())
-            .Returns(new ResponsavelSnapshot(ResponsavelId, ClienteId, false));
+        _catalogo.ObterResponsavelResumoAsync(ResponsavelId, Arg.Any<CancellationToken>())
+            .Returns(new ResponsavelResumoSnapshot(ResponsavelId, ClienteId, "João", "12345678901", "Irmão", false));
 
         var handler = NovoHandler();
-        var act = () => handler.HandleAsync(
-            NovoComando() with { ResponsavelId = ResponsavelId },
-            CancellationToken.None);
+        var act = () => handler.HandleAsync(NovoComando(), CancellationToken.None);
 
         await act.Should().ThrowAsync<RecursoInativoException>();
     }
@@ -242,13 +240,9 @@ public class CriarAgendamentoHandlerTests
     [Fact]
     public async Task Responsavel_do_titular_persiste_no_agendamento_CA009()
     {
-        _catalogo.ObterResponsavelAsync(ResponsavelId, Arg.Any<CancellationToken>())
-            .Returns(new ResponsavelSnapshot(ResponsavelId, ClienteId, true));
-
+        // Already set up in constructor with matching ClienteId.
         var handler = NovoHandler();
-        var resposta = await handler.HandleAsync(
-            NovoComando() with { ResponsavelId = ResponsavelId },
-            CancellationToken.None);
+        var resposta = await handler.HandleAsync(NovoComando(), CancellationToken.None);
 
         resposta.ResponsavelId.Should().Be(ResponsavelId);
         await _agendamentos.Received(1).AdicionarAsync(
@@ -327,13 +321,11 @@ public class CriarAgendamentoHandlerTests
     [Fact]
     public async Task Responsavel_inexistente_lanca_NotFound()
     {
-        _catalogo.ObterResponsavelAsync(ResponsavelId, Arg.Any<CancellationToken>())
-            .Returns((ResponsavelSnapshot?)null);
+        _catalogo.ObterResponsavelResumoAsync(ResponsavelId, Arg.Any<CancellationToken>())
+            .Returns((ResponsavelResumoSnapshot?)null);
 
         var handler = NovoHandler();
-        var act = () => handler.HandleAsync(
-            NovoComando() with { ResponsavelId = ResponsavelId },
-            CancellationToken.None);
+        var act = () => handler.HandleAsync(NovoComando(), CancellationToken.None);
 
         await act.Should().ThrowAsync<NotFoundException>();
     }
@@ -481,7 +473,7 @@ public class CriarAgendamentoHandlerTests
         FilialId: FilialId,
         ClienteId: ClienteId,
         VeiculoId: VeiculoId,
-        ResponsavelId: null,
+        ResponsavelId: ResponsavelId,
         Inicio: DateTime.UtcNow.AddDays(1),
         ServicoIds: new[] { ServicoA, ServicoB },
         Observacoes: "Cliente vai aguardar.",

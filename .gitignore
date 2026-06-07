@@ -49,3 +49,12 @@ mintty.*.png
 
 # Claude Code local runtime artifacts
 .claude/scheduled_tasks.lock
+
+# Orquestração — arquivos locais que NÃO devem subir
+cards/
+prompt.md
+bI9HqGGU*.json
+bl9HqGGu*.json
+orchestration-log.md
+PULL_REQUEST_DESCRIPTION.md
+.claude/worktrees/

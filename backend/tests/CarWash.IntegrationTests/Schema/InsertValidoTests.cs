@@ -77,6 +77,15 @@ public class InsertValidoTests : IAsyncLifetime
             cpf: new Cpf(GerarCpfValido()));
         _db.Filiados.Add(filiado);
 
+        // Responsavel (RF024 — FK do Agendamento aponta para responsaveis)
+        var responsavel = Responsavel.Criar(
+            id: Guid.NewGuid(),
+            clienteTitularId: cliente.Id,
+            nome: "Responsavel Teste",
+            documento: GerarCpfValido(),
+            grauVinculo: GrauVinculo.ResponsavelFinanceiro);
+        _db.Responsaveis.Add(responsavel);
+
         // Veiculo
         var veiculo = Veiculo.Criar(
             id: Guid.NewGuid(),
@@ -114,7 +123,7 @@ public class InsertValidoTests : IAsyncLifetime
             criadoPor: usuario.Id,
             inicio: inicio,
             fim: inicio.AddHours(1),
-            responsavelId: filiado.Id,
+            responsavelId: responsavel.Id,
             observacoes: "teste");
         _db.Agendamentos.Add(ag);
         await _db.SaveChangesAsync().ConfigureAwait(false);

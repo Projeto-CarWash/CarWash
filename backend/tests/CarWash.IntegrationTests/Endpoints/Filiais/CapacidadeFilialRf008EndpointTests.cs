@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using CarWash.Domain.Entities;
+using CarWash.Domain.Enums;
 using CarWash.Domain.ValueObjects;
 using CarWash.Infrastructure.Persistence;
 using CarWash.IntegrationTests.Collections;
@@ -110,7 +111,7 @@ public class CapacidadeFilialRf008EndpointTests : IAsyncDisposable
     private async Task<HttpResponseMessage> Agendar(
         HttpClient client,
         Guid filialId,
-        (Guid ClienteId, Guid VeiculoId) v,
+        (Guid ClienteId, Guid VeiculoId, Guid ResponsavelId) v,
         DateTime inicio,
         IReadOnlyList<Guid> servicoIds) =>
         await client.PostAsJsonAsync(RotaAgendamentos, new
@@ -118,6 +119,7 @@ public class CapacidadeFilialRf008EndpointTests : IAsyncDisposable
             filialId,
             clienteId = v.ClienteId,
             veiculoId = v.VeiculoId,
+            responsavelId = v.ResponsavelId,
             inicio,
             servicoIds = new[] { servicoIds[0] },
         }, _json);
@@ -146,7 +148,7 @@ public class CapacidadeFilialRf008EndpointTests : IAsyncDisposable
             .ToListAsync();
     }
 
-    private async Task<(Guid ClienteId, Guid VeiculoId)> SemearClienteVeiculoAsync()
+    private async Task<(Guid ClienteId, Guid VeiculoId, Guid ResponsavelId)> SemearClienteVeiculoAsync()
     {
         await using var db = CarWashDbContextFactoryForTests.Create(_fixture);
         var cliente = ClienteValido();
@@ -157,11 +159,18 @@ public class CapacidadeFilialRf008EndpointTests : IAsyncDisposable
             modelo: "Civic",
             fabricante: "Honda",
             cor: "Preto");
+        var responsavel = Responsavel.Criar(
+            id: Guid.NewGuid(),
+            clienteTitularId: cliente.Id,
+            nome: "Responsavel Teste",
+            documento: GerarCpfValido(),
+            grauVinculo: GrauVinculo.ResponsavelFinanceiro);
 
         db.Clientes.Add(cliente);
         db.Veiculos.Add(veiculo);
+        db.Responsaveis.Add(responsavel);
         await db.SaveChangesAsync();
-        return (cliente.Id, veiculo.Id);
+        return (cliente.Id, veiculo.Id, responsavel.Id);
     }
 
     private static Uri RotaCelulas(Guid id) =>
