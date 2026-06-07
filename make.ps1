@@ -8,7 +8,8 @@
 
 .PARAMETER Target
   Alvo a executar (help, up, down, restart, logs, ps, build, pull, migrate,
-  shell-back, shell-front, shell-db, backup, smoke, certs-dev, clean).
+  shell-back, shell-front, shell-db, backup, smoke, certs-dev, clean,
+  test, test-unit, test-back, test-front, test-e2e, clean-test).
 
 .PARAMETER Env
   Ambiente: dev | hom | prod (default: dev).
@@ -40,9 +41,19 @@ $EnvFileCandidate = ".env.$Env"
 $EnvFile = if (Test-Path $EnvFileCandidate) { $EnvFileCandidate } else { '.env' }
 $ComposeEnvFile = if (Test-Path $EnvFile) { @('--env-file', $EnvFile) } else { @() }
 
+# Stack de testes (CA011) — projeto isolado, nunca colide com a stack de dev.
+$TestProject = 'carwash-test'
+$TestCompose = @('-p', $TestProject, '-f', 'docker-compose.test.yml')
+
 function Invoke-Compose {
     param([string[]]$ComposeArgs)
     & docker compose @ComposeFiles @ComposeEnvFile @ComposeArgs
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+}
+
+function Invoke-TestCompose {
+    param([string[]]$ComposeArgs)
+    & docker compose @TestCompose @ComposeArgs
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
 
@@ -62,6 +73,14 @@ function Show-Help {
     Write-Host "  .\make.ps1 certs-dev                          gera cert auto-assinado para hom local"
     Write-Host "  .\make.ps1 shell-back|shell-front|shell-db    abre shell no container"
     Write-Host "  .\make.ps1 clean     -Env ...                 remove containers, volumes e redes (CUIDADO)"
+    Write-Host ""
+    Write-Host "  --- Testes dockerizados (CA011) ---"
+    Write-Host "  .\make.ps1 test                               suite completa (unit back+front + e2e)"
+    Write-Host "  .\make.ps1 test-unit                          unitarios back e front (containers)"
+    Write-Host "  .\make.ps1 test-back                          backend: unit + integration (Testcontainers)"
+    Write-Host "  .\make.ps1 test-front                         frontend: Vitest + cobertura"
+    Write-Host "  .\make.ps1 test-e2e                           sobe a stack e roda Playwright pelo proxy"
+    Write-Host "  .\make.ps1 clean-test                         derruba a stack de teste e remove volumes"
 }
 
 switch ($Target) {
@@ -135,6 +154,35 @@ switch ($Target) {
     }
 
     'clean' { Invoke-Compose 'down', '-v', '--remove-orphans' }
+
+    # --- Testes dockerizados (CA011) ---
+    'test-back' {
+        Invoke-TestCompose 'build', 'backend-tests'
+        Invoke-TestCompose 'run', '--rm', 'backend-tests'
+    }
+    'test-front' {
+        Invoke-TestCompose 'build', 'frontend-tests'
+        Invoke-TestCompose 'run', '--rm', 'frontend-tests'
+    }
+    'test-unit' {
+        & $PSCommandPath 'test-back'; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        & $PSCommandPath 'test-front'; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    }
+    'test-e2e' {
+        & docker compose @TestCompose --profile e2e build
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        & docker compose @TestCompose --profile e2e run --rm e2e
+        $e2eStatus = $LASTEXITCODE
+        & docker compose @TestCompose --profile e2e down -v --remove-orphans
+        if ($e2eStatus -ne 0) { exit $e2eStatus }
+    }
+    'test' {
+        & $PSCommandPath 'test-unit'; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        & $PSCommandPath 'test-e2e'; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    }
+    'clean-test' {
+        & docker compose @TestCompose --profile e2e --profile unit down -v --remove-orphans
+    }
 
     default {
         Write-Error "Alvo desconhecido: '$Target'. Rode '.\make.ps1 help' para a lista."
