@@ -16,6 +16,11 @@ const baseURL = process.env.E2E_BASE_URL ?? 'http://localhost';
 
 export default defineConfig({
   testDir: './e2e',
+  // Suítes de QA manual (lote de bugs front e RF008) rodam contra uma stack já no ar
+  // via seus próprios configs (e2e/qa-lote/qa-lote.config.ts, e2e/qa-rf008/qa-rf008.config.ts).
+  // Não fazem parte do E2E padrão do CI (make test-e2e) — ignoradas aqui para não
+  // serem coletadas pelo testDir.
+  testIgnore: ['**/qa-lote/**', '**/qa-rf008/**'],
   // Sem retries locais para não mascarar flakiness; 1 retry no CI cobre flutuação
   // de rede do ambiente efêmero — o trace do retry expõe a causa real.
   retries: process.env.CI ? 1 : 0,
