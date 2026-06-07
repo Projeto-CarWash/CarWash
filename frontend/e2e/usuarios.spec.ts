@@ -102,9 +102,11 @@ test.describe('Usuários internos (RF014) — autenticado', () => {
     await expect(page).toHaveURL(/\/dashboard$/);
 
     // Navega para a lista e busca pelo e-mail criado: deve aparecer.
+    // `exact: true` evita casar os rótulos sr-only das ações por linha
+    // ("Visualizar/Editar/Inativar <nome>"), que contêm o nome como substring.
     await page.goto('/usuarios');
     await page.getByPlaceholder(/buscar por nome/i).fill(NOVO_EMAIL);
-    await expect(page.getByText(NOVO_NOME)).toBeVisible();
+    await expect(page.getByText(NOVO_NOME, { exact: true })).toBeVisible();
     await expect(page.getByText(NOVO_EMAIL)).toBeVisible();
   });
 
