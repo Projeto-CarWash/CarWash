@@ -131,6 +131,7 @@ services:
       postgres:
         condition: service_healthy
     environment:
+      <<: *test-secrets
       ConnectionStrings__Default: 'Host=postgres;Port=5432;Database=carwash;Username=carwash_owner;Password=test-only-password'
       CARWASH_SEED_ADMIN_PASSWORD: TestAdmin!2026
     networks:
