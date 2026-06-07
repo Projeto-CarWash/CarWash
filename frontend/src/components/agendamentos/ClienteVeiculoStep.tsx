@@ -80,8 +80,8 @@ export function ClienteVeiculoStep({
   const [tentouAvancar, setTentouAvancar] = useState(false);
 
   // Responsável (RF024) — criação inline
-  const [responsavelNome, setResponsavelNome] = useState('');
-  const [responsavelDocumento, setResponsavelDocumento] = useState('');
+  const [responsavelNome, setResponsavelNome] = useState(cliente?.nome ?? '');
+  const [responsavelDocumento, setResponsavelDocumento] = useState(cliente?.cpf ?? cliente?.cnpj ?? '');
   const [criandoResponsavel, setCriandoResponsavel] = useState(false);
   const [erroResponsavel, setErroResponsavel] = useState<string | null>(null);
   const [responsavelCriado, setResponsavelCriado] = useState<ResponsavelResumido | null>(null);
@@ -89,14 +89,20 @@ export function ClienteVeiculoStep({
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
+    if (!busca.trim()) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setResultados([]);
+      return;
+    }
+
+    setBuscando(true);
     debounceRef.current = setTimeout(() => {
-      setBuscando(true);
       agendamentoService
         .buscarClientes(busca)
-        .then((r) => {
-          setResultados(r);
+        .then((res) => {
+          setResultados(res);
         })
-        .catch((error) => {
+        .catch((error: unknown) => {
           console.error('Erro ao buscar clientes:', error);
           setResultados([]);
         })
@@ -142,22 +148,6 @@ export function ClienteVeiculoStep({
     };
   }, [cliente]);
 
-  // Ao selecionar um cliente, prepara o responsável com dados do próprio cliente.
-  useEffect(() => {
-    if (cliente) {
-      setResponsavelNome(cliente.nome);
-      setResponsavelDocumento(cliente.cpf ?? cliente.cnpj ?? '');
-      setResponsavelCriado(null);
-      onResponsavelChange(null);
-    } else {
-      setResponsavelNome('');
-      setResponsavelDocumento('');
-      setResponsavelCriado(null);
-      onResponsavelChange(null);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cliente]);
-
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -172,11 +162,15 @@ export function ClienteVeiculoStep({
     (c: ClienteResumido) => {
       onClienteChange(c);
       onVeiculoChange(null);
+      onResponsavelChange(null);
+      setResponsavelNome(c.nome);
+      setResponsavelDocumento(c.cpf ?? c.cnpj ?? '');
+      setResponsavelCriado(null);
       setBusca('');
       setShowDropdown(false);
       setTentouAvancar(false);
     },
-    [onClienteChange, onVeiculoChange],
+    [onClienteChange, onVeiculoChange, onResponsavelChange],
   );
 
   const handleClearCliente = useCallback(() => {

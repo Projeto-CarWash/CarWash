@@ -1,7 +1,8 @@
-import api from './api';
 import { agendaService } from './agendaService';
+import api from './api';
 import { filialService } from './filialService';
 
+import type { AgendaItemSimples } from '@/types/agenda';
 import type {
   AgendamentoResponse,
   AgendamentoSemana,
@@ -18,7 +19,6 @@ import type {
   CancelarAgendamentoResponse,
 } from '@/types/agendamento';
 
-import type { AgendaItemSimples } from '@/types/agenda';
 
 export const agendamentoService = {
   async buscarClientes(busca: string): Promise<ClienteResumido[]> {
@@ -247,10 +247,10 @@ export const agendamentoService = {
    * <p>Não existe endpoint GET dedicado; busca via detalhe do cliente que pode
    * incluir responsáveis, ou retorna lista vazia para que a UI ofereça criação.</p>
    */
-  async buscarResponsaveisPorCliente(_clienteId: string): Promise<ResponsavelResumido[]> {
+  buscarResponsaveisPorCliente(_clienteId: string): Promise<ResponsavelResumido[]> {
     // O backend não expõe GET /api/v1/clientes/{id}/responsaveis.
     // Retorna lista vazia — a UI oferece a criação inline.
-    return [];
+    return Promise.resolve([]);
   },
 
   /**

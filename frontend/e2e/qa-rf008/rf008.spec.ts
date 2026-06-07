@@ -13,8 +13,8 @@ import {
   slotFuturoIso,
 } from './helpers-rf008';
 
-import type { APIRequestContext, BrowserContext, Page } from '@playwright/test';
 import type { SessaoApi } from './helpers-rf008';
+import type { APIRequestContext, BrowserContext, Page } from '@playwright/test';
 
 /**
  * Lote QA RF008 — agendamentos simultâneos no mesmo horário (hom, http://localhost).
@@ -97,7 +97,7 @@ let seedPlacas: string[] = [];
 
 test('SEED - 4 agendamentos simultaneos no mesmo slot via API (base para RF008.1)', async () => {
   test.setTimeout(120_000);
-  seedSlotIso = slotFuturoIso(30, 13);
+  seedSlotIso = slotFuturoIso(30);
   const r = await semearSimultaneos(api, sessao, 4, seedSlotIso);
   seedPlacas = r.placas;
   expect(seedPlacas).toHaveLength(4);
@@ -162,7 +162,7 @@ test('RF008.2 - frontend NAO bloqueia por "horario ocupado" (sem regra local de 
   // A NovoAgendamentoPage não tem verificação local de "horário ocupado"; o
   // conflito é delegado à API. Comprovação de comportamento: 2 agendamentos no
   // MESMO slot, veículos distintos, ambos 201 (não há bloqueio prévio).
-  const inicio = slotFuturoIso(31, 9);
+  const inicio = slotFuturoIso(31);
   const clienteId = await criarCliente(api, sessao);
   const responsavelId = await criarResponsavel(api, sessao, clienteId);
   const v1 = await criarVeiculo(api, sessao, clienteId);
@@ -199,7 +199,7 @@ test('RF008.2 - UI Novo Agendamento NAO conclui 201 (veiculos MOCKADOS) [FALHA E
 // CARD 04 — RF008.3: tratamento de conflito real (409)
 // ───────────────────────────────────────────────────────────────────────────
 test('RF008.3 - API retorna 409 de VEICULO (mesmo veiculo, janela sobreposta) com title de negocio', async () => {
-  const inicio = slotFuturoIso(32, 10);
+  const inicio = slotFuturoIso(32);
   const clienteId = await criarCliente(api, sessao);
   const responsavelId = await criarResponsavel(api, sessao, clienteId);
   const veiculoId = await criarVeiculo(api, sessao, clienteId);
@@ -212,7 +212,7 @@ test('RF008.3 - API retorna 409 de VEICULO (mesmo veiculo, janela sobreposta) co
 
 test('RF008.3 - API retorna 409 de CAPACIDADE (excede celulas ativas) com title de negocio', async () => {
   test.setTimeout(120_000);
-  const inicio = slotFuturoIso(33, 8);
+  const inicio = slotFuturoIso(33);
   await semearSimultaneos(api, sessao, 4, inicio);
   const clienteId = await criarCliente(api, sessao);
   const responsavelId = await criarResponsavel(api, sessao, clienteId);
@@ -251,7 +251,7 @@ test('RF008.3 - mapeamento do FRONT (NovoAgendamentoPage) traduz 409 real para m
 test('RF008 - ponta a ponta no BACKEND: simultaneos criados, capacidade respeitada e 409 de negocio', async () => {
   test.setTimeout(120_000);
   // (1) Sem conflito: 2 agendamentos no mesmo slot (veículos distintos) → 201/201.
-  const inicio = slotFuturoIso(34, 11);
+  const inicio = slotFuturoIso(34);
   const clienteId = await criarCliente(api, sessao);
   const responsavelId = await criarResponsavel(api, sessao, clienteId);
   const v1 = await criarVeiculo(api, sessao, clienteId);
