@@ -77,9 +77,11 @@ test.describe('Usuários internos (RF014) — autenticado', () => {
     await expect(page.getByRole('heading', { name: 'Usuários internos' })).toBeVisible();
 
     // Busca pelo e-mail do admin semeado para confirmar que a lista vem da API.
+    // O nome é texto simples (não há mais Link); a presença das ações por linha
+    // (botões Visualizar/Editar — padrão #173) confirma que a linha renderizou.
     await page.getByPlaceholder(/buscar por nome/i).fill(ADMIN_EMAIL);
-    await expect(page.getByRole('link', { name: /.+/ }).first()).toBeVisible();
     await expect(page.getByText(ADMIN_EMAIL)).toBeVisible();
+    await expect(page.getByRole('button', { name: /^visualizar /i }).first()).toBeVisible();
   });
 
   test('c. criar usuário com e-mail único redireciona ao dashboard e aparece na lista', async () => {
@@ -102,7 +104,7 @@ test.describe('Usuários internos (RF014) — autenticado', () => {
     // Navega para a lista e busca pelo e-mail criado: deve aparecer.
     await page.goto('/usuarios');
     await page.getByPlaceholder(/buscar por nome/i).fill(NOVO_EMAIL);
-    await expect(page.getByRole('link', { name: NOVO_NOME })).toBeVisible();
+    await expect(page.getByText(NOVO_NOME)).toBeVisible();
     await expect(page.getByText(NOVO_EMAIL)).toBeVisible();
   });
 
@@ -110,7 +112,12 @@ test.describe('Usuários internos (RF014) — autenticado', () => {
     const page = paginaAutenticada!;
     await page.goto('/usuarios');
     await page.getByPlaceholder(/buscar por nome/i).fill(NOVO_EMAIL);
-    await page.getByRole('link', { name: NOVO_NOME }).click();
+    // A navegação para o detalhe agora é pelo botão de ação "Editar" da linha
+    // (o nome deixou de ser Link — padrão #173).
+    await page
+      .getByRole('button', { name: new RegExp(`^editar ${NOVO_NOME}`, 'i') })
+      .first()
+      .click();
 
     await expect(page).toHaveURL(/\/usuarios\/[0-9a-f-]+$/);
     const nome = page.getByLabel('NOME');
@@ -126,26 +133,28 @@ test.describe('Usuários internos (RF014) — autenticado', () => {
     const page = paginaAutenticada!;
     await page.goto('/usuarios');
     await page.getByPlaceholder(/buscar por nome/i).fill(NOVO_EMAIL);
-    // O nome pode ter sido editado pelo cenário anterior; casa pelo prefixo.
+    // O nome pode ter sido editado pelo cenário anterior; abre o detalhe pelo
+    // botão "Editar" da linha (casa pelo prefixo do nome).
     await page
-      .getByRole('link', { name: new RegExp(`^${NOVO_NOME}`) })
+      .getByRole('button', { name: new RegExp(`^editar ${NOVO_NOME}`, 'i') })
       .first()
       .click();
 
     await expect(page).toHaveURL(/\/usuarios\/[0-9a-f-]+$/);
 
-    // Estado inicial: usuário criado vem ATIVO. Inativa.
-    const sw = page.getByRole('switch', { name: 'Inativar usuário' });
-    await expect(sw).toBeVisible();
-    await sw.click();
+    // Estado inicial: usuário criado vem ATIVO. O toggle agora é um botão que
+    // abre um modal de confirmação; só após confirmar é que o PATCH ocorre.
+    await page.getByRole('button', { name: /inativar usuário/i }).click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await page.getByRole('button', { name: /confirmar/i }).click();
     await expect(
       page.getByText('Usuário inativado com sucesso. O acesso ao sistema foi bloqueado.'),
     ).toBeVisible();
 
-    // Reativa para deixar o dado num estado conhecido.
-    const swAtivar = page.getByRole('switch', { name: 'Ativar usuário' });
-    await expect(swAtivar).toBeVisible();
-    await swAtivar.click();
+    // Reativa para deixar o dado num estado conhecido (mesmo fluxo via modal).
+    await page.getByRole('button', { name: /ativar usuário/i }).click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await page.getByRole('button', { name: /confirmar/i }).click();
     await expect(
       page.getByText('Usuário ativado com sucesso. O acesso ao sistema foi restaurado.'),
     ).toBeVisible();

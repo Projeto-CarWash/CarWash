@@ -151,6 +151,10 @@ services:
       <<: *test-secrets
       ASPNETCORE_ENVIRONMENT: Staging
       ConnectionStrings__Default: 'Host=postgres;Port=5432;Database=carwash;Username=carwash_owner;Password=test-only-password'
+      # A suíte E2E (login + usuários, chromium + firefox, com 1 retry) faz mais de
+      # 10 logins/min pelo MESMO IP do proxy. Sobe o limite só nesta stack de teste
+      # para não gerar 429 (falso-negativo). Produção mantém o default de 10/min.
+      RateLimiting__AuthLoginPermitLimit: '200'
     networks:
       - test-internal
       - test-public
