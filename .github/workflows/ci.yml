@@ -142,9 +142,9 @@ jobs:
           tree = ET.parse("TestResults/coverage-report/Cobertura.xml")
           root = tree.getroot()
           # Gates calibrados na cobertura REAL medida (merge UnitTests+IntegrationTests):
-          # Domain ~74.7% e Application ~76.3% — mínimos abaixo disso com folga, para
+          # Domain 74.5% e Application 87.4% — mínimos abaixo disso com folga, para
           # serem guardas de regressão, não vermelho permanente. Reavalie ao subir.
-          gates = {"CarWash.Domain": 0.70, "CarWash.Application": 0.75}
+          gates = {"CarWash.Domain": 0.70, "CarWash.Application": 0.80}
           rates = {}
           for pkg in root.iter("package"):
               name = pkg.get("name", "")
