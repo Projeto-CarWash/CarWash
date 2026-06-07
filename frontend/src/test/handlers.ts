@@ -116,6 +116,15 @@ const agendaItemDetalhado: AgendaItemDetalhado = {
 
 /** Handlers do "caminho feliz" — listas de apoio e fluxo de confirmação. */
 export const handlersPadrao = [
+  // Auth (RF001): o AuthProvider chama POST /auth/refresh no mount para tentar
+  // restaurar a sessão a partir do cookie httpOnly. O default devolve 401
+  // ("sem sessão") — assim o boot do provider nunca dispara request sem handler
+  // sob `onUnhandledRequest: 'error'`. Testes de sessão restaurada sobrescrevem
+  // este handler via `server.use(...)` para devolver 200 com LoginResponse.
+  http.post('/api/v1/auth/refresh', () =>
+    HttpResponse.json({ title: 'Não autenticado.', status: 401 }, { status: 401 }),
+  ),
+
   http.get('/api/v1/clientes', () =>
     HttpResponse.json({
       itens: [
@@ -142,7 +151,7 @@ export const handlersPadrao = [
           id: IDS.veiculo,
           clienteId: IDS.cliente,
           placa: 'ABC1D23',
-          marca: 'Fiat',
+          fabricante: 'Fiat',
           modelo: 'Uno',
           ativo: true,
         },
@@ -263,6 +272,108 @@ export const handlersPadrao = [
   http.post('/api/v1/agendamentos/confirmar', () =>
     HttpResponse.json(respostaCriacao, { status: 201 }),
   ),
+
+  http.patch('/api/v1/agendamentos/:id/cancelar', async ({ params, request }) => {
+    const body = (await request.json()) as { motivoCancelamento?: string };
+    const id = params.id as string;
+    const motivo = body.motivoCancelamento?.trim() ?? '';
+
+    if (motivo === 'trigger-409') {
+      return HttpResponse.json(
+        {
+          title: 'Conflito de estado inválido para operação.',
+          detail: 'Não é possível cancelar o agendamento.',
+        },
+        { status: 409 },
+      );
+    }
+    if (motivo === 'trigger-403') {
+      return HttpResponse.json({ title: 'Sem permissão.' }, { status: 403 });
+    }
+    if (motivo === 'trigger-401') {
+      return HttpResponse.json({ title: 'Não autenticado.' }, { status: 401 });
+    }
+    if (motivo === 'trigger-404') {
+      return HttpResponse.json({ title: 'Não encontrado.' }, { status: 404 });
+    }
+    if (motivo === 'trigger-500') {
+      return HttpResponse.json({ title: 'Erro interno.' }, { status: 500 });
+    }
+
+    if (motivo.length < 5) {
+      return HttpResponse.json(
+        {
+          title: 'Dados inválidos.',
+          errors: {
+            motivoCancelamento: ['O motivo do cancelamento deve ter pelo menos 5 caracteres.'],
+          },
+        },
+        { status: 400 },
+      );
+    }
+
+    return HttpResponse.json({
+      message: 'Agendamento cancelado com sucesso.',
+      data: {
+        id,
+        status: 'CANCELADO',
+        canceladoEm: new Date().toISOString(),
+        canceladoPor: '00000000-0000-0000-0000-000000000001',
+        motivoCancelamento: motivo,
+      },
+      traceId: 'trace-cancel',
+    });
+  }),
+
+  http.put('/api/v1/agendamentos/:id', async ({ params, request }) => {
+    const body = (await request.json()) as { observacoes?: string | null };
+    const id = params.id as string;
+    const obs = body.observacoes?.trim() ?? '';
+
+    if (obs === 'trigger-409') {
+      return HttpResponse.json(
+        { title: 'O agendamento não permite edição neste status.', detail: 'Status inválido.' },
+        { status: 409 },
+      );
+    }
+    if (obs === 'trigger-403') {
+      return HttpResponse.json({ title: 'Sem permissão.' }, { status: 403 });
+    }
+    if (obs === 'trigger-401') {
+      return HttpResponse.json({ title: 'Não autenticado.' }, { status: 401 });
+    }
+    if (obs === 'trigger-404') {
+      return HttpResponse.json({ title: 'Não encontrado.' }, { status: 404 });
+    }
+    if (obs === 'trigger-500') {
+      return HttpResponse.json({ title: 'Erro interno.' }, { status: 500 });
+    }
+    if (obs === 'trigger-400') {
+      return HttpResponse.json(
+        { title: 'Dados inválidos.', errors: { observacoes: ['Observações inválidas.'] } },
+        { status: 400 },
+      );
+    }
+
+    return HttpResponse.json({
+      id,
+      filialId: IDS.filial,
+      clienteId: IDS.cliente,
+      veiculoId: IDS.veiculo,
+      responsavelId: null,
+      status: 'AGENDADO',
+      inicio: '2099-01-01T14:00:00.000Z',
+      fim: '2099-01-01T15:30:00.000Z',
+      duracaoTotalMin: 90,
+      valorTotal: 150,
+      observacoes: body.observacoes ?? null,
+      versao: 2,
+      itens: [],
+      criadoEm: '2026-05-21T12:00:00.000Z',
+      mensagem: 'Agendamento atualizado com sucesso.',
+      traceId: 'trace-edit-mock',
+    });
+  }),
 ];
 
 /** Fixtures reaproveitáveis em asserções. */

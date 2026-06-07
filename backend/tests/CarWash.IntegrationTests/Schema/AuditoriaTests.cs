@@ -76,10 +76,10 @@ public class AuditoriaTests
         var interceptor = new AuditLogInterceptor(contexto);
         await using var db = CarWashDbContextFactoryForTests.Create(_fixture, interceptor);
 
-        var (filialId, clienteId, veiculoId, criadoPor) = await SemearAsync(db).ConfigureAwait(false);
+        var (filialId, clienteId, veiculoId, criadoPor, responsavelId) = await SemearAsync(db).ConfigureAwait(false);
 
         var inicio = DateTime.UtcNow.AddHours(4);
-        var ag = Agendamento.Criar(Guid.NewGuid(), filialId, clienteId, veiculoId, criadoPor, inicio, inicio.AddHours(1));
+        var ag = Agendamento.Criar(Guid.NewGuid(), filialId, clienteId, veiculoId, criadoPor, inicio, inicio.AddHours(1), responsavelId);
         db.Agendamentos.Add(ag);
         await db.SaveChangesAsync().ConfigureAwait(false);
 
@@ -142,7 +142,7 @@ public class AuditoriaTests
         json.Should().Contain("\"cnpj\":\"***\"");
     }
 
-    private static async Task<(Guid, Guid, Guid, Guid)> SemearAsync(CarWashDbContext db)
+    private static async Task<(Guid FilialId, Guid ClienteId, Guid VeiculoId, Guid CriadoPor, Guid ResponsavelId)> SemearAsync(CarWashDbContext db)
     {
         var filial = Filial.Criar(Guid.NewGuid(), $"FAud{Guid.NewGuid():N}".Substring(0, 30), $"F{Guid.NewGuid():N}"[..10].ToUpperInvariant(), 4);
         var cliente = Cliente.Criar(
@@ -159,6 +159,12 @@ public class AuditoriaTests
             modelo: "X",
             fabricante: "Y",
             cor: "Z");
+        var responsavel = Responsavel.Criar(
+            id: Guid.NewGuid(),
+            clienteTitularId: cliente.Id,
+            nome: "Responsavel Aud",
+            documento: GerarCpfValido(),
+            grauVinculo: GrauVinculo.ResponsavelFinanceiro);
         var usuario = Usuario.Criar(
             id: Guid.NewGuid(),
             nome: "Op",
@@ -169,9 +175,10 @@ public class AuditoriaTests
         db.Filiais.Add(filial);
         db.Clientes.Add(cliente);
         db.Veiculos.Add(veiculo);
+        db.Responsaveis.Add(responsavel);
         db.Usuarios.Add(usuario);
         await db.SaveChangesAsync().ConfigureAwait(false);
-        return (filial.Id, cliente.Id, veiculo.Id, usuario.Id);
+        return (filial.Id, cliente.Id, veiculo.Id, usuario.Id, responsavel.Id);
     }
 
     private static string GerarPlacaAleatoria()

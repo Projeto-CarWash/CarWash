@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using CarWash.Domain.Entities;
+using CarWash.Domain.Enums;
 using CarWash.Domain.ValueObjects;
 using CarWash.Infrastructure.Persistence;
 using CarWash.IntegrationTests.Collections;
@@ -36,13 +37,14 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
     public async Task POST_valido_retorna_201_com_totais()
     {
         var client = await AuthenticatedHttpClient.CreateAsync(_factory);
-        var (filialId, clienteId, veiculoId, servicoIds) = await SemearDependenciasAsync();
+        var (filialId, clienteId, veiculoId, responsavelId, servicoIds) = await SemearDependenciasAsync();
 
         var response = await client.PostAsJsonAsync(RotaCriar, new
         {
             filialId,
             clienteId,
             veiculoId,
+            responsavelId,
             inicio = DateTime.UtcNow.AddDays(1),
             servicoIds,
         }, _json);
@@ -72,13 +74,14 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
     public async Task POST_sem_filial_retorna_400_CA007()
     {
         var client = await AuthenticatedHttpClient.CreateAsync(_factory);
-        var (_, clienteId, veiculoId, servicoIds) = await SemearDependenciasAsync();
+        var (_, clienteId, veiculoId, responsavelId, servicoIds) = await SemearDependenciasAsync();
 
         var response = await client.PostAsJsonAsync(RotaCriar, new
         {
             filialId = Guid.Empty,
             clienteId,
             veiculoId,
+            responsavelId,
             inicio = DateTime.UtcNow.AddDays(1),
             servicoIds,
         }, _json);
@@ -92,13 +95,14 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
     public async Task POST_sem_cliente_retorna_400()
     {
         var client = await AuthenticatedHttpClient.CreateAsync(_factory);
-        var (filialId, _, veiculoId, servicoIds) = await SemearDependenciasAsync();
+        var (filialId, _, veiculoId, responsavelId, servicoIds) = await SemearDependenciasAsync();
 
         var response = await client.PostAsJsonAsync(RotaCriar, new
         {
             filialId,
             clienteId = Guid.Empty,
             veiculoId,
+            responsavelId,
             inicio = DateTime.UtcNow.AddDays(1),
             servicoIds,
         }, _json);
@@ -111,15 +115,16 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
     {
         // RN002: o veículo informado pertence a outro titular, não ao clienteId enviado.
         var client = await AuthenticatedHttpClient.CreateAsync(_factory);
-        var (filialId, _, _, servicoIds) = await SemearDependenciasAsync();
-        var (_, clienteOutro, _, _) = await SemearDependenciasAsync();
-        var (_, _, veiculoId, _) = await SemearDependenciasAsync();
+        var (filialId, _, _, _, servicoIds) = await SemearDependenciasAsync();
+        var (_, clienteOutro, _, responsavelId, _) = await SemearDependenciasAsync();
+        var (_, _, veiculoId, _, _) = await SemearDependenciasAsync();
 
         var response = await client.PostAsJsonAsync(RotaCriar, new
         {
             filialId,
             clienteId = clienteOutro,
             veiculoId,
+            responsavelId,
             inicio = DateTime.UtcNow.AddDays(1),
             servicoIds,
         }, _json);
@@ -131,7 +136,7 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
     public async Task POST_mesmo_veiculo_mesma_filial_mesmo_horario_retorna_409_CA006()
     {
         var client = await AuthenticatedHttpClient.CreateAsync(_factory);
-        var (filialId, clienteId, veiculoId, servicoIds) = await SemearDependenciasAsync();
+        var (filialId, clienteId, veiculoId, responsavelId, servicoIds) = await SemearDependenciasAsync();
         var inicio = DateTime.UtcNow.AddDays(2);
 
         var primeiro = await client.PostAsJsonAsync(RotaCriar, new
@@ -139,6 +144,7 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
             filialId,
             clienteId,
             veiculoId,
+            responsavelId,
             inicio,
             servicoIds,
         }, _json);
@@ -149,6 +155,7 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
             filialId,
             clienteId,
             veiculoId,
+            responsavelId,
             inicio = inicio.AddMinutes(10),
             servicoIds,
         }, _json);
@@ -162,7 +169,7 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
     public async Task POST_mesmo_veiculo_filiais_diferentes_mesmo_horario_retorna_409_CA006()
     {
         var client = await AuthenticatedHttpClient.CreateAsync(_factory);
-        var (filialA, clienteId, veiculoId, servicoIds) = await SemearDependenciasAsync();
+        var (filialA, clienteId, veiculoId, responsavelId, servicoIds) = await SemearDependenciasAsync();
         var filialB = await SemearFilialAsync();
         var inicio = DateTime.UtcNow.AddDays(3);
 
@@ -171,6 +178,7 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
             filialId = filialA,
             clienteId,
             veiculoId,
+            responsavelId,
             inicio,
             servicoIds,
         }, _json);
@@ -181,6 +189,7 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
             filialId = filialB,
             clienteId,
             veiculoId,
+            responsavelId,
             inicio = inicio.AddMinutes(5),
             servicoIds,
         }, _json);
@@ -194,13 +203,14 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
     public async Task POST_filial_inexistente_retorna_404()
     {
         var client = await AuthenticatedHttpClient.CreateAsync(_factory);
-        var (_, clienteId, veiculoId, servicoIds) = await SemearDependenciasAsync();
+        var (_, clienteId, veiculoId, responsavelId, servicoIds) = await SemearDependenciasAsync();
 
         var response = await client.PostAsJsonAsync(RotaCriar, new
         {
             filialId = Guid.NewGuid(),
             clienteId,
             veiculoId,
+            responsavelId,
             inicio = DateTime.UtcNow.AddDays(1),
             servicoIds,
         }, _json);
@@ -214,7 +224,7 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
         // RF019/card 142: filial existente mas inativa é o único recurso que vira
         // 409 (slug filial-inativa) — distinto do 422 de veículo/cliente/serviço.
         var client = await AuthenticatedHttpClient.CreateAsync(_factory);
-        var (_, clienteId, veiculoId, servicoIds) = await SemearDependenciasAsync();
+        var (_, clienteId, veiculoId, responsavelId, servicoIds) = await SemearDependenciasAsync();
         var filialInativaId = await SemearFilialAsync(ativa: false);
 
         var response = await client.PostAsJsonAsync(RotaCriar, new
@@ -222,6 +232,7 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
             filialId = filialInativaId,
             clienteId,
             veiculoId,
+            responsavelId,
             inicio = DateTime.UtcNow.AddDays(1),
             servicoIds,
         }, _json);
@@ -242,13 +253,14 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
     {
         // RF019/card 142: 404 traz a mensagem exata "Filial não encontrada."
         var client = await AuthenticatedHttpClient.CreateAsync(_factory);
-        var (_, clienteId, veiculoId, servicoIds) = await SemearDependenciasAsync();
+        var (_, clienteId, veiculoId, responsavelId, servicoIds) = await SemearDependenciasAsync();
 
         var response = await client.PostAsJsonAsync(RotaCriar, new
         {
             filialId = Guid.NewGuid(),
             clienteId,
             veiculoId,
+            responsavelId,
             inicio = DateTime.UtcNow.AddDays(1),
             servicoIds,
         }, _json);
@@ -264,13 +276,14 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
         // RF019/card 142: filialId ausente (Guid.Empty) → 400 do validator com a
         // mensagem do card em errors[filialId].
         var client = await AuthenticatedHttpClient.CreateAsync(_factory);
-        var (_, clienteId, veiculoId, servicoIds) = await SemearDependenciasAsync();
+        var (_, clienteId, veiculoId, responsavelId, servicoIds) = await SemearDependenciasAsync();
 
         var response = await client.PostAsJsonAsync(RotaCriar, new
         {
             filialId = Guid.Empty,
             clienteId,
             veiculoId,
+            responsavelId,
             inicio = DateTime.UtcNow.AddDays(1),
             servicoIds,
         }, _json);
@@ -295,13 +308,14 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
         // exige apenas status 400 para formato inválido — atendido. A mensagem do
         // card é a do validator de presença (Guid.Empty), não a deste caminho.
         var client = await AuthenticatedHttpClient.CreateAsync(_factory);
-        var (_, clienteId, veiculoId, servicoIds) = await SemearDependenciasAsync();
+        var (_, clienteId, veiculoId, responsavelId, servicoIds) = await SemearDependenciasAsync();
 
         string payloadJson = JsonSerializer.Serialize(new
         {
             filialId = "nao-e-um-uuid",
             clienteId,
             veiculoId,
+            responsavelId,
             inicio = DateTime.UtcNow.AddDays(1),
             servicoIds,
         }, _json);
@@ -324,13 +338,14 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
         // RF019/card 142: sucesso → 201, o response expõe o filialId vinculado e o
         // agendamento salvo aponta para exatamente aquela filial (1 agendamento → 1 filial).
         var client = await AuthenticatedHttpClient.CreateAsync(_factory);
-        var (filialId, clienteId, veiculoId, servicoIds) = await SemearDependenciasAsync();
+        var (filialId, clienteId, veiculoId, responsavelId, servicoIds) = await SemearDependenciasAsync();
 
         var response = await client.PostAsJsonAsync(RotaCriar, new
         {
             filialId,
             clienteId,
             veiculoId,
+            responsavelId,
             inicio = DateTime.UtcNow.AddDays(8),
             servicoIds,
         }, _json);
@@ -358,7 +373,7 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
         // na resposta HTTP. Casing das chaves confirmado empiricamente: camelCase
         // ("motivo"/"filialId"), pois é new { motivo, filialId }.
         var client = await AuthenticatedHttpClient.CreateAsync(_factory);
-        var (_, clienteId, veiculoId, servicoIds) = await SemearDependenciasAsync();
+        var (_, clienteId, veiculoId, responsavelId, servicoIds) = await SemearDependenciasAsync();
         var filialFantasma = Guid.NewGuid();
         string correlationId = $"rf019-inexistente-{Guid.NewGuid():N}";
         using var requisicao = new HttpRequestMessage(HttpMethod.Post, RotaCriar)
@@ -368,6 +383,7 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
                 filialId = filialFantasma,
                 clienteId,
                 veiculoId,
+                responsavelId,
                 inicio = DateTime.UtcNow.AddDays(1),
                 servicoIds,
             }, options: _json),
@@ -404,7 +420,7 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
     public async Task POST_filial_inativa_audita_AgendamentoFilialRejeitada_com_motivo_filial_inativa()
     {
         var client = await AuthenticatedHttpClient.CreateAsync(_factory);
-        var (_, clienteId, veiculoId, servicoIds) = await SemearDependenciasAsync();
+        var (_, clienteId, veiculoId, responsavelId, servicoIds) = await SemearDependenciasAsync();
         var filialInativaId = await SemearFilialAsync(ativa: false);
         string correlationId = $"rf019-inativa-{Guid.NewGuid():N}";
         using var requisicao = new HttpRequestMessage(HttpMethod.Post, RotaCriar)
@@ -414,6 +430,7 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
                 filialId = filialInativaId,
                 clienteId,
                 veiculoId,
+                responsavelId,
                 inicio = DateTime.UtcNow.AddDays(1),
                 servicoIds,
             }, options: _json),
@@ -446,7 +463,7 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
     public async Task POST_janelas_adjacentes_mesmo_veiculo_passam()
     {
         var client = await AuthenticatedHttpClient.CreateAsync(_factory);
-        var (filialId, clienteId, veiculoId, servicoIds) = await SemearDependenciasAsync();
+        var (filialId, clienteId, veiculoId, responsavelId, servicoIds) = await SemearDependenciasAsync();
         var inicio = DateTime.UtcNow.AddDays(4);
 
         var primeiro = await client.PostAsJsonAsync(RotaCriar, new
@@ -454,6 +471,7 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
             filialId,
             clienteId,
             veiculoId,
+            responsavelId,
             inicio,
             servicoIds = new[] { servicoIds[0] },
         }, _json);
@@ -468,6 +486,7 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
             filialId,
             clienteId,
             veiculoId,
+            responsavelId,
             inicio = fimPrimeiro,
             servicoIds = new[] { servicoIds[0] },
         }, _json);
@@ -479,7 +498,7 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
     public async Task POST_multiplos_servicos_retorna_201_com_totais_somados()
     {
         var client = await AuthenticatedHttpClient.CreateAsync(_factory);
-        var (filialId, clienteId, veiculoId, servicoIds) = await SemearDependenciasAsync();
+        var (filialId, clienteId, veiculoId, responsavelId, servicoIds) = await SemearDependenciasAsync();
         var inicio = DateTime.UtcNow.AddDays(7);
 
         var response = await client.PostAsJsonAsync(RotaCriar, new
@@ -487,6 +506,7 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
             filialId,
             clienteId,
             veiculoId,
+            responsavelId,
             inicio,
             servicoIds,
         }, _json);
@@ -510,13 +530,14 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
     public async Task POST_veiculo_inexistente_retorna_404()
     {
         var client = await AuthenticatedHttpClient.CreateAsync(_factory);
-        var (filialId, clienteId, _, servicoIds) = await SemearDependenciasAsync();
+        var (filialId, clienteId, _, responsavelId, servicoIds) = await SemearDependenciasAsync();
 
         var response = await client.PostAsJsonAsync(RotaCriar, new
         {
             filialId,
             clienteId,
             veiculoId = Guid.NewGuid(),
+            responsavelId,
             inicio = DateTime.UtcNow.AddDays(1),
             servicoIds,
         }, _json);
@@ -528,13 +549,14 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
     public async Task POST_servico_inexistente_retorna_404()
     {
         var client = await AuthenticatedHttpClient.CreateAsync(_factory);
-        var (filialId, clienteId, veiculoId, _) = await SemearDependenciasAsync();
+        var (filialId, clienteId, veiculoId, responsavelId, _) = await SemearDependenciasAsync();
 
         var response = await client.PostAsJsonAsync(RotaCriar, new
         {
             filialId,
             clienteId,
             veiculoId,
+            responsavelId,
             inicio = DateTime.UtcNow.AddDays(1),
             servicoIds = new[] { Guid.NewGuid() },
         }, _json);
@@ -546,7 +568,7 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
     public async Task POST_veiculo_inativo_retorna_422()
     {
         var client = await AuthenticatedHttpClient.CreateAsync(_factory);
-        var (filialId, _, _, servicoIds) = await SemearDependenciasAsync();
+        var (filialId, _, _, responsavelId, servicoIds) = await SemearDependenciasAsync();
         var (clienteInativo, veiculoInativoId) = await SemearVeiculoInativoAsync();
 
         var response = await client.PostAsJsonAsync(RotaCriar, new
@@ -554,6 +576,7 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
             filialId,
             clienteId = clienteInativo,
             veiculoId = veiculoInativoId,
+            responsavelId,
             inicio = DateTime.UtcNow.AddDays(1),
             servicoIds,
         }, _json);
@@ -567,7 +590,7 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
     public async Task POST_servico_inativo_retorna_422()
     {
         var client = await AuthenticatedHttpClient.CreateAsync(_factory);
-        var (filialId, clienteId, veiculoId, _) = await SemearDependenciasAsync();
+        var (filialId, clienteId, veiculoId, responsavelId, _) = await SemearDependenciasAsync();
         var servicoInativoId = await SemearServicoInativoAsync();
 
         var response = await client.PostAsJsonAsync(RotaCriar, new
@@ -575,6 +598,7 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
             filialId,
             clienteId,
             veiculoId,
+            responsavelId,
             inicio = DateTime.UtcNow.AddDays(1),
             servicoIds = new[] { servicoInativoId },
         }, _json);
@@ -586,13 +610,14 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
     public async Task POST_inicio_no_passado_retorna_400()
     {
         var client = await AuthenticatedHttpClient.CreateAsync(_factory);
-        var (filialId, clienteId, veiculoId, servicoIds) = await SemearDependenciasAsync();
+        var (filialId, clienteId, veiculoId, responsavelId, servicoIds) = await SemearDependenciasAsync();
 
         var response = await client.PostAsJsonAsync(RotaCriar, new
         {
             filialId,
             clienteId,
             veiculoId,
+            responsavelId,
             inicio = DateTime.UtcNow.AddHours(-2),
             servicoIds,
         }, _json);
@@ -604,13 +629,14 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
     public async Task POST_lista_de_servicos_vazia_retorna_400()
     {
         var client = await AuthenticatedHttpClient.CreateAsync(_factory);
-        var (filialId, clienteId, veiculoId, _) = await SemearDependenciasAsync();
+        var (filialId, clienteId, veiculoId, responsavelId, _) = await SemearDependenciasAsync();
 
         var response = await client.PostAsJsonAsync(RotaCriar, new
         {
             filialId,
             clienteId,
             veiculoId,
+            responsavelId,
             inicio = DateTime.UtcNow.AddDays(1),
             servicoIds = Array.Empty<Guid>(),
         }, _json);
@@ -622,13 +648,14 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
     public async Task POST_servico_duplicado_retorna_400()
     {
         var client = await AuthenticatedHttpClient.CreateAsync(_factory);
-        var (filialId, clienteId, veiculoId, servicoIds) = await SemearDependenciasAsync();
+        var (filialId, clienteId, veiculoId, responsavelId, servicoIds) = await SemearDependenciasAsync();
 
         var response = await client.PostAsJsonAsync(RotaCriar, new
         {
             filialId,
             clienteId,
             veiculoId,
+            responsavelId,
             inicio = DateTime.UtcNow.AddDays(1),
             servicoIds = new[] { servicoIds[0], servicoIds[0] },
         }, _json);
@@ -640,13 +667,14 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
     public async Task POST_observacoes_acima_de_500_retorna_400()
     {
         var client = await AuthenticatedHttpClient.CreateAsync(_factory);
-        var (filialId, clienteId, veiculoId, servicoIds) = await SemearDependenciasAsync();
+        var (filialId, clienteId, veiculoId, responsavelId, servicoIds) = await SemearDependenciasAsync();
 
         var response = await client.PostAsJsonAsync(RotaCriar, new
         {
             filialId,
             clienteId,
             veiculoId,
+            responsavelId,
             inicio = DateTime.UtcNow.AddDays(1),
             servicoIds,
             observacoes = new string('x', 501),
@@ -660,13 +688,14 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
     {
         // Erro genérico não tratado: mensagem neutra, sem stack trace nem nomes de tipo.
         var client = await AuthenticatedHttpClient.CreateAsync(_factory);
-        var (filialId, clienteId, veiculoId, servicoIds) = await SemearDependenciasAsync();
+        var (filialId, clienteId, veiculoId, responsavelId, servicoIds) = await SemearDependenciasAsync();
 
         var response = await client.PostAsJsonAsync(RotaCriar, new
         {
             filialId,
             clienteId,
             veiculoId,
+            responsavelId,
             inicio = DateTime.UtcNow.AddDays(1),
             servicoIds,
         }, _json);
@@ -693,7 +722,7 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
         // que apenas um persiste — o outro recebe 409.
         var clienteA = await AuthenticatedHttpClient.CreateAsync(_factory);
         var clienteB = await AuthenticatedHttpClient.CreateAsync(_factory);
-        var (filialId, clienteId, veiculoId, servicoIds) = await SemearDependenciasAsync();
+        var (filialId, clienteId, veiculoId, responsavelId, servicoIds) = await SemearDependenciasAsync();
         var inicio = DateTime.UtcNow.AddDays(10);
 
         object Corpo(DateTime quando) => new
@@ -701,6 +730,7 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
             filialId,
             clienteId,
             veiculoId,
+            responsavelId,
             inicio = quando,
             servicoIds = new[] { servicoIds[0] },
         };
@@ -731,7 +761,7 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
         // Após um 409 (conflito do segundo POST), não pode restar agendamento,
         // item ou histórico órfão do agendamento rejeitado — rollback total.
         var client = await AuthenticatedHttpClient.CreateAsync(_factory);
-        var (filialId, clienteId, veiculoId, servicoIds) = await SemearDependenciasAsync();
+        var (filialId, clienteId, veiculoId, responsavelId, servicoIds) = await SemearDependenciasAsync();
         var inicio = DateTime.UtcNow.AddDays(12);
 
         var primeiro = await client.PostAsJsonAsync(RotaCriar, new
@@ -739,6 +769,7 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
             filialId,
             clienteId,
             veiculoId,
+            responsavelId,
             inicio,
             servicoIds,
         }, _json);
@@ -749,6 +780,7 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
             filialId,
             clienteId,
             veiculoId,
+            responsavelId,
             inicio = inicio.AddMinutes(10),
             servicoIds,
         }, _json);
@@ -800,7 +832,7 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
         return servico.Id;
     }
 
-    private async Task<(Guid FilialId, Guid ClienteId, Guid VeiculoId, IReadOnlyList<Guid> ServicoIds)> SemearDependenciasAsync()
+    private async Task<(Guid FilialId, Guid ClienteId, Guid VeiculoId, Guid ResponsavelId, IReadOnlyList<Guid> ServicoIds)> SemearDependenciasAsync()
     {
         await using var db = NovoDbContext();
 
@@ -813,10 +845,17 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
             modelo: "Civic",
             fabricante: "Honda",
             cor: "Preto");
+        var responsavel = Responsavel.Criar(
+            id: Guid.NewGuid(),
+            clienteTitularId: cliente.Id,
+            nome: "Responsavel Teste",
+            documento: GerarCpfValido(),
+            grauVinculo: GrauVinculo.ResponsavelFinanceiro);
 
         db.Filiais.Add(filial);
         db.Clientes.Add(cliente);
         db.Veiculos.Add(veiculo);
+        db.Responsaveis.Add(responsavel);
         await db.SaveChangesAsync();
 
         var servicoIds = await db.Servicos
@@ -827,7 +866,7 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
             .Take(2)
             .ToListAsync();
 
-        return (filial.Id, cliente.Id, veiculo.Id, servicoIds);
+        return (filial.Id, cliente.Id, veiculo.Id, responsavel.Id, servicoIds);
     }
 
     private async Task<Guid> SemearFilialAsync(bool ativa = true)

@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using CarWash.Domain.Entities;
+using CarWash.Domain.Enums;
 using CarWash.Domain.ValueObjects;
 using CarWash.Infrastructure.Persistence;
 using CarWash.IntegrationTests.Collections;
@@ -513,7 +514,7 @@ public class ConsultarAgendaEndpointTests : IAsyncDisposable
         var filialId = await SemearFilialVaziaAsync();
         var (clienteA, veiculoA) = await SemearClienteVeiculoAsync();
         var (clienteB, veiculoB) = await SemearClienteVeiculoAsync();
-        var responsavelId = await SemearFiliadoAsync(clienteA);
+        var responsavelId = await SemearResponsavelAsync(clienteA);
 
         var baseInicio = new DateTime(2026, 8, 5, 10, 0, 0, DateTimeKind.Utc);
 
@@ -521,7 +522,7 @@ public class ConsultarAgendaEndpointTests : IAsyncDisposable
         var idComResponsavel = await SemearAgendamentoCruAsync(
             filialId, clienteA, veiculoA, baseInicio, responsavelId: responsavelId);
         await SemearAgendamentoCruAsync(
-            filialId, clienteB, veiculoB, baseInicio.AddHours(2), responsavelId: null);
+            filialId, clienteB, veiculoB, baseInicio.AddHours(2));
 
         var url = new Uri(
             MontarUrl("simples", filialId, baseInicio.AddHours(-1), baseInicio.AddHours(4)).OriginalString
@@ -663,21 +664,21 @@ public class ConsultarAgendaEndpointTests : IAsyncDisposable
     }
 
     /// <summary>
-    /// Semeia um filiado (responsável) vinculado a um cliente e devolve o seu id —
-    /// necessário porque <c>Agendamento.ResponsavelId</c> tem FK para <c>filiados</c>.
+    /// Semeia um responsável (RF024) vinculado a um cliente e devolve o seu id —
+    /// necessário porque <c>Agendamento.ResponsavelId</c> tem FK para <c>responsaveis</c>.
     /// </summary>
-    private async Task<Guid> SemearFiliadoAsync(Guid clienteId)
+    private async Task<Guid> SemearResponsavelAsync(Guid clienteId)
     {
         await using var db = NovoDbContext();
-        var filiado = Filiado.Criar(
+        var responsavel = Responsavel.Criar(
             id: Guid.NewGuid(),
-            clienteId: clienteId,
+            clienteTitularId: clienteId,
             nome: "Responsavel Teste",
-            telefone: new Telefone("11987654321"),
-            rg: "123456789");
-        db.Filiados.Add(filiado);
+            documento: GerarCpfValido(),
+            grauVinculo: GrauVinculo.ResponsavelFinanceiro);
+        db.Responsaveis.Add(responsavel);
         await db.SaveChangesAsync();
-        return filiado.Id;
+        return responsavel.Id;
     }
 
     /// <summary>
@@ -689,9 +690,15 @@ public class ConsultarAgendaEndpointTests : IAsyncDisposable
         Guid clienteId,
         Guid veiculoId,
         DateTime inicio,
-        Guid? responsavelId = null,
+        Guid responsavelId = default,
         bool cancelar = false)
     {
+        // O responsável (RF024) é obrigatório e tem FK para responsaveis; quando o
+        // teste não fornece um, semeamos um vinculado ao próprio cliente.
+        var responsavelEfetivo = responsavelId == Guid.Empty
+            ? await SemearResponsavelAsync(clienteId)
+            : responsavelId;
+
         await using var db = NovoDbContext();
         var agendamento = Agendamento.Criar(
             id: Guid.NewGuid(),
@@ -701,7 +708,7 @@ public class ConsultarAgendaEndpointTests : IAsyncDisposable
             criadoPor: AdminId,
             inicio: inicio,
             fim: inicio.AddMinutes(30),
-            responsavelId: responsavelId,
+            responsavelId: responsavelEfetivo,
             observacoes: null,
             duracaoTotalMin: 0,
             valorTotal: 0m);
@@ -768,6 +775,12 @@ public class ConsultarAgendaEndpointTests : IAsyncDisposable
         }
 
         const string observacoes = "Cliente prefere o turno da tarde.";
+        var responsavel = Responsavel.Criar(
+            id: Guid.NewGuid(),
+            clienteTitularId: cliente.Id,
+            nome: "Responsavel Teste",
+            documento: GerarCpfValido(),
+            grauVinculo: GrauVinculo.ResponsavelFinanceiro);
         var agendamento = Agendamento.Criar(
             id: agendamentoId,
             filialId: filial.Id,
@@ -776,7 +789,7 @@ public class ConsultarAgendaEndpointTests : IAsyncDisposable
             criadoPor: AdminId,
             inicio: inicio,
             fim: inicio.AddMinutes(Math.Max(duracaoTotal, 30)),
-            responsavelId: null,
+            responsavelId: responsavel.Id,
             observacoes: observacoes,
             duracaoTotalMin: duracaoTotal,
             valorTotal: valorTotal);
@@ -784,6 +797,7 @@ public class ConsultarAgendaEndpointTests : IAsyncDisposable
         db.Filiais.Add(filial);
         db.Clientes.Add(cliente);
         db.Veiculos.Add(veiculo);
+        db.Responsaveis.Add(responsavel);
         db.Agendamentos.Add(agendamento);
         foreach (var (servico, item) in itensServico)
         {

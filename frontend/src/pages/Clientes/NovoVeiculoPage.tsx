@@ -1,6 +1,16 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AxiosError } from 'axios';
-import { AlertCircle, ArrowLeft, Car, Check, ChevronDown, Loader2, Search, X } from 'lucide-react';
+import {
+  AlertCircle,
+  ArrowLeft,
+  Car,
+  Check,
+  ChevronDown,
+  Loader2,
+  Lock,
+  Search,
+  X,
+} from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -9,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PRESET_COLORS } from '@/lib/colors';
 import { veiculoSchema, type VeiculoFormData } from '@/schemas/veiculoSchema';
 import { clienteService, type ClienteResumo } from '@/services/clienteService';
 import { veiculoService } from '@/services/veiculoService';
@@ -345,36 +356,27 @@ export function NovoVeiculoPage() {
                   type="text"
                   placeholder="Pesquise o cliente por nome ou CPF/CNPJ..."
                   value={busca}
+                  readOnly={!!selectedCliente}
                   onChange={(e) => {
+                    if (selectedCliente) return;
                     setBusca(e.target.value);
                     setIsOpen(true);
-                    if (selectedCliente && e.target.value !== selectedCliente.nome) {
-                      setSelectedCliente(null);
-                      form.setValue('clienteId', '', { shouldValidate: true });
-                    }
                   }}
-                  onFocus={() => setIsOpen(true)}
+                  onFocus={() => {
+                    if (!selectedCliente) setIsOpen(true);
+                  }}
                   aria-invalid={!!errors.clienteId}
                   aria-describedby={errors.clienteId ? 'veiculo-cliente-error' : undefined}
                   className={`h-10 rounded-lg border pl-9 pr-10 text-sm text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-0 ${
-                    errors.clienteId
-                      ? 'border-red-500/60 bg-red-950/20 focus-visible:border-red-500'
-                      : 'border-zinc-700/60 bg-zinc-950/40 focus-visible:border-zinc-600'
+                    selectedCliente
+                      ? 'bg-zinc-800/50 text-zinc-400 cursor-not-allowed border-zinc-700/60 focus-visible:border-zinc-700/60'
+                      : errors.clienteId
+                        ? 'border-red-500/60 bg-red-950/20 focus-visible:border-red-500'
+                        : 'border-zinc-700/60 bg-zinc-950/40 focus-visible:border-zinc-600'
                   }`}
                 />
                 {selectedCliente ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedCliente(null);
-                      setBusca('');
-                      form.setValue('clienteId', '', { shouldValidate: true });
-                    }}
-                    className="absolute right-3 top-3 text-zinc-400 hover:text-zinc-200"
-                    aria-label="Limpar cliente selecionado"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
+                  <Lock className="absolute right-3 top-3 h-4 w-4 text-zinc-600 pointer-events-none" />
                 ) : (
                   <ChevronDown className="absolute right-3 top-3 h-4 w-4 text-zinc-500 pointer-events-none" />
                 )}
@@ -553,40 +555,75 @@ export function NovoVeiculoPage() {
             {/* Cor */}
             <div className="flex flex-col gap-2">
               <Label htmlFor="veiculo-cor" className="text-zinc-300">
-                Cor
+                Cor Predominante
               </Label>
               <Controller
                 control={form.control}
                 name="cor"
-                render={({ field, fieldState }) => (
-                  <>
-                    <Input
-                      id="veiculo-cor"
-                      type="text"
-                      placeholder="Ex: Preto"
-                      value={field.value}
-                      onChange={field.onChange}
-                      onBlur={(e) => {
-                        const val = e.target.value.trim();
-                        field.onChange(val);
-                        field.onBlur();
-                      }}
-                      ref={field.ref}
-                      aria-invalid={!!fieldState.error}
-                      aria-describedby={fieldState.error ? 'veiculo-cor-error' : undefined}
-                      className={`h-10 rounded-lg border px-3 text-sm text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-0 ${
-                        fieldState.error
-                          ? 'border-red-500/60 bg-red-950/20 focus-visible:border-red-500'
-                          : 'border-zinc-700/60 bg-zinc-950/40 focus-visible:border-zinc-600'
-                      }`}
-                    />
-                    {fieldState.error && (
-                      <p id="veiculo-cor-error" role="alert" className="text-xs text-red-400">
-                        {fieldState.error.message}
-                      </p>
-                    )}
-                  </>
-                )}
+                render={({ field, fieldState }) => {
+                  const selectedCor = PRESET_COLORS.find(
+                    (c) => c.name === field.value || c.hex === field.value,
+                  );
+
+                  return (
+                    <div className="space-y-3">
+                      <div className="flex flex-wrap gap-2">
+                        {PRESET_COLORS.map((c) => (
+                          <button
+                            key={c.name}
+                            type="button"
+                            onClick={() => {
+                              field.onChange(c.hex);
+                              field.onBlur();
+                            }}
+                            className={`group flex flex-col items-center gap-1.5 rounded-xl p-2 transition-all ${
+                              field.value === c.hex || field.value === c.name
+                                ? 'bg-zinc-800 ring-2 ring-red-500/60'
+                                : 'hover:bg-zinc-800/50'
+                            }`}
+                            title={c.name}
+                          >
+                            <div
+                              className="h-8 w-8 rounded-full border-2 transition-all"
+                              style={{
+                                backgroundColor: c.hex,
+                                borderColor:
+                                  field.value === c.hex || field.value === c.name
+                                    ? '#EF4444'
+                                    : 'transparent',
+                              }}
+                            />
+                            <span className="text-[9px] font-medium tracking-wider text-zinc-500">
+                              {c.name}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+
+                      {field.value && selectedCor && (
+                        <div className="flex items-center gap-2 rounded-lg border border-zinc-800/60 bg-zinc-900/40 p-3 w-fit">
+                          <div
+                            className="h-6 w-6 rounded-full border border-zinc-700"
+                            style={{ backgroundColor: selectedCor.hex }}
+                          />
+                          <div>
+                            <p className="text-[9px] tracking-wider text-zinc-500">SELECIONADA</p>
+                            <p className="text-sm font-semibold text-zinc-200">
+                              {selectedCor.name}{' '}
+                              <span className="font-normal text-zinc-500">· {selectedCor.hex}</span>
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {fieldState.error && (
+                        <p id="veiculo-cor-error" role="alert" className="text-xs text-red-400">
+                          {fieldState.error.message}
+                        </p>
+                      )}
+                    </div>
+                  );
+                }}
               />
             </div>
 

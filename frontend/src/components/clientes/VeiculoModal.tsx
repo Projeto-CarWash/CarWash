@@ -5,17 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PRESET_COLORS } from '@/lib/colors';
 import { type VeiculoLocalFormData, veiculoItemSchema } from '@/schemas/clienteSchema';
-
-const PRESET_COLORS = [
-  { name: 'VERMELHO', hex: '#E61F2D' },
-  { name: 'PRETO', hex: '#1A1A1A' },
-  { name: 'BRANCO', hex: '#F5F5F5' },
-  { name: 'CINZA', hex: '#808080' },
-  { name: 'AZUL', hex: '#2563EB' },
-  { name: 'BEGE', hex: '#D4A843' },
-  { name: 'VERDE', hex: '#22C55E' },
-] as const;
 
 interface VeiculoModalProps {
   open: boolean;
@@ -33,14 +24,11 @@ export function VeiculoModal({
   onSave,
 }: VeiculoModalProps) {
   const [placa, setPlaca] = useState('');
-  const [renavam, setRenavam] = useState('');
-  const [marca, setMarca] = useState('');
+  const [fabricante, setFabricante] = useState('');
   const [modelo, setModelo] = useState('');
-  const [anoModelo, setAnoModelo] = useState('');
-  const [categoria, setCategoria] = useState('');
-  const [cor, setCor] = useState('');
+  const [ano, setAno] = useState('');
   const [corHex, setCorHex] = useState('');
-  const [observacoes, setObservacoes] = useState('');
+  const [corNomeDisplay, setCorNomeDisplay] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -68,65 +56,46 @@ export function VeiculoModal({
 
   const placaDisplay = placa.length >= 3 ? `${placa.slice(0, 3)}-${placa.slice(3)}` : placa;
 
+  // Validate ano in real-time
   useEffect(() => {
-    const nums = anoModelo.replace(/\D/g, '');
-    let rangeError = false;
-    let compatError = false;
-
-    if (nums.length >= 4) {
-      const year1 = parseInt(nums.slice(0, 4), 10);
-      if (year1 < 1930 || year1 > 2027) rangeError = true;
-    }
-    if (nums.length === 8) {
-      const year1 = parseInt(nums.slice(0, 4), 10);
-      const year2 = parseInt(nums.slice(4, 8), 10);
-      if (year2 < 1930 || year2 > 2027) rangeError = true;
-
-      if (!rangeError && year2 !== year1 && year2 !== year1 + 1) {
-        compatError = true;
-      }
-    }
-
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setErrors((prev) => {
-      const currentErr = prev.anoModelo;
-
-      if (rangeError) {
-        if (currentErr !== 'O ano deve ser entre 1930 e 2027.') {
-          return { ...prev, anoModelo: 'O ano deve ser entre 1930 e 2027.' };
+    if (!ano) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setErrors((prev) => {
+        if (prev.ano) {
+          const { ano: _ano, ...rest } = prev;
+          return rest;
         }
         return prev;
-      }
+      });
+      return;
+    }
 
-      if (compatError) {
-        if (currentErr !== 'O modelo deve ser do mesmo ano ou até 1 ano à frente.') {
-          return { ...prev, anoModelo: 'O modelo deve ser do mesmo ano ou até 1 ano à frente.' };
+    const parsed = parseInt(ano, 10);
+    if (isNaN(parsed) || parsed < 1930 || parsed > 2027) {
+      setErrors((prev) => {
+        if (prev.ano !== 'O ano deve ser entre 1930 e 2027.') {
+          return { ...prev, ano: 'O ano deve ser entre 1930 e 2027.' };
         }
         return prev;
-      }
-
-      if (
-        currentErr === 'O ano deve ser entre 1930 e 2027.' ||
-        currentErr === 'O modelo deve ser do mesmo ano ou até 1 ano à frente.'
-      ) {
-        const { anoModelo: _anoModelo, ...rest } = prev;
-        return rest;
-      }
-
-      return prev;
-    });
-  }, [anoModelo]);
+      });
+    } else {
+      setErrors((prev) => {
+        if (prev.ano) {
+          const { ano: _ano, ...rest } = prev;
+          return rest;
+        }
+        return prev;
+      });
+    }
+  }, [ano]);
 
   const resetForm = useCallback(() => {
     setPlaca('');
-    setRenavam('');
-    setMarca('');
+    setFabricante('');
     setModelo('');
-    setAnoModelo('');
-    setCategoria('');
-    setCor('');
+    setAno('');
     setCorHex('');
-    setObservacoes('');
+    setCorNomeDisplay('');
     setErrors({});
   }, []);
 
@@ -136,22 +105,22 @@ export function VeiculoModal({
   }, [resetForm, onOpenChange]);
 
   const handleSelectColor = useCallback((name: string, hex: string) => {
-    setCor(name);
     setCorHex(hex);
+    setCorNomeDisplay(name);
   }, []);
 
   const handleSave = useCallback(() => {
-    const data = {
+    const data: Record<string, unknown> = {
       placa,
-      renavam: renavam || undefined,
-      marca,
+      fabricante,
       modelo,
-      anoModelo: anoModelo || undefined,
-      categoria: categoria || undefined,
-      cor,
-      corHex: corHex || undefined,
-      observacoesAtendimento: observacoes || undefined,
+      cor: corHex,
     };
+
+    // Only include ano if provided
+    if (ano) {
+      data.ano = parseInt(ano, 10);
+    }
 
     const result = veiculoItemSchema.safeParse(data);
 
@@ -175,32 +144,14 @@ export function VeiculoModal({
     setErrors({});
     onSave({
       placa: result.data.placa,
-      renavam: result.data.renavam,
-      marca: result.data.marca,
+      fabricante: result.data.fabricante,
       modelo: result.data.modelo,
-      anoModelo: result.data.anoModelo,
-      categoria: result.data.categoria,
       cor: result.data.cor,
-      corHex: result.data.corHex,
-      observacoesAtendimento: result.data.observacoesAtendimento,
+      ano: result.data.ano,
     });
     resetForm();
     onOpenChange(false);
-  }, [
-    placa,
-    renavam,
-    marca,
-    modelo,
-    anoModelo,
-    categoria,
-    cor,
-    corHex,
-    observacoes,
-    existingPlacas,
-    onSave,
-    onOpenChange,
-    resetForm,
-  ]);
+  }, [placa, fabricante, modelo, ano, corHex, existingPlacas, onSave, onOpenChange, resetForm]);
 
   const placaIsValid = /^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$/i.test(placa.replace(/[\s-]/g, ''));
 
@@ -296,33 +247,47 @@ export function VeiculoModal({
 
             <div className="space-y-1.5">
               <Label className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">
-                RENAVAM{' '}
-                <span className="font-normal tracking-normal text-zinc-600">(opcional)</span>
+                ANO <span className="font-normal tracking-normal text-zinc-600">(opcional)</span>
               </Label>
               <Input
-                value={renavam}
-                onChange={(e) => setRenavam(e.target.value.replace(/\D/g, '').slice(0, 11))}
-                placeholder=""
-                className="h-10 rounded-xl border-zinc-700/60 bg-zinc-900/50 text-sm text-zinc-200 placeholder:text-zinc-600 focus-visible:ring-0"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">MARCA</Label>
-              <Input
-                value={marca}
-                onChange={(e) => setMarca(e.target.value.slice(0, 20))}
-                placeholder="Porsche"
-                maxLength={20}
+                value={ano}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '').slice(0, 4);
+                  setAno(val);
+                }}
+                placeholder="2024"
+                maxLength={4}
                 className={`h-10 rounded-xl text-sm text-zinc-200 placeholder:text-zinc-600 focus-visible:ring-0 ${
-                  errors.marca
+                  errors.ano
                     ? 'border-red-500/60 bg-red-950/20'
                     : 'border-zinc-700/60 bg-zinc-900/50'
                 }`}
               />
-              {errors.marca && (
+              {errors.ano && (
                 <p className="flex items-center gap-1 text-xs text-red-500">
-                  <X className="h-3 w-3" /> {errors.marca}
+                  <X className="h-3 w-3" /> {errors.ano}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">
+                FABRICANTE
+              </Label>
+              <Input
+                value={fabricante}
+                onChange={(e) => setFabricante(e.target.value.slice(0, 80))}
+                placeholder="Porsche"
+                maxLength={80}
+                className={`h-10 rounded-xl text-sm text-zinc-200 placeholder:text-zinc-600 focus-visible:ring-0 ${
+                  errors.fabricante
+                    ? 'border-red-500/60 bg-red-950/20'
+                    : 'border-zinc-700/60 bg-zinc-900/50'
+                }`}
+              />
+              {errors.fabricante && (
+                <p className="flex items-center gap-1 text-xs text-red-500">
+                  <X className="h-3 w-3" /> {errors.fabricante}
                 </p>
               )}
             </div>
@@ -331,9 +296,9 @@ export function VeiculoModal({
               <Label className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">MODELO</Label>
               <Input
                 value={modelo}
-                onChange={(e) => setModelo(e.target.value.slice(0, 20))}
+                onChange={(e) => setModelo(e.target.value.slice(0, 80))}
                 placeholder="911 Carrera S"
-                maxLength={20}
+                maxLength={80}
                 className={`h-10 rounded-xl text-sm text-zinc-200 placeholder:text-zinc-600 focus-visible:ring-0 ${
                   errors.modelo
                     ? 'border-red-500/60 bg-red-950/20'
@@ -345,49 +310,6 @@ export function VeiculoModal({
                   <X className="h-3 w-3" /> {errors.modelo}
                 </p>
               )}
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">
-                ANO / MODELO{' '}
-                <span className="font-normal tracking-normal text-zinc-600">(opcional)</span>
-              </Label>
-              <Input
-                value={anoModelo}
-                onChange={(e) => {
-                  let val = e.target.value.replace(/\D/g, '');
-                  if (val.length > 8) val = val.slice(0, 8);
-                  if (val.length > 4) {
-                    val = `${val.slice(0, 4)} / ${val.slice(4)}`;
-                  }
-                  setAnoModelo(val);
-                }}
-                placeholder="2024 / 2025"
-                maxLength={11}
-                className={`h-10 rounded-xl text-sm text-zinc-200 placeholder:text-zinc-600 focus-visible:ring-0 ${
-                  errors.anoModelo
-                    ? 'border-red-500/60 bg-red-950/20'
-                    : 'border-zinc-700/60 bg-zinc-900/50'
-                }`}
-              />
-              {errors.anoModelo && (
-                <p className="flex items-center gap-1 text-xs text-red-500">
-                  <X className="h-3 w-3" /> {errors.anoModelo}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">
-                CATEGORIA{' '}
-                <span className="font-normal tracking-normal text-zinc-600">(opcional)</span>
-              </Label>
-              <Input
-                value={categoria}
-                onChange={(e) => setCategoria(e.target.value.slice(0, 40))}
-                placeholder="Esportivo · Médio"
-                className="h-10 rounded-xl border-zinc-700/60 bg-zinc-900/50 text-sm text-zinc-200 placeholder:text-zinc-600 focus-visible:ring-0"
-              />
             </div>
           </div>
 
@@ -410,7 +332,7 @@ export function VeiculoModal({
                   type="button"
                   onClick={() => handleSelectColor(c.name, c.hex)}
                   className={`group flex flex-col items-center gap-1.5 rounded-xl p-2 transition-all ${
-                    cor === c.name ? 'bg-zinc-800 ring-2 ring-red-500/60' : 'hover:bg-zinc-800/50'
+                    corHex === c.hex ? 'bg-zinc-800 ring-2 ring-red-500/60' : 'hover:bg-zinc-800/50'
                   }`}
                   title={c.name}
                 >
@@ -418,7 +340,7 @@ export function VeiculoModal({
                     className="h-8 w-8 rounded-full border-2 transition-all"
                     style={{
                       backgroundColor: c.hex,
-                      borderColor: cor === c.name ? '#EF4444' : 'transparent',
+                      borderColor: corHex === c.hex ? '#EF4444' : 'transparent',
                     }}
                   />
                   <span className="text-[9px] font-medium tracking-wider text-zinc-500">
@@ -428,16 +350,16 @@ export function VeiculoModal({
               ))}
             </div>
 
-            {cor && (
+            {corHex && (
               <div className="mt-3 flex items-center gap-2">
                 <div
                   className="h-6 w-6 rounded-full border border-zinc-700"
-                  style={{ backgroundColor: corHex || '#808080' }}
+                  style={{ backgroundColor: corHex }}
                 />
                 <div>
                   <p className="text-[9px] tracking-wider text-zinc-500">SELECIONADA</p>
                   <p className="text-sm font-semibold text-zinc-200">
-                    {cor} {corHex && <span className="font-normal text-zinc-500">· {corHex}</span>}
+                    {corNomeDisplay} <span className="font-normal text-zinc-500">· {corHex}</span>
                   </p>
                 </div>
               </div>
@@ -446,24 +368,6 @@ export function VeiculoModal({
               <p className="mt-1 flex items-center gap-1 text-xs text-red-500">
                 <X className="h-3 w-3" /> {errors.cor}
               </p>
-            )}
-          </div>
-
-          {/* Observações de atendimento */}
-          <div className="mt-6 space-y-1.5">
-            <Label className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">
-              OBSERVAÇÕES DE ATENDIMENTO
-            </Label>
-            <textarea
-              value={observacoes}
-              onChange={(e) => setObservacoes(e.target.value)}
-              placeholder="Cuidado com aerofólio traseiro — não apoiar escada."
-              rows={3}
-              className="w-full resize-none rounded-xl border border-zinc-700/60 bg-zinc-900/50 px-3 py-2.5 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-zinc-600 focus:outline-none"
-              maxLength={500}
-            />
-            {errors.observacoesAtendimento && (
-              <p className="text-xs text-red-500">{errors.observacoesAtendimento}</p>
             )}
           </div>
         </div>

@@ -146,15 +146,18 @@ public sealed class CriarAgendamentoHandler : ICommandHandler<CriarAgendamentoCo
 
         _logger.LogInformation(
             "Agendamento criado. AgendamentoId: {AgendamentoId}. VeiculoId: {VeiculoId}. FilialId: {FilialId}. "
+            + "ClienteId: {ClienteId}. ResponsavelId: {ResponsavelId}. "
             + "Janela: [{Inicio:o}, {Fim:o}). UsuarioId: {UsuarioId}. TraceId: {TraceId}",
             agendamentoId,
             command.VeiculoId,
             command.FilialId,
+            command.ClienteId,
+            command.ResponsavelId,
             calculado.Inicio,
             calculado.Fim,
             criadoPor,
             command.TraceId);
 
-        return AgendamentoResponseFactory.Montar(agendamento, itens, calculado.Servicos, command.TraceId);
+        return AgendamentoResponseFactory.Montar(agendamento, itens, calculado.Servicos, calculado.Responsavel, command.TraceId);
     }
 }

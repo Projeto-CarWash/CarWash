@@ -15,7 +15,9 @@ public sealed class AgendamentoResponse
 
     public Guid VeiculoId { get; init; }
 
-    public Guid? ResponsavelId { get; init; }
+    public Guid ResponsavelId { get; init; }
+
+    public ResponsavelDto Responsavel { get; init; } = new();
 
     public string Status { get; init; } = string.Empty;
 
@@ -45,4 +47,16 @@ public sealed class AgendamentoResponse
     public string Mensagem { get; init; } = string.Empty;
 
     public string TraceId { get; init; } = string.Empty;
+}
+
+/// <summary>Dados do responsável no payload de resposta (RF024/CA009).</summary>
+public sealed class ResponsavelDto
+{
+    public Guid Id { get; init; }
+
+    public string Nome { get; init; } = string.Empty;
+
+    public string Documento { get; init; } = string.Empty;
+
+    public string GrauVinculo { get; init; } = string.Empty;
 }
