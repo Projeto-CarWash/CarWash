@@ -175,8 +175,8 @@ test('CARD05 - GET cliente por id retorna veiculos embutidos; sem GET separado d
   // A chamada acima pode não ter token; o objetivo principal é o contrato visto na página.
   page.off('request', handler);
 
-  const chamouVeiculosSeparado = apiReqs.some(
-    (r) => /^GET \/api\/v1\/clientes\/[^/]+\/veiculos$/.test(r),
+  const chamouVeiculosSeparado = apiReqs.some((r) =>
+    /^GET \/api\/v1\/clientes\/[^/]+\/veiculos$/.test(r),
   );
   test.info().annotations.push({
     type: 'network',
