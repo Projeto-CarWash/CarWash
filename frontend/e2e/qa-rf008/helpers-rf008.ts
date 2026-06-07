@@ -80,10 +80,7 @@ async function jsonId(
 }
 
 /** Pega o 1º cliente já existente no seed/banco de hom. */
-export async function primeiroClienteId(
-  request: APIRequestContext,
-  s: SessaoApi,
-): Promise<string> {
+export async function primeiroClienteId(request: APIRequestContext, s: SessaoApi): Promise<string> {
   const resp = await request.get('/api/v1/clientes?tamanhoPagina=1', { headers: headers(s) });
   if (!resp.ok()) throw new Error(`GET clientes falhou (${resp.status()})`);
   const body = (await resp.json()) as { itens?: { id: string }[] };

@@ -19,7 +19,6 @@ import type {
   CancelarAgendamentoResponse,
 } from '@/types/agendamento';
 
-
 export const agendamentoService = {
   async buscarClientes(busca: string): Promise<ClienteResumido[]> {
     const { data } = await api.get<{ itens: ClienteResumido[] }>('/api/v1/clientes', {
@@ -206,10 +205,7 @@ export const agendamentoService = {
    * <p>Consome `GET /api/v1/agenda?formato=simples` com a primeira filial ativa
    * e mapeia os itens para `AgendamentoSemana`.</p>
    */
-  async listarAgendamentosSemana(
-    dataInicio: Date,
-    dataFim: Date,
-  ): Promise<AgendamentoSemana[]> {
+  async listarAgendamentosSemana(dataInicio: Date, dataFim: Date): Promise<AgendamentoSemana[]> {
     let filialId = '';
     try {
       const filiais = await filialService.listar();
