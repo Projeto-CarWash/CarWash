@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using CarWash.Domain.Entities;
+using CarWash.Domain.Enums;
 using CarWash.Domain.ValueObjects;
 using CarWash.Infrastructure.Persistence;
 using CarWash.IntegrationTests.Collections;
@@ -219,6 +220,7 @@ public class ConfirmarAgendamentoEndpointTests : IAsyncDisposable
                 filialId = ctx.FilialId,
                 clienteId = ctx.ClienteId,
                 veiculoId = ctx.VeiculoId,
+                responsavelId = ctx.ResponsavelId,
                 inicio = ctx.Inicio,
                 servicoIds = ctx.ServicoIds,
             },
@@ -409,6 +411,7 @@ public class ConfirmarAgendamentoEndpointTests : IAsyncDisposable
                 filialId = ctxConflito.FilialId,
                 clienteId = ctxConflito.ClienteId,
                 veiculoId = ctxConflito.VeiculoId,
+                responsavelId = ctxConflito.ResponsavelId,
                 inicio = ctxConflito.Inicio,
                 servicoIds = ctxConflito.ServicoIds,
             },
@@ -483,6 +486,7 @@ public class ConfirmarAgendamentoEndpointTests : IAsyncDisposable
         Guid FilialId,
         Guid ClienteId,
         Guid VeiculoId,
+        Guid ResponsavelId,
         IReadOnlyList<Guid> ServicoIds,
         DateTime Inicio,
         string Token,
@@ -494,6 +498,7 @@ public class ConfirmarAgendamentoEndpointTests : IAsyncDisposable
             ["filialId"] = FilialId,
             ["clienteId"] = ClienteId,
             ["veiculoId"] = VeiculoId,
+            ["responsavelId"] = ResponsavelId,
             ["inicio"] = Inicio,
             ["servicoIds"] = ServicoIds,
             ["confirmar"] = true,
@@ -510,7 +515,7 @@ public class ConfirmarAgendamentoEndpointTests : IAsyncDisposable
         HttpClient client,
         int inicioOffsetDias = 1)
     {
-        var (filialId, clienteId, veiculoId, servicoIds) = await SemearDependenciasAsync();
+        var (filialId, clienteId, veiculoId, responsavelId, servicoIds) = await SemearDependenciasAsync();
         var inicio = DateTime.UtcNow.AddDays(inicioOffsetDias).AddHours(Random.Shared.Next(0, 12));
 
         var pre = await client.PostAsJsonAsync(RotaPreConfirmar, new
@@ -518,6 +523,7 @@ public class ConfirmarAgendamentoEndpointTests : IAsyncDisposable
             filialId,
             clienteId,
             veiculoId,
+            responsavelId,
             inicio,
             servicoIds,
         }, _json);
@@ -530,6 +536,7 @@ public class ConfirmarAgendamentoEndpointTests : IAsyncDisposable
             filialId,
             clienteId,
             veiculoId,
+            responsavelId,
             servicoIds,
             inicio,
             token,
@@ -560,7 +567,7 @@ public class ConfirmarAgendamentoEndpointTests : IAsyncDisposable
         return mensagens;
     }
 
-    private async Task<(Guid FilialId, Guid ClienteId, Guid VeiculoId, IReadOnlyList<Guid> ServicoIds)>
+    private async Task<(Guid FilialId, Guid ClienteId, Guid VeiculoId, Guid ResponsavelId, IReadOnlyList<Guid> ServicoIds)>
         SemearDependenciasAsync()
     {
         await using var db = NovoDbContext();
@@ -574,10 +581,12 @@ public class ConfirmarAgendamentoEndpointTests : IAsyncDisposable
             modelo: "Civic",
             fabricante: "Honda",
             cor: "Preto");
+        var responsavel = ResponsavelValido(cliente.Id);
 
         db.Filiais.Add(filial);
         db.Clientes.Add(cliente);
         db.Veiculos.Add(veiculo);
+        db.Responsaveis.Add(responsavel);
         await db.SaveChangesAsync();
 
         var servicoIds = await db.Servicos
@@ -588,8 +597,15 @@ public class ConfirmarAgendamentoEndpointTests : IAsyncDisposable
             .Take(2)
             .ToListAsync();
 
-        return (filial.Id, cliente.Id, veiculo.Id, servicoIds);
+        return (filial.Id, cliente.Id, veiculo.Id, responsavel.Id, servicoIds);
     }
+
+    private static Responsavel ResponsavelValido(Guid clienteTitularId) => Responsavel.Criar(
+        id: Guid.NewGuid(),
+        clienteTitularId: clienteTitularId,
+        nome: "Responsável Teste",
+        documento: GerarCpfValido(),
+        grauVinculo: GrauVinculo.ResponsavelFinanceiro);
 
     private async Task InativarFilialAsync(Guid filialId)
     {

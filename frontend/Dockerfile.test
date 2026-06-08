@@ -1,0 +1,21 @@
+# syntax=docker/dockerfile:1.7
+# Frontend test runner — usa a imagem oficial do Playwright (Node 20 + browsers
+# Chromium/Firefox/WebKit já instalados com as deps de sistema). A mesma imagem
+# roda os testes unitários (Vitest) e os E2E (Playwright), evitando instalar
+# navegadores em runtime no CI.
+#
+# Versão fixada e alinhada ao @playwright/test do package.json — se atualizar o
+# pacote, atualize esta tag (caso contrário Playwright avisa de mismatch).
+ARG PLAYWRIGHT_VERSION=1.60.0
+FROM mcr.microsoft.com/playwright:v${PLAYWRIGHT_VERSION}-noble
+
+WORKDIR /app
+
+# Cache de dependências: copia manifests primeiro.
+COPY package.json package-lock.json* ./
+RUN npm ci --no-audit --no-fund
+
+COPY . .
+
+# Sem CMD/ENTRYPOINT fixo: o docker-compose.test.yml escolhe `npm test` (Vitest)
+# ou `npm run e2e` (Playwright) por serviço.

@@ -43,12 +43,12 @@ public class AgendamentoRepositoryTests : IAsyncLifetime
     [Fact]
     public async Task AdicionarAsync_persiste_agendamento_itens_e_historico()
     {
-        var (filialId, clienteId, veiculoId, criadoPor, servicoId) = await SemearAsync();
+        var (filialId, clienteId, veiculoId, criadoPor, servicoId, responsavelId) = await SemearAsync();
         var repo = new AgendamentoRepository(_db);
 
         var inicio = DateTime.UtcNow.AddDays(1);
         var (agendamento, itens, historico) = MontarAgendamento(
-            filialId, clienteId, veiculoId, criadoPor, servicoId, inicio);
+            filialId, clienteId, veiculoId, criadoPor, servicoId, responsavelId, inicio);
 
         await repo.AdicionarAsync(agendamento, itens, historico, "trace-int", CancellationToken.None);
 
@@ -63,11 +63,11 @@ public class AgendamentoRepositoryTests : IAsyncLifetime
     [Fact]
     public async Task AdicionarAsync_em_conflito_de_janela_lanca_AgendamentoConflitanteException_RN011()
     {
-        var (filialId, clienteId, veiculoId, criadoPor, servicoId) = await SemearAsync();
+        var (filialId, clienteId, veiculoId, criadoPor, servicoId, responsavelId) = await SemearAsync();
         var repo = new AgendamentoRepository(_db);
 
         var inicio = DateTime.UtcNow.AddDays(2);
-        var (primeiro, itens1, hist1) = MontarAgendamento(filialId, clienteId, veiculoId, criadoPor, servicoId, inicio);
+        var (primeiro, itens1, hist1) = MontarAgendamento(filialId, clienteId, veiculoId, criadoPor, servicoId, responsavelId, inicio);
         await repo.AdicionarAsync(primeiro, itens1, hist1, "trace-1", CancellationToken.None);
 
         // Segundo agendamento do mesmo veículo com janela sobreposta — simula a
@@ -75,7 +75,7 @@ public class AgendamentoRepositoryTests : IAsyncLifetime
         await using var db2 = CarWashDbContextFactoryForTests.Create(_fixture);
         var repo2 = new AgendamentoRepository(db2);
         var (segundo, itens2, hist2) = MontarAgendamento(
-            filialId, clienteId, veiculoId, criadoPor, servicoId, inicio.AddMinutes(10));
+            filialId, clienteId, veiculoId, criadoPor, servicoId, responsavelId, inicio.AddMinutes(10));
 
         var act = () => repo2.AdicionarAsync(segundo, itens2, hist2, "trace-2", CancellationToken.None);
 
@@ -86,11 +86,11 @@ public class AgendamentoRepositoryTests : IAsyncLifetime
     [Fact]
     public async Task ExisteConflitoVeiculoAsync_detecta_sobreposicao_e_ignora_janelas_adjacentes()
     {
-        var (filialId, clienteId, veiculoId, criadoPor, servicoId) = await SemearAsync();
+        var (filialId, clienteId, veiculoId, criadoPor, servicoId, responsavelId) = await SemearAsync();
         var repo = new AgendamentoRepository(_db);
 
         var inicio = DateTime.UtcNow.AddDays(3);
-        var (existente, itens, hist) = MontarAgendamento(filialId, clienteId, veiculoId, criadoPor, servicoId, inicio);
+        var (existente, itens, hist) = MontarAgendamento(filialId, clienteId, veiculoId, criadoPor, servicoId, responsavelId, inicio);
         await repo.AdicionarAsync(existente, itens, hist, "trace-3", CancellationToken.None);
 
         var fim = existente.Fim;
@@ -109,7 +109,7 @@ public class AgendamentoRepositoryTests : IAsyncLifetime
     }
 
     private static (Agendamento Agendamento, IReadOnlyCollection<AgendamentoItem> Itens, AgendamentoHistorico Historico)
-        MontarAgendamento(Guid filialId, Guid clienteId, Guid veiculoId, Guid criadoPor, Guid servicoId, DateTime inicio)
+        MontarAgendamento(Guid filialId, Guid clienteId, Guid veiculoId, Guid criadoPor, Guid servicoId, Guid responsavelId, DateTime inicio)
     {
         var id = Guid.NewGuid();
         var agendamento = Agendamento.Criar(
@@ -120,6 +120,7 @@ public class AgendamentoRepositoryTests : IAsyncLifetime
             criadoPor: criadoPor,
             inicio: inicio,
             fim: inicio.AddMinutes(30),
+            responsavelId: responsavelId,
             duracaoTotalMin: 30,
             valorTotal: 30m);
 
@@ -128,7 +129,7 @@ public class AgendamentoRepositoryTests : IAsyncLifetime
         return (agendamento, itens, historico);
     }
 
-    private async Task<(Guid FilialId, Guid ClienteId, Guid VeiculoId, Guid CriadoPor, Guid ServicoId)> SemearAsync()
+    private async Task<(Guid FilialId, Guid ClienteId, Guid VeiculoId, Guid CriadoPor, Guid ServicoId, Guid ResponsavelId)> SemearAsync()
     {
         var filial = Filial.Criar(Guid.NewGuid(), $"Filial {Guid.NewGuid():N}"[..30], $"F{Guid.NewGuid():N}"[..10].ToUpperInvariant(), 4);
         var cliente = Cliente.Criar(
@@ -145,6 +146,12 @@ public class AgendamentoRepositoryTests : IAsyncLifetime
             modelo: "Civic",
             fabricante: "Honda",
             cor: "Preto");
+        var responsavel = Responsavel.Criar(
+            id: Guid.NewGuid(),
+            clienteTitularId: cliente.Id,
+            nome: "Responsavel Teste",
+            documento: GerarCpfValido(),
+            grauVinculo: GrauVinculo.ResponsavelFinanceiro);
         var usuario = Usuario.Criar(
             id: Guid.NewGuid(),
             nome: "Operador",
@@ -155,13 +162,14 @@ public class AgendamentoRepositoryTests : IAsyncLifetime
         _db.Filiais.Add(filial);
         _db.Clientes.Add(cliente);
         _db.Veiculos.Add(veiculo);
+        _db.Responsaveis.Add(responsavel);
         _db.Usuarios.Add(usuario);
         await _db.SaveChangesAsync().ConfigureAwait(false);
 
         var servicoId = await _db.Servicos.AsNoTracking().OrderBy(s => s.Nome).Select(s => s.Id).FirstAsync()
             .ConfigureAwait(false);
 
-        return (filial.Id, cliente.Id, veiculo.Id, usuario.Id, servicoId);
+        return (filial.Id, cliente.Id, veiculo.Id, usuario.Id, servicoId, responsavel.Id);
     }
 
     private static string GerarPlacaAleatoria()

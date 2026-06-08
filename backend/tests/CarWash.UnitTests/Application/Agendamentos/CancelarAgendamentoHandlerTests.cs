@@ -32,7 +32,8 @@ public class CancelarAgendamentoHandlerTests
             veiculoId: Guid.NewGuid(),
             criadoPor: UsuarioId,
             inicio: DateTime.UtcNow.AddHours(1),
-            fim: DateTime.UtcNow.AddHours(2));
+            fim: DateTime.UtcNow.AddHours(2),
+            responsavelId: Guid.NewGuid());
         return ag;
     }
 

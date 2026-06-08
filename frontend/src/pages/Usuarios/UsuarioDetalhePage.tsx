@@ -33,6 +33,7 @@ export function UsuarioDetalhePage() {
   const [salvando, setSalvando] = useState(false);
   const [alterandoStatus, setAlterandoStatus] = useState(false);
   const [modalStatusAberto, setModalStatusAberto] = useState(false);
+  const [erroStatus, setErroStatus] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelado = false;
@@ -74,6 +75,7 @@ export function UsuarioDetalhePage() {
     const novoAtivo = !usuario.ativo;
     setAlterandoStatus(true);
     setErro(null);
+    setErroStatus(null);
     setSucesso(null);
     try {
       await userService.updateStatus(usuario.id, novoAtivo);
@@ -86,7 +88,9 @@ export function UsuarioDetalhePage() {
           : 'Usuário inativado com sucesso. O acesso ao sistema foi bloqueado.',
       );
     } catch {
-      setErro('Não foi possível alterar o status do usuário.');
+      // O modal segue aberto; o erro precisa aparecer DENTRO do dialog, pois o
+      // restante da página fica aria-hidden enquanto o modal está aberto.
+      setErroStatus('Não foi possível alterar o status do usuário.');
     } finally {
       setAlterandoStatus(false);
     }
@@ -131,7 +135,10 @@ export function UsuarioDetalhePage() {
           type="button"
           variant="outline"
           disabled={isBusy}
-          onClick={() => setModalStatusAberto(true)}
+          onClick={() => {
+            setErroStatus(null);
+            setModalStatusAberto(true);
+          }}
           className="h-9 rounded-full border-zinc-700/60 bg-transparent px-4 text-sm hover:bg-zinc-800/50 hover:text-zinc-200 text-zinc-400"
         >
           {alterandoStatus ? (
@@ -310,6 +317,7 @@ export function UsuarioDetalhePage() {
         onOpenChange={(aberto) => {
           if (alterandoStatus) return;
           setModalStatusAberto(aberto);
+          if (!aberto) setErroStatus(null);
         }}
       >
         <DialogContent className="sm:max-w-[425px] bg-zinc-950 border-zinc-800">
@@ -323,11 +331,22 @@ export function UsuarioDetalhePage() {
                 : `Deseja reativar o usuário "${usuario.nome}"? O acesso dele ao sistema será restaurado.`}
             </DialogDescription>
           </DialogHeader>
+          {erroStatus && (
+            <div
+              role="alert"
+              className="rounded-xl border border-red-500/30 bg-red-950/30 px-4 py-3 text-sm text-red-400"
+            >
+              {erroStatus}
+            </div>
+          )}
           <DialogFooter className="mt-4 gap-2 sm:gap-0">
             <Button
               type="button"
               variant="outline"
-              onClick={() => setModalStatusAberto(false)}
+              onClick={() => {
+                setModalStatusAberto(false);
+                setErroStatus(null);
+              }}
               disabled={alterandoStatus}
               className="border-zinc-700 bg-transparent text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100"
             >

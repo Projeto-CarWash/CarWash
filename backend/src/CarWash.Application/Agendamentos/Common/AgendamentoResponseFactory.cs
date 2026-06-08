@@ -1,4 +1,6 @@
+using System.Linq;
 using CarWash.Application.Agendamentos.Persistence;
+using CarWash.Application.Common;
 using CarWash.Domain.Entities;
 using CarWash.Domain.Enums;
 
@@ -17,11 +19,13 @@ public static class AgendamentoResponseFactory
         Agendamento agendamento,
         IReadOnlyCollection<AgendamentoItem> itens,
         IReadOnlyCollection<ServicoSnapshot> servicos,
+        ResponsavelResumoSnapshot responsavel,
         string traceId)
     {
         ArgumentNullException.ThrowIfNull(agendamento);
         ArgumentNullException.ThrowIfNull(itens);
         ArgumentNullException.ThrowIfNull(servicos);
+        ArgumentNullException.ThrowIfNull(responsavel);
 
         return new AgendamentoResponse
         {
@@ -30,6 +34,13 @@ public static class AgendamentoResponseFactory
             ClienteId = agendamento.ClienteId,
             VeiculoId = agendamento.VeiculoId,
             ResponsavelId = agendamento.ResponsavelId,
+            Responsavel = new ResponsavelDto
+            {
+                Id = responsavel.Id,
+                Nome = responsavel.Nome,
+                Documento = DocumentoMasker.Mascarar(responsavel.Documento),
+                GrauVinculo = responsavel.GrauVinculo,
+            },
             Status = agendamento.Status.ToDbValue(),
             Inicio = agendamento.Inicio,
             Fim = agendamento.Fim,

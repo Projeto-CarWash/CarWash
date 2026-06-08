@@ -13,7 +13,7 @@ public sealed class PreConfirmarAgendamentoRequest
 
     public Guid VeiculoId { get; set; }
 
-    public Guid? ResponsavelId { get; set; }
+    public Guid ResponsavelId { get; set; }
 
     public DateTime? Inicio { get; set; }
 

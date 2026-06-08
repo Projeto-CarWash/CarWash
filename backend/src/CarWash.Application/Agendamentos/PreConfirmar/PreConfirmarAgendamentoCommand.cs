@@ -11,7 +11,7 @@ public sealed record PreConfirmarAgendamentoCommand(
     Guid FilialId,
     Guid ClienteId,
     Guid VeiculoId,
-    Guid? ResponsavelId,
+    Guid ResponsavelId,
     DateTime? Inicio,
     IReadOnlyList<Guid>? ServicoIds,
     string? Observacoes,
