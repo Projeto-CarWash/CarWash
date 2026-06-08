@@ -236,6 +236,8 @@ public sealed class ConfirmarAgendamentoHandler
             historico,
             idempotencia,
             command.TraceId,
+            command.ResponsavelId,
+            command.ClienteId,
             cancellationToken).ConfigureAwait(false);
 
         // Corrida vencida por outra requisição com a MESMA chave: a UNIQUE da

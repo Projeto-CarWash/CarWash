@@ -141,8 +141,17 @@ public sealed class CriarAgendamentoHandler : ICommandHandler<CriarAgendamentoCo
 
         // RN011 camada 4: a constraint EXCLUDE captura a race condition; o
         // repositório a traduz em AgendamentoConflitanteException (409).
-        await _agendamentos.AdicionarAsync(agendamento, itens, historico, command.TraceId, cancellationToken)
-            .ConfigureAwait(false);
+        // RF024/CA009: o repositório revalida o vínculo responsável→cliente sob
+        // SELECT FOR UPDATE dentro da transação — fecha a race condition de
+        // alteração de vínculo concorrente.
+        await _agendamentos.AdicionarAsync(
+            agendamento,
+            itens,
+            historico,
+            command.TraceId,
+            command.ResponsavelId,
+            command.ClienteId,
+            cancellationToken).ConfigureAwait(false);
 
         _logger.LogInformation(
             "Agendamento criado. AgendamentoId: {AgendamentoId}. VeiculoId: {VeiculoId}. FilialId: {FilialId}. "
