@@ -119,7 +119,14 @@ export function NovoAgendamentoPage() {
 
     const { cliente, veiculo, responsavel, dataAgendamento, horaInicio, servicos } = wizardState;
 
-    if (!cliente || !veiculo || !responsavel || !dataAgendamento || !horaInicio || servicos.length === 0) {
+    if (
+      !cliente ||
+      !veiculo ||
+      !responsavel ||
+      !dataAgendamento ||
+      !horaInicio ||
+      servicos.length === 0
+    ) {
       setGlobalError(
         'Existem campos obrigatorios nao preenchidos. Revise as etapas e tente novamente.',
       );

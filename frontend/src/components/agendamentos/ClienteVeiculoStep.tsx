@@ -81,7 +81,9 @@ export function ClienteVeiculoStep({
 
   // Responsável (RF024) — criação inline
   const [responsavelNome, setResponsavelNome] = useState(cliente?.nome ?? '');
-  const [responsavelDocumento, setResponsavelDocumento] = useState(cliente?.cpf ?? cliente?.cnpj ?? '');
+  const [responsavelDocumento, setResponsavelDocumento] = useState(
+    cliente?.cpf ?? cliente?.cnpj ?? '',
+  );
   const [criandoResponsavel, setCriandoResponsavel] = useState(false);
   const [erroResponsavel, setErroResponsavel] = useState<string | null>(null);
   const [responsavelCriado, setResponsavelCriado] = useState<ResponsavelResumido | null>(null);
@@ -228,7 +230,8 @@ export function ClienteVeiculoStep({
   const isDataValida = !!dataAgendamento && !isDomingo;
   const isHoraValida = !!horaInicio && !erroHora;
   const isFilialValida = !!filialId;
-  const isStepValid = isFilialValida && !!cliente && !!veiculo && !!responsavelCriado && isDataValida && isHoraValida;
+  const isStepValid =
+    isFilialValida && !!cliente && !!veiculo && !!responsavelCriado && isDataValida && isHoraValida;
 
   const handleNext = useCallback(() => {
     setTentouAvancar(true);
@@ -260,7 +263,19 @@ export function ClienteVeiculoStep({
     if (isStepValid) {
       onNext();
     }
-  }, [isStepValid, onNext, cliente, responsavelCriado, responsavelNome, responsavelDocumento, onResponsavelChange, isFilialValida, veiculo, isDataValida, isHoraValida]);
+  }, [
+    isStepValid,
+    onNext,
+    cliente,
+    responsavelCriado,
+    responsavelNome,
+    responsavelDocumento,
+    onResponsavelChange,
+    isFilialValida,
+    veiculo,
+    isDataValida,
+    isHoraValida,
+  ]);
 
   return (
     <div>
@@ -473,7 +488,13 @@ export function ClienteVeiculoStep({
                   <p className="text-sm font-medium text-zinc-100">{responsavelCriado.nome}</p>
                   <p className="text-xs text-emerald-400">Responsável vinculado</p>
                 </div>
-                <svg className="h-5 w-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg
+                  className="h-5 w-5 text-emerald-500"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               </div>
@@ -484,7 +505,10 @@ export function ClienteVeiculoStep({
                 </p>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <Label htmlFor="resp-nome" className="text-[10px] font-bold tracking-[0.15em] text-zinc-500">
+                    <Label
+                      htmlFor="resp-nome"
+                      className="text-[10px] font-bold tracking-[0.15em] text-zinc-500"
+                    >
                       NOME
                     </Label>
                     <Input
@@ -497,7 +521,10 @@ export function ClienteVeiculoStep({
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="resp-doc" className="text-[10px] font-bold tracking-[0.15em] text-zinc-500">
+                    <Label
+                      htmlFor="resp-doc"
+                      className="text-[10px] font-bold tracking-[0.15em] text-zinc-500"
+                    >
                       CPF/CNPJ
                     </Label>
                     <Input
@@ -521,8 +548,7 @@ export function ClienteVeiculoStep({
 
             {tentouAvancar && !responsavelCriado && (
               <p className="flex items-center gap-1.5 text-xs text-red-500">
-                <AlertCircle className="h-3.5 w-3.5" />
-                O responsável é obrigatório para prosseguir.
+                <AlertCircle className="h-3.5 w-3.5" />O responsável é obrigatório para prosseguir.
               </p>
             )}
           </div>
