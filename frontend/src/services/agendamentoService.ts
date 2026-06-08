@@ -36,23 +36,27 @@ export const agendamentoService = {
 
   async buscarVeiculosPorCliente(clienteId: string): Promise<VeiculoResumido[]> {
     const cliente = await clienteService.obterPorId(clienteId);
-    return cliente.veiculos.map((v) => ({
-      id: v.id,
-      placa: v.placa,
-      modelo: v.modelo,
-      cor: v.cor,
-    }));
+    return cliente.veiculos.map((v) => {
+      return {
+        id: v.id,
+        placa: v.placa,
+        modelo: v.modelo,
+        cor: v.cor,
+      };
+    });
   },
 
   async listarServicosAtivos(): Promise<ServicoAtivo[]> {
     const response = await servicoService.listar({ ativo: true });
-    return response.itens.map((s) => ({
-      id: s.id,
-      nome: s.nome,
-      preco: s.preco,
-      duracao: s.duracaoMin,
-      descricao: '',
-    }));
+    return response.itens.map((s) => {
+      return {
+        id: s.id,
+        nome: s.nome,
+        preco: s.preco,
+        duracao: s.duracaoMin,
+        descricao: '',
+      };
+    });
   },
 
   /**
