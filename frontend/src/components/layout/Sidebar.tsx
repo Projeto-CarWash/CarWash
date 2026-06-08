@@ -55,8 +55,10 @@ export function Sidebar() {
     const baseClasses =
       'group relative flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all';
     const ativo = isActive(link.to);
-    const ativoClasses = 'bg-gradient-to-r from-red-600/20 to-transparent text-white';
-    const inativoClasses = 'text-zinc-400 hover:bg-zinc-800/40 hover:text-zinc-200';
+    const ativoClasses =
+      'bg-gradient-to-r from-red-600/10 dark:from-red-600/20 to-transparent text-red-600 dark:text-white';
+    const inativoClasses =
+      'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/40 hover:text-zinc-900 dark:hover:text-zinc-200';
 
     if (link.to) {
       return (
@@ -67,7 +69,9 @@ export function Sidebar() {
               aria-hidden="true"
             />
           )}
-          <link.icon className={`h-4 w-4 ${ativo ? 'text-white' : 'text-zinc-500'}`} />
+          <link.icon
+            className={`h-4 w-4 ${ativo ? 'text-red-600 dark:text-white' : 'text-zinc-500'}`}
+          />
           <span>{link.label}</span>
         </NavLink>
       );
@@ -81,46 +85,54 @@ export function Sidebar() {
       >
         <link.icon className="h-4 w-4 text-zinc-500" />
         <span>{link.label}</span>
-        <span className="ml-auto text-[9px] tracking-widest text-zinc-600">EM BREVE</span>
+        <span className="ml-auto text-[9px] tracking-widest text-zinc-400 dark:text-zinc-600">
+          EM BREVE
+        </span>
       </button>
     );
   }
 
   return (
-    <aside className="fixed bottom-0 left-0 top-0 z-40 flex w-64 flex-col border-r border-zinc-800/60 bg-zinc-950">
+    <aside className="fixed bottom-0 left-0 top-0 z-40 flex w-64 flex-col border-r border-zinc-200 dark:border-zinc-800/60 bg-white dark:bg-zinc-950">
       <div className="flex items-center gap-3 px-5 py-5">
         <div className="flex h-12 w-12 items-center justify-center">
           <img src="/logo.png" alt="Logo CarWash" className="h-full w-full object-contain" />
         </div>
         <div>
           <h1 className="text-lg font-black tracking-wider">
-            <span className="text-zinc-50">CAR</span>
+            <span className="text-zinc-900 dark:text-zinc-50">CAR</span>
             <span className="text-red-600">WASH</span>
           </h1>
-          <p className="mt-0.5 text-[10.5px] font-bold tracking-[0.2em] text-zinc-500">
-            ADMIN <span className="px-0.5 text-zinc-600">•</span> v2.4
+          <p className="mt-0.5 text-[10.5px] font-bold tracking-[0.2em] text-zinc-400 dark:text-zinc-500">
+            ADMIN <span className="px-0.5 text-zinc-300 dark:text-zinc-600">•</span> v2.4
           </p>
         </div>
       </div>
 
-      <Separator className="bg-zinc-800/60" />
+      <Separator className="bg-zinc-200 dark:bg-zinc-800/60" />
 
       <nav className="flex-1 overflow-y-auto px-3 py-4">
-        <p className="mb-2 px-3 text-[10px] font-bold tracking-[0.2em] text-zinc-600">OPERAÇÃO</p>
+        <p className="mb-2 px-3 text-[10px] font-bold tracking-[0.2em] text-zinc-400 dark:text-zinc-600">
+          OPERAÇÃO
+        </p>
         <ul className="mb-4 space-y-0.5">
           {operacaoLinks.map((link) => (
             <li key={link.label}>{renderItem(link)}</li>
           ))}
         </ul>
 
-        <p className="mb-2 px-3 text-[10px] font-bold tracking-[0.2em] text-zinc-600">GESTÃO</p>
+        <p className="mb-2 px-3 text-[10px] font-bold tracking-[0.2em] text-zinc-400 dark:text-zinc-600">
+          GESTÃO
+        </p>
         <ul className="mb-4 space-y-0.5">
           {gestaoLinks.map((link) => (
             <li key={link.label}>{renderItem(link)}</li>
           ))}
         </ul>
 
-        <p className="mb-2 px-3 text-[10px] font-bold tracking-[0.2em] text-zinc-600">SISTEMA</p>
+        <p className="mb-2 px-3 text-[10px] font-bold tracking-[0.2em] text-zinc-400 dark:text-zinc-600">
+          SISTEMA
+        </p>
         <ul className="space-y-0.5">
           {sistemaLinks.map((link) => (
             <li key={link.label}>{renderItem(link)}</li>
@@ -128,17 +140,19 @@ export function Sidebar() {
         </ul>
       </nav>
 
-      <Separator className="bg-zinc-800/60" />
+      <Separator className="bg-zinc-200 dark:bg-zinc-800/60" />
 
       <div className="flex items-center gap-3 px-5 py-4">
         <Avatar>
-          <AvatarFallback className="bg-zinc-800 text-xs font-semibold text-zinc-300">
+          <AvatarFallback className="bg-zinc-100 dark:bg-zinc-800 text-xs font-semibold text-zinc-700 dark:text-zinc-300">
             {inicial}
           </AvatarFallback>
         </Avatar>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium text-zinc-200">{user?.nome ?? '—'}</p>
-          <p className="text-[10px] font-semibold tracking-widest text-zinc-500">
+          <p className="truncate text-sm font-medium text-zinc-700 dark:text-zinc-200">
+            {user?.nome ?? '—'}
+          </p>
+          <p className="text-[10px] font-semibold tracking-widest text-zinc-400 dark:text-zinc-500">
             {user?.perfil?.toUpperCase() ?? ''}
           </p>
         </div>
