@@ -115,7 +115,7 @@ export const agendamentoService = {
       const filiais = await filialService.listar();
       filialId = filiais.itens?.[0]?.id ?? '';
     } catch {
-    
+      // Falha ao buscar filiais - continuará com filialId vazio retornando valores padrão
     }
 
     if (!filialId) {
@@ -158,7 +158,7 @@ export const agendamentoService = {
           }
         }
       } catch {
-        
+        // Erro ao consultar agenda para o mês - valores padrão (0) serão usados
       }
 
       const total = confirmados + pendentes + cancelados;
