@@ -167,8 +167,26 @@ test('RF008.2 - frontend NAO bloqueia por "horario ocupado" (sem regra local de 
   const responsavelId = await criarResponsavel(api, sessao, clienteId);
   const v1 = await criarVeiculo(api, sessao, clienteId);
   const v2 = await criarVeiculo(api, sessao, clienteId);
-  expect((await criarAgendamento(api, sessao, { clienteId, veiculoId: v1, responsavelId, inicioIso: inicio })).status).toBe(201);
-  expect((await criarAgendamento(api, sessao, { clienteId, veiculoId: v2, responsavelId, inicioIso: inicio })).status).toBe(201);
+  expect(
+    (
+      await criarAgendamento(api, sessao, {
+        clienteId,
+        veiculoId: v1,
+        responsavelId,
+        inicioIso: inicio,
+      })
+    ).status,
+  ).toBe(201);
+  expect(
+    (
+      await criarAgendamento(api, sessao, {
+        clienteId,
+        veiculoId: v2,
+        responsavelId,
+        inicioIso: inicio,
+      })
+    ).status,
+  ).toBe(201);
 });
 
 test('RF008.2 - UI Novo Agendamento NAO conclui 201 (veiculos MOCKADOS) [FALHA ESPERADA]', async () => {
@@ -184,9 +202,9 @@ test('RF008.2 - UI Novo Agendamento NAO conclui 201 (veiculos MOCKADOS) [FALHA E
   await opcao.click();
 
   // Veículos vêm de MOCK_VEICULOS (chaves c1..c5) → cliente real → lista vazia.
-  await expect(
-    page.getByText(/n[ãa]o possui ve[íi]culos vinculados/i),
-  ).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText(/n[ãa]o possui ve[íi]culos vinculados/i)).toBeVisible({
+    timeout: 10_000,
+  });
   await page.screenshot({ path: `${EVID}/rf008-2-lacuna-veiculos-mockados.png`, fullPage: true });
 
   // GAP CONFIRMADO (assertivo): cliente real → 0 veículos (mock) → não há como
@@ -203,8 +221,22 @@ test('RF008.3 - API retorna 409 de VEICULO (mesmo veiculo, janela sobreposta) co
   const clienteId = await criarCliente(api, sessao);
   const responsavelId = await criarResponsavel(api, sessao, clienteId);
   const veiculoId = await criarVeiculo(api, sessao, clienteId);
-  expect((await criarAgendamento(api, sessao, { clienteId, veiculoId, responsavelId, inicioIso: inicio })).status).toBe(201);
-  const r2 = await criarAgendamento(api, sessao, { clienteId, veiculoId, responsavelId, inicioIso: inicio });
+  expect(
+    (
+      await criarAgendamento(api, sessao, {
+        clienteId,
+        veiculoId,
+        responsavelId,
+        inicioIso: inicio,
+      })
+    ).status,
+  ).toBe(201);
+  const r2 = await criarAgendamento(api, sessao, {
+    clienteId,
+    veiculoId,
+    responsavelId,
+    inicioIso: inicio,
+  });
   expect(r2.status).toBe(409);
   expect(String(r2.body['title'] ?? '').toLowerCase()).toContain('veículo');
   expect(String(r2.body['type'] ?? '')).toContain('agendamento-conflito-veiculo');
@@ -217,7 +249,12 @@ test('RF008.3 - API retorna 409 de CAPACIDADE (excede celulas ativas) com title 
   const clienteId = await criarCliente(api, sessao);
   const responsavelId = await criarResponsavel(api, sessao, clienteId);
   const v5 = await criarVeiculo(api, sessao, clienteId);
-  const r5 = await criarAgendamento(api, sessao, { clienteId, veiculoId: v5, responsavelId, inicioIso: inicio });
+  const r5 = await criarAgendamento(api, sessao, {
+    clienteId,
+    veiculoId: v5,
+    responsavelId,
+    inicioIso: inicio,
+  });
   expect(r5.status).toBe(409);
   expect(String(r5.body['title'] ?? '').toLowerCase()).toContain('capacidade');
   expect(String(r5.body['type'] ?? '')).toContain('capacidade-filial');
@@ -231,15 +268,19 @@ test('RF008.3 - mapeamento do FRONT (NovoAgendamentoPage) traduz 409 real para m
   const mapear = (status: number, title: string): string => {
     const texto = (title ?? '').toLowerCase();
     if (status !== 409) return '';
-    if (texto.includes('capacidade')) return 'Capacidade da filial atingida para o horário informado.';
+    if (texto.includes('capacidade'))
+      return 'Capacidade da filial atingida para o horário informado.';
     if (texto.includes('veículo') || texto.includes('veiculo'))
       return 'Já existe agendamento para este veículo no horário informado.';
     return title ?? 'Conflito detectado. Ajuste os dados e tente novamente.';
   };
   // Títulos reais capturados nos testes acima:
-  expect(mapear(409, 'O veículo já possui um agendamento neste horário. Escolha outro horário ou veículo.')).toBe(
-    'Já existe agendamento para este veículo no horário informado.',
-  );
+  expect(
+    mapear(
+      409,
+      'O veículo já possui um agendamento neste horário. Escolha outro horário ou veículo.',
+    ),
+  ).toBe('Já existe agendamento para este veículo no horário informado.');
   expect(mapear(409, 'Capacidade da filial esgotada para o horário solicitado.')).toBe(
     'Capacidade da filial atingida para o horário informado.',
   );
@@ -256,11 +297,34 @@ test('RF008 - ponta a ponta no BACKEND: simultaneos criados, capacidade respeita
   const responsavelId = await criarResponsavel(api, sessao, clienteId);
   const v1 = await criarVeiculo(api, sessao, clienteId);
   const v2 = await criarVeiculo(api, sessao, clienteId);
-  expect((await criarAgendamento(api, sessao, { clienteId, veiculoId: v1, responsavelId, inicioIso: inicio })).status).toBe(201);
-  expect((await criarAgendamento(api, sessao, { clienteId, veiculoId: v2, responsavelId, inicioIso: inicio })).status).toBe(201);
+  expect(
+    (
+      await criarAgendamento(api, sessao, {
+        clienteId,
+        veiculoId: v1,
+        responsavelId,
+        inicioIso: inicio,
+      })
+    ).status,
+  ).toBe(201);
+  expect(
+    (
+      await criarAgendamento(api, sessao, {
+        clienteId,
+        veiculoId: v2,
+        responsavelId,
+        inicioIso: inicio,
+      })
+    ).status,
+  ).toBe(201);
 
   // (2) Conflito real (mesmo veículo) → 409 com mensagem de negócio (não técnico).
-  const r409 = await criarAgendamento(api, sessao, { clienteId, veiculoId: v1, responsavelId, inicioIso: inicio });
+  const r409 = await criarAgendamento(api, sessao, {
+    clienteId,
+    veiculoId: v1,
+    responsavelId,
+    inicioIso: inicio,
+  });
   expect(r409.status).toBe(409);
   expect(String(r409.body['title'] ?? '').toLowerCase()).toContain('veículo');
 });
