@@ -100,6 +100,15 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
             .ConfigureAwait(false);
     }
 
+    public async Task<Agendamento?> ObterPorIdAsync(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        return await _db.Agendamentos
+            .FirstOrDefaultAsync(a => a.Id == id, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
     public async Task CriarAsync(
         Agendamento agendamento,
         List<AgendamentoItem> itens,
@@ -114,8 +123,11 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
 
         try
         {
-            var filial = await _db.Filiais.AsNoTracking()
-                .FirstAsync(f => f.Id == agendamento.FilialId, cancellationToken)
+            var filial = await _db.Filiais
+                .FromSqlRaw(
+                    "SELECT * FROM filiais WHERE id = {0} FOR UPDATE",
+                    agendamento.FilialId)
+                .FirstAsync(cancellationToken)
                 .ConfigureAwait(false);
 
             var ocupacao = await ContarOcupacaoAsync(

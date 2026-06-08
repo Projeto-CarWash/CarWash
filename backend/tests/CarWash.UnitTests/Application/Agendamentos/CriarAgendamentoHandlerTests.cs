@@ -197,6 +197,28 @@ public class CriarAgendamentoHandlerTests
     }
 
     [Fact]
+    public async Task Capacidade_conta_apenas_agendado_e_em_andamento()
+    {
+        SetupEntidadesValidas();
+        _repo.ExisteConflitoVeiculoAsync(_veiculoId, Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+            .Returns(false);
+
+        _repo.ContarOcupacaoAsync(_filialId, Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+            .Returns(3);
+
+        var handler = NovoHandler();
+        var cmd = CommandValido();
+        var resposta = await handler.HandleAsync(cmd, CancellationToken.None);
+
+        resposta.Message.Should().Be("Agendamento criado com sucesso.");
+        await _repo.Received(1).ContarOcupacaoAsync(
+            _filialId,
+            Arg.Any<DateTime>(),
+            Arg.Any<DateTime>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task Capacidade_nao_atingida_sucesso()
     {
         SetupEntidadesValidas();

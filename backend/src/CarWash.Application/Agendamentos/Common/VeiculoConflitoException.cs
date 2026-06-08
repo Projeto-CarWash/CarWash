@@ -4,7 +4,7 @@ namespace CarWash.Application.Agendamentos.Common;
 
 public sealed class VeiculoConflitoException : ConflictException
 {
-    public const string MensagemPadrao = "Já existe agendamento para este veículo no horário informado.";
+    public const string MensagemPadrao = "Este veículo já possui agendamento ativo nesta janela de horário.";
     public const string SlugPadrao = "veiculo-conflito";
 
     public VeiculoConflitoException()

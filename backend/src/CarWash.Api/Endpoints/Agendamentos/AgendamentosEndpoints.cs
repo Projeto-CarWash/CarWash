@@ -1,9 +1,11 @@
 using CarWash.Api.Filters;
 using CarWash.Application.Abstractions.Messaging;
 using CarWash.Application.Agendamentos.Criar;
+using CarWash.Application.Agendamentos.ObterPorId;
 using FluentValidation;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Net.Http.Headers;
 using ValidationException = CarWash.Application.Common.Exceptions.ValidationException;
 
 namespace CarWash.Api.Endpoints.Agendamentos;
@@ -29,6 +31,13 @@ public static class AgendamentosEndpoints
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status409Conflict)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
+
+        grupo.MapGet("/{id:guid}", ObterPorIdAsync)
+            .WithName("ObterAgendamentoPorId")
+            .Produces<ObterAgendamentoPorIdResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
         return app;
     }
@@ -72,6 +81,20 @@ public static class AgendamentosEndpoints
             traceId, resposta.Data.Id, usuarioId);
 
         return TypedResults.Created($"/api/v1/agendamentos/{resposta.Data.Id}", resposta);
+    }
+
+    private static async Task<Ok<ObterAgendamentoPorIdResponse>> ObterPorIdAsync(
+        Guid id,
+        [FromServices] IQueryHandler<ObterAgendamentoPorIdQuery, ObterAgendamentoPorIdResponse> handler,
+        HttpContext http,
+        CancellationToken cancellationToken)
+    {
+        http.Response.Headers[HeaderNames.CacheControl] = "no-store";
+
+        var resposta = await handler.HandleAsync(
+            new ObterAgendamentoPorIdQuery(id), cancellationToken).ConfigureAwait(false);
+
+        return TypedResults.Ok(resposta);
     }
 
     private static async Task ValidarAsync<T>(

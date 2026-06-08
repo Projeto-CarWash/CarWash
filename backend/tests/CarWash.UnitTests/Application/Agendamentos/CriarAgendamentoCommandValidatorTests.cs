@@ -50,7 +50,24 @@ public class CriarAgendamentoCommandValidatorTests
         var cmd = CommandValido() with { Inicio = default };
         var resultado = await _sut.ValidateAsync(cmd, CancellationToken.None);
         resultado.IsValid.Should().BeFalse();
-        resultado.Errors.Should().ContainSingle(e => e.PropertyName == "Inicio");
+        resultado.Errors.Should().Contain(e => e.PropertyName == "Inicio");
+    }
+
+    [Fact]
+    public async Task Inicio_no_passado_falha()
+    {
+        var cmd = CommandValido() with { Inicio = DateTime.UtcNow.AddHours(-1) };
+        var resultado = await _sut.ValidateAsync(cmd, CancellationToken.None);
+        resultado.IsValid.Should().BeFalse();
+        resultado.Errors.Should().Contain(e => e.PropertyName == "Inicio");
+    }
+
+    [Fact]
+    public async Task Inicio_agora_passa()
+    {
+        var cmd = CommandValido() with { Inicio = DateTime.UtcNow };
+        var resultado = await _sut.ValidateAsync(cmd, CancellationToken.None);
+        resultado.IsValid.Should().BeTrue();
     }
 
     [Fact]

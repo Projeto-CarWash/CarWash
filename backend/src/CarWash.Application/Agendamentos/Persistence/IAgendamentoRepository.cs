@@ -21,6 +21,8 @@ public interface IAgendamentoRepository
     Task<IReadOnlyList<Servico>> ObterServicosPorIdsAsync(
         IReadOnlyList<Guid> servicoIds, CancellationToken cancellationToken);
 
+    Task<Agendamento?> ObterPorIdAsync(Guid id, CancellationToken cancellationToken);
+
     Task CriarAsync(
         Agendamento agendamento,
         List<AgendamentoItem> itens,

@@ -20,7 +20,8 @@ public sealed class CriarAgendamentoCommandValidator : AbstractValidator<CriarAg
         .When(x => x.ResponsavelId.HasValue);
 
         RuleFor(x => x.Inicio)
-            .NotEqual(default(DateTime)).WithMessage("A data/hora de início é obrigatória (ISO-8601 UTC).");
+            .NotEqual(default(DateTime)).WithMessage("A data/hora de início é obrigatória (ISO-8601 UTC).")
+            .Must(inicio => inicio >= DateTime.UtcNow.AddMinutes(-1)).WithMessage("A data/hora de início não pode estar no passado.");
 
         RuleFor(x => x.ServicoIds!)
             .NotNull().WithMessage("A lista de serviços é obrigatória.")
