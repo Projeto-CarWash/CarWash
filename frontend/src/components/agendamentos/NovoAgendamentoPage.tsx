@@ -17,6 +17,7 @@ import type {
   AgendamentoWizardState,
   ClienteResumido,
   CriarAgendamentoPayload,
+  ResponsavelResumido,
   ServicoAtivo,
   VeiculoResumido,
 } from '@/types/agendamento';
@@ -36,6 +37,7 @@ const INITIAL_STATE: AgendamentoWizardState = {
   filialNome: '',
   cliente: null,
   veiculo: null,
+  responsavel: null,
   dataAgendamento: '',
   horaInicio: '',
   servicos: [],
@@ -79,6 +81,11 @@ export function NovoAgendamentoPage() {
     setGlobalError(null);
   }, []);
 
+  const handleResponsavelChange = useCallback((responsavel: ResponsavelResumido | null) => {
+    setWizardState((prev) => ({ ...prev, responsavel }));
+    setGlobalError(null);
+  }, []);
+
   const handleDataChange = useCallback((dataAgendamento: string) => {
     setWizardState((prev) => ({ ...prev, dataAgendamento }));
     setGlobalError(null);
@@ -117,9 +124,16 @@ export function NovoAgendamentoPage() {
     if (isSubmitting) return;
     if (!confirmado) return;
 
-    const { cliente, veiculo, dataAgendamento, horaInicio, servicos } = wizardState;
+    const { cliente, veiculo, responsavel, dataAgendamento, horaInicio, servicos } = wizardState;
 
-    if (!cliente || !veiculo || !dataAgendamento || !horaInicio || servicos.length === 0) {
+    if (
+      !cliente ||
+      !veiculo ||
+      !responsavel ||
+      !dataAgendamento ||
+      !horaInicio ||
+      servicos.length === 0
+    ) {
       setGlobalError(
         'Existem campos obrigatorios nao preenchidos. Revise as etapas e tente novamente.',
       );
@@ -142,12 +156,12 @@ export function NovoAgendamentoPage() {
 
     const inicio = new Date(`${dataAgendamento}T${horaInicio}:00`);
 
-    // RF019/RF024 — payload real, sem valores mockados. `responsavelId` é
-    // opcional e omitido enquanto o fluxo não tem seleção de responsável.
+    // RF019/RF024 — payload real com responsável obrigatório.
     const payload: CriarAgendamentoPayload = {
       clienteId: cliente.id,
       veiculoId: veiculo.id,
       filialId: wizardState.filialId,
+      responsavelId: responsavel.id,
       inicio: inicio.toISOString(),
       servicoIds: servicos.map((s) => s.id),
     };
@@ -334,6 +348,7 @@ export function NovoAgendamentoPage() {
               horaInicio={wizardState.horaInicio}
               onClienteChange={handleClienteChange}
               onVeiculoChange={handleVeiculoChange}
+              onResponsavelChange={handleResponsavelChange}
               onDataChange={handleDataChange}
               onHoraChange={handleHoraChange}
               onNext={() => goToStep(2)}
