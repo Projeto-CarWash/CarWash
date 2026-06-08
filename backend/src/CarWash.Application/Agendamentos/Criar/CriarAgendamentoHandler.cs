@@ -143,15 +143,41 @@ public sealed class CriarAgendamentoHandler : ICommandHandler<CriarAgendamentoCo
         // repositório a traduz em AgendamentoConflitanteException (409).
         // RF024/CA009: o repositório revalida o vínculo responsável→cliente sob
         // SELECT FOR UPDATE dentro da transação — fecha a race condition de
-        // alteração de vínculo concorrente.
-        await _agendamentos.AdicionarAsync(
-            agendamento,
-            itens,
-            historico,
-            command.TraceId,
+        // alteração de vínculo concorrente. Em caso de rejeição, loga motivo
+        // padronizado antes de relançar a exceção.
+        try
+        {
+            await _agendamentos.AdicionarAsync(
+                agendamento,
+                itens,
+                historico,
+                command.TraceId,
+                command.ResponsavelId,
+                command.ClienteId,
+                cancellationToken).ConfigureAwait(false);
+        }
+    catch (ConflictException ex) when (ex.Slug == "responsavel-nao-vinculado")
+    {
+        _logger.LogWarning(
+            ex,
+            "Agendamento rejeitado na transação — vínculo responsável alterado concorrentemente. ResponsavelId: {ResponsavelId}. ClienteId: {ClienteId}. MotivoFalha: {MotivoFalha}. TraceId: {TraceId}",
             command.ResponsavelId,
             command.ClienteId,
-            cancellationToken).ConfigureAwait(false);
+            MotivosFalhaResponsavel.NaoVinculado,
+            command.TraceId);
+        throw;
+    }
+    catch (RecursoInativoException ex)
+    {
+        _logger.LogWarning(
+            ex,
+            "Agendamento rejeitado na transação — responsável inativado concorrentemente. ResponsavelId: {ResponsavelId}. ClienteId: {ClienteId}. MotivoFalha: {MotivoFalha}. TraceId: {TraceId}",
+            command.ResponsavelId,
+            command.ClienteId,
+            MotivosFalhaResponsavel.Inativo,
+            command.TraceId);
+        throw;
+    }
 
         _logger.LogInformation(
             "Agendamento criado. AgendamentoId: {AgendamentoId}. VeiculoId: {VeiculoId}. FilialId: {FilialId}. "
