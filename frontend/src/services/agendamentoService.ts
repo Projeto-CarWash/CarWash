@@ -237,16 +237,19 @@ export const agendamentoService = {
     }
   },
 
-  /**
-   * Busca responsáveis vinculados ao cliente (RF024).
-   *
-   * <p>Não existe endpoint GET dedicado; busca via detalhe do cliente que pode
-   * incluir responsáveis, ou retorna lista vazia para que a UI ofereça criação.</p>
-   */
-  buscarResponsaveisPorCliente(_clienteId: string): Promise<ResponsavelResumido[]> {
-    // O backend não expõe GET /api/v1/clientes/{id}/responsaveis.
-    // Retorna lista vazia — a UI oferece a criação inline.
-    return Promise.resolve([]);
+  async buscarResponsaveisPorCliente(clienteId: string): Promise<ResponsavelResumido[]> {
+    try {
+      const { data } = await api.get<{ id: string; nome: string; documento: string }[]>(
+        `/api/v1/clientes/${clienteId}/responsaveis`,
+      );
+      return data.map((r) => ({
+        id: r.id,
+        nome: r.nome,
+        documento: r.documento,
+      }));
+    } catch {
+      return [];
+    }
   },
 
   /**

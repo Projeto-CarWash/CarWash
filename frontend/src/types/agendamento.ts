@@ -19,6 +19,7 @@ export interface VeiculoResumido {
 export interface ResponsavelResumido {
   id: string;
   nome: string;
+  documento?: string;
 }
 
 export interface ServicoAtivo {
