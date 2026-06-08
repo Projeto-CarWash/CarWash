@@ -64,10 +64,7 @@ export function ObservacoesLogisticasField({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-baseline justify-between gap-2">
-        <Label
-          htmlFor={id}
-          className="text-zinc-300"
-        >
+        <Label htmlFor={id} className="text-zinc-300">
           Observações logísticas{' '}
           <span className="text-xs font-normal text-zinc-500">(opcional)</span>
         </Label>
@@ -95,7 +92,9 @@ export function ObservacoesLogisticasField({
         value={value}
         rows={4}
         maxLength={MAX_CHARS}
-        placeholder={readonly ? '' : 'Informe observações complementares sobre a logística deste agendamento…'}
+        placeholder={
+          readonly ? '' : 'Informe observações complementares sobre a logística deste agendamento…'
+        }
         readOnly={readonly}
         disabled={disabled}
         onBlur={onBlur}
@@ -114,12 +113,7 @@ export function ObservacoesLogisticasField({
 
       {/* Região de feedback: erro (assertiva) ou hint (não interrompe leitura) */}
       {error ? (
-        <p
-          id={errorId}
-          role="alert"
-          aria-live="assertive"
-          className="text-xs text-red-400"
-        >
+        <p id={errorId} role="alert" aria-live="assertive" className="text-xs text-red-400">
           {error}
         </p>
       ) : (

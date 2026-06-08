@@ -1,4 +1,6 @@
 import api from './api';
+import { clienteService } from './clienteService';
+import { servicoService } from './servicoService';
 
 import type {
   AgendamentoResponse,
@@ -14,80 +16,6 @@ import type {
   VeiculoResumido,
   CancelarAgendamentoResponse,
 } from '@/types/agendamento';
-
-const MOCK_VEICULOS: Record<string, VeiculoResumido[]> = {
-  c1: [
-    { id: 'v1', placa: 'ABC-1D23', modelo: 'VW Golf GTI', cor: 'Preto', ano: 2023 },
-    { id: 'v2', placa: 'XYZ-9H87', modelo: 'Hyundai HB20', cor: 'Prata', ano: 2021 },
-  ],
-  c2: [{ id: 'v3', placa: 'DEF-4E56', modelo: 'Honda Civic', cor: 'Branco', ano: 2024 }],
-  c3: [
-    { id: 'v4', placa: 'GHI-7F89', modelo: 'Toyota Hilux', cor: 'Prata', ano: 2022 },
-    { id: 'v5', placa: 'JKL-2G34', modelo: 'Fiat Toro', cor: 'Vermelho', ano: 2023 },
-    { id: 'v6', placa: 'MNO-5A67', modelo: 'Chevrolet S10', cor: 'Preto', ano: 2021 },
-  ],
-  c4: [],
-  c5: [{ id: 'v7', placa: 'PQR-8B12', modelo: 'BMW 320i', cor: 'Azul', ano: 2024 }],
-};
-
-const MOCK_SERVICOS: ServicoAtivo[] = [
-  {
-    id: 's1',
-    nome: 'Lavagem Simples',
-    preco: 45.0,
-    duracao: 30,
-    descricao: 'Lavagem externa com agua e shampoo automotivo.',
-  },
-  {
-    id: 's2',
-    nome: 'Lavagem Completa',
-    preco: 89.9,
-    duracao: 60,
-    descricao: 'Lavagem externa + aspiracao interna + painel.',
-  },
-  {
-    id: 's3',
-    nome: 'Polimento',
-    preco: 180.0,
-    duracao: 120,
-    descricao: 'Polimento com massa de corte e finalizacao.',
-  },
-  {
-    id: 's4',
-    nome: 'Cristalizacao',
-    preco: 250.0,
-    duracao: 90,
-    descricao: 'Cristalizacao de pintura com protecao UV.',
-  },
-  {
-    id: 's5',
-    nome: 'Higienizacao Interna',
-    preco: 120.0,
-    duracao: 45,
-    descricao: 'Limpeza profunda de estofados e carpetes.',
-  },
-  {
-    id: 's6',
-    nome: 'Enceramento',
-    preco: 70.0,
-    duracao: 40,
-    descricao: 'Aplicacao de cera protetora com brilho intenso.',
-  },
-  {
-    id: 's7',
-    nome: 'Lavagem de Motor',
-    preco: 95.0,
-    duracao: 35,
-    descricao: 'Desengraxe e lavagem do compartimento do motor.',
-  },
-  {
-    id: 's8',
-    nome: 'Vitrificacao',
-    preco: 350.0,
-    duracao: 180,
-    descricao: 'Protecao ceramica de longa duracao na pintura.',
-  },
-];
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -107,13 +35,24 @@ export const agendamentoService = {
   },
 
   async buscarVeiculosPorCliente(clienteId: string): Promise<VeiculoResumido[]> {
-    await delay(400);
-    return MOCK_VEICULOS[clienteId] ?? [];
+    const cliente = await clienteService.obterPorId(clienteId);
+    return cliente.veiculos.map((v) => ({
+      id: v.id,
+      placa: v.placa,
+      modelo: v.modelo,
+      cor: v.cor,
+    }));
   },
 
   async listarServicosAtivos(): Promise<ServicoAtivo[]> {
-    await delay(350);
-    return [...MOCK_SERVICOS];
+    const response = await servicoService.listar({ ativo: true });
+    return response.itens.map((s) => ({
+      id: s.id,
+      nome: s.nome,
+      preco: s.preco,
+      duracao: s.duracaoMin,
+      descricao: '',
+    }));
   },
 
   /**

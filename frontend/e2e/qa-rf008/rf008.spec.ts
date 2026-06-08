@@ -13,8 +13,8 @@ import {
   slotFuturoIso,
 } from './helpers-rf008';
 
-import type { APIRequestContext, BrowserContext, Page } from '@playwright/test';
 import type { SessaoApi } from './helpers-rf008';
+import type { APIRequestContext, BrowserContext, Page } from '@playwright/test';
 
 /**
  * Lote QA RF008 — agendamentos simultâneos no mesmo horário (hom, http://localhost).
@@ -97,7 +97,7 @@ let seedPlacas: string[] = [];
 
 test('SEED - 4 agendamentos simultaneos no mesmo slot via API (base para RF008.1)', async () => {
   test.setTimeout(120_000);
-  seedSlotIso = slotFuturoIso(30, 13);
+  seedSlotIso = slotFuturoIso(30);
   const r = await semearSimultaneos(api, sessao, 4, seedSlotIso);
   seedPlacas = r.placas;
   expect(seedPlacas).toHaveLength(4);
@@ -162,13 +162,31 @@ test('RF008.2 - frontend NAO bloqueia por "horario ocupado" (sem regra local de 
   // A NovoAgendamentoPage não tem verificação local de "horário ocupado"; o
   // conflito é delegado à API. Comprovação de comportamento: 2 agendamentos no
   // MESMO slot, veículos distintos, ambos 201 (não há bloqueio prévio).
-  const inicio = slotFuturoIso(31, 9);
+  const inicio = slotFuturoIso(31);
   const clienteId = await criarCliente(api, sessao);
   const responsavelId = await criarResponsavel(api, sessao, clienteId);
   const v1 = await criarVeiculo(api, sessao, clienteId);
   const v2 = await criarVeiculo(api, sessao, clienteId);
-  expect((await criarAgendamento(api, sessao, { clienteId, veiculoId: v1, responsavelId, inicioIso: inicio })).status).toBe(201);
-  expect((await criarAgendamento(api, sessao, { clienteId, veiculoId: v2, responsavelId, inicioIso: inicio })).status).toBe(201);
+  expect(
+    (
+      await criarAgendamento(api, sessao, {
+        clienteId,
+        veiculoId: v1,
+        responsavelId,
+        inicioIso: inicio,
+      })
+    ).status,
+  ).toBe(201);
+  expect(
+    (
+      await criarAgendamento(api, sessao, {
+        clienteId,
+        veiculoId: v2,
+        responsavelId,
+        inicioIso: inicio,
+      })
+    ).status,
+  ).toBe(201);
 });
 
 test('RF008.2 - UI Novo Agendamento NAO conclui 201 (veiculos MOCKADOS) [FALHA ESPERADA]', async () => {
@@ -184,9 +202,9 @@ test('RF008.2 - UI Novo Agendamento NAO conclui 201 (veiculos MOCKADOS) [FALHA E
   await opcao.click();
 
   // Veículos vêm de MOCK_VEICULOS (chaves c1..c5) → cliente real → lista vazia.
-  await expect(
-    page.getByText(/n[ãa]o possui ve[íi]culos vinculados/i),
-  ).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText(/n[ãa]o possui ve[íi]culos vinculados/i)).toBeVisible({
+    timeout: 10_000,
+  });
   await page.screenshot({ path: `${EVID}/rf008-2-lacuna-veiculos-mockados.png`, fullPage: true });
 
   // GAP CONFIRMADO (assertivo): cliente real → 0 veículos (mock) → não há como
@@ -199,12 +217,26 @@ test('RF008.2 - UI Novo Agendamento NAO conclui 201 (veiculos MOCKADOS) [FALHA E
 // CARD 04 — RF008.3: tratamento de conflito real (409)
 // ───────────────────────────────────────────────────────────────────────────
 test('RF008.3 - API retorna 409 de VEICULO (mesmo veiculo, janela sobreposta) com title de negocio', async () => {
-  const inicio = slotFuturoIso(32, 10);
+  const inicio = slotFuturoIso(32);
   const clienteId = await criarCliente(api, sessao);
   const responsavelId = await criarResponsavel(api, sessao, clienteId);
   const veiculoId = await criarVeiculo(api, sessao, clienteId);
-  expect((await criarAgendamento(api, sessao, { clienteId, veiculoId, responsavelId, inicioIso: inicio })).status).toBe(201);
-  const r2 = await criarAgendamento(api, sessao, { clienteId, veiculoId, responsavelId, inicioIso: inicio });
+  expect(
+    (
+      await criarAgendamento(api, sessao, {
+        clienteId,
+        veiculoId,
+        responsavelId,
+        inicioIso: inicio,
+      })
+    ).status,
+  ).toBe(201);
+  const r2 = await criarAgendamento(api, sessao, {
+    clienteId,
+    veiculoId,
+    responsavelId,
+    inicioIso: inicio,
+  });
   expect(r2.status).toBe(409);
   expect(String(r2.body['title'] ?? '').toLowerCase()).toContain('veículo');
   expect(String(r2.body['type'] ?? '')).toContain('agendamento-conflito-veiculo');
@@ -212,12 +244,17 @@ test('RF008.3 - API retorna 409 de VEICULO (mesmo veiculo, janela sobreposta) co
 
 test('RF008.3 - API retorna 409 de CAPACIDADE (excede celulas ativas) com title de negocio', async () => {
   test.setTimeout(120_000);
-  const inicio = slotFuturoIso(33, 8);
+  const inicio = slotFuturoIso(33);
   await semearSimultaneos(api, sessao, 4, inicio);
   const clienteId = await criarCliente(api, sessao);
   const responsavelId = await criarResponsavel(api, sessao, clienteId);
   const v5 = await criarVeiculo(api, sessao, clienteId);
-  const r5 = await criarAgendamento(api, sessao, { clienteId, veiculoId: v5, responsavelId, inicioIso: inicio });
+  const r5 = await criarAgendamento(api, sessao, {
+    clienteId,
+    veiculoId: v5,
+    responsavelId,
+    inicioIso: inicio,
+  });
   expect(r5.status).toBe(409);
   expect(String(r5.body['title'] ?? '').toLowerCase()).toContain('capacidade');
   expect(String(r5.body['type'] ?? '')).toContain('capacidade-filial');
@@ -231,15 +268,19 @@ test('RF008.3 - mapeamento do FRONT (NovoAgendamentoPage) traduz 409 real para m
   const mapear = (status: number, title: string): string => {
     const texto = (title ?? '').toLowerCase();
     if (status !== 409) return '';
-    if (texto.includes('capacidade')) return 'Capacidade da filial atingida para o horário informado.';
+    if (texto.includes('capacidade'))
+      return 'Capacidade da filial atingida para o horário informado.';
     if (texto.includes('veículo') || texto.includes('veiculo'))
       return 'Já existe agendamento para este veículo no horário informado.';
     return title ?? 'Conflito detectado. Ajuste os dados e tente novamente.';
   };
   // Títulos reais capturados nos testes acima:
-  expect(mapear(409, 'O veículo já possui um agendamento neste horário. Escolha outro horário ou veículo.')).toBe(
-    'Já existe agendamento para este veículo no horário informado.',
-  );
+  expect(
+    mapear(
+      409,
+      'O veículo já possui um agendamento neste horário. Escolha outro horário ou veículo.',
+    ),
+  ).toBe('Já existe agendamento para este veículo no horário informado.');
   expect(mapear(409, 'Capacidade da filial esgotada para o horário solicitado.')).toBe(
     'Capacidade da filial atingida para o horário informado.',
   );
@@ -251,16 +292,39 @@ test('RF008.3 - mapeamento do FRONT (NovoAgendamentoPage) traduz 409 real para m
 test('RF008 - ponta a ponta no BACKEND: simultaneos criados, capacidade respeitada e 409 de negocio', async () => {
   test.setTimeout(120_000);
   // (1) Sem conflito: 2 agendamentos no mesmo slot (veículos distintos) → 201/201.
-  const inicio = slotFuturoIso(34, 11);
+  const inicio = slotFuturoIso(34);
   const clienteId = await criarCliente(api, sessao);
   const responsavelId = await criarResponsavel(api, sessao, clienteId);
   const v1 = await criarVeiculo(api, sessao, clienteId);
   const v2 = await criarVeiculo(api, sessao, clienteId);
-  expect((await criarAgendamento(api, sessao, { clienteId, veiculoId: v1, responsavelId, inicioIso: inicio })).status).toBe(201);
-  expect((await criarAgendamento(api, sessao, { clienteId, veiculoId: v2, responsavelId, inicioIso: inicio })).status).toBe(201);
+  expect(
+    (
+      await criarAgendamento(api, sessao, {
+        clienteId,
+        veiculoId: v1,
+        responsavelId,
+        inicioIso: inicio,
+      })
+    ).status,
+  ).toBe(201);
+  expect(
+    (
+      await criarAgendamento(api, sessao, {
+        clienteId,
+        veiculoId: v2,
+        responsavelId,
+        inicioIso: inicio,
+      })
+    ).status,
+  ).toBe(201);
 
   // (2) Conflito real (mesmo veículo) → 409 com mensagem de negócio (não técnico).
-  const r409 = await criarAgendamento(api, sessao, { clienteId, veiculoId: v1, responsavelId, inicioIso: inicio });
+  const r409 = await criarAgendamento(api, sessao, {
+    clienteId,
+    veiculoId: v1,
+    responsavelId,
+    inicioIso: inicio,
+  });
   expect(r409.status).toBe(409);
   expect(String(r409.body['title'] ?? '').toLowerCase()).toContain('veículo');
 });
