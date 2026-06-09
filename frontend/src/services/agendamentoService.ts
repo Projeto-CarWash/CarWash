@@ -1,8 +1,8 @@
 import { agendaService } from './agendaService';
 import api from './api';
 import { clienteService } from './clienteService';
-import { servicoService } from './servicoService';
 import { filialService } from './filialService';
+import { servicoService } from './servicoService';
 
 import type { AgendaItemSimples } from '@/types/agenda';
 import type {
