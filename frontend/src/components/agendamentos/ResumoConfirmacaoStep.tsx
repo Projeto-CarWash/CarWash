@@ -11,6 +11,8 @@ import {
 
 import { Button } from '@/components/ui/button';
 
+import { ObservacoesLogisticasField } from './ObservacoesLogisticasField';
+
 import type { AgendamentoWizardState } from '@/types/agendamento';
 
 function formatarPreco(valor: number): string {
@@ -54,6 +56,12 @@ interface ResumoConfirmacaoStepProps {
   onBack: () => void;
   confirmado: boolean;
   onConfirmadoChange: (checked: boolean) => void;
+  /** Valor atual das observações logísticas (controlado pelo pai). */
+  observacoesLogisticas: string;
+  /** Callback para atualizar as observações logísticas no wizard state. */
+  onObservacoesLogisticasChange: (value: string) => void;
+  /** Erro de validação do campo (de Zod ou do backend). */
+  observacoesLogisticasErro?: string;
 }
 
 export function ResumoConfirmacaoStep({
@@ -63,6 +71,9 @@ export function ResumoConfirmacaoStep({
   onBack,
   confirmado,
   onConfirmadoChange,
+  observacoesLogisticas,
+  onObservacoesLogisticasChange,
+  observacoesLogisticasErro,
 }: ResumoConfirmacaoStepProps) {
   const { cliente, veiculo, servicos, dataAgendamento, horaInicio, filialNome } = wizardState;
 
@@ -194,6 +205,15 @@ export function ResumoConfirmacaoStep({
             </div>
           </div>
         </div>
+
+        {/* Observações logísticas */}
+        <ObservacoesLogisticasField
+          id="resumo-obs-logisticas"
+          value={observacoesLogisticas}
+          onChange={onObservacoesLogisticasChange}
+          error={observacoesLogisticasErro}
+          disabled={isSubmitting}
+        />
 
         <label
           htmlFor="confirmacao"

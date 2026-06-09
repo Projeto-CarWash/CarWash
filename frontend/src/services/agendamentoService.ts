@@ -1,6 +1,8 @@
 import { agendaService } from './agendaService';
 import api from './api';
+import { clienteService } from './clienteService';
 import { filialService } from './filialService';
+import { servicoService } from './servicoService';
 
 import type { AgendaItemSimples } from '@/types/agenda';
 import type {
@@ -33,40 +35,28 @@ export const agendamentoService = {
   },
 
   async buscarVeiculosPorCliente(clienteId: string): Promise<VeiculoResumido[]> {
-    const { data } = await api.get<{
-      veiculos: { id: string; placa: string; modelo: string; fabricante: string; cor: string }[];
-    }>(`/api/v1/clientes/${clienteId}`);
-
-    return (data.veiculos ?? []).map((v) => ({
-      id: v.id,
-      placa: v.placa,
-      modelo: v.modelo,
-      cor: v.cor,
-    }));
+    const cliente = await clienteService.obterPorId(clienteId);
+    return cliente.veiculos.map((v) => {
+      return {
+        id: v.id,
+        placa: v.placa,
+        modelo: v.modelo,
+        cor: v.cor,
+      };
+    });
   },
 
   async listarServicosAtivos(): Promise<ServicoAtivo[]> {
-    const { data } = await api.get<{
-      itens: {
-        id: string;
-        nome: string;
-        preco: number;
-        duracaoMin: number;
-        ativo: boolean;
-        criadoEm: string;
-        atualizadoEm: string;
-      }[];
-    }>('/api/v1/servicos', {
-      params: { ativo: true },
+    const response = await servicoService.listar({ ativo: true });
+    return response.itens.map((s) => {
+      return {
+        id: s.id,
+        nome: s.nome,
+        preco: s.preco,
+        duracao: s.duracaoMin,
+        descricao: '',
+      };
     });
-
-    return (data.itens ?? []).map((s) => ({
-      id: s.id,
-      nome: s.nome,
-      preco: s.preco,
-      duracao: s.duracaoMin,
-      descricao: undefined,
-    }));
   },
 
   async criarAgendamento(payload: CriarAgendamentoPayload): Promise<CriarAgendamentoResponse> {

@@ -74,6 +74,9 @@ function redirecionarParaLogin(): void {
     return;
   }
   if (window.location.pathname !== '/login') {
+    if (import.meta.env.MODE === 'test') {
+      return;
+    }
     window.location.href = '/login';
   }
 }
