@@ -21,8 +21,6 @@ import type {
   CancelarAgendamentoResponse,
 } from '@/types/agendamento';
 
-
-
 export const agendamentoService = {
   async buscarClientes(busca: string): Promise<ClienteResumido[]> {
     const { data } = await api.get<{ itens: ClienteResumido[] }>('/api/v1/clientes', {
