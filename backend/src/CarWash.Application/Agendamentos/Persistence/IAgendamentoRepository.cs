@@ -42,6 +42,9 @@ public interface IAgendamentoRepository
     /// Persiste o agendamento, seus itens e o evento <c>CRIADO</c> do histórico
     /// numa única transação. Em violação da EXCLUDE <c>ex_ag_veiculo_janela</c>
     /// (race condition), lança <see cref="Common.AgendamentoConflitanteException"/>.
+    /// RF024/CA009: revalida o vínculo responsável→cliente sob <c>SELECT FOR UPDATE</c>
+    /// dentro da transação — se o vínculo foi alterado concorrentemente, lança
+    /// <see cref="Common.ConflictException"/> com slug <c>responsavel-nao-vinculado</c>.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task AdicionarAsync(
@@ -49,6 +52,8 @@ public interface IAgendamentoRepository
         IReadOnlyCollection<AgendamentoItem> itens,
         AgendamentoHistorico historico,
         string correlationId,
+        Guid responsavelId,
+        Guid clienteId,
         CancellationToken cancellationToken);
 
     /// <summary>
@@ -58,7 +63,8 @@ public interface IAgendamentoRepository
     /// e a UNIQUE <c>uq_idempotencia_key_escopo</c> — relê o registro vencedor e
     /// devolve <see cref="ResultadoConfirmacaoIdempotente"/> com a resposta gravada
     /// (replay) ou lança <see cref="Common.IdempotenciaConflitanteException"/> se
-    /// o payload diverge.
+    /// o payload diverge. RF024/CA009: revalida o vínculo responsável→cliente sob
+    /// <c>SELECT FOR UPDATE</c> dentro da transação.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task<ResultadoConfirmacaoIdempotente> AdicionarComIdempotenciaAsync(
@@ -67,6 +73,8 @@ public interface IAgendamentoRepository
         AgendamentoHistorico historico,
         IdempotenciaRequisicao idempotencia,
         string correlationId,
+        Guid responsavelId,
+        Guid clienteId,
         CancellationToken cancellationToken);
 
     /// <summary>

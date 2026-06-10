@@ -1,6 +1,7 @@
 using System.Text.Json;
 using CarWash.Application.Agendamentos.Common;
 using CarWash.Application.Agendamentos.Persistence;
+using CarWash.Application.Common.Exceptions;
 using CarWash.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
@@ -106,6 +107,8 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
         IReadOnlyCollection<AgendamentoItem> itens,
         AgendamentoHistorico historico,
         string correlationId,
+        Guid responsavelId,
+        Guid clienteId,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(agendamento);
@@ -113,6 +116,8 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
         ArgumentNullException.ThrowIfNull(historico);
 
         await using var transaction = await _db.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+
+        await GarantirVinculoResponsavelAsync(responsavelId, clienteId, cancellationToken).ConfigureAwait(false);
 
         await _db.Agendamentos.AddAsync(agendamento, cancellationToken).ConfigureAwait(false);
         await _db.AgendamentoItens.AddRangeAsync(itens, cancellationToken).ConfigureAwait(false);
@@ -206,6 +211,8 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
         AgendamentoHistorico historico,
         IdempotenciaRequisicao idempotencia,
         string correlationId,
+        Guid responsavelId,
+        Guid clienteId,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(agendamento);
@@ -214,6 +221,8 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
         ArgumentNullException.ThrowIfNull(idempotencia);
 
         await using var transaction = await _db.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+
+        await GarantirVinculoResponsavelAsync(responsavelId, clienteId, cancellationToken).ConfigureAwait(false);
 
         await _db.Agendamentos.AddAsync(agendamento, cancellationToken).ConfigureAwait(false);
         await _db.AgendamentoItens.AddRangeAsync(itens, cancellationToken).ConfigureAwait(false);
@@ -467,4 +476,51 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
             throw;
         }
     }
+
+    /// <summary>
+    /// RF024/CA009: valida sob lock pessimista que o responsável pertence ao
+    /// cliente informado. O <c>SELECT ... FOR UPDATE</c> na linha de
+    /// <c>responsaveis</c> impede que uma transação concorrente altere
+    /// <c>cliente_titular_id</c> ou <c>ativo</c> entre a leitura e o
+    /// <c>COMMIT</c>. Executado DENTRO da transação de persistência do
+    /// agendamento — em caso de vínculo inválido ou responsável inativo,
+    /// lança <see cref="ConflictException"/> com slug
+    /// <c>responsavel-nao-vinculado</c> ou
+    /// <see cref="Application.Common.Exceptions.RecursoInativoException"/>,
+    /// e a transação é revertida pelo chamador (nenhum dado parcial persiste).
+    /// </summary>
+    private async Task GarantirVinculoResponsavelAsync(
+        Guid responsavelId,
+        Guid clienteId,
+        CancellationToken cancellationToken)
+    {
+        var vinculo = await _db.Responsaveis
+            .FromSqlInterpolated($"""
+                SELECT * FROM public.responsaveis
+                WHERE id = {responsavelId}
+                FOR UPDATE
+                """)
+            .Select(r => new ResponsavelVinculoSnapshot(r.Id, r.ClienteTitularId, r.Ativo))
+            .FirstOrDefaultAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        if (vinculo is null)
+        {
+            throw new NotFoundException("Responsável não encontrado.");
+        }
+
+        if (!vinculo.Ativo)
+        {
+            throw new RecursoInativoException("O responsável selecionado está inativo.");
+        }
+
+        if (vinculo.ClienteTitularId != clienteId)
+        {
+            throw new ConflictException(
+                "O responsável informado não está vinculado a este cliente.",
+                "responsavel-nao-vinculado");
+        }
+    }
+
+    private sealed record ResponsavelVinculoSnapshot(Guid Id, Guid ClienteTitularId, bool Ativo);
 }

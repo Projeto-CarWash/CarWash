@@ -76,8 +76,10 @@ public class ConfirmarAgendamentoHandlerTests
             Arg.Any<AgendamentoHistorico>(),
             Arg.Any<IdempotenciaRequisicao>(),
             Arg.Any<string>(),
+            Arg.Any<Guid>(),
+            Arg.Any<Guid>(),
             Arg.Any<CancellationToken>())
-            .Returns(ResultadoConfirmacaoIdempotente.Persistido());
+        .Returns(ResultadoConfirmacaoIdempotente.Persistido());
         _idempotencia.ObterAsync(Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns((IdempotenciaRequisicao?)null);
     }
@@ -101,6 +103,8 @@ public class ConfirmarAgendamentoHandlerTests
             Arg.Any<AgendamentoHistorico>(),
             Arg.Is<IdempotenciaRequisicao>(r => r.IdempotencyKey == IdempotencyKey && r.StatusHttp == 201),
             Arg.Any<string>(),
+            Arg.Any<Guid>(),
+            Arg.Any<Guid>(),
             Arg.Any<CancellationToken>());
     }
 
@@ -209,6 +213,8 @@ public class ConfirmarAgendamentoHandlerTests
             Arg.Any<AgendamentoHistorico>(),
             Arg.Any<IdempotenciaRequisicao>(),
             Arg.Any<string>(),
+            Arg.Any<Guid>(),
+            Arg.Any<Guid>(),
             Arg.Any<CancellationToken>());
     }
 
@@ -248,9 +254,11 @@ public class ConfirmarAgendamentoHandlerTests
             Arg.Any<AgendamentoHistorico>(),
             Arg.Any<IdempotenciaRequisicao>(),
             Arg.Any<string>(),
+            Arg.Any<Guid>(),
+            Arg.Any<Guid>(),
             Arg.Any<CancellationToken>())
-            .Returns(ResultadoConfirmacaoIdempotente.Replay(
-                JsonSerializer.Serialize(respostaOriginal, JsonOptions)));
+        .Returns(ResultadoConfirmacaoIdempotente.Replay(
+            JsonSerializer.Serialize(respostaOriginal, JsonOptions)));
 
         var handler = NovoHandler();
         var resultado = await handler.HandleAsync(
