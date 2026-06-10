@@ -802,6 +802,198 @@ public class CriarAgendamentoEndpointTests : IAsyncDisposable
             .Should().Be(0);
     }
 
+    [Fact]
+    public async Task POST_vinculo_responsavel_alterado_concorrentemente_retorna_409_CA009()
+    {
+        // RF024/CA009: o repositório revalida o vínculo responsável→cliente sob
+        // SELECT FOR UPDATE dentro da transação. Se o vínculo foi alterado entre
+        // o pre-check (AsNoTracking) e o COMMIT, o agendamento é rejeitado com 409.
+        var client = await AuthenticatedHttpClient.CreateAsync(_factory);
+        var (filialId, clienteId, veiculoId, responsavelId, servicoIds) = await SemearDependenciasAsync();
+        var inicio = DateTime.UtcNow.AddDays(13);
+
+        // Primeiro POST com vínculo válido — deve vencer com 201.
+        var primeiro = await client.PostAsJsonAsync(RotaCriar, new
+        {
+            filialId,
+            clienteId,
+            veiculoId,
+            responsavelId,
+            inicio,
+            servicoIds,
+        }, _json);
+        primeiro.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        // Simula operação administrativa concorrente que transfere o responsável
+        // para outro cliente — o domínio ainda não expõe esse método, então
+        // usamos SQL direto (mesmo padrão do AgendamentoRepositoryTests).
+        var outroClienteId = await SemearClienteAsync();
+        await using (var dbAlt = NovoDbContext())
+        {
+            await dbAlt.Database.ExecuteSqlRawAsync(
+                "UPDATE public.responsaveis SET cliente_titular_id = {0} WHERE id = {1}",
+                outroClienteId, responsavelId);
+        }
+
+        // Segundo POST com o mesmo responsavelId, mas o vínculo já foi alterado.
+        // O SELECT FOR UPDATE dentro da transação detecta cliente_titular_id ≠ clienteId
+        // e lança ConflictException → 409 com slug "responsavel-nao-vinculado".
+        var outroVeiculoId = await SemearVeiculoAsync(clienteId);
+        var segundo = await client.PostAsJsonAsync(RotaCriar, new
+        {
+            filialId,
+            clienteId,
+            veiculoId = outroVeiculoId,
+            responsavelId,
+            inicio = inicio.AddHours(2),
+            servicoIds,
+        }, _json);
+
+        segundo.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        var corpo = await segundo.Content.ReadFromJsonAsync<JsonElement>(_json);
+        corpo.GetProperty("type").GetString().Should().Contain("responsavel-nao-vinculado");
+        corpo.GetProperty("title").GetString().Should().Be("O responsável informado não está vinculado a este cliente.");
+
+        // Nenhum agendamento parcial persiste para o segundo veículo — rollback total.
+        await using var db = NovoDbContext();
+        (await db.Agendamentos.AnyAsync(a => a.VeiculoId == outroVeiculoId))
+            .Should().BeFalse("o agendamento rejeitado não deve persistir");
+    }
+
+    [Fact]
+    public async Task POST_responsavel_inativado_concorrentemente_retorna_422_CA009()
+    {
+        // RF024/CA009: se o responsável for inativado concorrentemente, o
+        // SELECT FOR UPDATE detecta ativo=false e lança RecursoInativoException → 422.
+        var client = await AuthenticatedHttpClient.CreateAsync(_factory);
+        var (filialId, clienteId, veiculoId, responsavelId, servicoIds) = await SemearDependenciasAsync();
+        var inicio = DateTime.UtcNow.AddDays(14);
+
+        // Primeiro POST com responsável ativo — deve vencer com 201.
+        var primeiro = await client.PostAsJsonAsync(RotaCriar, new
+        {
+            filialId,
+            clienteId,
+            veiculoId,
+            responsavelId,
+            inicio,
+            servicoIds,
+        }, _json);
+        primeiro.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        // Simula inativação concorrente do responsável.
+        await using (var dbAlt = NovoDbContext())
+        {
+            await dbAlt.Database.ExecuteSqlRawAsync(
+                "UPDATE public.responsaveis SET ativo = false WHERE id = {0}",
+                responsavelId);
+        }
+
+        // Segundo POST com o responsável agora inativo — 422.
+        var outroVeiculoId = await SemearVeiculoAsync(clienteId);
+        var segundo = await client.PostAsJsonAsync(RotaCriar, new
+        {
+            filialId,
+            clienteId,
+            veiculoId = outroVeiculoId,
+            responsavelId,
+            inicio = inicio.AddHours(2),
+            servicoIds,
+        }, _json);
+
+        segundo.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
+        var corpo = await segundo.Content.ReadFromJsonAsync<JsonElement>(_json);
+        corpo.GetProperty("type").GetString().Should().Contain("recurso-inativo");
+
+        // Nenhum agendamento parcial persiste — rollback total.
+        await using var db = NovoDbContext();
+        (await db.Agendamentos.AnyAsync(a => a.VeiculoId == outroVeiculoId))
+            .Should().BeFalse("o agendamento rejeitado não deve persistir");
+    }
+
+    [Fact]
+    public async Task POST_concorrente_vinculo_responsavel_alterado_nenhum_registro_parcial_CA009()
+    {
+        // RF024/CA009: após rejeição por vínculo inválido, não pode restar
+        // agendamento, item ou histórico órfão — rollback total na transação.
+        var client = await AuthenticatedHttpClient.CreateAsync(_factory);
+        var (filialId, clienteId, veiculoId, responsavelId, servicoIds) = await SemearDependenciasAsync();
+        var inicio = DateTime.UtcNow.AddDays(15);
+
+        // Cria com sucesso.
+        var valido = await client.PostAsJsonAsync(RotaCriar, new
+        {
+            filialId,
+            clienteId,
+            veiculoId,
+            responsavelId,
+            inicio,
+            servicoIds,
+        }, _json);
+        valido.StatusCode.Should().Be(HttpStatusCode.Created);
+        var corpoValido = await valido.Content.ReadFromJsonAsync<JsonElement>(_json);
+        var agendamentoValidoId = corpoValido.GetProperty("id").GetGuid();
+
+        // Altera o vínculo e tenta criar outro agendamento.
+        var outroClienteId = await SemearClienteAsync();
+        await using (var dbAlt = NovoDbContext())
+        {
+            await dbAlt.Database.ExecuteSqlRawAsync(
+                "UPDATE public.responsaveis SET cliente_titular_id = {0} WHERE id = {1}",
+                outroClienteId, responsavelId);
+        }
+
+        var outroVeiculoId = await SemearVeiculoAsync(clienteId);
+        var rejeitado = await client.PostAsJsonAsync(RotaCriar, new
+        {
+            filialId,
+            clienteId,
+            veiculoId = outroVeiculoId,
+            responsavelId,
+            inicio = inicio.AddHours(3),
+            servicoIds,
+        }, _json);
+        rejeitado.StatusCode.Should().Be(HttpStatusCode.Conflict);
+
+        // Apenas o agendamento válido deve existir — nenhum órfão.
+        await using var db = NovoDbContext();
+        var agendamentos = await db.Agendamentos
+            .Where(a => a.VeiculoId == veiculoId || a.VeiculoId == outroVeiculoId)
+            .Select(a => a.Id)
+            .ToListAsync();
+        agendamentos.Should().HaveCount(1);
+        agendamentos[0].Should().Be(agendamentoValidoId);
+
+        (await db.AgendamentoItens.CountAsync(i => !db.Agendamentos.Any(a => a.Id == i.AgendamentoId)))
+            .Should().Be(0);
+        (await db.AgendamentoHistoricos.CountAsync(h => !db.Agendamentos.Any(a => a.Id == h.AgendamentoId)))
+            .Should().Be(0);
+    }
+
+    private async Task<Guid> SemearClienteAsync()
+    {
+        await using var db = NovoDbContext();
+        var cliente = ClienteValido();
+        db.Clientes.Add(cliente);
+        await db.SaveChangesAsync();
+        return cliente.Id;
+    }
+
+    private async Task<Guid> SemearVeiculoAsync(Guid clienteId)
+    {
+        await using var db = NovoDbContext();
+        var veiculo = Veiculo.Criar(
+            id: Guid.NewGuid(),
+            clienteId: clienteId,
+            placa: new Placa(GerarPlacaAleatoria()),
+            modelo: "Corolla",
+            fabricante: "Toyota",
+            cor: "Prata");
+        db.Veiculos.Add(veiculo);
+        await db.SaveChangesAsync();
+        return veiculo.Id;
+    }
+
     private async Task<(Guid ClienteId, Guid VeiculoId)> SemearVeiculoInativoAsync()
     {
         await using var db = NovoDbContext();

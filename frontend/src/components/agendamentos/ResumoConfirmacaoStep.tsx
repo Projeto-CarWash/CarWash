@@ -175,7 +175,23 @@ export function ResumoConfirmacaoStep({
                 <User className="h-4.5 w-4.5 text-red-500" />
               </div>
               <div>
-                <p className="text-sm font-medium text-zinc-100">{wizardState.responsavel.nome}</p>
+                <p className="text-sm font-medium text-zinc-100">
+                  {wizardState.responsavel.nome}
+                  {wizardState.responsavel.documento && (
+                    <span className="ml-1.5 text-xs font-normal text-zinc-400">
+                      (
+                      {formatarDoc(
+                        wizardState.responsavel.documento.replace(/\D/g, '').length === 11
+                          ? wizardState.responsavel.documento.replace(/\D/g, '')
+                          : undefined,
+                        wizardState.responsavel.documento.replace(/\D/g, '').length === 14
+                          ? wizardState.responsavel.documento.replace(/\D/g, '')
+                          : undefined,
+                      )}
+                      )
+                    </span>
+                  )}
+                </p>
                 <p className="text-xs text-zinc-500">Responsável pelo agendamento</p>
               </div>
             </div>
