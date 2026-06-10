@@ -46,6 +46,7 @@ interface ClienteVeiculoStepProps {
   onDataChange: (data: string) => void;
   onHoraChange: (hora: string) => void;
   onNext: () => void;
+  conflitoVeiculo?: boolean;
 }
 
 export function ClienteVeiculoStep({
@@ -65,6 +66,7 @@ export function ClienteVeiculoStep({
   onDataChange,
   onHoraChange,
   onNext,
+  conflitoVeiculo,
 }: ClienteVeiculoStepProps) {
   const [busca, setBusca] = useState('');
   const [resultados, setResultados] = useState<ClienteResumido[]>([]);
@@ -78,6 +80,15 @@ export function ClienteVeiculoStep({
   const [erroVeiculos, setErroVeiculos] = useState<string | null>(null);
 
   const [tentouAvancar, setTentouAvancar] = useState(false);
+
+  // Foco no veículo em caso de conflito
+  const veiculoBlockRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (conflitoVeiculo && veiculoBlockRef.current) {
+      veiculoBlockRef.current.focus();
+    }
+  }, [conflitoVeiculo]);
 
   // Responsável (RF024) — criação inline
   const [responsavelNome, setResponsavelNome] = useState(cliente?.nome ?? '');
@@ -380,10 +391,33 @@ export function ClienteVeiculoStep({
           )}
         </div>
 
-        <div className="space-y-1.5">
+        <div
+          className="space-y-1.5 outline-none"
+          ref={veiculoBlockRef}
+          tabIndex={-1}
+          aria-invalid={conflitoVeiculo ? 'true' : undefined}
+        >
           <Label className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">
             VEÍCULO <span className="text-red-500">*</span>
           </Label>
+
+          {conflitoVeiculo && (
+            <div
+              role="alert"
+              aria-live="assertive"
+              className="mb-3 flex items-start gap-3 rounded-xl border border-red-500/30 bg-red-950/30 px-4 py-3"
+            >
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" aria-hidden="true" />
+              <div className="flex-1 space-y-1">
+                <p className="text-sm font-medium text-red-400">
+                  Veículo já possui agendamento neste horário.
+                </p>
+                <p className="text-xs text-red-400/80">
+                  Esse bloqueio vale para toda a operação, inclusive entre filiais.
+                </p>
+              </div>
+            </div>
+          )}
 
           {!cliente ? (
             <p className="rounded-xl border border-zinc-800/40 bg-zinc-900/20 px-4 py-3 text-sm text-zinc-600">
@@ -422,9 +456,11 @@ export function ClienteVeiculoStep({
                     type="button"
                     onClick={() => handleSelectVeiculo(v)}
                     className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-left transition-all ${
-                      selected
-                        ? 'border-red-500/50 bg-red-950/20 shadow-[0_0_0_1px_rgba(239,68,68,0.3)]'
-                        : 'border-zinc-700/60 bg-zinc-900/50 hover:border-zinc-600 hover:bg-zinc-800/40'
+                      selected && conflitoVeiculo
+                        ? 'border-red-500 bg-red-950/20 shadow-[0_0_0_1px_rgba(239,68,68,0.5)]'
+                        : selected
+                          ? 'border-red-500/50 bg-red-950/20 shadow-[0_0_0_1px_rgba(239,68,68,0.3)]'
+                          : 'border-zinc-700/60 bg-zinc-900/50 hover:border-zinc-600 hover:bg-zinc-800/40'
                     }`}
                   >
                     <div
@@ -576,10 +612,15 @@ export function ClienteVeiculoStep({
                 }
               }}
               className={`h-10 rounded-xl text-sm text-zinc-200 focus-visible:ring-0 [color-scheme:dark] ${
-                (tentouAvancar && !dataAgendamento) || isDomingo
+                (tentouAvancar && !dataAgendamento) || isDomingo || conflitoVeiculo
                   ? 'border-red-500/60 bg-red-950/20'
                   : 'border-zinc-700/60 bg-zinc-900/50'
               }`}
+              aria-invalid={
+                conflitoVeiculo || (tentouAvancar && !dataAgendamento) || isDomingo
+                  ? 'true'
+                  : undefined
+              }
             />
             {tentouAvancar && !dataAgendamento && (
               <p className="flex items-center gap-1.5 text-xs text-red-500">
@@ -615,10 +656,15 @@ export function ClienteVeiculoStep({
                 }
               }}
               className={`h-10 rounded-xl text-sm text-zinc-200 focus-visible:ring-0 [color-scheme:dark] ${
-                (tentouAvancar && !horaInicio) || !!erroHora || isDomingo
+                (tentouAvancar && !horaInicio) || !!erroHora || isDomingo || conflitoVeiculo
                   ? 'border-red-500/60 bg-red-950/20'
                   : 'border-zinc-700/60 bg-zinc-900/50'
               }`}
+              aria-invalid={
+                conflitoVeiculo || (tentouAvancar && !horaInicio) || !!erroHora || isDomingo
+                  ? 'true'
+                  : undefined
+              }
             />
             {tentouAvancar && !horaInicio && (
               <p className="flex items-center gap-1.5 text-xs text-red-500">
