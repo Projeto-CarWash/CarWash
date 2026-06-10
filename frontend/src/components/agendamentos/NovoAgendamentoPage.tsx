@@ -56,8 +56,8 @@ export function NovoAgendamentoPage() {
 
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [conflitoVeiculo, setConflitoVeiculo] = useState(false);
 
-  // RF019 — carrega filiais ativas para o seletor.
   const {
     data: filiaisData,
     isLoading: filiaisCarregando,
@@ -79,6 +79,7 @@ export function NovoAgendamentoPage() {
   const handleVeiculoChange = useCallback((veiculo: VeiculoResumido | null) => {
     setWizardState((prev) => ({ ...prev, veiculo }));
     setGlobalError(null);
+    setConflitoVeiculo(false);
   }, []);
 
   const handleResponsavelChange = useCallback((responsavel: ResponsavelResumido | null) => {
@@ -89,11 +90,13 @@ export function NovoAgendamentoPage() {
   const handleDataChange = useCallback((dataAgendamento: string) => {
     setWizardState((prev) => ({ ...prev, dataAgendamento }));
     setGlobalError(null);
+    setConflitoVeiculo(false);
   }, []);
 
   const handleHoraChange = useCallback((horaInicio: string) => {
     setWizardState((prev) => ({ ...prev, horaInicio }));
     setGlobalError(null);
+    setConflitoVeiculo(false);
   }, []);
 
   const handleServicosChange = useCallback((servicos: ServicoAtivo[]) => {
@@ -117,6 +120,7 @@ export function NovoAgendamentoPage() {
     setGlobalError(null);
     setSuccessMsg(null);
     setConfirmado(false);
+    setConflitoVeiculo(false);
     void navigate('/dashboard', { replace: true });
   }, [navigate]);
 
@@ -174,6 +178,7 @@ export function NovoAgendamentoPage() {
 
     setGlobalError(null);
     setSuccessMsg(null);
+    setConflitoVeiculo(false);
     setIsSubmitting(true);
 
     try {
@@ -240,7 +245,7 @@ export function NovoAgendamentoPage() {
         } else if (texto.includes('capacidade')) {
           setGlobalError('Capacidade da filial atingida para o horário informado.');
         } else if (texto.includes('veículo') || texto.includes('veiculo')) {
-          setGlobalError('Já existe agendamento para este veículo no horário informado.');
+          setConflitoVeiculo(true);
         } else {
           // Fallback: usa título do backend se reconhecível, senão mensagem genérica.
           setGlobalError(
@@ -369,6 +374,7 @@ export function NovoAgendamentoPage() {
               onDataChange={handleDataChange}
               onHoraChange={handleHoraChange}
               onNext={() => goToStep(2)}
+              conflitoVeiculo={conflitoVeiculo}
             />
           )}
 
@@ -397,6 +403,7 @@ export function NovoAgendamentoPage() {
                 observacoesLogisticas={wizardState.observacoesLogisticas ?? ''}
                 onObservacoesLogisticasChange={handleObservacoesLogisticasChange}
                 observacoesLogisticasErro={obsLogisticasErro ?? undefined}
+                conflitoVeiculo={conflitoVeiculo}
               />
             </>
           )}
