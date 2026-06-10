@@ -154,15 +154,15 @@ public class ObterAgendamentoPorIdEndpointTests : IAsyncDisposable
     {
         Span<int> d = stackalloc int[11];
         var rng = Random.Shared;
-        for (var i = 0; i < 9; i++)
+        for (int i = 0; i < 9; i++)
         {
             d[i] = rng.Next(0, 10);
         }
 
         d[9] = Dv(d[..9], 10);
         d[10] = Dv(d[..10], 11);
-        var chars = new char[11];
-        for (var i = 0; i < 11; i++)
+        char[] chars = new char[11];
+        for (int i = 0; i < 11; i++)
         {
             chars[i] = (char)('0' + d[i]);
         }
@@ -171,13 +171,13 @@ public class ObterAgendamentoPorIdEndpointTests : IAsyncDisposable
 
         static int Dv(ReadOnlySpan<int> parcial, int pesoInicial)
         {
-            var soma = 0;
-            for (var i = 0; i < parcial.Length; i++)
+            int soma = 0;
+            for (int i = 0; i < parcial.Length; i++)
             {
                 soma += parcial[i] * (pesoInicial - i);
             }
 
-            var resto = soma % 11;
+            int resto = soma % 11;
             return resto < 2 ? 0 : 11 - resto;
         }
     }
