@@ -90,6 +90,8 @@ public class PreConfirmarAgendamentoHandlerTests
             Arg.Any<IReadOnlyCollection<AgendamentoItem>>(),
             Arg.Any<AgendamentoHistorico>(),
             Arg.Any<string>(),
+            Arg.Any<Guid>(),
+            Arg.Any<Guid>(),
             Arg.Any<CancellationToken>());
     }
 

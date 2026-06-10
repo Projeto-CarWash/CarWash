@@ -69,12 +69,12 @@ public static class ResponsaveisEndpoints
         logger.LogInformation(
             "Responsável cadastrado com sucesso. TraceId: {TraceId}. ResponsavelId: {ResponsavelId}. ClienteTitularId: {ClienteTitularId}. UsuarioId: {UsuarioId}",
             traceId,
-            resposta.Id,
+            resposta.Data.ResponsavelId,
             clienteTitularId,
             usuarioId);
 
         return TypedResults.Created(
-            $"/api/v1/clientes/{clienteTitularId}/responsaveis/{resposta.Id}",
+            $"/api/v1/clientes/{clienteTitularId}/responsaveis/{resposta.Data.ResponsavelId}",
             resposta);
     }
 
