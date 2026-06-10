@@ -110,15 +110,6 @@ export function ClienteVeiculoStep({
     }
   }, [conflitoVeiculo]);
 
-  // Responsável (RF024) — criação inline
-  const [responsavelNome, setResponsavelNome] = useState(cliente?.nome ?? '');
-  const [responsavelDocumento, setResponsavelDocumento] = useState(
-    cliente?.cpf ?? cliente?.cnpj ?? '',
-  );
-  const [criandoResponsavel, setCriandoResponsavel] = useState(false);
-  const [erroResponsavel, setErroResponsavel] = useState<string | null>(null);
-  const [responsavelCriado, setResponsavelCriado] = useState<ResponsavelResumido | null>(null);
-
   // Search clients effect
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
