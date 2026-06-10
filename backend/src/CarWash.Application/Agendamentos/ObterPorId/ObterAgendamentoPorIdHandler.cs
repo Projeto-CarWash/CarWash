@@ -54,7 +54,8 @@ public sealed class ObterAgendamentoPorIdHandler
 
         _logger.LogInformation(
             "Agendamento consultado por id. TraceId: {TraceId}. AgendamentoId: {AgendamentoId}",
-            query.TraceId, agendamento.Id);
+            query.TraceId,
+            agendamento.Id);
 
         return MontarResponse(agendamento, itens, servicos, query.TraceId);
     }

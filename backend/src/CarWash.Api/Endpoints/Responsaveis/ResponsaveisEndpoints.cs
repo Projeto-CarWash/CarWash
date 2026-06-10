@@ -66,9 +66,12 @@ public static class ResponsaveisEndpoints
 
         var resposta = await handler.HandleAsync(command, cancellationToken).ConfigureAwait(false);
 
-    logger.LogInformation(
+        logger.LogInformation(
             "Responsável cadastrado com sucesso. TraceId: {TraceId}. ResponsavelId: {ResponsavelId}. ClienteTitularId: {ClienteTitularId}. UsuarioId: {UsuarioId}",
-            traceId, resposta.Data.ResponsavelId, clienteTitularId, usuarioId);
+            traceId,
+            resposta.Data.ResponsavelId,
+            clienteTitularId,
+            usuarioId);
 
         return TypedResults.Created(
             $"/api/v1/clientes/{clienteTitularId}/responsaveis/{resposta.Data.ResponsavelId}",

@@ -52,7 +52,7 @@ public sealed class EditarAgendamentoHandler
 
         var statusAnterior = agendamento.Status;
 
-        GarantirStatusEditavel(agendamento, statusAnterior);
+        GarantirStatusEditavel(statusAnterior);
 
         AplicarAlteracoes(agendamento, command);
 
@@ -72,7 +72,9 @@ public sealed class EditarAgendamentoHandler
             }));
 
         await _agendamentos.SalvarAsync(
-            agendamento, historico, command.TraceId,
+            agendamento,
+            historico,
+            command.TraceId,
             "AGENDAMENTO_EDITADO",
             usuarioId,
             JsonSerializer.Serialize(new
@@ -89,7 +91,10 @@ public sealed class EditarAgendamentoHandler
         _logger.LogInformation(
             "Agendamento editado. AgendamentoId: {AgendamentoId}. Status: {Status}. " +
             "UsuarioId: {UsuarioId}. TraceId: {TraceId}",
-            agendamento.Id, agendamento.Status.ToDbValue(), usuarioId, command.TraceId);
+            agendamento.Id,
+            agendamento.Status.ToDbValue(),
+            usuarioId,
+            command.TraceId);
 
         return new EditarAgendamentoResponse
         {
@@ -104,7 +109,7 @@ public sealed class EditarAgendamentoHandler
         };
     }
 
-    private static void GarantirStatusEditavel(Agendamento agendamento, StatusAgendamento statusAnterior)
+    private static void GarantirStatusEditavel(StatusAgendamento statusAnterior)
     {
         if (statusAnterior is not StatusAgendamento.Agendado)
         {

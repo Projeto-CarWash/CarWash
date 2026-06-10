@@ -22,9 +22,9 @@ public class ObterAgendamentoPorIdHandlerTests
     private ObterAgendamentoPorIdHandler NovoHandler() =>
         new(_agendamentos, _catalogo, NullLogger<ObterAgendamentoPorIdHandler>.Instance);
 
-    private ObterAgendamentoPorIdQuery NovaQuery() => new(AgendamentoId, "trace-1");
+    private static ObterAgendamentoPorIdQuery NovaQuery() => new(AgendamentoId, "trace-1");
 
-    private Agendamento NovoAgendamento()
+    private static Agendamento NovoAgendamento()
     {
         return Agendamento.Criar(
             id: AgendamentoId,
@@ -33,10 +33,11 @@ public class ObterAgendamentoPorIdHandlerTests
             veiculoId: Guid.NewGuid(),
             criadoPor: UsuarioId,
             inicio: DateTime.UtcNow.AddHours(1),
-            fim: DateTime.UtcNow.AddHours(2));
+            fim: DateTime.UtcNow.AddHours(2),
+            responsavelId: Guid.NewGuid());
     }
 
-    private IReadOnlyCollection<AgendamentoItem> NovosItens(Guid servicoId)
+    private static IReadOnlyCollection<AgendamentoItem> NovosItens(Guid servicoId)
     {
         return new[]
         {

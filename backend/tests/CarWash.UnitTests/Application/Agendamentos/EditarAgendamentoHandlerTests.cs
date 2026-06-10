@@ -7,8 +7,8 @@ using CarWash.Domain.Entities;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
-using ValidationException = CarWash.Application.Common.Exceptions.ValidationException;
 using Xunit;
+using ValidationException = CarWash.Application.Common.Exceptions.ValidationException;
 
 namespace CarWash.UnitTests.Application.Agendamentos;
 
@@ -22,10 +22,10 @@ public class EditarAgendamentoHandlerTests
     private EditarAgendamentoHandler NovoHandler() =>
         new(_agendamentos, NullLogger<EditarAgendamentoHandler>.Instance);
 
-    private EditarAgendamentoCommand NovoComando(DateTime? inicio = null, DateTime? fim = null) =>
+    private static EditarAgendamentoCommand NovoComando(DateTime? inicio = null, DateTime? fim = null) =>
         new(AgendamentoId, inicio, fim, null, null, "trace-1", UsuarioId);
 
-    private Agendamento NovoAgendamento()
+    private static Agendamento NovoAgendamento()
     {
         return Agendamento.Criar(
             id: AgendamentoId,
@@ -34,7 +34,8 @@ public class EditarAgendamentoHandlerTests
             veiculoId: Guid.NewGuid(),
             criadoPor: UsuarioId,
             inicio: DateTime.UtcNow.AddHours(1),
-            fim: DateTime.UtcNow.AddHours(2));
+            fim: DateTime.UtcNow.AddHours(2),
+            responsavelId: Guid.NewGuid());
     }
 
     [Fact]

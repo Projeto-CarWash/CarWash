@@ -33,7 +33,7 @@ public class ObterAgendamentoPorIdEndpointTests : IAsyncDisposable
         _factory = new CarWashWebApplicationFactory(fixture);
     }
 
-    private Uri RotaObterPorId(Guid id) => new($"/api/v1/agendamentos/{id}", UriKind.Relative);
+    private static Uri RotaObterPorId(Guid id) => new($"/api/v1/agendamentos/{id}", UriKind.Relative);
 
     [Fact]
     public async Task GET_agendamento_existente_retorna_200_com_dados_completos()
@@ -54,7 +54,7 @@ public class ObterAgendamentoPorIdEndpointTests : IAsyncDisposable
         data.GetProperty("clienteId").GetGuid().Should().NotBeEmpty();
         data.GetProperty("veiculoId").GetGuid().Should().NotBeEmpty();
         data.GetProperty("criadoEm").GetDateTime().Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(10));
-        data.TryGetProperty("itens", out var itens).Should().BeTrue();
+        data.TryGetProperty("itens", out _).Should().BeTrue();
     }
 
     [Fact]
@@ -100,7 +100,7 @@ public class ObterAgendamentoPorIdEndpointTests : IAsyncDisposable
     {
         await using var db = NovoDbContext();
 
-        var filial = Filial.Criar(Guid.NewGuid(), $"Filial {Guid.NewGuid():N}"[..30], 4);
+        var filial = Filial.Criar(Guid.NewGuid(), $"Filial {Guid.NewGuid():N}"[..30], $"F{Guid.NewGuid():N}"[..10].ToUpperInvariant(), 4);
         var cliente = ClienteValido();
         var veiculo = Veiculo.Criar(
             id: Guid.NewGuid(),
