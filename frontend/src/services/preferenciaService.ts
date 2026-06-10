@@ -20,7 +20,9 @@ export const preferenciaService = {
    */
   async obterTema(): Promise<Theme | null> {
     try {
-      const { data } = await api.get<PreferenciasResponse>('/api/v1/usuarios/me/preferencias');
+      const { data } = await api.get<PreferenciasResponse>('/api/v1/usuarios/me/preferencias', {
+        _skipAuthRefresh: true,
+      });
       if (data.tema === 'light' || data.tema === 'dark') {
         return data.tema;
       }
