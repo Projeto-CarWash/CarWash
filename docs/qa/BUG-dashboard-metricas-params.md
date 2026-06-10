@@ -7,6 +7,14 @@
 
 ## Descrição
 
+> **Atualização (QA de UI):** a investigação visual mostrou que o bug tinha **duas camadas**:
+> 1. **Parâmetros** — o front enviava `inicio`/`fim`, o back espera `dataInicio`/`dataFim` → **400** → card "Erro ao carregar dados do painel".
+> 2. **Forma da resposta** — mesmo após corrigir os parâmetros (200), o painel ficava **em branco** (crash): o front consumia a resposta como objeto achatado `{ total, faturamento, ... }`, mas o backend devolve um **envelope aninhado** (`data.operacional.totalAtendimentos`, `data.financeiro.faturamentoTotal`, ...). Assim `metricas.total` era `undefined` e `metricas.total.toLocaleString()` lançava → tela branca (sem error boundary).
+>
+> A divergência passou despercebida porque **o mock de dev (`src/mocks/handlers.ts`) também estava no formato achatado e com `inicio`/`fim`** — ou seja, o mock acompanhava a suposição errada do front, então em modo mock "funcionava".
+
+### Camada 1 — parâmetros
+
 O frontend chama `GET /api/v1/dashboard/metricas` enviando os parâmetros de período como **`inicio`/`fim`**:
 
 ```ts
@@ -28,6 +36,15 @@ O painel deve carregar e exibir as métricas (total, pendentes, concluídos, can
 
 ## Correção
 
-Frontend: enviar `dataInicio`/`dataFim` (datas no formato `YYYY-MM-DD`, que o backend aceita). `filialId`/`status` já estavam corretos. Sem alteração de backend.
+Frontend (`dashboardService.obterMetricas`), sem alteração de backend:
+1. Enviar `dataInicio`/`dataFim` (datas `YYYY-MM-DD`, aceitas pelo backend). `filialId`/`status` já estavam corretos.
+2. **Mapear** o envelope do backend para a forma achatada `DashboardMetricas` que o painel consome:
+   `total ← data.operacional.totalAtendimentos`, `pendentes/concluidos/cancelados` idem, `ocupacao ← taxaConclusao`, `tempoMedio ← tempoMedioAtendimentoMin`, `faturamento ← data.financeiro.faturamentoTotal`, `ticketMedio ← data.financeiro.ticketMedio`.
+3. Alinhar o mock de dev (`src/mocks/handlers.ts`) ao envelope real (e a `dataInicio`/`dataFim`), para o modo mock refletir a API verdadeira.
 
-- Teste de regressão: `dashboardService.test.ts` — garante que a query envia `dataInicio`/`dataFim` e **não** `inicio`/`fim`.
+- Teste de regressão: `dashboardService.test.ts` — garante os parâmetros `dataInicio`/`dataFim` **e** o mapeamento envelope→achatado.
+
+## Verificação
+
+- Screenshot pós-fix (`dash-happy.png`): painel renderiza header, filtros (com filiais carregadas) e o **empty-state** correto ("Nenhum dado encontrado para o período") — sem card de erro e sem tela branca. Confirma que `metricas.total` agora é número.
+- API: `GET /dashboard/metricas?dataInicio=...&dataFim=...` → 200 com o envelope.
