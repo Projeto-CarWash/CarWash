@@ -41,6 +41,7 @@ const INITIAL_STATE: AgendamentoWizardState = {
   dataAgendamento: '',
   horaInicio: '',
   servicos: [],
+  observacoesLogisticas: '',
 };
 
 export function NovoAgendamentoPage() {
@@ -99,6 +100,12 @@ export function NovoAgendamentoPage() {
     setWizardState((prev) => ({ ...prev, servicos }));
     setGlobalError(null);
   }, []);
+
+  const handleObservacoesLogisticasChange = useCallback((observacoesLogisticas: string) => {
+    setWizardState((prev) => ({ ...prev, observacoesLogisticas }));
+  }, []);
+
+  const [obsLogisticasErro, setObsLogisticasErro] = useState<string | null>(null);
 
   const goToStep = useCallback((step: number) => {
     setCurrentStep(step);
@@ -159,13 +166,20 @@ export function NovoAgendamentoPage() {
       servicoIds: servicos.map((s) => s.id),
     };
 
+    // Inclui observações logísticas apenas quando informadas (trim no envio).
+    const obsLogisticas = wizardState.observacoesLogisticas?.trim();
+    if (obsLogisticas) {
+      payload.observacoesLogisticas = obsLogisticas;
+    }
+
     setGlobalError(null);
     setSuccessMsg(null);
     setIsSubmitting(true);
 
     try {
       await agendamentoService.criarAgendamento(payload);
-      setSuccessMsg('Agendamento criado com sucesso!');
+      setSuccessMsg('Agendamento salvo com sucesso.');
+      setObsLogisticasErro(null);
 
       setTimeout(() => {
         void navigate('/dashboard', { replace: true });
@@ -241,7 +255,26 @@ export function NovoAgendamentoPage() {
       // caso contrário, usa a mensagem padrão associada ao campo Filial.
       if (status === 400) {
         const erroFilial = problem?.errors?.filialId?.[0] ?? problem?.errors?.FilialId?.[0];
+        const erroObsLog =
+          problem?.errors?.observacoesLogisticas?.[0] ??
+          problem?.errors?.ObservacoesLogisticas?.[0];
+        if (erroObsLog) {
+          setObsLogisticasErro('Dados da observação inválidos. Verifique e tente novamente.');
+        }
         setGlobalError(erroFilial ?? problem?.title ?? API_MESSAGES[400]!);
+        return;
+      }
+
+      // 409: agendamento no estado atual não permite edição da observação.
+      if (status === 409) {
+        setObsLogisticasErro('A observação não pode ser alterada no estado atual do agendamento.');
+        setGlobalError(API_MESSAGES[status] ?? API_MESSAGES[500]!);
+        return;
+      }
+
+      // 403: sem permissão para gerenciar observações logísticas.
+      if (status === 403) {
+        setGlobalError('Você não possui permissão para gerenciar observações logísticas.');
         return;
       }
 
@@ -361,6 +394,9 @@ export function NovoAgendamentoPage() {
                 onConfirmadoChange={setConfirmado}
                 onConfirm={handleConfirm}
                 onBack={() => goToStep(2)}
+                observacoesLogisticas={wizardState.observacoesLogisticas ?? ''}
+                onObservacoesLogisticasChange={handleObservacoesLogisticasChange}
+                observacoesLogisticasErro={obsLogisticasErro ?? undefined}
               />
             </>
           )}

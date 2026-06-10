@@ -38,7 +38,7 @@ public sealed class ObterClientePorIdHandler : IQueryHandler<ObterClientePorIdQu
         var responsaveis = await _responsaveis.ListarPorClienteTitularIdAsync(query.Id, cancellationToken).ConfigureAwait(false);
         response.Responsaveis = responsaveis.Select(r => new ResponsavelResponse
         {
-            Id = r.Id,
+            ResponsavelId = r.Id,
             ClienteTitularId = r.ClienteTitularId,
             Nome = r.Nome,
             Documento = r.Documento,

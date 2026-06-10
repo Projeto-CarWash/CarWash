@@ -156,6 +156,18 @@ export function RevisaoAgendamento({
           </div>
         )}
 
+        {/* Observações logísticas */}
+        {resumo.observacoesLogisticas && (
+          <div className="mt-6">
+            <h3 className="text-sm font-semibold tracking-wide text-zinc-200">
+              Observações Logísticas
+            </h3>
+            <p className="mt-2 rounded-xl border border-zinc-800/60 bg-zinc-950/40 px-4 py-3 text-sm whitespace-pre-line text-zinc-300">
+              {resumo.observacoesLogisticas}
+            </p>
+          </div>
+        )}
+
         {/* Totais */}
         <div className="mt-6 space-y-2 border-t border-zinc-800/60 pt-4">
           <div className="flex items-center justify-between text-sm">
