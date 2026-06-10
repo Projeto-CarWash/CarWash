@@ -38,6 +38,8 @@ export interface AgendamentoWizardState {
   dataAgendamento: string;
   horaInicio: string;
   servicos: ServicoAtivo[];
+  /** Observações logísticas opcionais (máx. 1000 caracteres). */
+  observacoesLogisticas?: string;
 }
 
 export interface CriarAgendamentoPayload {
@@ -49,6 +51,8 @@ export interface CriarAgendamentoPayload {
   inicio: string;
   servicoIds: string[];
   observacoes?: string;
+  /** Observações logísticas opcionais (máx. 1000 caracteres). */
+  observacoesLogisticas?: string | null;
 }
 
 export interface CriarAgendamentoResponse {
@@ -81,6 +85,8 @@ export interface CriarAgendamentoRequest {
   inicio: string;
   servicoIds: string[];
   observacoes?: string | null;
+  /** Observações logísticas opcionais (máx. 1000 caracteres). */
+  observacoesLogisticas?: string | null;
 }
 
 export interface ConfirmarAgendamentoRequest extends CriarAgendamentoRequest {
@@ -109,6 +115,8 @@ export interface AgendamentoResponse {
   duracaoTotalMin: number;
   valorTotal: number;
   observacoes: string | null;
+  /** Observações logísticas — campo a ser exposto pelo backend. */
+  observacoesLogisticas?: string | null;
   versao: number;
   itens: AgendamentoItemResponse[];
   criadoEm: string;
@@ -126,6 +134,8 @@ export interface ResumoConfirmacao {
   duracaoTotalMin: number;
   valorTotal: number;
   observacoes: string | null;
+  /** Observações logísticas — campo a ser exposto pelo backend. */
+  observacoesLogisticas?: string | null;
   hashResumo: string;
 }
 
