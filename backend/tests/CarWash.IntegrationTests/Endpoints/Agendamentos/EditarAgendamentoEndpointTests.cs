@@ -153,13 +153,14 @@ public class EditarAgendamentoEndpointTests : IAsyncDisposable
 
     private async Task<Guid> CriarAgendamentoAsync(HttpClient client)
     {
-        var (filialId, clienteId, veiculoId, servicoIds) = await SemearDependenciasAsync();
+        var (filialId, clienteId, veiculoId, responsavelId, servicoIds) = await SemearDependenciasAsync();
 
         var response = await client.PostAsJsonAsync(RotaCriar, new
         {
             filialId,
             clienteId,
             veiculoId,
+            responsavelId,
             inicio = DateTime.UtcNow.AddDays(1),
             servicoIds,
         }, _json);
@@ -192,7 +193,7 @@ public class EditarAgendamentoEndpointTests : IAsyncDisposable
         await db.SaveChangesAsync();
     }
 
-    private async Task<(Guid FilialId, Guid ClienteId, Guid VeiculoId, IReadOnlyList<Guid> ServicoIds)>
+    private async Task<(Guid FilialId, Guid ClienteId, Guid VeiculoId, Guid ResponsavelId, IReadOnlyList<Guid> ServicoIds)>
         SemearDependenciasAsync()
     {
         await using var db = NovoDbContext();
@@ -206,10 +207,17 @@ public class EditarAgendamentoEndpointTests : IAsyncDisposable
             modelo: "Civic",
             fabricante: "Honda",
             cor: "Preto");
+        var responsavel = Responsavel.Criar(
+            id: Guid.NewGuid(),
+            clienteTitularId: cliente.Id,
+            nome: "Responsavel Teste",
+            documento: GerarCpfValido(),
+            grauVinculo: GrauVinculo.ResponsavelFinanceiro);
 
         db.Filiais.Add(filial);
         db.Clientes.Add(cliente);
         db.Veiculos.Add(veiculo);
+        db.Responsaveis.Add(responsavel);
         await db.SaveChangesAsync();
 
         var servicoIds = await db.Servicos
@@ -220,7 +228,7 @@ public class EditarAgendamentoEndpointTests : IAsyncDisposable
             .Take(2)
             .ToListAsync();
 
-        return (filial.Id, cliente.Id, veiculo.Id, servicoIds);
+        return (filial.Id, cliente.Id, veiculo.Id, responsavel.Id, servicoIds);
     }
 
     private CarWashDbContext NovoDbContext() => CarWashDbContextFactoryForTests.Create(_fixture);
