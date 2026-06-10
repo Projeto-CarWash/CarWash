@@ -34,12 +34,6 @@ export const agendamentoService = {
     return data.itens;
   },
 
-  /**
-   * Busca os veículos vinculados ao cliente via API real.
-   *
-   * <p>Consome `GET /api/v1/clientes/{id}` e extrai o array `veiculos`,
-   * mapeando para `VeiculoResumido`.</p>
-   */
   async buscarVeiculosPorCliente(clienteId: string): Promise<VeiculoResumido[]> {
     const cliente = await clienteService.obterPorId(clienteId);
     return cliente.veiculos.map((v) => {
@@ -52,11 +46,6 @@ export const agendamentoService = {
     });
   },
 
-  /**
-   * Lista os serviços ativos via API real.
-   *
-   * <p>Consome `GET /api/v1/servicos?ativo=true` e mapeia para `ServicoAtivo`.</p>
-   */
   async listarServicosAtivos(): Promise<ServicoAtivo[]> {
     const response = await servicoService.listar({ ativo: true });
     return response.itens.map((s) => {
@@ -70,12 +59,6 @@ export const agendamentoService = {
     });
   },
 
-  /**
-   * Cria o agendamento em passo único — `POST /api/v1/agendamentos` (RF007/RF019).
-   *
-   * <p>Envia o payload real (incluindo `filialId`); os erros HTTP (400/401/403/
-   * 404/409/500) são propagados para a UI tratar — sem mock.</p>
-   */
   async criarAgendamento(payload: CriarAgendamentoPayload): Promise<CriarAgendamentoResponse> {
     const { data } = await api.post<AgendamentoResponse>('/api/v1/agendamentos', payload);
     return { id: data.id };
@@ -99,13 +82,6 @@ export const agendamentoService = {
     return data;
   },
 
-  /**
-   * Estatísticas do ano consultando a API real de agenda mês a mês.
-   *
-   * <p>Para cada mês do ano, faz uma consulta `GET /api/v1/agenda?formato=simples`
-   * com início e fim do mês, usando a primeira filial ativa como filtro obrigatório.
-   * Conta os itens por status para montar as estatísticas.</p>
-   */
   async obterEstatisticasAno(ano: number): Promise<EstatisticasMes[]> {
     const nomesMeses = [
       'JANEIRO',
@@ -128,7 +104,7 @@ export const agendamentoService = {
       const filiais = await filialService.listar();
       filialId = filiais.itens?.[0]?.id ?? '';
     } catch {
-      // Sem filial, retorna estatísticas zeradas.
+      // Falha ao buscar filiais - continuará com filialId vazio retornando valores padrão
     }
 
     if (!filialId) {
@@ -148,7 +124,6 @@ export const agendamentoService = {
       const inicio = new Date(ano, m, 1);
       const fim = new Date(ano, m + 1, 0, 23, 59, 59);
 
-      // A API tem janela máxima de 31 dias — cada mês está dentro desse limite.
       let confirmados = 0;
       let pendentes = 0;
       let cancelados = 0;
@@ -172,7 +147,7 @@ export const agendamentoService = {
           }
         }
       } catch {
-        // Mês sem dados ou erro de rede — contagem zerada.
+        // Erro ao consultar agenda para o mês - valores padrão (0) serão usados
       }
 
       const total = confirmados + pendentes + cancelados;
@@ -189,12 +164,6 @@ export const agendamentoService = {
     return resultados;
   },
 
-  /**
-   * Lista os agendamentos da semana via API real.
-   *
-   * <p>Consome `GET /api/v1/agenda?formato=simples` com a primeira filial ativa
-   * e mapeia os itens para `AgendamentoSemana`.</p>
-   */
   async listarAgendamentosSemana(dataInicio: Date, dataFim: Date): Promise<AgendamentoSemana[]> {
     let filialId = '';
     try {
@@ -227,24 +196,21 @@ export const agendamentoService = {
     }
   },
 
-  /**
-   * Busca responsáveis vinculados ao cliente (RF024).
-   *
-   * <p>Não existe endpoint GET dedicado; busca via detalhe do cliente que pode
-   * incluir responsáveis, ou retorna lista vazia para que a UI ofereça criação.</p>
-   */
-  buscarResponsaveisPorCliente(_clienteId: string): Promise<ResponsavelResumido[]> {
-    // O backend não expõe GET /api/v1/clientes/{id}/responsaveis.
-    // Retorna lista vazia — a UI oferece a criação inline.
-    return Promise.resolve([]);
+  async buscarResponsaveisPorCliente(clienteId: string): Promise<ResponsavelResumido[]> {
+    try {
+      const { data } = await api.get<{ id: string; nome: string; documento: string }[]>(
+        `/api/v1/clientes/${clienteId}/responsaveis`,
+      );
+      return data.map((r) => ({
+        id: r.id,
+        nome: r.nome,
+        documento: r.documento,
+      }));
+    } catch {
+      return [];
+    }
   },
 
-  /**
-   * Cria um responsável vinculado ao cliente — `POST /api/v1/clientes/{clienteId}/responsaveis`.
-   *
-   * <p>Usado pelo wizard de agendamento quando o cliente não possui responsável
-   * cadastrado. O responsável é obrigatório (RF024).</p>
-   */
   async criarResponsavel(
     clienteId: string,
     dados: { nome: string; documento: string; grauVinculo: string },

@@ -1,5 +1,6 @@
 import { AlertCircle, Car, ChevronRight, RefreshCw, Search, User, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +22,18 @@ function formatarDoc(cpf?: string, cnpj?: string): string {
   return '';
 }
 
+function formatarDocumento(doc?: string): string {
+  if (!doc) return '';
+  const clean = doc.replace(/\D/g, '');
+  if (clean.length === 11) {
+    return `${clean.slice(0, 3)}.${clean.slice(3, 6)}.${clean.slice(6, 9)}-${clean.slice(9)}`;
+  }
+  if (clean.length === 14) {
+    return `${clean.slice(0, 2)}.${clean.slice(2, 5)}.${clean.slice(5, 8)}/${clean.slice(8, 12)}-${clean.slice(12)}`;
+  }
+  return doc;
+}
+
 function getMinDate(): string {
   const now = new Date();
   const y = now.getFullYear();
@@ -38,6 +51,7 @@ interface ClienteVeiculoStepProps {
   onRetryFiliais: () => void;
   cliente: ClienteResumido | null;
   veiculo: VeiculoResumido | null;
+  responsavel: ResponsavelResumido | null;
   dataAgendamento: string;
   horaInicio: string;
   onClienteChange: (cliente: ClienteResumido | null) => void;
@@ -57,6 +71,7 @@ export function ClienteVeiculoStep({
   onRetryFiliais,
   cliente,
   veiculo,
+  responsavel,
   dataAgendamento,
   horaInicio,
   onClienteChange,
@@ -66,6 +81,8 @@ export function ClienteVeiculoStep({
   onHoraChange,
   onNext,
 }: ClienteVeiculoStepProps) {
+  const navigate = useNavigate();
+
   const [busca, setBusca] = useState('');
   const [resultados, setResultados] = useState<ClienteResumido[]>([]);
   const [buscando, setBuscando] = useState(false);
@@ -77,17 +94,12 @@ export function ClienteVeiculoStep({
   const [carregandoVeiculos, setCarregandoVeiculos] = useState(false);
   const [erroVeiculos, setErroVeiculos] = useState<string | null>(null);
 
+  const [responsaveis, setResponsaveis] = useState<ResponsavelResumido[]>([]);
+  const [carregandoResponsaveis, setCarregandoResponsaveis] = useState(false);
+
   const [tentouAvancar, setTentouAvancar] = useState(false);
 
-  // Responsável (RF024) — criação inline
-  const [responsavelNome, setResponsavelNome] = useState(cliente?.nome ?? '');
-  const [responsavelDocumento, setResponsavelDocumento] = useState(
-    cliente?.cpf ?? cliente?.cnpj ?? '',
-  );
-  const [criandoResponsavel, setCriandoResponsavel] = useState(false);
-  const [erroResponsavel, setErroResponsavel] = useState<string | null>(null);
-  const [responsavelCriado, setResponsavelCriado] = useState<ResponsavelResumido | null>(null);
-
+  // Search clients effect
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
@@ -116,6 +128,7 @@ export function ClienteVeiculoStep({
     };
   }, [busca]);
 
+  // Load client vehicles
   useEffect(() => {
     let ignore = false;
 
@@ -150,6 +163,35 @@ export function ClienteVeiculoStep({
     };
   }, [cliente]);
 
+  // Load client responsibles (RF024)
+  useEffect(() => {
+    let ignore = false;
+
+    if (!cliente) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setResponsaveis([]);
+      return;
+    }
+
+    setCarregandoResponsaveis(true);
+    agendamentoService
+      .buscarResponsaveisPorCliente(cliente.id)
+      .then((res) => {
+        if (!ignore) setResponsaveis(res);
+      })
+      .catch((error: unknown) => {
+        console.error('Erro ao buscar responsaveis:', error);
+        if (!ignore) setResponsaveis([]);
+      })
+      .finally(() => {
+        if (!ignore) setCarregandoResponsaveis(false);
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [cliente]);
+
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -165,9 +207,6 @@ export function ClienteVeiculoStep({
       onClienteChange(c);
       onVeiculoChange(null);
       onResponsavelChange(null);
-      setResponsavelNome(c.nome);
-      setResponsavelDocumento(c.cpf ?? c.cnpj ?? '');
-      setResponsavelCriado(null);
       setBusca('');
       setShowDropdown(false);
       setTentouAvancar(false);
@@ -180,10 +219,8 @@ export function ClienteVeiculoStep({
     onVeiculoChange(null);
     onResponsavelChange(null);
     setVeiculos([]);
+    setResponsaveis([]);
     setBusca('');
-    setResponsavelCriado(null);
-    setResponsavelNome('');
-    setResponsavelDocumento('');
   }, [onClienteChange, onVeiculoChange, onResponsavelChange]);
 
   const handleSelectVeiculo = useCallback(
@@ -231,51 +268,15 @@ export function ClienteVeiculoStep({
   const isHoraValida = !!horaInicio && !erroHora;
   const isFilialValida = !!filialId;
   const isStepValid =
-    isFilialValida && !!cliente && !!veiculo && !!responsavelCriado && isDataValida && isHoraValida;
+    isFilialValida && !!cliente && !!veiculo && !!responsavel && isDataValida && isHoraValida;
 
   const handleNext = useCallback(() => {
     setTentouAvancar(true);
 
-    // Auto-criar responsável se ainda não criado
-    if (cliente && !responsavelCriado && responsavelNome.trim() && responsavelDocumento.trim()) {
-      setCriandoResponsavel(true);
-      setErroResponsavel(null);
-      agendamentoService
-        .criarResponsavel(cliente.id, {
-          nome: responsavelNome.trim(),
-          documento: responsavelDocumento.replace(/\D/g, ''),
-          grauVinculo: 'RESPONSAVEL_FINANCEIRO',
-        })
-        .then((resp) => {
-          setResponsavelCriado(resp);
-          onResponsavelChange(resp);
-          if (isFilialValida && !!veiculo && isDataValida && isHoraValida) {
-            onNext();
-          }
-        })
-        .catch(() => {
-          setErroResponsavel('Não foi possível cadastrar o responsável. Tente novamente.');
-        })
-        .finally(() => setCriandoResponsavel(false));
-      return;
-    }
-
     if (isStepValid) {
       onNext();
     }
-  }, [
-    isStepValid,
-    onNext,
-    cliente,
-    responsavelCriado,
-    responsavelNome,
-    responsavelDocumento,
-    onResponsavelChange,
-    isFilialValida,
-    veiculo,
-    isDataValida,
-    isHoraValida,
-  ]);
+  }, [isStepValid, onNext]);
 
   return (
     <div>
@@ -297,6 +298,7 @@ export function ClienteVeiculoStep({
           tentouAvancar={tentouAvancar}
         />
 
+        {/* Cliente Selection */}
         <div className="space-y-1.5">
           <Label className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">
             CLIENTE <span className="text-red-500">*</span>
@@ -332,7 +334,7 @@ export function ClienteVeiculoStep({
                 onChange={(e) => setBusca(e.target.value)}
                 onFocus={() => setShowDropdown(true)}
                 placeholder="Buscar por nome, CPF ou CNPJ…"
-                className={`h-10 rounded-xl pl-9 text-sm text-zinc-200 placeholder:text-zinc-600 focus-visible:ring-0 ${
+                className={`h-10 rounded-xl pl-9 text-sm text-zinc-200 placeholder:text-zinc-650 focus-visible:ring-0 ${
                   tentouAvancar && !cliente
                     ? 'border-red-500/60 bg-red-950/20'
                     : 'border-zinc-700/60 bg-zinc-900/50'
@@ -380,6 +382,7 @@ export function ClienteVeiculoStep({
           )}
         </div>
 
+        {/* Vehicle Selection */}
         <div className="space-y-1.5">
           <Label className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">
             VEÍCULO <span className="text-red-500">*</span>
@@ -472,88 +475,86 @@ export function ClienteVeiculoStep({
           )}
         </div>
 
-        {/* Responsável (RF024) */}
-        {cliente && (
-          <div className="space-y-1.5">
-            <Label className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">
-              RESPONSÁVEL <span className="text-red-500">*</span>
-            </Label>
+        {/* Responsável Selection (RF024) */}
+        <div className="space-y-1.5">
+          <Label
+            htmlFor="ag-responsavel"
+            className="text-[10px] font-bold tracking-[0.2em] text-zinc-500"
+          >
+            RESPONSÁVEL <span className="text-red-500">*</span>
+          </Label>
 
-            {responsavelCriado ? (
-              <div className="flex items-center gap-3 rounded-xl border border-emerald-500/30 bg-emerald-950/20 px-4 py-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-600/10">
-                  <User className="h-4 w-4 text-emerald-500" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-zinc-100">{responsavelCriado.nome}</p>
-                  <p className="text-xs text-emerald-400">Responsável vinculado</p>
-                </div>
-                <svg
-                  className="h-5 w-5 text-emerald-500"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-            ) : (
-              <div className="space-y-3 rounded-xl border border-zinc-700/60 bg-zinc-900/50 p-4">
-                <p className="text-xs text-zinc-400">
-                  Informe os dados do responsável pelo agendamento.
-                </p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label
-                      htmlFor="resp-nome"
-                      className="text-[10px] font-bold tracking-[0.15em] text-zinc-500"
-                    >
-                      NOME
-                    </Label>
-                    <Input
-                      id="resp-nome"
-                      type="text"
-                      value={responsavelNome}
-                      onChange={(e) => setResponsavelNome(e.target.value)}
-                      placeholder="Nome do responsável"
-                      className="h-9 rounded-lg border-zinc-700/60 bg-zinc-900/50 text-sm text-zinc-200 placeholder:text-zinc-600"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label
-                      htmlFor="resp-doc"
-                      className="text-[10px] font-bold tracking-[0.15em] text-zinc-500"
-                    >
-                      CPF/CNPJ
-                    </Label>
-                    <Input
-                      id="resp-doc"
-                      type="text"
-                      value={responsavelDocumento}
-                      onChange={(e) => setResponsavelDocumento(e.target.value)}
-                      placeholder="Documento"
-                      className="h-9 rounded-lg border-zinc-700/60 bg-zinc-900/50 text-sm text-zinc-200 placeholder:text-zinc-600"
-                    />
-                  </div>
-                </div>
-                {erroResponsavel && (
-                  <p className="flex items-center gap-1.5 text-xs text-red-500">
-                    <AlertCircle className="h-3.5 w-3.5" />
-                    {erroResponsavel}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {tentouAvancar && !responsavelCriado && (
-              <p className="flex items-center gap-1.5 text-xs text-red-500">
-                <AlertCircle className="h-3.5 w-3.5" />O responsável é obrigatório para prosseguir.
+          {!cliente ? (
+            <p className="rounded-xl border border-zinc-200 dark:border-zinc-850 bg-zinc-50 dark:bg-zinc-950/20 px-4 py-3 text-sm text-zinc-400">
+              Selecione um cliente primeiro para ver os responsáveis disponíveis.
+            </p>
+          ) : carregandoResponsaveis ? (
+            <div className="flex items-center gap-2 rounded-xl border border-zinc-200 dark:border-zinc-850 bg-zinc-50 dark:bg-zinc-950/20 px-4 py-3 text-sm text-zinc-500">
+              <RefreshCw className="h-4 w-4 animate-spin" />
+              Carregando responsáveis…
+            </div>
+          ) : responsaveis.length === 0 ? (
+            <div className="rounded-xl border border-amber-250 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-950/20 p-4 space-y-3">
+              <p className="text-sm text-amber-600 dark:text-amber-400">
+                Nenhum responsável vinculado a este cliente. Cadastre um responsável para
+                prosseguir.
               </p>
-            )}
-          </div>
-        )}
+              <Button
+                type="button"
+                onClick={() => void navigate(`/clientes/${cliente.id}`)}
+                className="h-9 rounded-full bg-amber-600 hover:bg-amber-700 text-xs font-semibold text-white px-4 shadow-lg shadow-amber-600/15"
+              >
+                Cadastrar responsável
+              </Button>
+            </div>
+          ) : (
+            <div className="relative">
+              <User
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500"
+                aria-hidden="true"
+              />
+              <select
+                id="ag-responsavel"
+                value={responsavel?.id ?? ''}
+                onChange={(e) => {
+                  const selectedId = e.target.value;
+                  const found = responsaveis.find((r) => r.id === selectedId);
+                  onResponsavelChange(found ?? null);
+                  setTentouAvancar(false);
+                }}
+                className={`h-10 w-full cursor-pointer appearance-none rounded-xl border pl-9 pr-4 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50 dark:[color-scheme:dark] ${
+                  tentouAvancar && !responsavel
+                    ? 'border-red-500/60 bg-red-950/20 text-zinc-200'
+                    : 'border-zinc-200 dark:border-zinc-700/60 bg-zinc-50 dark:bg-zinc-900/50 text-zinc-800 dark:text-zinc-200'
+                }`}
+              >
+                <option value="" disabled className="text-zinc-400 dark:text-zinc-600">
+                  Selecione o responsável
+                </option>
+                {responsaveis.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.nome} {r.documento ? `(${formatarDocumento(r.documento)})` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
+          {tentouAvancar && cliente && !responsavel && responsaveis.length > 0 && (
+            <p className="flex items-center gap-1.5 text-xs text-red-500">
+              <AlertCircle className="h-3.5 w-3.5" />
+              Selecione o responsável para continuar.
+            </p>
+          )}
+          {tentouAvancar && cliente && responsaveis.length === 0 && (
+            <p className="flex items-center gap-1.5 text-xs text-red-500">
+              <AlertCircle className="h-3.5 w-3.5" />O responsável é obrigatório. Cadastre um
+              responsável antes de prosseguir.
+            </p>
+          )}
+        </div>
+
+        {/* Date and Time Fields */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <Label
@@ -641,24 +642,16 @@ export function ClienteVeiculoStep({
           </div>
         </div>
       </div>
+
       <div className="mt-8 flex items-center justify-end">
         <Button
           type="button"
           onClick={handleNext}
-          disabled={(tentouAvancar && !isStepValid) || criandoResponsavel}
+          disabled={tentouAvancar && !isStepValid}
           className="h-10 rounded-full bg-red-600 px-6 text-sm font-semibold text-white shadow-lg shadow-red-600/25 hover:bg-red-700 disabled:opacity-50"
         >
-          {criandoResponsavel ? (
-            <>
-              <RefreshCw className="mr-1 h-4 w-4 animate-spin" />
-              Validando…
-            </>
-          ) : (
-            <>
-              Próximo
-              <ChevronRight className="ml-1 h-4 w-4" />
-            </>
-          )}
+          Próximo
+          <ChevronRight className="ml-1 h-4 w-4" />
         </Button>
       </div>
     </div>
