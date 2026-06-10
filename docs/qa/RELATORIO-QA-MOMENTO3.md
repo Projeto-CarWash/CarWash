@@ -7,10 +7,11 @@
 
 ## Resumo executivo
 
-- **Cards sem bug (aprovados):** 24 de 26.
-- **Cards com bug:** 2 (RF023 e RF024 — mesma causa raiz no backend).
-- **Bugs distintos encontrados:** **1** — falta o endpoint `GET /api/v1/clientes/{id}/responsaveis` (retorna **405**), o que deixa o dropdown de responsável (RF024) vazio e impede listar responsáveis (RF023) pela rota dedicada que o frontend consome.
-  - Detalhe e reprodução: [`BUG-responsaveis-get-405.md`](./BUG-responsaveis-get-405.md).
+- **Bugs distintos encontrados:** **2**.
+  1. Falta o endpoint `GET /api/v1/clientes/{id}/responsaveis` (retorna **405**) → dropdown de responsável (RF024) vazio e sem listagem (RF023). Detalhe: [`BUG-responsaveis-get-405.md`](./BUG-responsaveis-get-405.md). **Corrigido (PR #188).**
+  2. Dashboard (RF013) nunca carrega métricas: o frontend envia `inicio`/`fim` mas o backend espera `dataInicio`/`dataFim` → **400** → "Erro ao carregar dados do painel". Detalhe: [`BUG-dashboard-metricas-params.md`](./BUG-dashboard-metricas-params.md). **Encontrado na passada de QA de UI (screenshots), corrigido em seguida.**
+
+> O segundo bug só apareceu na **verificação visual da UI** (Playwright/screenshots): o QA por API testou o backend com os nomes corretos de parâmetro, e o E2E só checa o título do dashboard — nenhum dos dois exercitava a chamada real do frontend ao endpoint de métricas.
 
 > Observação: durante o MOMENTO 1, vários cards já haviam sido validados pelas suítes automatizadas (ex.: RF008 com `qa-rf008/rf008.spec.ts`, login/usuários com `login.spec.ts`/`usuarios.spec.ts`). O QA abaixo reconfirmou cada RF contra a stack viva.
 
@@ -26,7 +27,7 @@
 | 6 | RF010 Cancelamento e bloqueio de edição finalizado | RF010 | ✅ PASS | `GET/PATCH /agendamentos/{id}` e `/cancelar` → 200 |
 | 7 | RF011 Observações logísticas por agendamento | RF011 | ✅ PASS | `POST /agendamentos/{id}/observacoes` → 201 |
 | 8 | RF012 Histórico de atendimentos por cliente | RF012 | ✅ PASS | `GET /clientes/{id}/historico-atendimentos` → 200 |
-| 9 | RF013 Dashboard com métricas | RF013 | ✅ PASS | `GET /dashboard/metricas?dataInicio&dataFim` → 200; rota `/dashboard` + Painel de Métricas |
+| 9 | RF013 Dashboard com métricas | RF013 | ⚠️ BUG (corrigido) | backend 200, **mas o frontend enviava `inicio`/`fim` → 400 → "Erro ao carregar dados do painel"**. Visto na UI (screenshot). Corrigido para `dataInicio`/`dataFim`. |
 | 10 | RF017 Cadastro de filiais (multiunidade) | RF017 | ✅ PASS | `POST /filiais` → 201 |
 | 11 | RF018 Configuração de células ativas (1..100) | RF018 | ✅ PASS | set 10 → 200; rejeita 0 → 400 |
 | 12 | RF019 Seleção obrigatória de filial no agendamento | RF019 | ✅ PASS | agendamento sem filial → 400; agenda sem filial → 400 |
