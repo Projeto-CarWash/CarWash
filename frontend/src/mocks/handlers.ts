@@ -225,6 +225,15 @@ export const handlers = [
     return HttpResponse.json(atual, { status: 200 });
   }),
 
+  http.get('*/api/v1/usuarios/me/preferencias', () => {
+    return HttpResponse.json({ tema: 'dark' });
+  }),
+
+  http.patch('*/api/v1/usuarios/me/preferencias', async ({ request }) => {
+    const { tema } = (await request.json()) as { tema: string };
+    return HttpResponse.json({ tema });
+  }),
+
   http.get('*/api/v1/clientes/:id/responsaveis', ({ params }) => {
     const { id } = params;
     const list = responsaveisPorCliente[id as string] ?? [];
