@@ -14,36 +14,61 @@ import type { DashboardFiltros } from '@/types/dashboard';
  * fixa os nomes corretos dos parâmetros enviados.
  */
 describe('dashboardService.obterMetricas', () => {
-  const metricas = {
-    total: 1,
-    pendentes: 1,
-    concluidos: 0,
-    cancelados: 0,
-    ocupacao: 10,
-    tempoMedio: 30,
-    faturamento: 100,
-    ticketMedio: 100,
+  // Envelope no formato REAL do backend (DashboardMetricasResponse).
+  const envelope = {
+    message: 'ok',
+    data: {
+      periodo: { dataInicio: '2026-05-11', dataFim: '2026-06-10' },
+      filtrosAplicados: { filialId: null, clienteId: null, status: null },
+      operacional: {
+        totalAtendimentos: 7,
+        pendentes: 2,
+        concluidos: 4,
+        cancelados: 1,
+        taxaConclusao: 57.1,
+        tempoMedioAtendimentoMin: 33,
+      },
+      financeiro: {
+        faturamentoTotal: 980.5,
+        ticketMedio: 140.07,
+        faturamentoPorFilial: [],
+        faturamentoPorServico: [],
+        valorMedioPorCliente: 0,
+      },
+    },
+    traceId: 't',
   };
 
-  it('envia dataInicio/dataFim (não inicio/fim) na query', async () => {
+  it('envia dataInicio/dataFim (não inicio/fim) e mapeia o envelope para a forma achatada', async () => {
     let capturada: URLSearchParams | null = null;
     server.use(
       http.get('*/api/v1/dashboard/metricas', ({ request }) => {
         capturada = new URL(request.url).searchParams;
-        return HttpResponse.json(metricas);
+        return HttpResponse.json(envelope);
       }),
     );
 
     const filtros: DashboardFiltros = { inicio: '2026-05-11', fim: '2026-06-10' };
     const data = await dashboardService.obterMetricas(filtros);
 
+    // params corretos
     expect(capturada).not.toBeNull();
     expect(capturada!.get('dataInicio')).toBe('2026-05-11');
     expect(capturada!.get('dataFim')).toBe('2026-06-10');
-    // Garante que os nomes antigos (que causavam 400) não são mais enviados.
     expect(capturada!.has('inicio')).toBe(false);
     expect(capturada!.has('fim')).toBe(false);
-    expect(data.total).toBe(1);
+
+    // mapeamento envelope → DashboardMetricas (o que o painel renderiza)
+    expect(data).toEqual({
+      total: 7,
+      pendentes: 2,
+      concluidos: 4,
+      cancelados: 1,
+      ocupacao: 57.1,
+      tempoMedio: 33,
+      faturamento: 980.5,
+      ticketMedio: 140.07,
+    });
   });
 
   it('encaminha filialId e status quando informados', async () => {
@@ -51,7 +76,7 @@ describe('dashboardService.obterMetricas', () => {
     server.use(
       http.get('*/api/v1/dashboard/metricas', ({ request }) => {
         capturada = new URL(request.url).searchParams;
-        return HttpResponse.json(metricas);
+        return HttpResponse.json(envelope);
       }),
     );
 

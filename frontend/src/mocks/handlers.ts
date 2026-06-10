@@ -68,14 +68,14 @@ export const handlers = [
 
   http.get('*/api/v1/dashboard/metricas', ({ request }) => {
     const url = new URL(request.url);
-    const inicio = url.searchParams.get('inicio');
-    const fim = url.searchParams.get('fim');
+    const inicio = url.searchParams.get('dataInicio');
+    const fim = url.searchParams.get('dataFim');
     const filialId = url.searchParams.get('filialId');
     const status = url.searchParams.get('status');
 
     if (!inicio || !fim) {
       return HttpResponse.json(
-        { message: 'Período inicial e final são obrigatórios.' },
+        { message: 'dataInicio e dataFim são obrigatórios.' },
         { status: 400 },
       );
     }
@@ -119,15 +119,29 @@ export const handlers = [
     const ocupacao = total > 0 ? Math.min(100, Math.round((concluidos / total) * 1000) / 10) : 75.0;
     const tempoMedio = 45;
 
+    // Envelope no mesmo formato do backend real (DashboardMetricasResponse).
     return HttpResponse.json({
-      total,
-      pendentes,
-      concluidos,
-      cancelados,
-      ocupacao,
-      tempoMedio,
-      faturamento,
-      ticketMedio,
+      message: 'Métricas calculadas com sucesso.',
+      data: {
+        periodo: { dataInicio: inicio, dataFim: fim },
+        filtrosAplicados: { filialId, clienteId: null, status },
+        operacional: {
+          totalAtendimentos: total,
+          pendentes,
+          concluidos,
+          cancelados,
+          taxaConclusao: ocupacao,
+          tempoMedioAtendimentoMin: tempoMedio,
+        },
+        financeiro: {
+          faturamentoTotal: faturamento,
+          ticketMedio,
+          faturamentoPorFilial: [],
+          faturamentoPorServico: [],
+          valorMedioPorCliente: 0,
+        },
+      },
+      traceId: 'mock-trace',
     });
   }),
 
