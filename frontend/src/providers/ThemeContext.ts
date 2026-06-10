@@ -6,6 +6,8 @@ export interface ThemeContextData {
   theme: Theme;
   toggle: () => void;
   setTheme: (theme: Theme) => void;
+  /** Indica que o tema está sendo sincronizado com o backend. */
+  isSyncing: boolean;
 }
 
 /**

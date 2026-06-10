@@ -1,5 +1,6 @@
 import { AlertCircle, Car, ChevronRight, RefreshCw, Search, User, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +9,7 @@ import { agendamentoService } from '@/services/agendamentoService';
 
 import { SeletorFilial } from './SeletorFilial';
 
-import type { ClienteResumido, VeiculoResumido } from '@/types/agendamento';
+import type { ClienteResumido, ResponsavelResumido, VeiculoResumido } from '@/types/agendamento';
 import type { FilialResumo } from '@/types/filial';
 
 function formatarDoc(cpf?: string, cnpj?: string): string {
@@ -19,6 +20,18 @@ function formatarDoc(cpf?: string, cnpj?: string): string {
     return `${cnpj.slice(0, 2)}.${cnpj.slice(2, 5)}.${cnpj.slice(5, 8)}/${cnpj.slice(8, 12)}-${cnpj.slice(12)}`;
   }
   return '';
+}
+
+function formatarDocumento(doc?: string): string {
+  if (!doc) return '';
+  const clean = doc.replace(/\D/g, '');
+  if (clean.length === 11) {
+    return `${clean.slice(0, 3)}.${clean.slice(3, 6)}.${clean.slice(6, 9)}-${clean.slice(9)}`;
+  }
+  if (clean.length === 14) {
+    return `${clean.slice(0, 2)}.${clean.slice(2, 5)}.${clean.slice(5, 8)}/${clean.slice(8, 12)}-${clean.slice(12)}`;
+  }
+  return doc;
 }
 
 function getMinDate(): string {
@@ -38,13 +51,16 @@ interface ClienteVeiculoStepProps {
   onRetryFiliais: () => void;
   cliente: ClienteResumido | null;
   veiculo: VeiculoResumido | null;
+  responsavel: ResponsavelResumido | null;
   dataAgendamento: string;
   horaInicio: string;
   onClienteChange: (cliente: ClienteResumido | null) => void;
   onVeiculoChange: (veiculo: VeiculoResumido | null) => void;
+  onResponsavelChange: (responsavel: ResponsavelResumido | null) => void;
   onDataChange: (data: string) => void;
   onHoraChange: (hora: string) => void;
   onNext: () => void;
+  conflitoVeiculo?: boolean;
 }
 
 export function ClienteVeiculoStep({
@@ -56,14 +72,19 @@ export function ClienteVeiculoStep({
   onRetryFiliais,
   cliente,
   veiculo,
+  responsavel,
   dataAgendamento,
   horaInicio,
   onClienteChange,
   onVeiculoChange,
+  onResponsavelChange,
   onDataChange,
   onHoraChange,
   onNext,
+  conflitoVeiculo,
 }: ClienteVeiculoStepProps) {
+  const navigate = useNavigate();
+
   const [busca, setBusca] = useState('');
   const [resultados, setResultados] = useState<ClienteResumido[]>([]);
   const [buscando, setBuscando] = useState(false);
@@ -75,19 +96,38 @@ export function ClienteVeiculoStep({
   const [carregandoVeiculos, setCarregandoVeiculos] = useState(false);
   const [erroVeiculos, setErroVeiculos] = useState<string | null>(null);
 
+  const [responsaveis, setResponsaveis] = useState<ResponsavelResumido[]>([]);
+  const [carregandoResponsaveis, setCarregandoResponsaveis] = useState(false);
+
   const [tentouAvancar, setTentouAvancar] = useState(false);
 
+  // Foco no veículo em caso de conflito
+  const veiculoBlockRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (conflitoVeiculo && veiculoBlockRef.current) {
+      veiculoBlockRef.current.focus();
+    }
+  }, [conflitoVeiculo]);
+
+  // Search clients effect
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
+    if (!busca.trim()) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setResultados([]);
+      return;
+    }
+
+    setBuscando(true);
     debounceRef.current = setTimeout(() => {
-      setBuscando(true);
       agendamentoService
         .buscarClientes(busca)
-        .then((r) => {
-          setResultados(r);
+        .then((res) => {
+          setResultados(res);
         })
-        .catch((error) => {
+        .catch((error: unknown) => {
           console.error('Erro ao buscar clientes:', error);
           setResultados([]);
         })
@@ -99,6 +139,7 @@ export function ClienteVeiculoStep({
     };
   }, [busca]);
 
+  // Load client vehicles
   useEffect(() => {
     let ignore = false;
 
@@ -133,6 +174,35 @@ export function ClienteVeiculoStep({
     };
   }, [cliente]);
 
+  // Load client responsibles (RF024)
+  useEffect(() => {
+    let ignore = false;
+
+    if (!cliente) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setResponsaveis([]);
+      return;
+    }
+
+    setCarregandoResponsaveis(true);
+    agendamentoService
+      .buscarResponsaveisPorCliente(cliente.id)
+      .then((res) => {
+        if (!ignore) setResponsaveis(res);
+      })
+      .catch((error: unknown) => {
+        console.error('Erro ao buscar responsaveis:', error);
+        if (!ignore) setResponsaveis([]);
+      })
+      .finally(() => {
+        if (!ignore) setCarregandoResponsaveis(false);
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [cliente]);
+
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -147,19 +217,22 @@ export function ClienteVeiculoStep({
     (c: ClienteResumido) => {
       onClienteChange(c);
       onVeiculoChange(null);
+      onResponsavelChange(null);
       setBusca('');
       setShowDropdown(false);
       setTentouAvancar(false);
     },
-    [onClienteChange, onVeiculoChange],
+    [onClienteChange, onVeiculoChange, onResponsavelChange],
   );
 
   const handleClearCliente = useCallback(() => {
     onClienteChange(null);
     onVeiculoChange(null);
+    onResponsavelChange(null);
     setVeiculos([]);
+    setResponsaveis([]);
     setBusca('');
-  }, [onClienteChange, onVeiculoChange]);
+  }, [onClienteChange, onVeiculoChange, onResponsavelChange]);
 
   const handleSelectVeiculo = useCallback(
     (v: VeiculoResumido) => {
@@ -205,10 +278,12 @@ export function ClienteVeiculoStep({
   const isDataValida = !!dataAgendamento && !isDomingo;
   const isHoraValida = !!horaInicio && !erroHora;
   const isFilialValida = !!filialId;
-  const isStepValid = isFilialValida && !!cliente && !!veiculo && isDataValida && isHoraValida;
+  const isStepValid =
+    isFilialValida && !!cliente && !!veiculo && !!responsavel && isDataValida && isHoraValida;
 
   const handleNext = useCallback(() => {
     setTentouAvancar(true);
+
     if (isStepValid) {
       onNext();
     }
@@ -234,6 +309,7 @@ export function ClienteVeiculoStep({
           tentouAvancar={tentouAvancar}
         />
 
+        {/* Cliente Selection */}
         <div className="space-y-1.5">
           <Label className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">
             CLIENTE <span className="text-red-500">*</span>
@@ -269,7 +345,7 @@ export function ClienteVeiculoStep({
                 onChange={(e) => setBusca(e.target.value)}
                 onFocus={() => setShowDropdown(true)}
                 placeholder="Buscar por nome, CPF ou CNPJ…"
-                className={`h-10 rounded-xl pl-9 text-sm text-zinc-200 placeholder:text-zinc-600 focus-visible:ring-0 ${
+                className={`h-10 rounded-xl pl-9 text-sm text-zinc-200 placeholder:text-zinc-650 focus-visible:ring-0 ${
                   tentouAvancar && !cliente
                     ? 'border-red-500/60 bg-red-950/20'
                     : 'border-zinc-700/60 bg-zinc-900/50'
@@ -317,10 +393,34 @@ export function ClienteVeiculoStep({
           )}
         </div>
 
-        <div className="space-y-1.5">
+        {/* Vehicle Selection */}
+        <div
+          className="space-y-1.5 outline-none"
+          ref={veiculoBlockRef}
+          tabIndex={-1}
+          aria-invalid={conflitoVeiculo ? 'true' : undefined}
+        >
           <Label className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">
             VEÍCULO <span className="text-red-500">*</span>
           </Label>
+
+          {conflitoVeiculo && (
+            <div
+              role="alert"
+              aria-live="assertive"
+              className="mb-3 flex items-start gap-3 rounded-xl border border-red-500/30 bg-red-950/30 px-4 py-3"
+            >
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" aria-hidden="true" />
+              <div className="flex-1 space-y-1">
+                <p className="text-sm font-medium text-red-400">
+                  Veículo já possui agendamento neste horário.
+                </p>
+                <p className="text-xs text-red-400/80">
+                  Esse bloqueio vale para toda a operação, inclusive entre filiais.
+                </p>
+              </div>
+            </div>
+          )}
 
           {!cliente ? (
             <p className="rounded-xl border border-zinc-800/40 bg-zinc-900/20 px-4 py-3 text-sm text-zinc-600">
@@ -359,9 +459,11 @@ export function ClienteVeiculoStep({
                     type="button"
                     onClick={() => handleSelectVeiculo(v)}
                     className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-left transition-all ${
-                      selected
-                        ? 'border-red-500/50 bg-red-950/20 shadow-[0_0_0_1px_rgba(239,68,68,0.3)]'
-                        : 'border-zinc-700/60 bg-zinc-900/50 hover:border-zinc-600 hover:bg-zinc-800/40'
+                      selected && conflitoVeiculo
+                        ? 'border-red-500 bg-red-950/20 shadow-[0_0_0_1px_rgba(239,68,68,0.5)]'
+                        : selected
+                          ? 'border-red-500/50 bg-red-950/20 shadow-[0_0_0_1px_rgba(239,68,68,0.3)]'
+                          : 'border-zinc-700/60 bg-zinc-900/50 hover:border-zinc-600 hover:bg-zinc-800/40'
                     }`}
                   >
                     <div
@@ -409,6 +511,86 @@ export function ClienteVeiculoStep({
           )}
         </div>
 
+        {/* Responsável Selection (RF024) */}
+        <div className="space-y-1.5">
+          <Label
+            htmlFor="ag-responsavel"
+            className="text-[10px] font-bold tracking-[0.2em] text-zinc-500"
+          >
+            RESPONSÁVEL <span className="text-red-500">*</span>
+          </Label>
+
+          {!cliente ? (
+            <p className="rounded-xl border border-zinc-200 dark:border-zinc-850 bg-zinc-50 dark:bg-zinc-950/20 px-4 py-3 text-sm text-zinc-400">
+              Selecione um cliente primeiro para ver os responsáveis disponíveis.
+            </p>
+          ) : carregandoResponsaveis ? (
+            <div className="flex items-center gap-2 rounded-xl border border-zinc-200 dark:border-zinc-850 bg-zinc-50 dark:bg-zinc-950/20 px-4 py-3 text-sm text-zinc-500">
+              <RefreshCw className="h-4 w-4 animate-spin" />
+              Carregando responsáveis…
+            </div>
+          ) : responsaveis.length === 0 ? (
+            <div className="rounded-xl border border-amber-250 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-950/20 p-4 space-y-3">
+              <p className="text-sm text-amber-600 dark:text-amber-400">
+                Nenhum responsável vinculado a este cliente. Cadastre um responsável para
+                prosseguir.
+              </p>
+              <Button
+                type="button"
+                onClick={() => void navigate(`/clientes/${cliente.id}`)}
+                className="h-9 rounded-full bg-amber-600 hover:bg-amber-700 text-xs font-semibold text-white px-4 shadow-lg shadow-amber-600/15"
+              >
+                Cadastrar responsável
+              </Button>
+            </div>
+          ) : (
+            <div className="relative">
+              <User
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500"
+                aria-hidden="true"
+              />
+              <select
+                id="ag-responsavel"
+                value={responsavel?.id ?? ''}
+                onChange={(e) => {
+                  const selectedId = e.target.value;
+                  const found = responsaveis.find((r) => r.id === selectedId);
+                  onResponsavelChange(found ?? null);
+                  setTentouAvancar(false);
+                }}
+                className={`h-10 w-full cursor-pointer appearance-none rounded-xl border pl-9 pr-4 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50 dark:[color-scheme:dark] ${
+                  tentouAvancar && !responsavel
+                    ? 'border-red-500/60 bg-red-950/20 text-zinc-200'
+                    : 'border-zinc-200 dark:border-zinc-700/60 bg-zinc-50 dark:bg-zinc-900/50 text-zinc-800 dark:text-zinc-200'
+                }`}
+              >
+                <option value="" disabled className="text-zinc-400 dark:text-zinc-600">
+                  Selecione o responsável
+                </option>
+                {responsaveis.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.nome} {r.documento ? `(${formatarDocumento(r.documento)})` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {tentouAvancar && cliente && !responsavel && responsaveis.length > 0 && (
+            <p className="flex items-center gap-1.5 text-xs text-red-500">
+              <AlertCircle className="h-3.5 w-3.5" />
+              Selecione o responsável para continuar.
+            </p>
+          )}
+          {tentouAvancar && cliente && responsaveis.length === 0 && (
+            <p className="flex items-center gap-1.5 text-xs text-red-500">
+              <AlertCircle className="h-3.5 w-3.5" />O responsável é obrigatório. Cadastre um
+              responsável antes de prosseguir.
+            </p>
+          )}
+        </div>
+
+        {/* Date and Time Fields */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <Label
@@ -431,10 +613,15 @@ export function ClienteVeiculoStep({
                 }
               }}
               className={`h-10 rounded-xl text-sm text-zinc-200 focus-visible:ring-0 [color-scheme:dark] ${
-                (tentouAvancar && !dataAgendamento) || isDomingo
+                (tentouAvancar && !dataAgendamento) || isDomingo || conflitoVeiculo
                   ? 'border-red-500/60 bg-red-950/20'
                   : 'border-zinc-700/60 bg-zinc-900/50'
               }`}
+              aria-invalid={
+                conflitoVeiculo || (tentouAvancar && !dataAgendamento) || isDomingo
+                  ? 'true'
+                  : undefined
+              }
             />
             {tentouAvancar && !dataAgendamento && (
               <p className="flex items-center gap-1.5 text-xs text-red-500">
@@ -470,10 +657,15 @@ export function ClienteVeiculoStep({
                 }
               }}
               className={`h-10 rounded-xl text-sm text-zinc-200 focus-visible:ring-0 [color-scheme:dark] ${
-                (tentouAvancar && !horaInicio) || !!erroHora || isDomingo
+                (tentouAvancar && !horaInicio) || !!erroHora || isDomingo || conflitoVeiculo
                   ? 'border-red-500/60 bg-red-950/20'
                   : 'border-zinc-700/60 bg-zinc-900/50'
               }`}
+              aria-invalid={
+                conflitoVeiculo || (tentouAvancar && !horaInicio) || !!erroHora || isDomingo
+                  ? 'true'
+                  : undefined
+              }
             />
             {tentouAvancar && !horaInicio && (
               <p className="flex items-center gap-1.5 text-xs text-red-500">
@@ -496,6 +688,7 @@ export function ClienteVeiculoStep({
           </div>
         </div>
       </div>
+
       <div className="mt-8 flex items-center justify-end">
         <Button
           type="button"

@@ -2,7 +2,7 @@ namespace CarWash.Application.Responsaveis.Common;
 
 public class ResponsavelResponse
 {
-    public Guid Id { get; set; }
+    public Guid ResponsavelId { get; set; }
 
     public Guid ClienteTitularId { get; set; }
 

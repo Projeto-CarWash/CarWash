@@ -56,14 +56,17 @@ public sealed class CriarResponsavelHandler : ICommandHandler<CriarResponsavelCo
 
         return new CriarResponsavelResponse
         {
-            Id = responsavel.Id,
-            ClienteTitularId = responsavel.ClienteTitularId,
-            Nome = responsavel.Nome,
-            Documento = responsavel.Documento,
-            Telefone = responsavel.Telefone,
-            Email = responsavel.Email,
-            GrauVinculo = responsavel.GrauVinculo,
-            Mensagem = "Responsável cadastrado com sucesso.",
+            Message = "Responsável cadastrado com sucesso.",
+            Data = new CriarResponsavelData
+            {
+                ResponsavelId = responsavel.Id,
+                ClienteTitularId = responsavel.ClienteTitularId,
+                Nome = responsavel.Nome,
+                Documento = responsavel.Documento,
+                Telefone = responsavel.Telefone,
+                Email = responsavel.Email,
+                GrauVinculo = responsavel.GrauVinculo,
+            },
             TraceId = command.TraceId,
         };
     }
