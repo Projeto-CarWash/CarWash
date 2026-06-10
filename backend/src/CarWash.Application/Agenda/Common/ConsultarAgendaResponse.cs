@@ -8,15 +8,15 @@ namespace CarWash.Application.Agenda.Common;
 /// </summary>
 public sealed class ConsultarAgendaResponse
 {
-    /// <summary>Mensagem amigável de status da consulta.</summary>
+    /// <summary>Gets mensagem amigável de status da consulta.</summary>
     public string Message { get; init; } = string.Empty;
 
     /// <summary>
-    /// Eventos da agenda. Cada item é <see cref="AgendaItemSimplesResponse"/>
+    /// Gets eventos da agenda. Cada item é <see cref="AgendaItemSimplesResponse"/>
     /// (formato simples) ou <see cref="AgendaItemDetalhadoResponse"/> (detalhado).
     /// </summary>
     public IReadOnlyList<object> Data { get; init; } = [];
 
-    /// <summary>Identificador de correlação da requisição.</summary>
+    /// <summary>Gets identificador de correlação da requisição.</summary>
     public string TraceId { get; init; } = string.Empty;
 }

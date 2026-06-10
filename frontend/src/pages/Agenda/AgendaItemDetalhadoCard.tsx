@@ -1,4 +1,4 @@
-import { CalendarClock, Car, Clock, FileText, Receipt, User } from 'lucide-react';
+import { CalendarClock, Car, Clock, FileText, Pencil, Receipt, Trash2, User } from 'lucide-react';
 
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { formatarDuracao, formatarReais } from '@/lib/format';
@@ -15,6 +15,10 @@ import type { AgendaItemDetalhado } from '@/types/agenda';
 
 interface AgendaItemDetalhadoCardProps {
   item: AgendaItemDetalhado;
+  /** Callback disparado ao clicar/ativar o card (RF008.1 — detalhe individual). */
+  onClick?: (item: AgendaItemDetalhado) => void;
+  onEditar?: (item: AgendaItemDetalhado) => void;
+  onCancelar?: (item: AgendaItemDetalhado) => void;
 }
 
 /** Par rótulo/valor usado nos blocos de cliente e veículo. */
@@ -36,22 +40,74 @@ function Campo({ rotulo, valor }: { rotulo: string; valor: string }) {
  * observações e totais. Layout responsivo: blocos empilham no mobile e formam
  * grade no desktop.</p>
  */
-export function AgendaItemDetalhadoCard({ item }: AgendaItemDetalhadoCardProps) {
+export function AgendaItemDetalhadoCard({
+  item,
+  onClick,
+  onEditar,
+  onCancelar,
+}: AgendaItemDetalhadoCardProps) {
+  const descricao = `Agendamento de ${item.cliente.nome}, placa ${item.veiculo.placa}, ${rotuloStatus(item.status)}`;
+
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (onClick && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault();
+      onClick(item);
+    }
+  }
+
   return (
-    <Card className="border border-zinc-200/70 dark:border-zinc-800/60">
+    <Card
+      className={`border border-zinc-200/70 dark:border-zinc-800/60 transition-shadow ${
+        onClick
+          ? 'cursor-pointer hover:shadow-lg hover:border-red-500/30 focus-visible:ring-2 focus-visible:ring-red-500/50 focus-visible:outline-none'
+          : ''
+      }`}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      aria-label={descricao}
+      onClick={onClick ? () => onClick(item) : undefined}
+      onKeyDown={onClick ? handleKeyDown : undefined}
+    >
       <CardHeader className="gap-3">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex items-center gap-2 text-sm font-semibold text-zinc-800 dark:text-zinc-100">
             <CalendarClock className="h-4 w-4 shrink-0 text-red-500" aria-hidden="true" />
             <span className="tabular-nums">{formatarFaixaHorario(item.inicio, item.fim)}</span>
           </div>
-          <span
-            className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold tracking-[0.12em] ${classesStatus(
-              item.status,
-            )}`}
+          {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
+          <div
+            className="flex items-center gap-2"
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
           >
-            {rotuloStatus(item.status).toUpperCase()}
-          </span>
+            {onEditar && item.status === 'AGENDADO' && (
+              <button
+                type="button"
+                className="p-1 rounded text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 focus-visible:ring-2 focus-visible:ring-red-500/50"
+                aria-label="Editar agendamento"
+                onClick={() => onEditar(item)}
+              >
+                <Pencil className="h-4 w-4" />
+              </button>
+            )}
+            {onCancelar && (item.status === 'AGENDADO' || item.status === 'EM_ANDAMENTO') && (
+              <button
+                type="button"
+                className="p-1 rounded text-zinc-400 hover:text-red-500 focus-visible:ring-2 focus-visible:ring-red-500/50"
+                aria-label="Cancelar agendamento"
+                onClick={() => onCancelar(item)}
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            )}
+            <span
+              className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold tracking-[0.12em] ${classesStatus(
+                item.status,
+              )}`}
+            >
+              {rotuloStatus(item.status).toUpperCase()}
+            </span>
+          </div>
         </div>
       </CardHeader>
 
@@ -123,6 +179,22 @@ export function AgendaItemDetalhadoCard({ item }: AgendaItemDetalhadoCardProps) 
           <section aria-label="Observações" className="flex items-start gap-2">
             <FileText className="mt-0.5 h-3.5 w-3.5 shrink-0 text-zinc-400" aria-hidden="true" />
             <p className="text-sm text-zinc-600 dark:text-zinc-300">{item.observacoes}</p>
+          </section>
+        )}
+
+        {/* Observações logísticas */}
+        {item.observacoesLogisticas && (
+          <section
+            aria-label="Observações logísticas"
+            className="rounded-lg border border-zinc-200/60 bg-zinc-50/50 p-3 dark:border-zinc-800/40 dark:bg-zinc-950/30"
+          >
+            <h3 className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-zinc-600 dark:text-zinc-300">
+              <FileText className="h-3.5 w-3.5 text-red-500" aria-hidden="true" />
+              Observações Logísticas
+            </h3>
+            <p className="whitespace-pre-line text-sm text-zinc-700 dark:text-zinc-300">
+              {item.observacoesLogisticas}
+            </p>
           </section>
         )}
 

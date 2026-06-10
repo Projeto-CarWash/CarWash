@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using CarWash.Domain.Entities;
+using CarWash.Domain.Enums;
 using CarWash.Domain.ValueObjects;
 using CarWash.Infrastructure.Persistence;
 using CarWash.IntegrationTests.Collections;
@@ -56,7 +57,7 @@ public class ConsultarAgendaEndpointTests : IAsyncDisposable
         data.GetArrayLength().Should().Be(1);
 
         var item = data[0];
-        var campos = item.EnumerateObject().Select(p => p.Name).OrderBy(n => n).ToArray();
+        string[] campos = item.EnumerateObject().Select(p => p.Name).OrderBy(n => n).ToArray();
         campos.Should().BeEquivalentTo(
             "agendamentoId", "inicio", "fim", "titulo", "status",
             "clienteNome", "veiculoPlaca", "servicosResumo");
@@ -87,7 +88,7 @@ public class ConsultarAgendaEndpointTests : IAsyncDisposable
         var corpo = await response.Content.ReadFromJsonAsync<JsonElement>(_json);
         var item = corpo.GetProperty("data")[0];
 
-        var campos = item.EnumerateObject().Select(p => p.Name).OrderBy(n => n).ToArray();
+        string[] campos = item.EnumerateObject().Select(p => p.Name).OrderBy(n => n).ToArray();
         campos.Should().BeEquivalentTo(
             "agendamentoId", "status", "filialId", "inicio", "fim",
             "duracaoTotalMin", "valorTotal", "cliente", "veiculo", "servicos",
@@ -377,7 +378,7 @@ public class ConsultarAgendaEndpointTests : IAsyncDisposable
 
         if ((int)response.StatusCode >= 500)
         {
-            var corpo = await response.Content.ReadAsStringAsync();
+            string corpo = await response.Content.ReadAsStringAsync();
             corpo.Should().NotContain("at CarWash.");
             corpo.Should().NotContain("Exception:");
             corpo.Should().NotContain("StackTrace");
@@ -513,7 +514,7 @@ public class ConsultarAgendaEndpointTests : IAsyncDisposable
         var filialId = await SemearFilialVaziaAsync();
         var (clienteA, veiculoA) = await SemearClienteVeiculoAsync();
         var (clienteB, veiculoB) = await SemearClienteVeiculoAsync();
-        var responsavelId = await SemearFiliadoAsync(clienteA);
+        var responsavelId = await SemearResponsavelAsync(clienteA);
 
         var baseInicio = new DateTime(2026, 8, 5, 10, 0, 0, DateTimeKind.Utc);
 
@@ -521,7 +522,7 @@ public class ConsultarAgendaEndpointTests : IAsyncDisposable
         var idComResponsavel = await SemearAgendamentoCruAsync(
             filialId, clienteA, veiculoA, baseInicio, responsavelId: responsavelId);
         await SemearAgendamentoCruAsync(
-            filialId, clienteB, veiculoB, baseInicio.AddHours(2), responsavelId: null);
+            filialId, clienteB, veiculoB, baseInicio.AddHours(2));
 
         var url = new Uri(
             MontarUrl("simples", filialId, baseInicio.AddHours(-1), baseInicio.AddHours(4)).OriginalString
@@ -636,11 +637,13 @@ public class ConsultarAgendaEndpointTests : IAsyncDisposable
     private async Task<Guid> SemearFilialVaziaAsync()
     {
         await using var db = NovoDbContext();
-        var filial = Filial.Criar(Guid.NewGuid(), $"Filial {Guid.NewGuid():N}"[..30], 4);
+        var filial = Filial.Criar(Guid.NewGuid(), $"Filial {Guid.NewGuid():N}"[..30], CodigoTeste(), 4);
         db.Filiais.Add(filial);
         await db.SaveChangesAsync();
         return filial.Id;
     }
+
+    private static string CodigoTeste() => $"F{Guid.NewGuid():N}"[..10].ToUpperInvariant();
 
     private async Task<(Guid ClienteId, Guid VeiculoId)> SemearClienteVeiculoAsync()
     {
@@ -661,21 +664,21 @@ public class ConsultarAgendaEndpointTests : IAsyncDisposable
     }
 
     /// <summary>
-    /// Semeia um filiado (responsável) vinculado a um cliente e devolve o seu id —
-    /// necessário porque <c>Agendamento.ResponsavelId</c> tem FK para <c>filiados</c>.
+    /// Semeia um responsável (RF024) vinculado a um cliente e devolve o seu id —
+    /// necessário porque <c>Agendamento.ResponsavelId</c> tem FK para <c>responsaveis</c>.
     /// </summary>
-    private async Task<Guid> SemearFiliadoAsync(Guid clienteId)
+    private async Task<Guid> SemearResponsavelAsync(Guid clienteId)
     {
         await using var db = NovoDbContext();
-        var filiado = Filiado.Criar(
+        var responsavel = Responsavel.Criar(
             id: Guid.NewGuid(),
-            clienteId: clienteId,
+            clienteTitularId: clienteId,
             nome: "Responsavel Teste",
-            telefone: new Telefone("11987654321"),
-            rg: "123456789");
-        db.Filiados.Add(filiado);
+            documento: GerarCpfValido(),
+            grauVinculo: GrauVinculo.ResponsavelFinanceiro);
+        db.Responsaveis.Add(responsavel);
         await db.SaveChangesAsync();
-        return filiado.Id;
+        return responsavel.Id;
     }
 
     /// <summary>
@@ -687,9 +690,15 @@ public class ConsultarAgendaEndpointTests : IAsyncDisposable
         Guid clienteId,
         Guid veiculoId,
         DateTime inicio,
-        Guid? responsavelId = null,
+        Guid responsavelId = default,
         bool cancelar = false)
     {
+        // O responsável (RF024) é obrigatório e tem FK para responsaveis; quando o
+        // teste não fornece um, semeamos um vinculado ao próprio cliente.
+        var responsavelEfetivo = responsavelId == Guid.Empty
+            ? await SemearResponsavelAsync(clienteId)
+            : responsavelId;
+
         await using var db = NovoDbContext();
         var agendamento = Agendamento.Criar(
             id: Guid.NewGuid(),
@@ -699,14 +708,14 @@ public class ConsultarAgendaEndpointTests : IAsyncDisposable
             criadoPor: AdminId,
             inicio: inicio,
             fim: inicio.AddMinutes(30),
-            responsavelId: responsavelId,
+            responsavelId: responsavelEfetivo,
             observacoes: null,
             duracaoTotalMin: 0,
             valorTotal: 0m);
 
         if (cancelar)
         {
-		agendamento.Cancelar("Cancelado para fins de teste", Guid.NewGuid());
+            agendamento.Cancelar("Cancelado para fins de teste", Guid.NewGuid());
         }
 
         db.Agendamentos.Add(agendamento);
@@ -722,7 +731,7 @@ public class ConsultarAgendaEndpointTests : IAsyncDisposable
     {
         await using var db = NovoDbContext();
 
-        var filial = Filial.Criar(Guid.NewGuid(), $"Filial {Guid.NewGuid():N}"[..30], 4);
+        var filial = Filial.Criar(Guid.NewGuid(), $"Filial {Guid.NewGuid():N}"[..30], CodigoTeste(), 4);
         var cliente = ClienteValido();
         var veiculo = Veiculo.Criar(
             id: Guid.NewGuid(),
@@ -740,18 +749,18 @@ public class ConsultarAgendaEndpointTests : IAsyncDisposable
         var itensServico = new List<(Servico Servico, AgendamentoItem Item)>();
 
         var agendamentoId = Guid.NewGuid();
-        var duracaoTotal = 0;
-        var valorTotal = 0m;
+        int duracaoTotal = 0;
+        decimal valorTotal = 0m;
 
-        for (var i = 0; i < servicos; i++)
+        for (int i = 0; i < servicos; i++)
         {
-            var nome = $"Servico {Guid.NewGuid():N}"[..20];
-            var duracao = 30 + (i * 10);
-            var precoCatalogo = 50m + (i * 5m);
+            string nome = $"Servico {Guid.NewGuid():N}"[..20];
+            int duracao = 30 + (i * 10);
+            decimal precoCatalogo = 50m + (i * 5m);
 
             // Snapshot RN006: o preço/duração aplicados diferem do catálogo de propósito.
-            var duracaoAplicada = duracao + 1;
-            var precoAplicado = precoCatalogo + 7m;
+            int duracaoAplicada = duracao + 1;
+            decimal precoAplicado = precoCatalogo + 7m;
 
             var servico = Servico.Criar(Guid.NewGuid(), nome, precoCatalogo, duracao);
             var item = AgendamentoItem.Criar(
@@ -766,6 +775,12 @@ public class ConsultarAgendaEndpointTests : IAsyncDisposable
         }
 
         const string observacoes = "Cliente prefere o turno da tarde.";
+        var responsavel = Responsavel.Criar(
+            id: Guid.NewGuid(),
+            clienteTitularId: cliente.Id,
+            nome: "Responsavel Teste",
+            documento: GerarCpfValido(),
+            grauVinculo: GrauVinculo.ResponsavelFinanceiro);
         var agendamento = Agendamento.Criar(
             id: agendamentoId,
             filialId: filial.Id,
@@ -774,7 +789,7 @@ public class ConsultarAgendaEndpointTests : IAsyncDisposable
             criadoPor: AdminId,
             inicio: inicio,
             fim: inicio.AddMinutes(Math.Max(duracaoTotal, 30)),
-            responsavelId: null,
+            responsavelId: responsavel.Id,
             observacoes: observacoes,
             duracaoTotalMin: duracaoTotal,
             valorTotal: valorTotal);
@@ -782,6 +797,7 @@ public class ConsultarAgendaEndpointTests : IAsyncDisposable
         db.Filiais.Add(filial);
         db.Clientes.Add(cliente);
         db.Veiculos.Add(veiculo);
+        db.Responsaveis.Add(responsavel);
         db.Agendamentos.Add(agendamento);
         foreach (var (servico, item) in itensServico)
         {
@@ -839,15 +855,15 @@ public class ConsultarAgendaEndpointTests : IAsyncDisposable
     {
         Span<int> d = stackalloc int[11];
         var rng = Random.Shared;
-        for (var i = 0; i < 9; i++)
+        for (int i = 0; i < 9; i++)
         {
             d[i] = rng.Next(0, 10);
         }
 
         d[9] = Dv(d[..9], 10);
         d[10] = Dv(d[..10], 11);
-        var chars = new char[11];
-        for (var i = 0; i < 11; i++)
+        char[] chars = new char[11];
+        for (int i = 0; i < 11; i++)
         {
             chars[i] = (char)('0' + d[i]);
         }
@@ -856,17 +872,18 @@ public class ConsultarAgendaEndpointTests : IAsyncDisposable
 
         static int Dv(ReadOnlySpan<int> parcial, int pesoInicial)
         {
-            var soma = 0;
-            for (var i = 0; i < parcial.Length; i++)
+            int soma = 0;
+            for (int i = 0; i < parcial.Length; i++)
             {
                 soma += parcial[i] * (pesoInicial - i);
             }
 
-            var resto = soma % 11;
+            int resto = soma % 11;
             return resto < 2 ? 0 : 11 - resto;
         }
     }
 
+    /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
         await _factory.DisposeAsync();

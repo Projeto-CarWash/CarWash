@@ -16,6 +16,11 @@ export interface VeiculoResumido {
   ano?: number;
 }
 
+export interface ResponsavelResumido {
+  id: string;
+  nome: string;
+}
+
 export interface ServicoAtivo {
   id: string;
   nome: string;
@@ -25,21 +30,29 @@ export interface ServicoAtivo {
 }
 
 export interface AgendamentoWizardState {
+  filialId: string;
+  filialNome: string;
   cliente: ClienteResumido | null;
   veiculo: VeiculoResumido | null;
+  responsavel: ResponsavelResumido | null;
   dataAgendamento: string;
   horaInicio: string;
   servicos: ServicoAtivo[];
+  /** Observações logísticas opcionais (máx. 1000 caracteres). */
+  observacoesLogisticas?: string;
 }
 
 export interface CriarAgendamentoPayload {
   clienteId: string;
   veiculoId: string;
   filialId: string;
+  /** Obrigatório (RF024) — responsável vinculado ao cliente. */
   responsavelId: string;
   inicio: string;
   servicoIds: string[];
   observacoes?: string;
+  /** Observações logísticas opcionais (máx. 1000 caracteres). */
+  observacoesLogisticas?: string | null;
 }
 
 export interface CriarAgendamentoResponse {
@@ -72,6 +85,8 @@ export interface CriarAgendamentoRequest {
   inicio: string;
   servicoIds: string[];
   observacoes?: string | null;
+  /** Observações logísticas opcionais (máx. 1000 caracteres). */
+  observacoesLogisticas?: string | null;
 }
 
 export interface ConfirmarAgendamentoRequest extends CriarAgendamentoRequest {
@@ -100,6 +115,8 @@ export interface AgendamentoResponse {
   duracaoTotalMin: number;
   valorTotal: number;
   observacoes: string | null;
+  /** Observações logísticas — campo a ser exposto pelo backend. */
+  observacoesLogisticas?: string | null;
   versao: number;
   itens: AgendamentoItemResponse[];
   criadoEm: string;
@@ -117,6 +134,8 @@ export interface ResumoConfirmacao {
   duracaoTotalMin: number;
   valorTotal: number;
   observacoes: string | null;
+  /** Observações logísticas — campo a ser exposto pelo backend. */
+  observacoesLogisticas?: string | null;
   hashResumo: string;
 }
 
@@ -124,5 +143,19 @@ export interface PreConfirmacaoResponse {
   tokenConfirmacao: string;
   expiraEm: string;
   resumo: ResumoConfirmacao;
+  traceId: string;
+}
+
+export interface CancelarAgendamentoData {
+  id: string;
+  status: string;
+  canceladoEm: string | null;
+  canceladoPor: string | null;
+  motivoCancelamento: string | null;
+}
+
+export interface CancelarAgendamentoResponse {
+  message: string;
+  data: CancelarAgendamentoData;
   traceId: string;
 }

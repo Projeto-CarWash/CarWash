@@ -26,6 +26,8 @@ public class ClienteResponse
 
     public EnderecoResponse Endereco { get; set; } = null!;
 
+    public string? Observacoes { get; set; }
+
     public bool Ativo { get; set; }
 
     public DateTime CriadoEm { get; set; }
@@ -57,9 +59,25 @@ public class ClienteResponse
                 Cidade = cliente.EnderecoCidade,
                 Uf = cliente.EnderecoUf,
             },
+            Observacoes = cliente.Observacoes,
             Ativo = cliente.Ativo,
             CriadoEm = cliente.CriadoEm,
             AtualizadoEm = cliente.AtualizadoEm,
         };
+    }
+
+    public List<ClienteVeiculoResponse> Veiculos { get; set; } = new();
+
+    public class ClienteVeiculoResponse
+    {
+        public Guid Id { get; set; }
+
+        public string Placa { get; set; } = string.Empty;
+
+        public string Modelo { get; set; } = string.Empty;
+
+        public string Fabricante { get; set; } = string.Empty;
+
+        public string Cor { get; set; } = string.Empty;
     }
 }

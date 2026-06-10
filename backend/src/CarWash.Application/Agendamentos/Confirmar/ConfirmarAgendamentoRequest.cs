@@ -14,7 +14,7 @@ public sealed class ConfirmarAgendamentoRequest
 
     public Guid VeiculoId { get; set; }
 
-    public Guid? ResponsavelId { get; set; }
+    public Guid ResponsavelId { get; set; }
 
     public DateTime? Inicio { get; set; }
 
@@ -22,12 +22,12 @@ public sealed class ConfirmarAgendamentoRequest
 
     public string? Observacoes { get; set; }
 
-    /// <summary>Confirmação explícita do usuário — deve ser <c>true</c> para concluir.</summary>
+    /// <summary>Gets or sets confirmação explícita do usuário — deve ser <c>true</c> para concluir.</summary>
     public bool? Confirmar { get; set; }
 
-    /// <summary>Token assinado recebido na pré-confirmação.</summary>
+    /// <summary>Gets or sets token assinado recebido na pré-confirmação.</summary>
     public string? TokenConfirmacao { get; set; }
 
-    /// <summary>Chave de idempotência (GUID) — duplo clique/retry produzem um só agendamento.</summary>
+    /// <summary>Gets or sets chave de idempotência (GUID) — duplo clique/retry produzem um só agendamento.</summary>
     public Guid? IdempotencyKey { get; set; }
 }

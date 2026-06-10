@@ -1,18 +1,21 @@
+using CarWash.Application.Agendamentos.Common;
 using FluentValidation;
 
 namespace CarWash.Application.Agendamentos.Criar;
 
 /// <summary>
-/// Validador estrutural do RF007/RF019/RF020. Garante filial (RF019/RN010/CA007),
-/// veículo, ao menos um serviço sem duplicatas e início futuro. As regras de
-/// estado (recursos ativos, conflito RN011) são verificadas no handler/banco.
+/// Validador estrutural do RF007/RF019/RF020/RF024. Garante filial (RF019/RN010/CA007),
+/// veículo, responsável obrigatório (RF024), ao menos um serviço sem duplicatas e
+/// início futuro. As regras de estado (recursos ativos, conflito RN011) são
+/// verificadas no handler/banco.
 /// </summary>
 public sealed class CriarAgendamentoCommandValidator : AbstractValidator<CriarAgendamentoCommand>
 {
     public CriarAgendamentoCommandValidator()
     {
+        // RF019: filial obrigatória — mensagem do card 142.
         RuleFor(x => x.FilialId)
-            .NotEmpty().WithMessage("Filial é obrigatória para o agendamento (RF019).");
+            .NotEmpty().WithMessage(MensagensFilialAgendamento.Obrigatoria);
 
         RuleFor(x => x.ClienteId)
             .NotEmpty().WithMessage("Cliente é obrigatório para o agendamento.");
@@ -21,9 +24,7 @@ public sealed class CriarAgendamentoCommandValidator : AbstractValidator<CriarAg
             .NotEmpty().WithMessage("Veículo é obrigatório para o agendamento.");
 
         RuleFor(x => x.ResponsavelId)
-            .Must(id => id != Guid.Empty)
-            .When(x => x.ResponsavelId.HasValue)
-            .WithMessage("Responsável informado é inválido.");
+            .NotEmpty().WithMessage("Selecione um responsável para prosseguir.");
 
         RuleFor(x => x.Inicio)
             .Cascade(CascadeMode.Stop)

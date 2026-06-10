@@ -1,19 +1,21 @@
+using CarWash.Application.Agendamentos.Common;
 using FluentValidation;
 
 namespace CarWash.Application.Agendamentos.PreConfirmar;
 
 /// <summary>
-/// Validador estrutural da pré-confirmação (RF015). Mesmas regras do RF007:
-/// filial (RF019/RN010/CA007), cliente, veículo, início futuro e ao menos um
-/// serviço sem duplicatas. Estado (recursos ativos, conflito RN011) é verificado
-/// no handler.
+/// Validador estrutural da pré-confirmação (RF015). Mesmas regras do RF007/RF024:
+/// filial (RF019/RN010/CA007), cliente, veículo, responsável obrigatório (RF024),
+/// início futuro e ao menos um serviço sem duplicatas. Estado (recursos ativos,
+/// conflito RN011) é verificado no handler.
 /// </summary>
 public sealed class PreConfirmarAgendamentoCommandValidator : AbstractValidator<PreConfirmarAgendamentoCommand>
 {
     public PreConfirmarAgendamentoCommandValidator()
     {
+        // RF019: filial obrigatória — mensagem do card 142.
         RuleFor(x => x.FilialId)
-            .NotEmpty().WithMessage("Filial é obrigatória para o agendamento (RF019).");
+            .NotEmpty().WithMessage(MensagensFilialAgendamento.Obrigatoria);
 
         RuleFor(x => x.ClienteId)
             .NotEmpty().WithMessage("Cliente é obrigatório para o agendamento.");
@@ -22,9 +24,7 @@ public sealed class PreConfirmarAgendamentoCommandValidator : AbstractValidator<
             .NotEmpty().WithMessage("Veículo é obrigatório para o agendamento.");
 
         RuleFor(x => x.ResponsavelId)
-            .Must(id => id != Guid.Empty)
-            .When(x => x.ResponsavelId.HasValue)
-            .WithMessage("Responsável informado é inválido.");
+            .NotEmpty().WithMessage("Selecione um responsável para prosseguir.");
 
         RuleFor(x => x.Inicio)
             .Cascade(CascadeMode.Stop)

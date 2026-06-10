@@ -46,7 +46,13 @@ COMPOSE := docker compose $(COMPOSE_FILES)
 SAFE_COMPOSE_FILES := -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.safe.yml
 SAFE_COMPOSE := docker compose $(SAFE_COMPOSE_FILES)
 
-.PHONY: help up down restart logs ps build pull migrate seed shell-back shell-front shell-db backup smoke certs-dev clean
+# Stack de testes (CA011) — autocontida, nome de projeto isolado para nunca
+# colidir com a stack de dev. Ver docker-compose.test.yml.
+TEST_PROJECT := carwash-test
+TEST_COMPOSE := docker compose -p $(TEST_PROJECT) -f docker-compose.test.yml
+
+.PHONY: help up down restart logs ps build pull migrate seed shell-back shell-front shell-db backup smoke certs-dev clean \
+        test test-unit test-back test-front test-e2e clean-test
 
 help:
 	@echo "CarWash — comandos disponíveis (ENV=$(ENV))"
@@ -63,6 +69,14 @@ help:
 	@echo "  make certs-dev                  gera cert auto-assinado para hom local"
 	@echo "  make shell-back|shell-front|shell-db   abre shell no container"
 	@echo "  make clean                      remove containers, volumes e redes (CUIDADO)"
+	@echo ""
+	@echo "  --- Testes dockerizados (CA011) ---"
+	@echo "  make test                       roda TODA a suíte (unit back+front + e2e)"
+	@echo "  make test-unit                  testes unitários back e front (em containers)"
+	@echo "  make test-back                  backend: unit + integration (Testcontainers)"
+	@echo "  make test-front                 frontend: Vitest + cobertura"
+	@echo "  make test-e2e                   sobe a stack e roda Playwright pelo proxy"
+	@echo "  make clean-test                 derruba a stack de teste e remove volumes"
 
 up:
 	$(COMPOSE) up -d --build
@@ -125,3 +139,38 @@ certs-dev:
 
 clean:
 	$(COMPOSE) down -v --remove-orphans
+
+# =============================================================================
+# TESTES DOCKERIZADOS (CA011) — mesmo comando local e em CI
+# =============================================================================
+
+# Backend: unit + integration num único container. IntegrationTests usa
+# Testcontainers, que precisa do socket do Docker do host (montado no compose).
+test-back:
+	$(TEST_COMPOSE) build backend-tests
+	$(TEST_COMPOSE) run --rm backend-tests
+
+# Frontend: Vitest + cobertura (jsdom + MSW, sem stack no ar).
+test-front:
+	$(TEST_COMPOSE) build frontend-tests
+	$(TEST_COMPOSE) run --rm frontend-tests
+
+# Atalho para os dois conjuntos unitários (back inclui integration).
+test-unit: test-back test-front
+
+# E2E: sobe a stack (postgres+migrator+backend+frontend+proxy), o runner espera
+# o /health pelo proxy, roda o Playwright e depois derruba tudo (mesmo em falha).
+test-e2e:
+	@set -e; \
+	$(TEST_COMPOSE) --profile e2e build; \
+	status=0; \
+	$(TEST_COMPOSE) --profile e2e run --rm e2e || status=$$?; \
+	$(TEST_COMPOSE) --profile e2e down -v --remove-orphans; \
+	exit $$status
+
+# Suíte completa: unitários (back+front) e depois E2E.
+test: test-unit test-e2e
+
+# Derruba a stack de teste e remove volumes/redes/órfãos (idempotente).
+clean-test:
+	-$(TEST_COMPOSE) --profile e2e --profile unit down -v --remove-orphans

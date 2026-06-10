@@ -1,3 +1,4 @@
+using CarWash.Application.Abstractions;
 using CarWash.Application.Agendamentos.Abstractions;
 using CarWash.Application.Agendamentos.Common;
 using CarWash.Application.Agendamentos.Persistence;
@@ -23,6 +24,8 @@ public class PreConfirmarAgendamentoHandlerTests
     private static readonly Guid ServicoB = Guid.NewGuid();
     private static readonly Guid UsuarioId = Guid.NewGuid();
 
+    private static readonly Guid ResponsavelId = Guid.NewGuid();
+
     private readonly IAgendamentoRepository _agendamentos = Substitute.For<IAgendamentoRepository>();
     private readonly IAgendamentoCatalogoRepository _catalogo = Substitute.For<IAgendamentoCatalogoRepository>();
     private readonly ITokenConfirmacaoService _tokens;
@@ -41,6 +44,8 @@ public class PreConfirmarAgendamentoHandlerTests
             .Returns(new VeiculoResumoSnapshot(VeiculoId, ClienteId, "ABC1D23", "Civic", "Preto", true));
         _catalogo.ObterClienteResumoAsync(ClienteId, Arg.Any<CancellationToken>())
             .Returns(new ClienteResumoSnapshot(ClienteId, "Maria", "12345678901", true));
+        _catalogo.ObterResponsavelResumoAsync(ResponsavelId, Arg.Any<CancellationToken>())
+            .Returns(new ResponsavelResumoSnapshot(ResponsavelId, ClienteId, "João", "12345678901", "Irmão", true));
         _catalogo.ObterServicosAsync(Arg.Any<IReadOnlyCollection<Guid>>(), Arg.Any<CancellationToken>())
             .Returns(new List<ServicoSnapshot>
             {
@@ -50,6 +55,15 @@ public class PreConfirmarAgendamentoHandlerTests
         _agendamentos.ExisteConflitoVeiculoAsync(
             Arg.Any<Guid>(), Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
             .Returns(false);
+
+        // RF018/RF008: a CalculadoraResumoAgendamento valida capacidade da filial
+        // (RN009). Sem stub, o mock retornaria celulas_ativas=null/0 e lançaria
+        // CapacidadeFilialEsgotadaException nos caminhos felizes.
+        _catalogo.ObterCelulasAtivasFilialAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(50);
+        _catalogo.ContarSobreposicoesNaFilialAsync(
+            Arg.Any<Guid>(), Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+            .Returns(0);
     }
 
     [Fact]
@@ -145,7 +159,10 @@ public class PreConfirmarAgendamentoHandlerTests
 
     private PreConfirmarAgendamentoHandler NovoHandler() =>
         new(
-            new CalculadoraResumoAgendamento(_catalogo),
+            new CalculadoraResumoAgendamento(
+                _catalogo,
+                Substitute.For<IAuditLogger>(),
+                NullLogger<CalculadoraResumoAgendamento>.Instance),
             _agendamentos,
             _tokens,
             NullLogger<PreConfirmarAgendamentoHandler>.Instance);
@@ -154,7 +171,7 @@ public class PreConfirmarAgendamentoHandlerTests
         FilialId: FilialId,
         ClienteId: ClienteId,
         VeiculoId: VeiculoId,
-        ResponsavelId: null,
+        ResponsavelId: ResponsavelId,
         Inicio: DateTime.UtcNow.AddDays(1),
         ServicoIds: new[] { ServicoA, ServicoB },
         Observacoes: "Cliente aguarda.",

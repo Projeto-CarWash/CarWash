@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  Building2,
   CalendarDays,
   CarFront,
   DollarSign,
@@ -24,13 +25,14 @@ interface NavLinkItem {
 
 const operacaoLinks: NavLinkItem[] = [
   { icon: LayoutDashboard, label: 'Painel', to: '/dashboard' },
+  { icon: Building2, label: 'Filiais', to: '/filiais' },
   { icon: Wrench, label: 'Serviços', to: '/servicos' },
   { icon: Users, label: 'Clientes', to: '/clientes' },
-  { icon: CarFront, label: 'Veículos' },
+  { icon: CarFront, label: 'Veículos', to: '/veiculos' },
 ];
 
 const gestaoLinks: NavLinkItem[] = [
-  { icon: CalendarDays, label: 'Agendamentos', to: '/agendamentos' },
+  { icon: CalendarDays, label: 'Agendamentos', to: '/agenda' },
   { icon: DollarSign, label: 'Financeiro' },
   { icon: BarChart3, label: 'Relatórios' },
   { icon: UserCog, label: 'Equipe', to: '/usuarios' },

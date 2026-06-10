@@ -1,0 +1,158 @@
+using CarWash.Application.Common.Exceptions;
+using CarWash.Application.Filiais.Common;
+using CarWash.Application.Filiais.Persistence;
+using CarWash.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
+using Npgsql;
+using PostgresErrorCodes = Npgsql.PostgresErrorCodes;
+
+namespace CarWash.Infrastructure.Persistence.Repositories;
+
+/// <summary>
+/// Implementação EF Core do <see cref="IFilialRepository"/>. Traduz
+/// <see cref="DbUpdateException"/> por <see cref="PostgresException.ConstraintName"/>
+/// em exceções específicas (ADR-0007 §5.2) para o middleware global responder
+/// 409 com o slug correto.
+/// </summary>
+public class FilialRepository : IFilialRepository
+{
+    private const string ConstraintCodigo = "uk_filiais_codigo";
+    private const string ConstraintCnpj = "uk_filiais_cnpj";
+    private const string ConstraintNomeLower = "uk_filiais_nome_lower";
+
+    private readonly CarWashDbContext context;
+
+    public FilialRepository(CarWashDbContext context)
+    {
+        this.context = context;
+    }
+
+    public Task<bool> ExisteCodigoAsync(string codigo, CancellationToken cancellationToken)
+    {
+        return context.Filiais
+            .AsNoTracking()
+            .AnyAsync(x => x.Codigo == codigo, cancellationToken);
+    }
+
+    public Task<bool> ExisteCnpjAsync(string cnpj, CancellationToken cancellationToken)
+    {
+        return context.Filiais
+            .AsNoTracking()
+            .AnyAsync(x => x.Cnpj == cnpj, cancellationToken);
+    }
+
+    public Task<bool> ExisteNomeAsync(string nome, CancellationToken cancellationToken)
+    {
+        // Estratégia: igualdade case-insensitive via `LOWER(nome) = $1`, onde o
+        // lado direito é pré-computado em C# com `ToLowerInvariant()` e o lado
+        // esquerdo é traduzido pelo provider Npgsql para `LOWER(nome)` —
+        // casando exatamente com o índice funcional `uk_filiais_nome_lower`.
+        // Evita falsos 409 quando o nome contém os curingas LIKE `%` ou `_`,
+        // que `ILike` interpretaria como wildcard. O `x.Nome.ToLower()` na
+        // expressão LINQ é traduzido pelo provider para `LOWER(...)` no SQL
+        // (não executa em runtime C#) — por isso CA1304/CA1862/RCS1155 ficam
+        // suprimidos apenas nesse trecho.
+        string normalizadoLower = (nome ?? string.Empty).Trim().ToLowerInvariant();
+#pragma warning disable CA1304, CA1311, CA1862, RCS1155
+        return context.Filiais
+            .AsNoTracking()
+            .AnyAsync(x => x.Nome.ToLower() == normalizadoLower, cancellationToken);
+#pragma warning restore CA1304, CA1311, CA1862, RCS1155
+    }
+
+    public Task<Filial?> ObterPorIdAsync(Guid id, CancellationToken cancellationToken)
+    {
+        return context.Filiais.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+    }
+
+    public async Task AdicionarAsync(Filial filial, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(filial);
+
+        await context.Filiais.AddAsync(filial, cancellationToken).ConfigureAwait(false);
+
+        try
+        {
+            await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (DbUpdateException ex) when (IsUniqueViolation(ex))
+        {
+            // Race condition: outro POST concorrente venceu o pré-check.
+            // Inspeciona o ConstraintName para escolher o slug certo.
+            string? constraintName = (ex.InnerException as PostgresException)?.ConstraintName;
+            throw constraintName switch
+            {
+                ConstraintCodigo => new FilialCodigoJaExisteException(ex),
+                ConstraintCnpj => new FilialCnpjJaExisteException(ex),
+                ConstraintNomeLower => new FilialNomeJaExisteException(ex),
+                _ => new ConflictException("Conflito ao cadastrar filial.", ex),
+            };
+        }
+    }
+
+    /// <summary>
+    /// Persiste mudanças pendentes do agregado rastreado (RF018 — ajuste de
+    /// <c>celulas_ativas</c>). O ajuste de células não toca nenhuma UK, então
+    /// não há tradução de <c>DbUpdateException</c> aqui.
+    /// </summary>
+    public Task SalvarAsync(CancellationToken cancellationToken)
+    {
+        return context.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<(IReadOnlyList<Filial> Itens, int Total)> ListarAsync(
+        string? busca,
+        bool? ativo,
+        int pagina,
+        int tamanhoPagina,
+        CancellationToken cancellationToken)
+    {
+        if (pagina < 1)
+        {
+            pagina = 1;
+        }
+
+        if (tamanhoPagina < 1)
+        {
+            tamanhoPagina = 20;
+        }
+
+        if (tamanhoPagina > 100)
+        {
+            tamanhoPagina = 100;
+        }
+
+        var query = context.Filiais.AsNoTracking();
+
+        if (ativo.HasValue)
+        {
+            query = query.Where(x => x.Ativa == ativo.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(busca))
+        {
+            string termo = busca.Trim();
+            string like = $"%{termo}%";
+            query = query.Where(x =>
+                EF.Functions.ILike(x.Nome, like)
+                || (x.Codigo != null && EF.Functions.ILike(x.Codigo, like))
+                || (x.EnderecoCidade != null && EF.Functions.ILike(x.EnderecoCidade, like)));
+        }
+
+        int total = await query.CountAsync(cancellationToken).ConfigureAwait(false);
+
+        var itens = await query
+            .OrderBy(x => x.Nome)
+            .Skip((pagina - 1) * tamanhoPagina)
+            .Take(tamanhoPagina)
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
+
+        return (itens, total);
+    }
+
+    private static bool IsUniqueViolation(DbUpdateException exception)
+    {
+        return exception.InnerException is PostgresException postgresException
+            && postgresException.SqlState == PostgresErrorCodes.UniqueViolation;
+    }
+}

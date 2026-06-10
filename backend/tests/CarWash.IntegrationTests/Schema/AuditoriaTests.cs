@@ -76,10 +76,10 @@ public class AuditoriaTests
         var interceptor = new AuditLogInterceptor(contexto);
         await using var db = CarWashDbContextFactoryForTests.Create(_fixture, interceptor);
 
-        var (filialId, clienteId, veiculoId, criadoPor) = await SemearAsync(db).ConfigureAwait(false);
+        var (filialId, clienteId, veiculoId, criadoPor, responsavelId) = await SemearAsync(db).ConfigureAwait(false);
 
         var inicio = DateTime.UtcNow.AddHours(4);
-        var ag = Agendamento.Criar(Guid.NewGuid(), filialId, clienteId, veiculoId, criadoPor, inicio, inicio.AddHours(1));
+        var ag = Agendamento.Criar(Guid.NewGuid(), filialId, clienteId, veiculoId, criadoPor, inicio, inicio.AddHours(1), responsavelId);
         db.Agendamentos.Add(ag);
         await db.SaveChangesAsync().ConfigureAwait(false);
 
@@ -105,7 +105,7 @@ public class AuditoriaTests
             outro = "manter",
         };
 
-        var json = AuditDataMasker.Mask(payload);
+        string json = AuditDataMasker.Mask(payload);
         json.Should().Contain("\"senha\":\"***\"");
         json.Should().Contain("\"password\":\"***\"");
         json.Should().Contain("\"refresh_token\":\"***\"");
@@ -123,7 +123,7 @@ public class AuditoriaTests
             cnpj = new { valor = "11222333000181" },
         };
 
-        var json = AuditDataMasker.Mask(payload);
+        string json = AuditDataMasker.Mask(payload);
         json.Should().Contain("\"cpf\":\"***.***.447-**\"");
         json.Should().Contain("\"cnpj\":\"**.***.***/****-81\"");
     }
@@ -137,14 +137,14 @@ public class AuditoriaTests
             cnpj = new { valor = "123" },
         };
 
-        var json = AuditDataMasker.Mask(payload);
+        string json = AuditDataMasker.Mask(payload);
         json.Should().Contain("\"cpf\":\"***\"");
         json.Should().Contain("\"cnpj\":\"***\"");
     }
 
-    private static async Task<(Guid, Guid, Guid, Guid)> SemearAsync(CarWashDbContext db)
+    private static async Task<(Guid FilialId, Guid ClienteId, Guid VeiculoId, Guid CriadoPor, Guid ResponsavelId)> SemearAsync(CarWashDbContext db)
     {
-        var filial = Filial.Criar(Guid.NewGuid(), $"FAud{Guid.NewGuid():N}".Substring(0, 30), 4);
+        var filial = Filial.Criar(Guid.NewGuid(), $"FAud{Guid.NewGuid():N}".Substring(0, 30), $"F{Guid.NewGuid():N}"[..10].ToUpperInvariant(), 4);
         var cliente = Cliente.Criar(
             id: Guid.NewGuid(),
             nome: "Cliente Aud",
@@ -159,6 +159,12 @@ public class AuditoriaTests
             modelo: "X",
             fabricante: "Y",
             cor: "Z");
+        var responsavel = Responsavel.Criar(
+            id: Guid.NewGuid(),
+            clienteTitularId: cliente.Id,
+            nome: "Responsavel Aud",
+            documento: GerarCpfValido(),
+            grauVinculo: GrauVinculo.ResponsavelFinanceiro);
         var usuario = Usuario.Criar(
             id: Guid.NewGuid(),
             nome: "Op",
@@ -169,15 +175,16 @@ public class AuditoriaTests
         db.Filiais.Add(filial);
         db.Clientes.Add(cliente);
         db.Veiculos.Add(veiculo);
+        db.Responsaveis.Add(responsavel);
         db.Usuarios.Add(usuario);
         await db.SaveChangesAsync().ConfigureAwait(false);
-        return (filial.Id, cliente.Id, veiculo.Id, usuario.Id);
+        return (filial.Id, cliente.Id, veiculo.Id, usuario.Id, responsavel.Id);
     }
 
     private static string GerarPlacaAleatoria()
     {
         var rng = Random.Shared;
-        var letras = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        string letras = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         return $"{letras[rng.Next(26)]}{letras[rng.Next(26)]}{letras[rng.Next(26)]}{rng.Next(0, 10)}{letras[rng.Next(26)]}{rng.Next(0, 10)}{rng.Next(0, 10)}";
     }
 
@@ -185,15 +192,15 @@ public class AuditoriaTests
     {
         Span<int> d = stackalloc int[11];
         var rng = Random.Shared;
-        for (var i = 0; i < 9; i++)
+        for (int i = 0; i < 9; i++)
         {
             d[i] = rng.Next(0, 10);
         }
 
         d[9] = Dv(d[..9], 10);
         d[10] = Dv(d[..10], 11);
-        var chars = new char[11];
-        for (var i = 0; i < 11; i++)
+        char[] chars = new char[11];
+        for (int i = 0; i < 11; i++)
         {
             chars[i] = (char)('0' + d[i]);
         }
@@ -202,13 +209,13 @@ public class AuditoriaTests
 
         static int Dv(ReadOnlySpan<int> parcial, int pesoInicial)
         {
-            var soma = 0;
-            for (var i = 0; i < parcial.Length; i++)
+            int soma = 0;
+            for (int i = 0; i < parcial.Length; i++)
             {
                 soma += parcial[i] * (pesoInicial - i);
             }
 
-            var resto = soma % 11;
+            int resto = soma % 11;
             return resto < 2 ? 0 : 11 - resto;
         }
     }

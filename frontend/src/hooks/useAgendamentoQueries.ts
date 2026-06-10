@@ -4,7 +4,6 @@ import { agendamentoService } from '@/services/agendamentoService';
 import { clienteService } from '@/services/clienteService';
 import { filialService } from '@/services/filialService';
 import { servicoService } from '@/services/servicoService';
-import { veiculoService } from '@/services/veiculoService';
 
 import type {
   AgendamentoResponse,
@@ -36,20 +35,6 @@ export function useClientesParaAgendamento(busca: string) {
 }
 
 /**
- * Lista de veículos do cliente selecionado.
- *
- * @remarks Depende de `GET /api/v1/veiculos` — endpoint PENDENTE no backend
- * (ver `services/veiculoService.ts`). A query só dispara quando há cliente.
- */
-export function useVeiculosDoCliente(clienteId: string | undefined) {
-  return useQuery({
-    queryKey: ['agendamento', 'veiculos', clienteId],
-    queryFn: () => veiculoService.listarPorCliente(clienteId!),
-    enabled: Boolean(clienteId),
-  });
-}
-
-/**
  * Catálogo de serviços.
  *
  * @remarks Depende de `GET /api/v1/servicos` — endpoint PENDENTE no backend
@@ -63,10 +48,9 @@ export function useServicos() {
 }
 
 /**
- * Lista de filiais.
+ * Lista de filiais ativas para o seletor obrigatório do agendamento (RF019).
  *
- * @remarks Depende de `GET /api/v1/filiais` — endpoint PENDENTE no backend
- * (ver `services/filialService.ts`).
+ * @remarks `GET /api/v1/filiais?ativo=true` (endpoint oficial — ADR-0007 §4).
  */
 export function useFiliais() {
   return useQuery({

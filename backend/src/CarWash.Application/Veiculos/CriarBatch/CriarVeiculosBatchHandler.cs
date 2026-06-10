@@ -58,7 +58,7 @@ public sealed class CriarVeiculosBatchHandler : ICommandHandler<CriarVeiculosBat
 
         // 4) Construir entidades de domínio — falha rápida se algum campo for inválido.
         var veiculos = new List<Veiculo>(command.Veiculos.Count);
-        for (var i = 0; i < command.Veiculos.Count; i++)
+        for (int i = 0; i < command.Veiculos.Count; i++)
         {
             var item = command.Veiculos[i];
             var veiculo = Veiculo.Criar(

@@ -39,6 +39,7 @@ public sealed class CriarAgendamentoHandler : ICommandHandler<CriarAgendamentoCo
         _logger = logger;
     }
 
+    /// <inheritdoc/>
     public async Task<AgendamentoResponse> HandleAsync(CriarAgendamentoCommand command, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(command);
@@ -89,6 +90,23 @@ public sealed class CriarAgendamentoHandler : ICommandHandler<CriarAgendamentoCo
             throw new AgendamentoConflitanteException();
         }
 
+        // RF008/RN009: agendamentos simultâneos permitidos até o limite de células
+        // ativas da filial; ao exceder o teto, rejeita com 409.
+        if (await _agendamentos.CapacidadeAtingidaAsync(
+            command.FilialId,
+            calculado.Inicio,
+            calculado.Fim,
+            cancellationToken).ConfigureAwait(false))
+        {
+            _logger.LogWarning(
+                "Criação rejeitada por capacidade da filial atingida (RF008) — filial {FilialId} na janela [{Inicio:o}, {Fim:o}). TraceId: {TraceId}",
+                command.FilialId,
+                calculado.Inicio,
+                calculado.Fim,
+                command.TraceId);
+            throw new CapacidadeFilialAtingidaException();
+        }
+
         var agendamentoId = Guid.NewGuid();
 
         // RN011 camada 3: a fábrica do domínio reforça as invariantes (filial,
@@ -128,15 +146,18 @@ public sealed class CriarAgendamentoHandler : ICommandHandler<CriarAgendamentoCo
 
         _logger.LogInformation(
             "Agendamento criado. AgendamentoId: {AgendamentoId}. VeiculoId: {VeiculoId}. FilialId: {FilialId}. "
+            + "ClienteId: {ClienteId}. ResponsavelId: {ResponsavelId}. "
             + "Janela: [{Inicio:o}, {Fim:o}). UsuarioId: {UsuarioId}. TraceId: {TraceId}",
             agendamentoId,
             command.VeiculoId,
             command.FilialId,
+            command.ClienteId,
+            command.ResponsavelId,
             calculado.Inicio,
             calculado.Fim,
             criadoPor,
             command.TraceId);
 
-        return AgendamentoResponseFactory.Montar(agendamento, itens, calculado.Servicos, command.TraceId);
+        return AgendamentoResponseFactory.Montar(agendamento, itens, calculado.Servicos, calculado.Responsavel, command.TraceId);
     }
 }

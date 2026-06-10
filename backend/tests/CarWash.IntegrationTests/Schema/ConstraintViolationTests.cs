@@ -26,12 +26,14 @@ public class ConstraintViolationTests : IAsyncLifetime
         _fixture = fixture;
     }
 
+    /// <inheritdoc/>
     public Task InitializeAsync()
     {
         _db = CarWashDbContextFactoryForTests.Create(_fixture);
         return Task.CompletedTask;
     }
 
+    /// <inheritdoc/>
     public async Task DisposeAsync() => await _db.DisposeAsync().ConfigureAwait(false);
 
     [Fact]
@@ -141,15 +143,15 @@ public class ConstraintViolationTests : IAsyncLifetime
     [Fact]
     public async Task Agendamento_inicio_igual_ou_maior_que_fim_falha_com_ck_ag_inicio_menor_fim()
     {
-        var (filialId, clienteId, veiculoId, criadoPor) = await SemearAgendamentoDependenciasAsync().ConfigureAwait(false);
+        var (filialId, clienteId, veiculoId, criadoPor, responsavelId) = await SemearAgendamentoDependenciasAsync().ConfigureAwait(false);
 
         var inicio = DateTime.UtcNow.AddHours(1);
         await using var conn = new NpgsqlConnection(_fixture.ConnectionString);
         await conn.OpenAsync().ConfigureAwait(false);
         await using var cmd = conn.CreateCommand();
         cmd.CommandText =
-            "INSERT INTO public.agendamentos (id, filial_id, cliente_id, veiculo_id, criado_por, status, inicio, fim) "
-            + $"VALUES ('{Guid.NewGuid()}', '{filialId}', '{clienteId}', '{veiculoId}', '{criadoPor}', 'agendado', '{inicio:O}', '{inicio:O}');";
+            "INSERT INTO public.agendamentos (id, filial_id, cliente_id, veiculo_id, responsavel_id, criado_por, status, inicio, fim) "
+            + $"VALUES ('{Guid.NewGuid()}', '{filialId}', '{clienteId}', '{veiculoId}', '{responsavelId}', '{criadoPor}', 'agendado', '{inicio:O}', '{inicio:O}');";
         var ex = await Record.ExceptionAsync(() => cmd.ExecuteNonQueryAsync()).ConfigureAwait(false);
         ex.Should().BeOfType<PostgresException>();
         ((PostgresException)ex!).ConstraintName.Should().Be("ck_ag_inicio_menor_fim");
@@ -158,7 +160,7 @@ public class ConstraintViolationTests : IAsyncLifetime
     [Fact]
     public async Task Servico_duplicado_no_mesmo_agendamento_falha_com_uk_item_agendamento_servico()
     {
-        var (filialId, clienteId, veiculoId, criadoPor) = await SemearAgendamentoDependenciasAsync().ConfigureAwait(false);
+        var (filialId, clienteId, veiculoId, criadoPor, responsavelId) = await SemearAgendamentoDependenciasAsync().ConfigureAwait(false);
 
         var inicio = DateTime.UtcNow.AddHours(1);
         var agendamento = Agendamento.Criar(
@@ -168,7 +170,8 @@ public class ConstraintViolationTests : IAsyncLifetime
             veiculoId: veiculoId,
             criadoPor: criadoPor,
             inicio: inicio,
-            fim: inicio.AddHours(1));
+            fim: inicio.AddHours(1),
+            responsavelId: responsavelId);
         _db.Agendamentos.Add(agendamento);
         await _db.SaveChangesAsync().ConfigureAwait(false);
 
@@ -189,11 +192,11 @@ public class ConstraintViolationTests : IAsyncLifetime
     [Fact]
     public async Task Conflito_mesmo_veiculo_mesma_filial_falha_com_ex_ag_veiculo_janela()
     {
-        var (filialId, clienteId, veiculoId, criadoPor) = await SemearAgendamentoDependenciasAsync().ConfigureAwait(false);
+        var (filialId, clienteId, veiculoId, criadoPor, responsavelId) = await SemearAgendamentoDependenciasAsync().ConfigureAwait(false);
 
         var inicio = DateTime.UtcNow.AddHours(1);
-        var a1 = Agendamento.Criar(Guid.NewGuid(), filialId, clienteId, veiculoId, criadoPor, inicio, inicio.AddHours(1));
-        var a2 = Agendamento.Criar(Guid.NewGuid(), filialId, clienteId, veiculoId, criadoPor, inicio.AddMinutes(30), inicio.AddMinutes(90));
+        var a1 = Agendamento.Criar(Guid.NewGuid(), filialId, clienteId, veiculoId, criadoPor, inicio, inicio.AddHours(1), responsavelId);
+        var a2 = Agendamento.Criar(Guid.NewGuid(), filialId, clienteId, veiculoId, criadoPor, inicio.AddMinutes(30), inicio.AddMinutes(90), responsavelId);
 
         _db.Agendamentos.Add(a1);
         await _db.SaveChangesAsync().ConfigureAwait(false);
@@ -207,14 +210,14 @@ public class ConstraintViolationTests : IAsyncLifetime
     [Fact]
     public async Task Conflito_global_RN011_em_filiais_diferentes_ainda_falha()
     {
-        var (filialId1, clienteId, veiculoId, criadoPor) = await SemearAgendamentoDependenciasAsync().ConfigureAwait(false);
+        var (filialId1, clienteId, veiculoId, criadoPor, responsavelId) = await SemearAgendamentoDependenciasAsync().ConfigureAwait(false);
         var filialId2 = Guid.NewGuid();
-        _db.Filiais.Add(Filial.Criar(filialId2, "Filial 2", 3));
+        _db.Filiais.Add(Filial.Criar(filialId2, "Filial 2", $"F{Guid.NewGuid():N}"[..10].ToUpperInvariant(), 3));
         await _db.SaveChangesAsync().ConfigureAwait(false);
 
         var inicio = DateTime.UtcNow.AddHours(2);
-        var a1 = Agendamento.Criar(Guid.NewGuid(), filialId1, clienteId, veiculoId, criadoPor, inicio, inicio.AddHours(1));
-        var a2 = Agendamento.Criar(Guid.NewGuid(), filialId2, clienteId, veiculoId, criadoPor, inicio.AddMinutes(15), inicio.AddMinutes(75));
+        var a1 = Agendamento.Criar(Guid.NewGuid(), filialId1, clienteId, veiculoId, criadoPor, inicio, inicio.AddHours(1), responsavelId);
+        var a2 = Agendamento.Criar(Guid.NewGuid(), filialId2, clienteId, veiculoId, criadoPor, inicio.AddMinutes(15), inicio.AddMinutes(75), responsavelId);
 
         _db.Agendamentos.Add(a1);
         await _db.SaveChangesAsync().ConfigureAwait(false);
@@ -228,11 +231,11 @@ public class ConstraintViolationTests : IAsyncLifetime
     [Fact]
     public async Task Janelas_adjacentes_meio_abertas_passam()
     {
-        var (filialId, clienteId, veiculoId, criadoPor) = await SemearAgendamentoDependenciasAsync().ConfigureAwait(false);
+        var (filialId, clienteId, veiculoId, criadoPor, responsavelId) = await SemearAgendamentoDependenciasAsync().ConfigureAwait(false);
 
         var inicio = DateTime.UtcNow.AddHours(3);
-        var a1 = Agendamento.Criar(Guid.NewGuid(), filialId, clienteId, veiculoId, criadoPor, inicio, inicio.AddHours(1));
-        var a2 = Agendamento.Criar(Guid.NewGuid(), filialId, clienteId, veiculoId, criadoPor, inicio.AddHours(1), inicio.AddHours(2));
+        var a1 = Agendamento.Criar(Guid.NewGuid(), filialId, clienteId, veiculoId, criadoPor, inicio, inicio.AddHours(1), responsavelId);
+        var a2 = Agendamento.Criar(Guid.NewGuid(), filialId, clienteId, veiculoId, criadoPor, inicio.AddHours(1), inicio.AddHours(2), responsavelId);
 
         _db.Agendamentos.Add(a1);
         await _db.SaveChangesAsync().ConfigureAwait(false);
@@ -240,15 +243,15 @@ public class ConstraintViolationTests : IAsyncLifetime
         _db.Agendamentos.Add(a2);
         await _db.SaveChangesAsync().ConfigureAwait(false);
 
-        var total = await _db.Agendamentos
+        int total = await _db.Agendamentos
             .CountAsync(x => x.VeiculoId == veiculoId && (x.Id == a1.Id || x.Id == a2.Id))
             .ConfigureAwait(false);
         total.Should().Be(2);
     }
 
-    private async Task<(Guid filialId, Guid clienteId, Guid veiculoId, Guid criadoPor)> SemearAgendamentoDependenciasAsync()
+    private async Task<(Guid filialId, Guid clienteId, Guid veiculoId, Guid criadoPor, Guid responsavelId)> SemearAgendamentoDependenciasAsync()
     {
-        var filial = Filial.Criar(Guid.NewGuid(), $"Filial {Guid.NewGuid():N}".Substring(0, 30), 4);
+        var filial = Filial.Criar(Guid.NewGuid(), $"Filial {Guid.NewGuid():N}".Substring(0, 30), $"F{Guid.NewGuid():N}"[..10].ToUpperInvariant(), 4);
         var cliente = ClienteValido();
         var veiculo = Veiculo.Criar(
             id: Guid.NewGuid(),
@@ -257,6 +260,13 @@ public class ConstraintViolationTests : IAsyncLifetime
             modelo: "Civic",
             fabricante: "Honda",
             cor: "Preto");
+
+        var responsavel = Responsavel.Criar(
+            id: Guid.NewGuid(),
+            clienteTitularId: cliente.Id,
+            nome: "Responsavel Teste",
+            documento: GerarCpfValido(),
+            grauVinculo: GrauVinculo.ResponsavelFinanceiro);
 
         var usuario = Usuario.Criar(
             id: Guid.NewGuid(),
@@ -268,10 +278,11 @@ public class ConstraintViolationTests : IAsyncLifetime
         _db.Filiais.Add(filial);
         _db.Clientes.Add(cliente);
         _db.Veiculos.Add(veiculo);
+        _db.Responsaveis.Add(responsavel);
         _db.Usuarios.Add(usuario);
         await _db.SaveChangesAsync().ConfigureAwait(false);
 
-        return (filial.Id, cliente.Id, veiculo.Id, usuario.Id);
+        return (filial.Id, cliente.Id, veiculo.Id, usuario.Id, responsavel.Id);
     }
 
     private static Cliente ClienteValido() => Cliente.Criar(
@@ -297,7 +308,7 @@ public class ConstraintViolationTests : IAsyncLifetime
     private static string GerarPlacaAleatoria()
     {
         var rng = Random.Shared;
-        var letras = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        string letras = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         return $"{letras[rng.Next(26)]}{letras[rng.Next(26)]}{letras[rng.Next(26)]}{rng.Next(0, 10)}{letras[rng.Next(26)]}{rng.Next(0, 10)}{rng.Next(0, 10)}";
     }
 
@@ -306,15 +317,15 @@ public class ConstraintViolationTests : IAsyncLifetime
         // Gera 9 dígitos aleatórios e calcula DVs. Garante unicidade por teste.
         Span<int> d = stackalloc int[11];
         var rng = Random.Shared;
-        for (var i = 0; i < 9; i++)
+        for (int i = 0; i < 9; i++)
         {
             d[i] = rng.Next(0, 10);
         }
 
         d[9] = Dv(d[..9], 10);
         d[10] = Dv(d[..10], 11);
-        var chars = new char[11];
-        for (var i = 0; i < 11; i++)
+        char[] chars = new char[11];
+        for (int i = 0; i < 11; i++)
         {
             chars[i] = (char)('0' + d[i]);
         }
@@ -323,13 +334,13 @@ public class ConstraintViolationTests : IAsyncLifetime
 
         static int Dv(ReadOnlySpan<int> parcial, int pesoInicial)
         {
-            var soma = 0;
-            for (var i = 0; i < parcial.Length; i++)
+            int soma = 0;
+            for (int i = 0; i < parcial.Length; i++)
             {
                 soma += parcial[i] * (pesoInicial - i);
             }
 
-            var resto = soma % 11;
+            int resto = soma % 11;
             return resto < 2 ? 0 : 11 - resto;
         }
     }

@@ -1,12 +1,19 @@
-import { Car, ChevronLeft, Clock, DollarSign, Loader2, User, Wrench } from 'lucide-react';
+import {
+  Building2,
+  Car,
+  ChevronLeft,
+  Clock,
+  DollarSign,
+  Loader2,
+  User,
+  Wrench,
+} from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 
-import type { AgendamentoWizardState } from '@/types/agendamento';
+import { ObservacoesLogisticasField } from './ObservacoesLogisticasField';
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
+import type { AgendamentoWizardState } from '@/types/agendamento';
 
 function formatarPreco(valor: number): string {
   return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -49,6 +56,12 @@ interface ResumoConfirmacaoStepProps {
   onBack: () => void;
   confirmado: boolean;
   onConfirmadoChange: (checked: boolean) => void;
+  /** Valor atual das observações logísticas (controlado pelo pai). */
+  observacoesLogisticas: string;
+  /** Callback para atualizar as observações logísticas no wizard state. */
+  onObservacoesLogisticasChange: (value: string) => void;
+  /** Erro de validação do campo (de Zod ou do backend). */
+  observacoesLogisticasErro?: string;
 }
 
 export function ResumoConfirmacaoStep({
@@ -58,8 +71,11 @@ export function ResumoConfirmacaoStep({
   onBack,
   confirmado,
   onConfirmadoChange,
+  observacoesLogisticas,
+  onObservacoesLogisticasChange,
+  observacoesLogisticasErro,
 }: ResumoConfirmacaoStepProps) {
-  const { cliente, veiculo, servicos, dataAgendamento, horaInicio } = wizardState;
+  const { cliente, veiculo, servicos, dataAgendamento, horaInicio, filialNome } = wizardState;
 
   const duracaoTotal = servicos.reduce((sum, s) => sum + s.duracao, 0);
   const valorTotal = servicos.reduce((sum, s) => sum + s.preco, 0);
@@ -75,6 +91,17 @@ export function ResumoConfirmacaoStep({
       </div>
 
       <div className="space-y-4">
+        <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-4">
+          <p className="mb-3 text-[10px] font-bold tracking-[0.2em] text-zinc-500">FILIAL</p>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-600/10">
+              <Building2 className="h-4.5 w-4.5 text-red-500" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-zinc-100">{filialNome || 'Não selecionada'}</p>
+            </div>
+          </div>
+        </div>
         <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-4">
           <p className="mb-3 text-[10px] font-bold tracking-[0.2em] text-zinc-500">CLIENTE</p>
           <div className="flex items-center gap-3">
@@ -103,6 +130,21 @@ export function ResumoConfirmacaoStep({
             </div>
           </div>
         </div>
+
+        {wizardState.responsavel && (
+          <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-4">
+            <p className="mb-3 text-[10px] font-bold tracking-[0.2em] text-zinc-500">RESPONSÁVEL</p>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-600/10">
+                <User className="h-4.5 w-4.5 text-red-500" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-zinc-100">{wizardState.responsavel.nome}</p>
+                <p className="text-xs text-zinc-500">Responsável pelo agendamento</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-4">
           <p className="mb-3 text-[10px] font-bold tracking-[0.2em] text-zinc-500">
@@ -163,6 +205,15 @@ export function ResumoConfirmacaoStep({
             </div>
           </div>
         </div>
+
+        {/* Observações logísticas */}
+        <ObservacoesLogisticasField
+          id="resumo-obs-logisticas"
+          value={observacoesLogisticas}
+          onChange={onObservacoesLogisticasChange}
+          error={observacoesLogisticasErro}
+          disabled={isSubmitting}
+        />
 
         <label
           htmlFor="confirmacao"

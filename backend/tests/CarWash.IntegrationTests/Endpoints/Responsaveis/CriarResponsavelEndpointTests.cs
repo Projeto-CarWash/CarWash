@@ -110,7 +110,7 @@ public class CriarResponsavelEndpointTests : IAsyncDisposable
         var client = await AuthenticatedHttpClient.CreateAsync(_factory);
         var clienteId = await CriarClienteAsync(client);
 
-        var cpf = NovoCpfValido();
+        string cpf = NovoCpfValido();
         var primeiroPayload = PayloadValido();
         primeiroPayload["documento"] = cpf;
 
@@ -145,7 +145,7 @@ public class CriarResponsavelEndpointTests : IAsyncDisposable
     {
         var payload = new Dictionary<string, object?>
         {
-            ["nome"] = $"Titular-{Guid.NewGuid():N}",
+            ["nome"] = "Cliente Titular",
             ["dataNascimento"] = "1990-01-01",
             ["cpf"] = NovoCpfValido(),
             ["celular"] = "11987654321",
@@ -171,8 +171,8 @@ public class CriarResponsavelEndpointTests : IAsyncDisposable
     private static string NovoCpfValido()
     {
         var rng = Random.Shared;
-        var bases = new int[9];
-        for (var i = 0; i < 9; i++)
+        int[] bases = new int[9];
+        for (int i = 0; i < 9; i++)
         {
             bases[i] = rng.Next(0, 10);
         }
@@ -182,20 +182,20 @@ public class CriarResponsavelEndpointTests : IAsyncDisposable
             bases[0] = (bases[0] + 1) % 10;
         }
 
-        var d1 = DigitoVerificador(bases, 10);
-        var d2 = DigitoVerificador([.. bases, d1], 11);
+        int d1 = DigitoVerificador(bases, 10);
+        int d2 = DigitoVerificador([.. bases, d1], 11);
         return string.Concat(string.Concat(bases), d1, d2);
     }
 
     private static int DigitoVerificador(int[] digitos, int pesoInicial)
     {
-        var soma = 0;
-        for (var i = 0; i < digitos.Length; i++)
+        int soma = 0;
+        for (int i = 0; i < digitos.Length; i++)
         {
             soma += digitos[i] * (pesoInicial - i);
         }
 
-        var resto = soma % 11;
+        int resto = soma % 11;
         return resto < 2 ? 0 : 11 - resto;
     }
 

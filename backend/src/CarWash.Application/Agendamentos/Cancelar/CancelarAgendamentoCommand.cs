@@ -8,8 +8,8 @@ namespace CarWash.Application.Agendamentos.Cancelar;
 /// <c>TraceId</c> e <c>UsuarioId</c> são preenchidos pelo endpoint.
 /// </summary>
 public sealed record CancelarAgendamentoCommand(
-	Guid AgendamentoId,
-	string MotivoCancelamento,
-	string Origem,
-	string TraceId,
-	Guid? UsuarioId) : ICommand<CancelarAgendamentoResponse>;
+    Guid AgendamentoId,
+    string MotivoCancelamento,
+    string Origem,
+    string TraceId,
+    Guid? UsuarioId) : ICommand<CancelarAgendamentoResponse>;

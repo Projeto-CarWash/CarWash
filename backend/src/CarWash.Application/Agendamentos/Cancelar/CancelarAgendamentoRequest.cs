@@ -7,7 +7,7 @@ namespace CarWash.Application.Agendamentos.Cancelar;
 /// </summary>
 public sealed class CancelarAgendamentoRequest
 {
-	public string? MotivoCancelamento { get; set; }
+    public string? MotivoCancelamento { get; set; }
 
-	public string? Origem { get; set; }
+    public string? Origem { get; set; }
 }

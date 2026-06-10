@@ -17,6 +17,7 @@ public class SwaggerWebApplicationFactory : WebApplicationFactory<Program>
         _fixture = fixture;
     }
 
+    /// <inheritdoc/>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
@@ -25,6 +26,14 @@ public class SwaggerWebApplicationFactory : WebApplicationFactory<Program>
         builder.UseSetting("Jwt:Secret", CarWashWebApplicationFactory.JwtTestingSecret);
         builder.UseSetting("Jwt:Issuer", "carwash-api");
         builder.UseSetting("Jwt:Audience", "carwash-web");
+
+        // RF015: sem a chave dedicada de confirmação o startup falha em fail-fast.
+        // Em máquinas com a env Jwt__ConfirmacaoSigningKey exportada o teste passava
+        // por acaso; num container limpo (CA011) ele quebrava — espelhamos o setting
+        // de CarWashWebApplicationFactory para tornar a suíte reprodutível.
+        builder.UseSetting(
+            "Jwt:ConfirmacaoSigningKey",
+            CarWashWebApplicationFactory.JwtConfirmacaoTestingKey);
         builder.UseSetting("Cors:AllowedOrigins:0", "http://localhost");
     }
 }

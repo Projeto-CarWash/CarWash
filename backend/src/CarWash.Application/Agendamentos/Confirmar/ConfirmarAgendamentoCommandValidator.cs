@@ -1,12 +1,14 @@
+using CarWash.Application.Agendamentos.Common;
 using FluentValidation;
 
 namespace CarWash.Application.Agendamentos.Confirmar;
 
 /// <summary>
 /// Validador estrutural da confirmação (RF015 — etapa 2). Além das regras do
-/// RF007 (filial/cliente/veículo/início/serviços), exige a confirmação explícita,
-/// o <c>tokenConfirmacao</c> e a <c>idempotencyKey</c>. As mensagens de
-/// <c>confirmar</c> e <c>tokenConfirmacao</c> são as do contrato do card 133.
+/// RF007/RF024 (filial/cliente/veículo/responsável/início/serviços), exige a
+/// confirmação explícita, o <c>tokenConfirmacao</c> e a <c>idempotencyKey</c>.
+/// As mensagens de <c>confirmar</c> e <c>tokenConfirmacao</c> são as do contrato
+/// do card 133.
 /// </summary>
 public sealed class ConfirmarAgendamentoCommandValidator : AbstractValidator<ConfirmarAgendamentoCommand>
 {
@@ -18,8 +20,9 @@ public sealed class ConfirmarAgendamentoCommandValidator : AbstractValidator<Con
 
     public ConfirmarAgendamentoCommandValidator()
     {
+        // RF019: filial obrigatória — mensagem do card 142.
         RuleFor(x => x.FilialId)
-            .NotEmpty().WithMessage("Filial é obrigatória para o agendamento (RF019).");
+            .NotEmpty().WithMessage(MensagensFilialAgendamento.Obrigatoria);
 
         RuleFor(x => x.ClienteId)
             .NotEmpty().WithMessage("Cliente é obrigatório para o agendamento.");
@@ -28,9 +31,7 @@ public sealed class ConfirmarAgendamentoCommandValidator : AbstractValidator<Con
             .NotEmpty().WithMessage("Veículo é obrigatório para o agendamento.");
 
         RuleFor(x => x.ResponsavelId)
-            .Must(id => id != Guid.Empty)
-            .When(x => x.ResponsavelId.HasValue)
-            .WithMessage("Responsável informado é inválido.");
+            .NotEmpty().WithMessage("Selecione um responsável para prosseguir.");
 
         RuleFor(x => x.Inicio)
             .Cascade(CascadeMode.Stop)

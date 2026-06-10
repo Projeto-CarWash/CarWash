@@ -33,6 +33,7 @@ public sealed class ConsultarAgendaHandler : IQueryHandler<ConsultarAgendaQuery,
         _repositorio = repositorio;
     }
 
+    /// <inheritdoc/>
     public async Task<ConsultarAgendaResponse> HandleAsync(
         ConsultarAgendaQuery query,
         CancellationToken cancellationToken)
@@ -40,7 +41,7 @@ public sealed class ConsultarAgendaHandler : IQueryHandler<ConsultarAgendaQuery,
         ArgumentNullException.ThrowIfNull(query);
 
         // O validator já garantiu que tudo parseia — aqui o parse não pode falhar.
-        var detalhado = string.Equals(
+        bool detalhado = string.Equals(
             query.Formato?.Trim(),
             "detalhado",
             StringComparison.OrdinalIgnoreCase);
@@ -58,7 +59,7 @@ public sealed class ConsultarAgendaHandler : IQueryHandler<ConsultarAgendaQuery,
         var filialId = Guid.Parse(query.FilialId!, CultureInfo.InvariantCulture);
         var clienteId = ParsearGuidOpcional(query.ClienteId);
         var responsavelId = ParsearGuidOpcional(query.UsuarioId);
-        var statusDb = StatusAgendaMapper.ParaDb(query.Status);
+        string? statusDb = StatusAgendaMapper.ParaDb(query.Status);
 
         var projecoes = await _repositorio.ConsultarAsync(
             filialId,
@@ -90,6 +91,7 @@ public sealed class ConsultarAgendaHandler : IQueryHandler<ConsultarAgendaQuery,
     /// Deriva o título do formato simples (L2): nome do primeiro serviço na
     /// ordem de criação. Fallback <see cref="TituloPadrao"/> sem serviços.
     /// </summary>
+    /// <returns></returns>
     public static string DerivarTitulo(IReadOnlyList<AgendaServicoProjecao> servicos)
     {
         ArgumentNullException.ThrowIfNull(servicos);
@@ -101,6 +103,7 @@ public sealed class ConsultarAgendaHandler : IQueryHandler<ConsultarAgendaQuery,
     /// para 1 serviço, <c>"&lt;nome&gt; + &lt;N-1&gt;"</c> para N&gt;1,
     /// <see cref="ServicosResumoVazio"/> para 0.
     /// </summary>
+    /// <returns></returns>
     public static string DerivarServicosResumo(IReadOnlyList<AgendaServicoProjecao> servicos)
     {
         ArgumentNullException.ThrowIfNull(servicos);
@@ -115,7 +118,7 @@ public sealed class ConsultarAgendaHandler : IQueryHandler<ConsultarAgendaQuery,
             return servicos[0].Nome;
         }
 
-        var restantes = (servicos.Count - 1).ToString(CultureInfo.InvariantCulture);
+        string restantes = (servicos.Count - 1).ToString(CultureInfo.InvariantCulture);
         return $"{servicos[0].Nome} + {restantes}";
     }
 

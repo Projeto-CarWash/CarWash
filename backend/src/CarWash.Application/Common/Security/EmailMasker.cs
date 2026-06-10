@@ -19,6 +19,7 @@ public static class EmailMasker
     /// Mascara o e-mail informado. Retorna <c>***@***</c> para entrada vazia
     /// ou inválida (não-2-partes ou parte local com ≤ 2 chars).
     /// </summary>
+    /// <returns></returns>
     public static string Mask(string? email)
     {
         if (string.IsNullOrWhiteSpace(email))
@@ -26,7 +27,7 @@ public static class EmailMasker
             return "***@***";
         }
 
-        var partes = email.Split('@');
+        string[] partes = email.Split('@');
         if (partes.Length != 2 || partes[0].Length <= 2 || string.IsNullOrEmpty(partes[1]))
         {
             return "***@***";

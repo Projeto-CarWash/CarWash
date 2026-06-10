@@ -6,22 +6,22 @@ namespace CarWash.Application.Agendamentos.Cancelar;
 /// </summary>
 public sealed class CancelarAgendamentoResponse
 {
-	public string Message { get; init; } = string.Empty;
+    public string Message { get; init; } = string.Empty;
 
-	public CancelarAgendamentoData Data { get; init; } = new();
+    public CancelarAgendamentoData Data { get; init; } = new();
 
-	public string TraceId { get; init; } = string.Empty;
+    public string TraceId { get; init; } = string.Empty;
 }
 
 public sealed class CancelarAgendamentoData
 {
-	public Guid Id { get; init; }
+    public Guid Id { get; init; }
 
-	public string Status { get; init; } = string.Empty;
+    public string Status { get; init; } = string.Empty;
 
-	public DateTime? CanceladoEm { get; init; }
+    public DateTime? CanceladoEm { get; init; }
 
-	public Guid? CanceladoPor { get; init; }
+    public Guid? CanceladoPor { get; init; }
 
-	public string? MotivoCancelamento { get; init; }
+    public string? MotivoCancelamento { get; init; }
 }

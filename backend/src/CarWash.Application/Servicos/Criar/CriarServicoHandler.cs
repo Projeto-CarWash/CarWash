@@ -21,6 +21,7 @@ public sealed class CriarServicoHandler : ICommandHandler<CriarServicoCommand, C
         _repositorio = repositorio;
     }
 
+    /// <inheritdoc/>
     public async Task<CriarServicoResponse> HandleAsync(CriarServicoCommand command, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(command);
@@ -48,7 +49,7 @@ public sealed class CriarServicoHandler : ICommandHandler<CriarServicoCommand, C
                 });
         }
 
-        var nome = InputNormalizer.SanitizeTextOrNull(command.Nome)!;
+        string nome = InputNormalizer.SanitizeTextOrNull(command.Nome)!;
 
         // GAP-CW-SRV-NOME-1: nome deve ser único entre todos os serviços
         // (índice uk_servicos_nome no banco como defesa final).

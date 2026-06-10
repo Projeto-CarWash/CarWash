@@ -19,7 +19,7 @@ using Serilog;
 #pragma warning disable CA1861
 
 const string CorsPolicyName = "CarWashClients";
-var readyTags = new[] { "ready" };
+string[] readyTags = new[] { "ready" };
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,6 +37,7 @@ builder.Host.UseSerilog((ctx, services, configuration) =>
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddControllers();
 
 // Em ambiente HTTP, sobrescreve o ICurrentRequestContext default por uma
 // implementação que lê o HttpContext (claims + correlation id + IP/UA).
@@ -114,12 +115,18 @@ builder.Services.AddRateLimiter(opt =>
             ct).ConfigureAwait(false);
     };
 
+    // Limite por janela configurável (RateLimiting:AuthLoginPermitLimit). Default 10/min
+    // em produção; o ambiente E2E sobe o valor para caber a suíte completa numa única
+    // execução sem 429 — a stack roda atrás de um único IP/proxy, então todos os logins
+    // dos specs caem na mesma partição.
+    int authLoginPermitLimit =
+        builder.Configuration.GetValue("RateLimiting:AuthLoginPermitLimit", 10);
     opt.AddPolicy("auth-login", http =>
     {
-        var key = http.Connection.RemoteIpAddress?.ToString() ?? "anonimo";
+        string key = http.Connection.RemoteIpAddress?.ToString() ?? "anonimo";
         return RateLimitPartition.GetFixedWindowLimiter(key, _ => new FixedWindowRateLimiterOptions
         {
-            PermitLimit = 10,
+            PermitLimit = authLoginPermitLimit,
             Window = TimeSpan.FromMinutes(1),
             QueueLimit = 0,
             AutoReplenishment = true,
@@ -130,7 +137,7 @@ builder.Services.AddRateLimiter(opt =>
 // ---------- CORS ----------
 // Frontend usa `withCredentials: true` (cookie httpOnly do refresh) — exige
 // origin explícita (AllowAnyOrigin é rejeitado quando AllowCredentials é true).
-var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+string[] corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
 builder.Services.AddCors(opt =>
 {
     opt.AddPolicy(CorsPolicyName, policy =>
@@ -146,7 +153,7 @@ builder.Services.AddCors(opt =>
     });
 });
 
-var conn = builder.Configuration.GetConnectionString("Default")
+string conn = builder.Configuration.GetConnectionString("Default")
     ?? throw new InvalidOperationException("ConnectionStrings:Default não configurada");
 
 builder.Services.AddHealthChecks()
@@ -173,7 +180,7 @@ app.UseStatusCodePages(async ctx =>
         return;
     }
 
-    var correlationId = ctx.HttpContext.Items[CorrelationIdMiddleware.ItemKey] as string
+    string correlationId = ctx.HttpContext.Items[CorrelationIdMiddleware.ItemKey] as string
         ?? Guid.NewGuid().ToString("N");
 
     response.ContentType = "application/problem+json";
@@ -210,6 +217,7 @@ app.MapHealthChecks("/health/ready", new HealthCheckOptions { Predicate = check 
 app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false });
 
 app.MapCarWashEndpoints();
+app.MapControllers();
 
 #pragma warning disable S6966 // Top-level statements: app.Run blocks intentionally; required by blueprint.
 app.Run();

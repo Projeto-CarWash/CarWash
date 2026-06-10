@@ -33,6 +33,7 @@ public sealed class PreConfirmarAgendamentoHandler
         _logger = logger;
     }
 
+    /// <inheritdoc/>
     public async Task<PreConfirmacaoResponse> HandleAsync(
         PreConfirmarAgendamentoCommand command,
         CancellationToken cancellationToken)
@@ -86,15 +87,36 @@ public sealed class PreConfirmarAgendamentoHandler
             throw new AgendamentoConflitanteException();
         }
 
-        var token = _tokens.Gerar(calculado.HashResumo, usuarioId, command.TraceId);
+        // RF008/RN009: agendamentos simultâneos são permitidos até o limite de
+        // células ativas da filial. Pré-check já na prévia (409) — o teto pode ter
+        // sido atingido entre a montagem do formulário e a pré-confirmação.
+        if (await _agendamentos.CapacidadeAtingidaAsync(
+            command.FilialId,
+            calculado.Inicio,
+            calculado.Fim,
+            cancellationToken).ConfigureAwait(false))
+        {
+            _logger.LogWarning(
+                "Pré-confirmação rejeitada por capacidade da filial atingida (RF008) — filial {FilialId} na janela [{Inicio:o}, {Fim:o}). TraceId: {TraceId}",
+                command.FilialId,
+                calculado.Inicio,
+                calculado.Fim,
+                command.TraceId);
+            throw new CapacidadeFilialAtingidaException();
+        }
+
+        string token = _tokens.Gerar(calculado.HashResumo, usuarioId, command.TraceId);
         var validado = _tokens.Validar(token, usuarioId);
 
         _logger.LogInformation(
             "Pré-confirmação gerada. UsuarioId: {UsuarioId}. FilialId: {FilialId}. VeiculoId: {VeiculoId}. "
+            + "ClienteId: {ClienteId}. ResponsavelId: {ResponsavelId}. "
             + "Janela: [{Inicio:o}, {Fim:o}). HashResumo: {HashResumo}. ExpiraEm: {ExpiraEm:o}. TraceId: {TraceId}",
             usuarioId,
             command.FilialId,
             command.VeiculoId,
+            command.ClienteId,
+            command.ResponsavelId,
             calculado.Inicio,
             calculado.Fim,
             calculado.HashResumo,

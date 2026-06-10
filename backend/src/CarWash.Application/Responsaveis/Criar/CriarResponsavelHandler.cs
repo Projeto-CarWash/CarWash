@@ -28,18 +28,18 @@ public sealed class CriarResponsavelHandler : ICommandHandler<CriarResponsavelCo
         var cliente = await _clientes.ObterPorIdAsync(command.ClienteTitularId, cancellationToken).ConfigureAwait(false)
             ?? throw new NotFoundException("Cliente titular não encontrado.");
 
-        var nome = InputNormalizer.SanitizeTextOrNull(command.Nome)!;
-        var documentoDigits = InputNormalizer.OnlyDigitsOrNull(command.Documento)!;
-        var telefoneDigits = InputNormalizer.OnlyDigitsOrNull(command.Telefone);
-        var emailNormalizado = InputNormalizer.EmailOrNull(command.Email);
+        string nome = InputNormalizer.SanitizeTextOrNull(command.Nome)!;
+        string documentoDigits = InputNormalizer.OnlyDigitsOrNull(command.Documento)!;
+        string? telefoneDigits = InputNormalizer.OnlyDigitsOrNull(command.Telefone);
+        string? emailNormalizado = InputNormalizer.EmailOrNull(command.Email);
 
         if (await _responsaveis.ExisteDocumentoAsync(documentoDigits, cancellationToken).ConfigureAwait(false))
         {
             throw new DocumentoResponsavelJaExisteException();
         }
 
-        Telefone? telefone = telefoneDigits is null ? null : new Telefone(telefoneDigits);
-        Email? email = emailNormalizado is null ? null : new Email(emailNormalizado);
+        var telefone = telefoneDigits is null ? null : new Telefone(telefoneDigits);
+        var email = emailNormalizado is null ? null : new Email(emailNormalizado);
 
         var grauVinculo = GrauVinculoExtensions.FromDbValue(command.GrauVinculo!);
 

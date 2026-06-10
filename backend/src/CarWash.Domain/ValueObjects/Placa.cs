@@ -22,7 +22,7 @@ public sealed partial record Placa
             throw new DomainException("O campo placa é obrigatório.");
         }
 
-        var normalizado = valor.Trim().ToUpperInvariant();
+        string normalizado = valor.Trim().ToUpperInvariant();
 
         if (normalizado.Length != TamanhoEsperado)
         {
@@ -37,6 +37,7 @@ public sealed partial record Placa
         Valor = normalizado;
     }
 
+    /// <inheritdoc/>
     public override string ToString() => Valor;
 
     public static implicit operator string(Placa placa) =>

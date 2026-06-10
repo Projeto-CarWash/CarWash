@@ -50,7 +50,7 @@ public static class AuthCookies
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        if (context.Request.Cookies.TryGetValue(RefreshTokenCookieName, out var token)
+        if (context.Request.Cookies.TryGetValue(RefreshTokenCookieName, out string? token)
             && !string.IsNullOrWhiteSpace(token))
         {
             return token;
@@ -73,7 +73,21 @@ public static class AuthCookies
     /// Habilita <c>Secure</c> apenas quando o ambiente realmente tem TLS:
     /// nginx em hom/prod faz terminate de TLS e repassa HTTP para o backend.
     /// Em Development e Testing o cookie precisa funcionar sob HTTP local.
+    ///
+    /// <para>Override explícito por variável de ambiente
+    /// <c>CARWASH_AUTH_COOKIE_SECURE</c> (true/false): a stack E2E roda atrás de um
+    /// proxy SEM TLS (http://proxy), então precisa forçar <c>Secure=false</c> —
+    /// senão o browser descarta o cookie do refresh e a sessão não persiste após
+    /// reload. Sem o override, o comportamento por ambiente é preservado.</para>
     /// </summary>
-    private static bool ShouldUseSecure(IHostEnvironment env) =>
-        !env.IsDevelopment() && !env.IsEnvironment("Testing");
+    private static bool ShouldUseSecure(IHostEnvironment env)
+    {
+        string? overrideValue = Environment.GetEnvironmentVariable("CARWASH_AUTH_COOKIE_SECURE");
+        if (bool.TryParse(overrideValue, out bool secureOverride))
+        {
+            return secureOverride;
+        }
+
+        return !env.IsDevelopment() && !env.IsEnvironment("Testing");
+    }
 }

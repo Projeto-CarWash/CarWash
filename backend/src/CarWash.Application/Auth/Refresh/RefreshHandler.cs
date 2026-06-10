@@ -47,6 +47,7 @@ public sealed class RefreshHandler : ICommandHandler<RefreshCommand, RefreshResu
         _log = log;
     }
 
+    /// <inheritdoc/>
     public async Task<RefreshResultado> HandleAsync(RefreshCommand command, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(command);

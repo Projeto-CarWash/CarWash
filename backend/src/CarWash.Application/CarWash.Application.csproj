@@ -8,24 +8,6 @@
   </PropertyGroup>
 
 	<ItemGroup>
-		<Compile Remove="Services\AuthService.cs" />
-		<Compile Remove="Services\VeiculoService.cs" />
-		<Compile Remove="Interfaces\IAuthService.cs" />
-		<Compile Remove="Interfaces\ICarWashDbContext.cs" />
-		<Compile Remove="Interfaces\IVeiculoService.cs" />
-		<Compile Remove="Exceptions\ApiException.cs" />
-		<Compile Remove="Exceptions\AuthException.cs" />
-		<Compile Remove="DTOs\BaseResponse.cs" />
-		<Compile Remove="DTOs\LoginRequest.cs" />
-		<Compile Remove="DTOs\LoginResponse.cs" />
-		<Compile Remove="DTOs\TokenRequest.cs" />
-		<Compile Remove="DTOs\UsuarioResponse.cs" />
-		<Compile Remove="DTOs\CriarVeiculoRequest.cs" />
-		<Compile Remove="DTOs\CriarVeiculoResponse.cs" />
-		<Compile Remove="DTOs\Common\**" />
-	</ItemGroup>
-
-	<ItemGroup>
 		<ProjectReference Include="..\CarWash.Domain\CarWash.Domain.csproj" />
 	</ItemGroup>
 
@@ -37,8 +19,8 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
     <PackageReference Include="FluentValidation" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
-    <PackageReference Include="Microsoft.IdentityModel.Tokens" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
+    <PackageReference Include="Microsoft.IdentityModel.Tokens" />
   </ItemGroup>
 
 </Project>

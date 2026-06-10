@@ -60,46 +60,46 @@ public static class AgendamentosEndpoints
             .ProducesProblem(StatusCodes.Status422UnprocessableEntity)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
 
-	// RF015 — etapa 2: confirmação idempotente (persiste em transação única).
-	grupo.MapPost("/confirmar", ConfirmarAsync)
-		.WithName("ConfirmarAgendamento")
-		.Produces<AgendamentoResponse>(StatusCodes.Status201Created)
-		.ProducesProblem(StatusCodes.Status400BadRequest)
-		.ProducesProblem(StatusCodes.Status401Unauthorized)
-		.ProducesProblem(StatusCodes.Status403Forbidden)
-		.ProducesProblem(StatusCodes.Status404NotFound)
-		.ProducesProblem(StatusCodes.Status409Conflict)
-		.ProducesProblem(StatusCodes.Status410Gone)
-		.ProducesProblem(StatusCodes.Status500InternalServerError);
+        // RF015 — etapa 2: confirmação idempotente (persiste em transação única).
+        grupo.MapPost("/confirmar", ConfirmarAsync)
+            .WithName("ConfirmarAgendamento")
+            .Produces<AgendamentoResponse>(StatusCodes.Status201Created)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict)
+            .ProducesProblem(StatusCodes.Status410Gone)
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
 
         // RF010 — cancelamento de agendamento com motivo obrigatório.
         grupo.MapPatch("/{id:guid}/cancelar", CancelarAsync)
-        .WithName("CancelarAgendamento")
-        .Produces<CancelarAgendamentoResponse>(StatusCodes.Status200OK)
-        .ProducesProblem(StatusCodes.Status400BadRequest)
-        .ProducesProblem(StatusCodes.Status401Unauthorized)
-        .ProducesProblem(StatusCodes.Status404NotFound)
-        .ProducesProblem(StatusCodes.Status409Conflict)
-        .ProducesProblem(StatusCodes.Status500InternalServerError);
+            .WithName("CancelarAgendamento")
+            .Produces<CancelarAgendamentoResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict)
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
 
         // RF010 — consulta detalhada de agendamento por id.
         grupo.MapGet("/{id:guid}", ObterPorIdAsync)
-        .WithName("ObterAgendamentoPorId")
-        .Produces<AgendamentoDetalhadoResponse>(StatusCodes.Status200OK)
-        .ProducesProblem(StatusCodes.Status401Unauthorized)
-        .ProducesProblem(StatusCodes.Status404NotFound)
-        .ProducesProblem(StatusCodes.Status500InternalServerError);
+            .WithName("ObterAgendamentoPorId")
+            .Produces<AgendamentoDetalhadoResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
 
         // RF010 — edição de agendamento com bloqueio por status.
         grupo.MapPatch("/{id:guid}", EditarAsync)
-        .WithName("EditarAgendamento")
-        .Produces<EditarAgendamentoResponse>(StatusCodes.Status200OK)
-        .ProducesProblem(StatusCodes.Status400BadRequest)
-        .ProducesProblem(StatusCodes.Status401Unauthorized)
-        .ProducesProblem(StatusCodes.Status403Forbidden)
-        .ProducesProblem(StatusCodes.Status404NotFound)
-        .ProducesProblem(StatusCodes.Status409Conflict)
-        .ProducesProblem(StatusCodes.Status500InternalServerError);
+            .WithName("EditarAgendamento")
+            .Produces<EditarAgendamentoResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict)
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
 
         return app;
     }
@@ -119,7 +119,7 @@ public static class AgendamentosEndpoints
                 "Corpo da requisição ausente ou malformado.");
         }
 
-        var traceId = http.TraceIdentifier;
+        string traceId = http.TraceIdentifier;
         var usuarioId = ObterUsuarioId(http);
 
         var command = new CriarAgendamentoCommand(
@@ -140,11 +140,14 @@ public static class AgendamentosEndpoints
 
         logger.LogInformation(
             "Agendamento criado com sucesso. TraceId: {TraceId}. AgendamentoId: {AgendamentoId}. "
-            + "VeiculoId: {VeiculoId}. FilialId: {FilialId}. UsuarioId: {UsuarioId}",
+            + "VeiculoId: {VeiculoId}. FilialId: {FilialId}. ClienteId: {ClienteId}. "
+            + "ResponsavelId: {ResponsavelId}. UsuarioId: {UsuarioId}",
             traceId,
             resposta.Id,
             resposta.VeiculoId,
             resposta.FilialId,
+            resposta.ClienteId,
+            resposta.ResponsavelId,
             usuarioId);
 
         return TypedResults.Created($"/api/v1/agendamentos/{resposta.Id}", resposta);
@@ -165,7 +168,7 @@ public static class AgendamentosEndpoints
                 "Corpo da requisição ausente ou malformado.");
         }
 
-        var traceId = http.TraceIdentifier;
+        string traceId = http.TraceIdentifier;
         var usuarioId = ObterUsuarioId(http);
 
         var command = new PreConfirmarAgendamentoCommand(
@@ -186,10 +189,13 @@ public static class AgendamentosEndpoints
 
         logger.LogInformation(
             "Pré-confirmação de agendamento gerada. TraceId: {TraceId}. FilialId: {FilialId}. "
-            + "VeiculoId: {VeiculoId}. UsuarioId: {UsuarioId}. ExpiraEm: {ExpiraEm:o}",
+            + "VeiculoId: {VeiculoId}. ClienteId: {ClienteId}. ResponsavelId: {ResponsavelId}. "
+            + "UsuarioId: {UsuarioId}. ExpiraEm: {ExpiraEm:o}",
             traceId,
             resposta.Resumo.Filial.Id,
             resposta.Resumo.Veiculo.Id,
+            resposta.Resumo.Cliente.Id,
+            resposta.Resumo.Responsavel.Id,
             usuarioId,
             resposta.ExpiraEm);
 
@@ -211,7 +217,7 @@ public static class AgendamentosEndpoints
                 "Corpo da requisição ausente ou malformado.");
         }
 
-        var traceId = http.TraceIdentifier;
+        string traceId = http.TraceIdentifier;
         var usuarioId = ObterUsuarioId(http);
 
         var command = new ConfirmarAgendamentoCommand(
@@ -248,16 +254,19 @@ public static class AgendamentosEndpoints
         {
             logger.LogInformation(
                 "Agendamento confirmado com sucesso. TraceId: {TraceId}. AgendamentoId: {AgendamentoId}. "
-                + "VeiculoId: {VeiculoId}. FilialId: {FilialId}. UsuarioId: {UsuarioId}",
+                + "VeiculoId: {VeiculoId}. FilialId: {FilialId}. ClienteId: {ClienteId}. "
+                + "ResponsavelId: {ResponsavelId}. UsuarioId: {UsuarioId}",
                 traceId,
                 resposta.Id,
                 resposta.VeiculoId,
                 resposta.FilialId,
+                resposta.ClienteId,
+                resposta.ResponsavelId,
                 usuarioId);
         }
 
-	return TypedResults.Created($"/api/v1/agendamentos/{resposta.Id}", resposta);
-	}
+        return TypedResults.Created($"/api/v1/agendamentos/{resposta.Id}", resposta);
+    }
 
     private static async Task<Ok<CancelarAgendamentoResponse>> CancelarAsync(
         Guid id,
@@ -275,7 +284,7 @@ public static class AgendamentosEndpoints
                 "Corpo da requisição ausente ou malformado.");
         }
 
-        var traceId = http.TraceIdentifier;
+        string traceId = http.TraceIdentifier;
         var usuarioId = ObterUsuarioId(http);
 
         var command = new CancelarAgendamentoCommand(
@@ -306,7 +315,7 @@ public static class AgendamentosEndpoints
         HttpContext http,
         CancellationToken cancellationToken)
     {
-        var traceId = http.TraceIdentifier;
+        string traceId = http.TraceIdentifier;
 
         var query = new ObterAgendamentoPorIdQuery(id, traceId);
 
@@ -336,7 +345,7 @@ public static class AgendamentosEndpoints
                 "Corpo da requisição ausente ou malformado.");
         }
 
-        var traceId = http.TraceIdentifier;
+        string traceId = http.TraceIdentifier;
         var usuarioId = ObterUsuarioId(http);
 
         var command = new EditarAgendamentoCommand(
@@ -362,9 +371,9 @@ public static class AgendamentosEndpoints
         return TypedResults.Ok(resposta);
     }
 
-	private static Guid? ObterUsuarioId(HttpContext http)
+    private static Guid? ObterUsuarioId(HttpContext http)
     {
-        var sub = http.User.FindFirst("sub")?.Value
+        string? sub = http.User.FindFirst("sub")?.Value
             ?? http.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         return Guid.TryParse(sub, out var id) ? id : null;
     }
