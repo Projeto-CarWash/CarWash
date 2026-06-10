@@ -67,6 +67,32 @@ ENTRYPOINT ["dotnet", "ef", "database", "update", \
     "--configuration", "Release", \
     "--no-build"]
 
+# ---------- Stage 2b: tests (unit + integration) ----------
+# Imagem dedicada para rodar a suíte de testes dentro do Docker — o mesmo
+# comando funciona localmente e no CI, sem depender de SDK instalado no host.
+# Reaproveita o stage `build` (já com restore e fontes) e adiciona os projetos
+# de teste, que NÃO entram no publish da API.
+#
+# IntegrationTests usa Testcontainers, que precisa falar com um Docker daemon.
+# Por isso este container deve ser executado com o socket do host montado
+# (-v /var/run/docker.sock:/var/run/docker.sock) — ver docker-compose.test.yml.
+# O TESTCONTAINERS_HOST_OVERRIDE garante que os containers efêmeros publiquem
+# portas alcançáveis a partir deste container (em CI/DinD costuma ser "host.docker.internal").
+FROM build AS tests
+ARG BUILD_CONFIGURATION=Release
+WORKDIR /src
+
+# O stage `build` já fez `COPY . .`, então tests/ está presente; mas o restore
+# anterior só cobriu CarWash.Api. Restauramos a solution inteira para trazer
+# xunit/Testcontainers/coverlet usados pelos projetos de teste.
+RUN dotnet restore CarWash.sln
+
+# ENTRYPOINT só `dotnet`: o compose (docker-compose.test.yml) fornece o `test ...`
+# completo via `command:`. Assim não há duplicação de args ao mesclar entrypoint+cmd.
+# Default (quando rodado sem command): roda a solution com o gate de cobertura.
+ENTRYPOINT ["dotnet"]
+CMD ["test", "CarWash.sln", "--configuration", "Release", "--settings", "coverlet.runsettings", "--collect:XPlat Code Coverage", "--results-directory", "/src/TestResults"]
+
 # ---------- Stage 3: runtime final ----------
 FROM mcr.microsoft.com/dotnet/aspnet:${DOTNET_VERSION} AS final
 WORKDIR /app

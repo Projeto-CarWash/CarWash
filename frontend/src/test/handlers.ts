@@ -116,6 +116,15 @@ const agendaItemDetalhado: AgendaItemDetalhado = {
 
 /** Handlers do "caminho feliz" — listas de apoio e fluxo de confirmação. */
 export const handlersPadrao = [
+  // Auth (RF001): o AuthProvider chama POST /auth/refresh no mount para tentar
+  // restaurar a sessão a partir do cookie httpOnly. O default devolve 401
+  // ("sem sessão") — assim o boot do provider nunca dispara request sem handler
+  // sob `onUnhandledRequest: 'error'`. Testes de sessão restaurada sobrescrevem
+  // este handler via `server.use(...)` para devolver 200 com LoginResponse.
+  http.post('/api/v1/auth/refresh', () =>
+    HttpResponse.json({ title: 'Não autenticado.', status: 401 }, { status: 401 }),
+  ),
+
   http.get('/api/v1/clientes', () =>
     HttpResponse.json({
       itens: [

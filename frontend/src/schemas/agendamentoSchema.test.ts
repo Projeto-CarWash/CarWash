@@ -87,4 +87,42 @@ describe('agendamentoSchema', () => {
     const r = agendamentoSchema.safeParse({ ...baseValida, responsavelId: '' });
     expect(r.success).toBe(true);
   });
+
+  it('aceita agendamento sem observações logísticas', () => {
+    const r = agendamentoSchema.safeParse({ ...baseValida, observacoesLogisticas: undefined });
+    expect(r.success).toBe(true);
+  });
+
+  it('aceita observações logísticas vazias (campo opcional)', () => {
+    const r = agendamentoSchema.safeParse({ ...baseValida, observacoesLogisticas: '' });
+    expect(r.success).toBe(true);
+  });
+
+  it('aceita observações logísticas com exatamente 1000 caracteres', () => {
+    const r = agendamentoSchema.safeParse({
+      ...baseValida,
+      observacoesLogisticas: 'x'.repeat(1000),
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it('rejeita observações logísticas acima de 1000 caracteres', () => {
+    const r = agendamentoSchema.safeParse({
+      ...baseValida,
+      observacoesLogisticas: 'x'.repeat(1001),
+    });
+    expect(r.success).toBe(false);
+    if (!r.success) {
+      const issue = r.error.issues.find((i) => i.path[0] === 'observacoesLogisticas');
+      expect(issue?.message).toMatch(/1000/);
+    }
+  });
+
+  it('aceita observações logísticas com quebras de linha', () => {
+    const r = agendamentoSchema.safeParse({
+      ...baseValida,
+      observacoesLogisticas: 'Linha 1\nLinha 2\nLinha 3',
+    });
+    expect(r.success).toBe(true);
+  });
 });

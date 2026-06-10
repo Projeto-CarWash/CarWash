@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Runsettings do coletor de cobertura (coverlet.collector) usado por `dotnet test`.
+  Define formato, exclusões e o GATE global de cobertura (CA011 / CI).
+
+  Por que aqui e não no .csproj: o coletor "XPlat Code Coverage" lê estas opções
+  e formatos sem precisar do coverlet.msbuild em cada projeto. O Threshold abaixo
+  faz o `dotnet test` FALHAR se a cobertura de linha global ficar abaixo do alvo.
+
+  Gates por assembly (Domain 70% / Application 80%, calibrados na cobertura real
+  medida) são verificados no CI a partir do relatório cobertura mesclado — ver
+  .github/workflows/ci.yml (job backend, passo "Coverage gate por assembly").
+-->
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat code coverage">
+        <Configuration>
+          <Format>cobertura,opencover</Format>
+          <!-- Não medir cobertura de migrations EF, Program.cs e dos próprios testes. -->
+          <ExcludeByFile>**/Migrations/**/*.cs,**/Program.cs</ExcludeByFile>
+          <Exclude>[*.Tests]*,[*]*.Migrations.*,[xunit.*]*</Exclude>
+          <ExcludeByAttribute>GeneratedCodeAttribute,ExcludeFromCodeCoverageAttribute,CompilerGeneratedAttribute</ExcludeByAttribute>
+          <SkipAutoProps>true</SkipAutoProps>
+          <!-- GATE GLOBAL: abaixo de 60% de linhas o `dotnet test` retorna != 0. -->
+          <Threshold>60</Threshold>
+          <ThresholdType>line</ThresholdType>
+          <ThresholdStat>total</ThresholdStat>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>
