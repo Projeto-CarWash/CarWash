@@ -221,6 +221,22 @@ export function NovoAgendamentoPage() {
             'A filial selecionada está inativa e não pode receber novos agendamentos.',
           );
           goToStep(1);
+        } else if (
+          texto.includes('respons') ||
+          texto.includes('vínculo') ||
+          texto.includes('vinculo') ||
+          texto.includes('relação') ||
+          texto.includes('relacao')
+        ) {
+          // Conflito de vínculo entre veículo e responsável (RF024)
+          setGlobalError(
+            problem?.title ??
+              problem?.detail ??
+              'O responsável selecionado possui um vínculo inválido com o veículo ou cliente.',
+          );
+          setWizardState((prev) => ({ ...prev, responsavel: null }));
+          setConfirmado(false);
+          goToStep(1);
         } else if (texto.includes('capacidade')) {
           setGlobalError('Capacidade da filial atingida para o horário informado.');
         } else if (texto.includes('veículo') || texto.includes('veiculo')) {
@@ -344,6 +360,7 @@ export function NovoAgendamentoPage() {
               }}
               cliente={wizardState.cliente}
               veiculo={wizardState.veiculo}
+              responsavel={wizardState.responsavel}
               dataAgendamento={wizardState.dataAgendamento}
               horaInicio={wizardState.horaInicio}
               onClienteChange={handleClienteChange}

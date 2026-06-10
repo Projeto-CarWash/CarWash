@@ -196,8 +196,19 @@ export const agendamentoService = {
     }
   },
 
-  buscarResponsaveisPorCliente(_clienteId: string): Promise<ResponsavelResumido[]> {
-    return Promise.resolve([]);
+  async buscarResponsaveisPorCliente(clienteId: string): Promise<ResponsavelResumido[]> {
+    try {
+      const { data } = await api.get<{ id: string; nome: string; documento: string }[]>(
+        `/api/v1/clientes/${clienteId}/responsaveis`,
+      );
+      return data.map((r) => ({
+        id: r.id,
+        nome: r.nome,
+        documento: r.documento,
+      }));
+    } catch {
+      return [];
+    }
   },
 
   async criarResponsavel(
