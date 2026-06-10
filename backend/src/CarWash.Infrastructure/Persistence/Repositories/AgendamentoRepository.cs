@@ -472,10 +472,10 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
                 throw;
             }
 
-        await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
-        throw;
+            await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
+            throw;
+        }
     }
-}
 
     /// <summary>
     /// RF024/CA009: valida sob lock pessimista que o responsável pertence ao

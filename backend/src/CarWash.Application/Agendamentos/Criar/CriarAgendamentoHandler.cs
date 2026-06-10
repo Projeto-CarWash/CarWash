@@ -145,6 +145,7 @@ public sealed class CriarAgendamentoHandler : ICommandHandler<CriarAgendamentoCo
         // SELECT FOR UPDATE dentro da transação — fecha a race condition de
         // alteração de vínculo concorrente. Em caso de rejeição, loga motivo
         // padronizado antes de relançar a exceção.
+#pragma warning disable S2139 // Loga motivo de falha padronizado (RF024/CA009) e relança a MESMA exceção para o middleware traduzir em HTTP — observabilidade intencional.
         try
         {
             await _agendamentos.AdicionarAsync(
@@ -156,28 +157,29 @@ public sealed class CriarAgendamentoHandler : ICommandHandler<CriarAgendamentoCo
                 command.ClienteId,
                 cancellationToken).ConfigureAwait(false);
         }
-    catch (ConflictException ex) when (ex.Slug == "responsavel-nao-vinculado")
-    {
-        _logger.LogWarning(
-            ex,
-            "Agendamento rejeitado na transação — vínculo responsável alterado concorrentemente. ResponsavelId: {ResponsavelId}. ClienteId: {ClienteId}. MotivoFalha: {MotivoFalha}. TraceId: {TraceId}",
-            command.ResponsavelId,
-            command.ClienteId,
-            MotivosFalhaResponsavel.NaoVinculado,
-            command.TraceId);
-        throw;
-    }
-    catch (RecursoInativoException ex)
-    {
-        _logger.LogWarning(
-            ex,
-            "Agendamento rejeitado na transação — responsável inativado concorrentemente. ResponsavelId: {ResponsavelId}. ClienteId: {ClienteId}. MotivoFalha: {MotivoFalha}. TraceId: {TraceId}",
-            command.ResponsavelId,
-            command.ClienteId,
-            MotivosFalhaResponsavel.Inativo,
-            command.TraceId);
-        throw;
-    }
+        catch (ConflictException ex) when (ex.Slug == "responsavel-nao-vinculado")
+        {
+            _logger.LogWarning(
+                ex,
+                "Agendamento rejeitado na transação — vínculo responsável alterado concorrentemente. ResponsavelId: {ResponsavelId}. ClienteId: {ClienteId}. MotivoFalha: {MotivoFalha}. TraceId: {TraceId}",
+                command.ResponsavelId,
+                command.ClienteId,
+                MotivosFalhaResponsavel.NaoVinculado,
+                command.TraceId);
+            throw;
+        }
+        catch (RecursoInativoException ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "Agendamento rejeitado na transação — responsável inativado concorrentemente. ResponsavelId: {ResponsavelId}. ClienteId: {ClienteId}. MotivoFalha: {MotivoFalha}. TraceId: {TraceId}",
+                command.ResponsavelId,
+                command.ClienteId,
+                MotivosFalhaResponsavel.Inativo,
+                command.TraceId);
+            throw;
+        }
+#pragma warning restore S2139
 
         _logger.LogInformation(
             "Agendamento criado. AgendamentoId: {AgendamentoId}. VeiculoId: {VeiculoId}. FilialId: {FilialId}. "
