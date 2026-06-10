@@ -372,10 +372,59 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
             .ConfigureAwait(false);
     }
 
+    public async Task<(Agendamento Agendamento, IReadOnlyCollection<AgendamentoItem> Itens)?> ObterPorIdComItensAsync(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var agendamento = await _db.Agendamentos
+            .AsNoTracking()
+            .FirstOrDefaultAsync(a => a.Id == id, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (agendamento is null)
+        {
+            return null;
+        }
+
+        var itens = await _db.AgendamentoItens
+            .AsNoTracking()
+            .Where(i => i.AgendamentoId == id)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        return (agendamento, itens);
+    }
+
     public async Task SalvarAsync(
         Agendamento agendamento,
         AgendamentoHistorico historico,
         string correlationId,
+        CancellationToken cancellationToken)
+    {
+        await SalvarAsync(
+            agendamento,
+            historico,
+            correlationId,
+            "AGENDAMENTO_CANCELADO",
+            agendamento.CanceladoPor,
+            JsonSerializer.Serialize(new
+            {
+                agendamento.Id,
+                StatusNovo = agendamento.StatusRaw,
+                agendamento.CanceladoPor,
+                agendamento.MotivoCancelamento,
+                agendamento.CanceladoEm,
+            }),
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task SalvarAsync(
+        Agendamento agendamento,
+        AgendamentoHistorico historico,
+        string correlationId,
+        string auditEvento,
+        Guid? auditUsuarioId,
+        string auditDados,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(agendamento);
@@ -387,19 +436,12 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
 
         var audit = AuditLog.Registrar(
             id: Guid.NewGuid(),
-            evento: "AGENDAMENTO_CANCELADO",
+            evento: auditEvento,
             entidade: "agendamentos",
             correlationId: correlationId,
             entidadeId: agendamento.Id,
-            usuarioId: agendamento.CanceladoPor,
-            dados: JsonSerializer.Serialize(new
-            {
-                agendamento.Id,
-                StatusNovo = agendamento.StatusRaw,
-                agendamento.CanceladoPor,
-                agendamento.MotivoCancelamento,
-                agendamento.CanceladoEm,
-            }));
+            usuarioId: auditUsuarioId,
+            dados: auditDados);
         await _db.AuditLogs.AddAsync(audit, cancellationToken).ConfigureAwait(false);
 
         try
