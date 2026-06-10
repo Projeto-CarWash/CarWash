@@ -5,6 +5,7 @@ import { NovoClientePage } from '@/components/clientes/NovoClientePage';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import PrivateRoute from '@/components/PrivateRoute';
 import { AuthProvider } from '@/contexts/AuthProvider';
+import { AgendaPage } from '@/pages/Agenda/AgendaPage';
 import { AgendamentosCalendarioPage } from '@/pages/Agendamentos/AgendamentosCalendarioPage';
 import { AgendamentosDashboardPage } from '@/pages/Agendamentos/AgendamentosDashboardPage';
 import { ClienteDetalhePage } from '@/pages/Clientes/ClienteDetalhePage';
@@ -15,6 +16,7 @@ import Dashboard from '@/pages/Dashboard/Dashboard';
 import { FiliaisListaPage } from '@/pages/Filiais/FiliaisListaPage';
 import { FilialEditarPage } from '@/pages/Filiais/FilialEditarPage';
 import { FilialFormPage } from '@/pages/Filiais/FilialFormPage';
+import { HistoricoPage } from '@/pages/Historico/HistoricoPage';
 import Login from '@/pages/Login/Login';
 import { ServicoFormPage } from '@/pages/Servicos/ServicoFormPage';
 import { ServicosListaPage } from '@/pages/Servicos/ServicosListaPage';
@@ -242,6 +244,28 @@ function App() {
             <PrivateRoute>
               <DashboardLayout>
                 <NovoAgendamentoPage />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/agenda"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <AgendaPage />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/historico"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <HistoricoPage />
               </DashboardLayout>
             </PrivateRoute>
           }

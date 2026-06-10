@@ -59,6 +59,15 @@ export const agendamentoSchema = z.object({
     }),
 
   observacoes: z.string().max(500, 'Observações devem ter no máximo 500 caracteres.').optional(),
+
+  /**
+   * Observações logísticas opcionais — máx. 1000 caracteres.
+   * Campo adicional para registro de informações complementares de logística.
+   */
+  observacoesLogisticas: z
+    .string()
+    .max(1000, 'Observação logística deve ter no máximo 1000 caracteres.')
+    .optional(),
 });
 
 export type AgendamentoFormData = z.infer<typeof agendamentoSchema>;

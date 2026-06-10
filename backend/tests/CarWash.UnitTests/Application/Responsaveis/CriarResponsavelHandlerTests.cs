@@ -26,12 +26,12 @@ public class CriarResponsavelHandlerTests
         var comando = NovoComando(cliente.Id);
         var resposta = await handler.HandleAsync(comando, CancellationToken.None);
 
-        resposta.Id.Should().NotBeEmpty();
-        resposta.ClienteTitularId.Should().Be(cliente.Id);
-        resposta.Nome.Should().Be("João Silva");
-        resposta.Documento.Should().Be("39053344705");
-        resposta.GrauVinculo.Should().Be("RESPONSAVEL_FINANCEIRO");
-        resposta.Mensagem.Should().Be("Responsável cadastrado com sucesso.");
+        resposta.Data.ResponsavelId.Should().NotBeEmpty();
+        resposta.Data.ClienteTitularId.Should().Be(cliente.Id);
+        resposta.Data.Nome.Should().Be("João Silva");
+        resposta.Data.Documento.Should().Be("39053344705");
+        resposta.Data.GrauVinculo.Should().Be("RESPONSAVEL_FINANCEIRO");
+        resposta.Message.Should().Be("Responsável cadastrado com sucesso.");
         resposta.TraceId.Should().Be("trace-1");
 
         await _responsaveis.Received(1).AdicionarAsync(

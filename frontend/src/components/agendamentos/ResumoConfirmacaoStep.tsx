@@ -1,4 +1,5 @@
 import {
+  AlertCircle,
   Building2,
   Car,
   ChevronLeft,
@@ -8,8 +9,11 @@ import {
   User,
   Wrench,
 } from 'lucide-react';
+import * as React from 'react';
 
 import { Button } from '@/components/ui/button';
+
+import { ObservacoesLogisticasField } from './ObservacoesLogisticasField';
 
 import type { AgendamentoWizardState } from '@/types/agendamento';
 
@@ -54,6 +58,14 @@ interface ResumoConfirmacaoStepProps {
   onBack: () => void;
   confirmado: boolean;
   onConfirmadoChange: (checked: boolean) => void;
+  /** Valor atual das observações logísticas (controlado pelo pai). */
+  observacoesLogisticas: string;
+  /** Callback para atualizar as observações logísticas no wizard state. */
+  onObservacoesLogisticasChange: (value: string) => void;
+  /** Erro de validação do campo (de Zod ou do backend). */
+  observacoesLogisticasErro?: string;
+  /** Conflito de veículo do RF020. */
+  conflitoVeiculo?: boolean;
 }
 
 export function ResumoConfirmacaoStep({
@@ -63,12 +75,24 @@ export function ResumoConfirmacaoStep({
   onBack,
   confirmado,
   onConfirmadoChange,
+  observacoesLogisticas,
+  onObservacoesLogisticasChange,
+  observacoesLogisticasErro,
+  conflitoVeiculo,
 }: ResumoConfirmacaoStepProps) {
   const { cliente, veiculo, servicos, dataAgendamento, horaInicio, filialNome } = wizardState;
 
   const duracaoTotal = servicos.reduce((sum, s) => sum + s.duracao, 0);
   const valorTotal = servicos.reduce((sum, s) => sum + s.preco, 0);
   const horaFim = calcularHoraFim(horaInicio, duracaoTotal);
+
+  const errorContainerRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (conflitoVeiculo && errorContainerRef.current) {
+      errorContainerRef.current.focus();
+    }
+  }, [conflitoVeiculo]);
 
   return (
     <div>
@@ -104,7 +128,30 @@ export function ResumoConfirmacaoStep({
           </div>
         </div>
 
-        <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-4">
+        <div
+          className={`rounded-xl border ${conflitoVeiculo ? 'border-red-500 bg-red-950/20' : 'border-zinc-800/60 bg-zinc-900/40'} p-4 outline-none`}
+          ref={errorContainerRef}
+          tabIndex={-1}
+          aria-invalid={conflitoVeiculo ? 'true' : undefined}
+        >
+          {conflitoVeiculo && (
+            <div
+              role="alert"
+              aria-live="assertive"
+              className="mb-4 flex items-start gap-3 rounded-xl border border-red-500/30 bg-red-950/30 px-4 py-3"
+            >
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" aria-hidden="true" />
+              <div className="flex-1 space-y-1">
+                <p className="text-sm font-medium text-red-400">
+                  Veículo já possui agendamento neste horário.
+                </p>
+                <p className="text-xs text-red-400/80">
+                  Esse bloqueio vale para toda a operação, inclusive entre filiais.
+                </p>
+              </div>
+            </div>
+          )}
+
           <p className="mb-3 text-[10px] font-bold tracking-[0.2em] text-zinc-500">VEÍCULO</p>
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-600/10">
@@ -120,7 +167,41 @@ export function ResumoConfirmacaoStep({
           </div>
         </div>
 
-        <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-4">
+        {wizardState.responsavel && (
+          <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-4">
+            <p className="mb-3 text-[10px] font-bold tracking-[0.2em] text-zinc-500">RESPONSÁVEL</p>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-600/10">
+                <User className="h-4.5 w-4.5 text-red-500" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-zinc-100">
+                  {wizardState.responsavel.nome}
+                  {wizardState.responsavel.documento && (
+                    <span className="ml-1.5 text-xs font-normal text-zinc-400">
+                      (
+                      {formatarDoc(
+                        wizardState.responsavel.documento.replace(/\D/g, '').length === 11
+                          ? wizardState.responsavel.documento.replace(/\D/g, '')
+                          : undefined,
+                        wizardState.responsavel.documento.replace(/\D/g, '').length === 14
+                          ? wizardState.responsavel.documento.replace(/\D/g, '')
+                          : undefined,
+                      )}
+                      )
+                    </span>
+                  )}
+                </p>
+                <p className="text-xs text-zinc-500">Responsável pelo agendamento</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div
+          className={`rounded-xl border ${conflitoVeiculo ? 'border-red-500 bg-red-950/20' : 'border-zinc-800/60 bg-zinc-900/40'} p-4`}
+          aria-invalid={conflitoVeiculo ? 'true' : undefined}
+        >
           <p className="mb-3 text-[10px] font-bold tracking-[0.2em] text-zinc-500">
             DATA E HORÁRIO
           </p>
@@ -179,6 +260,15 @@ export function ResumoConfirmacaoStep({
             </div>
           </div>
         </div>
+
+        {/* Observações logísticas */}
+        <ObservacoesLogisticasField
+          id="resumo-obs-logisticas"
+          value={observacoesLogisticas}
+          onChange={onObservacoesLogisticasChange}
+          error={observacoesLogisticasErro}
+          disabled={isSubmitting}
+        />
 
         <label
           htmlFor="confirmacao"

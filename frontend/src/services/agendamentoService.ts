@@ -1,5 +1,10 @@
+import { agendaService } from './agendaService';
 import api from './api';
+import { clienteService } from './clienteService';
+import { filialService } from './filialService';
+import { servicoService } from './servicoService';
 
+import type { AgendaItemSimples } from '@/types/agenda';
 import type {
   AgendamentoResponse,
   AgendamentoSemana,
@@ -10,88 +15,11 @@ import type {
   CriarAgendamentoResponse,
   EstatisticasMes,
   PreConfirmacaoResponse,
+  ResponsavelResumido,
   ServicoAtivo,
   VeiculoResumido,
   CancelarAgendamentoResponse,
 } from '@/types/agendamento';
-
-const MOCK_VEICULOS: Record<string, VeiculoResumido[]> = {
-  c1: [
-    { id: 'v1', placa: 'ABC-1D23', modelo: 'VW Golf GTI', cor: 'Preto', ano: 2023 },
-    { id: 'v2', placa: 'XYZ-9H87', modelo: 'Hyundai HB20', cor: 'Prata', ano: 2021 },
-  ],
-  c2: [{ id: 'v3', placa: 'DEF-4E56', modelo: 'Honda Civic', cor: 'Branco', ano: 2024 }],
-  c3: [
-    { id: 'v4', placa: 'GHI-7F89', modelo: 'Toyota Hilux', cor: 'Prata', ano: 2022 },
-    { id: 'v5', placa: 'JKL-2G34', modelo: 'Fiat Toro', cor: 'Vermelho', ano: 2023 },
-    { id: 'v6', placa: 'MNO-5A67', modelo: 'Chevrolet S10', cor: 'Preto', ano: 2021 },
-  ],
-  c4: [],
-  c5: [{ id: 'v7', placa: 'PQR-8B12', modelo: 'BMW 320i', cor: 'Azul', ano: 2024 }],
-};
-
-const MOCK_SERVICOS: ServicoAtivo[] = [
-  {
-    id: 's1',
-    nome: 'Lavagem Simples',
-    preco: 45.0,
-    duracao: 30,
-    descricao: 'Lavagem externa com agua e shampoo automotivo.',
-  },
-  {
-    id: 's2',
-    nome: 'Lavagem Completa',
-    preco: 89.9,
-    duracao: 60,
-    descricao: 'Lavagem externa + aspiracao interna + painel.',
-  },
-  {
-    id: 's3',
-    nome: 'Polimento',
-    preco: 180.0,
-    duracao: 120,
-    descricao: 'Polimento com massa de corte e finalizacao.',
-  },
-  {
-    id: 's4',
-    nome: 'Cristalizacao',
-    preco: 250.0,
-    duracao: 90,
-    descricao: 'Cristalizacao de pintura com protecao UV.',
-  },
-  {
-    id: 's5',
-    nome: 'Higienizacao Interna',
-    preco: 120.0,
-    duracao: 45,
-    descricao: 'Limpeza profunda de estofados e carpetes.',
-  },
-  {
-    id: 's6',
-    nome: 'Enceramento',
-    preco: 70.0,
-    duracao: 40,
-    descricao: 'Aplicacao de cera protetora com brilho intenso.',
-  },
-  {
-    id: 's7',
-    nome: 'Lavagem de Motor',
-    preco: 95.0,
-    duracao: 35,
-    descricao: 'Desengraxe e lavagem do compartimento do motor.',
-  },
-  {
-    id: 's8',
-    nome: 'Vitrificacao',
-    preco: 350.0,
-    duracao: 180,
-    descricao: 'Protecao ceramica de longa duracao na pintura.',
-  },
-];
-
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 export const agendamentoService = {
   async buscarClientes(busca: string): Promise<ClienteResumido[]> {
@@ -107,21 +35,30 @@ export const agendamentoService = {
   },
 
   async buscarVeiculosPorCliente(clienteId: string): Promise<VeiculoResumido[]> {
-    await delay(400);
-    return MOCK_VEICULOS[clienteId] ?? [];
+    const cliente = await clienteService.obterPorId(clienteId);
+    return cliente.veiculos.map((v) => {
+      return {
+        id: v.id,
+        placa: v.placa,
+        modelo: v.modelo,
+        cor: v.cor,
+      };
+    });
   },
 
   async listarServicosAtivos(): Promise<ServicoAtivo[]> {
-    await delay(350);
-    return [...MOCK_SERVICOS];
+    const response = await servicoService.listar({ ativo: true });
+    return response.itens.map((s) => {
+      return {
+        id: s.id,
+        nome: s.nome,
+        preco: s.preco,
+        duracao: s.duracaoMin,
+        descricao: '',
+      };
+    });
   },
 
-  /**
-   * Cria o agendamento em passo único — `POST /api/v1/agendamentos` (RF007/RF019).
-   *
-   * <p>Envia o payload real (incluindo `filialId`); os erros HTTP (400/401/403/
-   * 404/409/500) são propagados para a UI tratar — sem mock.</p>
-   */
   async criarAgendamento(payload: CriarAgendamentoPayload): Promise<CriarAgendamentoResponse> {
     const { data } = await api.post<AgendamentoResponse>('/api/v1/agendamentos', payload);
     return { id: data.id };
@@ -145,9 +82,7 @@ export const agendamentoService = {
     return data;
   },
 
-  async obterEstatisticasAno(_ano: number): Promise<EstatisticasMes[]> {
-    await delay(500);
-
+  async obterEstatisticasAno(ano: number): Promise<EstatisticasMes[]> {
     const nomesMeses = [
       'JANEIRO',
       'FEVEREIRO',
@@ -163,19 +98,128 @@ export const agendamentoService = {
       'DEZEMBRO',
     ];
 
-    return nomesMeses.map((nome, index) => ({
-      mes: index + 1,
-      nome,
-      confirmados: 0,
-      pendentes: 0,
-      cancelados: 0,
-      total: 0,
-    }));
+    // Busca a primeira filial ativa para usar como filtro obrigatório da agenda.
+    let filialId = '';
+    try {
+      const filiais = await filialService.listar();
+      filialId = filiais.itens?.[0]?.id ?? '';
+    } catch {
+      // Falha ao buscar filiais - continuará com filialId vazio retornando valores padrão
+    }
+
+    if (!filialId) {
+      return nomesMeses.map((nome, index) => ({
+        mes: index + 1,
+        nome,
+        confirmados: 0,
+        pendentes: 0,
+        cancelados: 0,
+        total: 0,
+      }));
+    }
+
+    const resultados: EstatisticasMes[] = [];
+
+    for (let m = 0; m < 12; m++) {
+      const inicio = new Date(ano, m, 1);
+      const fim = new Date(ano, m + 1, 0, 23, 59, 59);
+
+      let confirmados = 0;
+      let pendentes = 0;
+      let cancelados = 0;
+
+      try {
+        const resp = await agendaService.consultarSimples({
+          formato: 'simples',
+          inicio: inicio.toISOString().slice(0, 16),
+          fim: fim.toISOString().slice(0, 16),
+          filialId,
+        });
+
+        for (const item of resp.data) {
+          const s = item.status.toUpperCase();
+          if (s === 'AGENDADO' || s === 'EM_ANDAMENTO' || s === 'CONCLUIDO') {
+            confirmados++;
+          } else if (s === 'CANCELADO') {
+            cancelados++;
+          } else {
+            pendentes++;
+          }
+        }
+      } catch {
+        // Erro ao consultar agenda para o mês - valores padrão (0) serão usados
+      }
+
+      const total = confirmados + pendentes + cancelados;
+      resultados.push({
+        mes: m + 1,
+        nome: nomesMeses[m]!,
+        confirmados,
+        pendentes,
+        cancelados,
+        total,
+      });
+    }
+
+    return resultados;
   },
 
-  async listarAgendamentosSemana(_dataInicio: Date, _dataFim: Date): Promise<AgendamentoSemana[]> {
-    await delay(600);
-    return [];
+  async listarAgendamentosSemana(dataInicio: Date, dataFim: Date): Promise<AgendamentoSemana[]> {
+    let filialId = '';
+    try {
+      const filiais = await filialService.listar();
+      filialId = filiais.itens?.[0]?.id ?? '';
+    } catch {
+      return [];
+    }
+
+    if (!filialId) return [];
+
+    try {
+      const resp = await agendaService.consultarSimples({
+        formato: 'simples',
+        inicio: dataInicio.toISOString().slice(0, 16),
+        fim: dataFim.toISOString().slice(0, 16),
+        filialId,
+      });
+
+      return resp.data.map((item: AgendaItemSimples) => ({
+        id: item.agendamentoId,
+        titulo: item.titulo,
+        cliente: item.clienteNome,
+        inicio: item.inicio,
+        fim: item.fim,
+        status: item.status.toLowerCase() as AgendamentoSemana['status'],
+      }));
+    } catch {
+      return [];
+    }
+  },
+
+  async buscarResponsaveisPorCliente(clienteId: string): Promise<ResponsavelResumido[]> {
+    try {
+      const { data } = await api.get<{ id: string; nome: string; documento: string }[]>(
+        `/api/v1/clientes/${clienteId}/responsaveis`,
+      );
+      return data.map((r) => ({
+        id: r.id,
+        nome: r.nome,
+        documento: r.documento,
+      }));
+    } catch {
+      return [];
+    }
+  },
+
+  async criarResponsavel(
+    clienteId: string,
+    dados: { nome: string; documento: string; grauVinculo: string },
+  ): Promise<ResponsavelResumido> {
+    const { data } = await api.post<{ id: string; nome: string }>(
+      `/api/v1/clientes/${clienteId}/responsaveis`,
+      dados,
+    );
+    return { id: data.id, nome: data.nome ?? dados.nome };
   },
 
   async cancelar(id: string, motivoCancelamento: string): Promise<CancelarAgendamentoResponse> {
