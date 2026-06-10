@@ -28,6 +28,12 @@ public sealed class CalculadoraResumoAgendamento
     /// </summary>
     public const string EventoFilialRejeitada = "AgendamentoFilialRejeitada";
 
+    /// <summary>
+    /// Evento de auditoria das falhas de vínculo do responsável (RF024/CA009).
+    /// entidadeId = null, dados = { motivo, responsavelId, clienteId }.
+    /// </summary>
+    public const string EventoResponsavelRejeitado = "AgendamentoResponsavelRejeitado";
+
     public const string EntidadeAuditoria = "Agendamento";
 
     private readonly IAgendamentoCatalogoRepository _catalogo;
@@ -264,6 +270,27 @@ public sealed class CalculadoraResumoAgendamento
             motivo);
     }
 
+    /// <summary>
+    /// RF024/CA009: audita a rejeição de vínculo do responsável, imediatamente
+    /// antes de lançar a exceção. O <c>motivo</c> vai apenas para
+    /// <c>audit_logs</c>/log de aplicação — nunca para a resposta HTTP.
+    /// </summary>
+    private async Task AuditarFalhaResponsavelAsync(Guid responsavelId, Guid clienteId, string motivo, CancellationToken cancellationToken)
+    {
+        await _audit.LogAsync(
+            evento: EventoResponsavelRejeitado,
+            entidade: EntidadeAuditoria,
+            entidadeId: null,
+            dados: new { motivo, responsavelId, clienteId },
+            cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        _log.LogWarning(
+            "Agendamento rejeitado por falha de vínculo do responsável. ResponsavelId={ResponsavelId}, ClienteId={ClienteId}, Motivo={Motivo}",
+            responsavelId,
+            clienteId,
+            motivo);
+    }
+
     private async Task<VeiculoResumoSnapshot> GarantirVeiculoAsync(Guid veiculoId, CancellationToken cancellationToken)
     {
         var veiculo = await _catalogo.ObterVeiculoResumoAsync(veiculoId, cancellationToken).ConfigureAwait(false)
@@ -297,13 +324,17 @@ public sealed class CalculadoraResumoAgendamento
 
         if (!responsavel.Ativo)
         {
+            await AuditarFalhaResponsavelAsync(responsavelId, clienteId, MotivosFalhaResponsavel.Inativo, cancellationToken)
+                .ConfigureAwait(false);
             throw new RecursoInativoException("O responsável selecionado está inativo.");
         }
 
         if (responsavel.ClienteId != clienteId)
         {
+            await AuditarFalhaResponsavelAsync(responsavelId, clienteId, MotivosFalhaResponsavel.NaoVinculado, cancellationToken)
+                .ConfigureAwait(false);
             throw new ConflictException(
-                "O responsável selecionado não está vinculado ao cliente informado.",
+                "O responsável informado não está vinculado a este cliente.",
                 "responsavel-nao-vinculado");
         }
 

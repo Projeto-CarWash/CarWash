@@ -11,6 +11,8 @@ import {
 
 import { Button } from '@/components/ui/button';
 
+import { ObservacoesLogisticasField } from './ObservacoesLogisticasField';
+
 import type { AgendamentoWizardState } from '@/types/agendamento';
 
 function formatarPreco(valor: number): string {
@@ -54,6 +56,12 @@ interface ResumoConfirmacaoStepProps {
   onBack: () => void;
   confirmado: boolean;
   onConfirmadoChange: (checked: boolean) => void;
+  /** Valor atual das observações logísticas (controlado pelo pai). */
+  observacoesLogisticas: string;
+  /** Callback para atualizar as observações logísticas no wizard state. */
+  onObservacoesLogisticasChange: (value: string) => void;
+  /** Erro de validação do campo (de Zod ou do backend). */
+  observacoesLogisticasErro?: string;
 }
 
 export function ResumoConfirmacaoStep({
@@ -63,6 +71,9 @@ export function ResumoConfirmacaoStep({
   onBack,
   confirmado,
   onConfirmadoChange,
+  observacoesLogisticas,
+  onObservacoesLogisticasChange,
+  observacoesLogisticasErro,
 }: ResumoConfirmacaoStepProps) {
   const { cliente, veiculo, servicos, dataAgendamento, horaInicio, filialNome } = wizardState;
 
@@ -128,7 +139,23 @@ export function ResumoConfirmacaoStep({
                 <User className="h-4.5 w-4.5 text-red-500" />
               </div>
               <div>
-                <p className="text-sm font-medium text-zinc-100">{wizardState.responsavel.nome}</p>
+                <p className="text-sm font-medium text-zinc-100">
+                  {wizardState.responsavel.nome}
+                  {wizardState.responsavel.documento && (
+                    <span className="ml-1.5 text-xs font-normal text-zinc-400">
+                      (
+                      {formatarDoc(
+                        wizardState.responsavel.documento.replace(/\D/g, '').length === 11
+                          ? wizardState.responsavel.documento.replace(/\D/g, '')
+                          : undefined,
+                        wizardState.responsavel.documento.replace(/\D/g, '').length === 14
+                          ? wizardState.responsavel.documento.replace(/\D/g, '')
+                          : undefined,
+                      )}
+                      )
+                    </span>
+                  )}
+                </p>
                 <p className="text-xs text-zinc-500">Responsável pelo agendamento</p>
               </div>
             </div>
@@ -194,6 +221,15 @@ export function ResumoConfirmacaoStep({
             </div>
           </div>
         </div>
+
+        {/* Observações logísticas */}
+        <ObservacoesLogisticasField
+          id="resumo-obs-logisticas"
+          value={observacoesLogisticas}
+          onChange={onObservacoesLogisticasChange}
+          error={observacoesLogisticasErro}
+          disabled={isSubmitting}
+        />
 
         <label
           htmlFor="confirmacao"

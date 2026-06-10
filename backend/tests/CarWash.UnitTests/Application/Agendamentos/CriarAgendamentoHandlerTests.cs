@@ -77,6 +77,8 @@ public class CriarAgendamentoHandlerTests
             Arg.Is<IReadOnlyCollection<AgendamentoItem>>(itens => itens.Count == 2),
             Arg.Is<AgendamentoHistorico>(h => h.AgendamentoId != Guid.Empty),
             "trace-1",
+            ResponsavelId,
+            ClienteId,
             Arg.Any<CancellationToken>());
     }
 
@@ -98,6 +100,8 @@ public class CriarAgendamentoHandlerTests
             Arg.Any<IReadOnlyCollection<AgendamentoItem>>(),
             Arg.Any<AgendamentoHistorico>(),
             Arg.Any<string>(),
+            Arg.Any<Guid>(),
+            Arg.Any<Guid>(),
             Arg.Any<CancellationToken>());
     }
 
@@ -121,6 +125,8 @@ public class CriarAgendamentoHandlerTests
             Arg.Any<IReadOnlyCollection<AgendamentoItem>>(),
             Arg.Any<AgendamentoHistorico>(),
             Arg.Any<string>(),
+            Arg.Any<Guid>(),
+            Arg.Any<Guid>(),
             Arg.Any<CancellationToken>());
     }
 
@@ -214,7 +220,7 @@ public class CriarAgendamentoHandlerTests
     }
 
     [Fact]
-    public async Task Responsavel_de_outro_titular_lanca_ConflictException_CA009()
+    public async Task Responsavel_de_outro_titular_lanca_ConflictException_CA009_e_audita()
     {
         _catalogo.ObterResponsavelResumoAsync(ResponsavelId, Arg.Any<CancellationToken>())
             .Returns(new ResponsavelResumoSnapshot(ResponsavelId, Guid.NewGuid(), "João", "12345678901", "Irmão", true));
@@ -223,10 +229,17 @@ public class CriarAgendamentoHandlerTests
         var act = () => handler.HandleAsync(NovoComando(), CancellationToken.None);
 
         await act.Should().ThrowAsync<ConflictException>();
+
+        await _audit.Received(1).LogAsync(
+            CalculadoraResumoAgendamento.EventoResponsavelRejeitado,
+            CalculadoraResumoAgendamento.EntidadeAuditoria,
+            null,
+            Arg.Is<object>(d => MotivoDe(d) == MotivosFalhaResponsavel.NaoVinculado),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task Responsavel_inativo_lanca_RecursoInativo()
+    public async Task Responsavel_inativo_lanca_RecursoInativo_e_audita()
     {
         _catalogo.ObterResponsavelResumoAsync(ResponsavelId, Arg.Any<CancellationToken>())
             .Returns(new ResponsavelResumoSnapshot(ResponsavelId, ClienteId, "João", "12345678901", "Irmão", false));
@@ -235,6 +248,13 @@ public class CriarAgendamentoHandlerTests
         var act = () => handler.HandleAsync(NovoComando(), CancellationToken.None);
 
         await act.Should().ThrowAsync<RecursoInativoException>();
+
+        await _audit.Received(1).LogAsync(
+            CalculadoraResumoAgendamento.EventoResponsavelRejeitado,
+            CalculadoraResumoAgendamento.EntidadeAuditoria,
+            null,
+            Arg.Is<object>(d => MotivoDe(d) == MotivosFalhaResponsavel.Inativo),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -250,6 +270,8 @@ public class CriarAgendamentoHandlerTests
             Arg.Any<IReadOnlyCollection<AgendamentoItem>>(),
             Arg.Any<AgendamentoHistorico>(),
             Arg.Any<string>(),
+            Arg.Any<Guid>(),
+            Arg.Any<Guid>(),
             Arg.Any<CancellationToken>());
     }
 
@@ -303,6 +325,8 @@ public class CriarAgendamentoHandlerTests
             Arg.Any<IReadOnlyCollection<AgendamentoItem>>(),
             Arg.Any<AgendamentoHistorico>(),
             Arg.Any<string>(),
+            Arg.Any<Guid>(),
+            Arg.Any<Guid>(),
             Arg.Any<CancellationToken>());
     }
 
@@ -374,6 +398,8 @@ public class CriarAgendamentoHandlerTests
             Arg.Any<IReadOnlyCollection<AgendamentoItem>>(),
             Arg.Any<AgendamentoHistorico>(),
             Arg.Any<string>(),
+            Arg.Any<Guid>(),
+            Arg.Any<Guid>(),
             Arg.Any<CancellationToken>());
     }
 
@@ -389,6 +415,8 @@ public class CriarAgendamentoHandlerTests
             Arg.Any<IReadOnlyCollection<AgendamentoItem>>(),
             Arg.Is<AgendamentoHistorico>(h => h.Evento == global::CarWash.Domain.Enums.EventoHistorico.Criado),
             Arg.Any<string>(),
+            Arg.Any<Guid>(),
+            Arg.Any<Guid>(),
             Arg.Any<CancellationToken>());
     }
 
@@ -408,6 +436,8 @@ public class CriarAgendamentoHandlerTests
                 && itens.Any(i => i.ServicoId == ServicoB && i.PrecoAplicado == 45m && i.DuracaoAplicada == 45)),
             Arg.Any<AgendamentoHistorico>(),
             Arg.Any<string>(),
+            Arg.Any<Guid>(),
+            Arg.Any<Guid>(),
             Arg.Any<CancellationToken>());
     }
 

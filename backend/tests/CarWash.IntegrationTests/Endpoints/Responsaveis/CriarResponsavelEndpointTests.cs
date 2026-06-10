@@ -34,11 +34,13 @@ public class CriarResponsavelEndpointTests : IAsyncDisposable
         response.Headers.Location!.OriginalString.Should().Contain($"/api/v1/clientes/{clienteId}/responsaveis/");
 
         var corpo = await response.Content.ReadFromJsonAsync<JsonElement>(_json);
-        corpo.GetProperty("id").GetGuid().Should().NotBeEmpty();
-        corpo.GetProperty("clienteTitularId").GetGuid().Should().Be(clienteId);
-        corpo.GetProperty("nome").GetString().Should().Be("João Silva");
-        corpo.GetProperty("mensagem").GetString().Should().Be("Responsável cadastrado com sucesso.");
+        corpo.GetProperty("message").GetString().Should().Be("Responsável cadastrado com sucesso.");
         corpo.GetProperty("traceId").GetString().Should().NotBeNullOrWhiteSpace();
+
+        var data = corpo.GetProperty("data");
+        data.GetProperty("responsavelId").GetGuid().Should().NotBeEmpty();
+        data.GetProperty("clienteTitularId").GetGuid().Should().Be(clienteId);
+        data.GetProperty("nome").GetString().Should().Be("João Silva");
     }
 
     [Fact]
