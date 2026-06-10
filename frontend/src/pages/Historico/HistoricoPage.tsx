@@ -258,7 +258,12 @@ export function HistoricoPage() {
               </option>
               {clientes.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.nome} {c.cpf ? `(CPF: ...${c.cpf.slice(-4)})` : c.cnpj ? `(CNPJ: ...${c.cnpj.slice(-4)})` : ''}
+                  {c.nome}{' '}
+                  {c.cpf
+                    ? `(CPF: ...${c.cpf.slice(-4)})`
+                    : c.cnpj
+                      ? `(CNPJ: ...${c.cnpj.slice(-4)})`
+                      : ''}
                 </option>
               ))}
             </select>
@@ -327,7 +332,7 @@ export function HistoricoPage() {
                 </option>
               ))}
             </select>
-            {((dataInicio || dataFim) && ultimosDias !== '') && (
+            {(dataInicio || dataFim) && ultimosDias !== '' && (
               <p id="hist-aviso-periodo" className="text-xs text-amber-400" role="alert">
                 Escolha intervalo de datas ou últimos dias, não ambos.
               </p>

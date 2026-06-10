@@ -1,13 +1,4 @@
-import {
-  Car,
-  ChevronDown,
-  ChevronUp,
-  Clock,
-  Eye,
-  MapPin,
-  UserCircle,
-  Wrench,
-} from 'lucide-react';
+import { Car, ChevronDown, ChevronUp, Clock, Eye, MapPin, UserCircle, Wrench } from 'lucide-react';
 import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -86,12 +77,8 @@ function HistoricoTabela({ itens, onVerDetalhe }: HistoricoListaProps) {
               <TableCell className="text-sm font-medium text-zinc-200">
                 {formatarData(item.inicio)}
               </TableCell>
-              <TableCell className="text-sm text-zinc-300">
-                {formatarHora(item.inicio)}
-              </TableCell>
-              <TableCell className="text-sm text-zinc-300">
-                {formatarHora(item.fim)}
-              </TableCell>
+              <TableCell className="text-sm text-zinc-300">{formatarHora(item.inicio)}</TableCell>
+              <TableCell className="text-sm text-zinc-300">{formatarHora(item.fim)}</TableCell>
               <TableCell>
                 <span
                   className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold tracking-[0.12em] ${classesStatus(item.status)}`}
@@ -105,9 +92,7 @@ function HistoricoTabela({ itens, onVerDetalhe }: HistoricoListaProps) {
               <TableCell className="max-w-[200px] truncate text-sm text-zinc-400">
                 {resumoServicos(item)}
               </TableCell>
-              <TableCell className="text-sm text-zinc-400">
-                {item.cliente.nome ?? '—'}
-              </TableCell>
+              <TableCell className="text-sm text-zinc-400">{item.cliente.nome ?? '—'}</TableCell>
               <TableCell className="text-right">
                 <Button
                   type="button"
