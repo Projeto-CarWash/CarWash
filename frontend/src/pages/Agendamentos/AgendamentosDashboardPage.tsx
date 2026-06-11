@@ -115,30 +115,29 @@ export function AgendamentosDashboardPage() {
                         </div>
                       )}
                   </div>
-                  <div className="h-1.5 w-1.5 rounded-full bg-zinc-800 transition-colors group-hover:bg-red-600" />
+                  <div className="flex items-center gap-1.5 rounded-md border border-zinc-800 bg-zinc-900/50 px-2.5 py-1 text-[9px] font-bold tracking-wider text-zinc-400 uppercase">
+                    Total
+                    <span className="text-zinc-100">{mes.total}</span>
+                  </div>
                 </div>
                 <div className="grid w-full flex-1 grid-cols-2 rounded-lg border border-zinc-800/60 bg-[#08080a] overflow-hidden transition-colors group-hover:border-zinc-700/50">
                   <div className="flex flex-col justify-center border-b border-r border-zinc-800/60 p-6 text-left">
-                    <p className="text-[9px] font-bold tracking-[0.15em] text-zinc-600">
-                      CONFIRMADOS
-                    </p>
-                    <p className="mt-3 text-sm font-bold text-emerald-500">{mes.confirmados}</p>
+                    <p className="text-[9px] font-bold tracking-[0.15em] text-zinc-600">AGENDADO</p>
+                    <p className="mt-3 text-sm font-bold text-emerald-500">{mes.agendado}</p>
                   </div>
                   <div className="flex flex-col justify-center border-b border-zinc-800/60 p-6 text-left">
                     <p className="text-[9px] font-bold tracking-[0.15em] text-zinc-600">
-                      PENDENTES
+                      EM ANDAMENTO
                     </p>
-                    <p className="mt-3 text-sm font-bold text-amber-500">{mes.pendentes}</p>
+                    <p className="mt-3 text-sm font-bold text-amber-500">{mes.emAndamento}</p>
                   </div>
                   <div className="flex flex-col justify-center border-r border-zinc-800/60 p-6 text-left">
-                    <p className="text-[9px] font-bold tracking-[0.15em] text-zinc-600">
-                      CANCELADOS
-                    </p>
-                    <p className="mt-3 text-sm font-bold text-red-600">{mes.cancelados}</p>
+                    <p className="text-[9px] font-bold tracking-[0.15em] text-zinc-600">CONCLUÍDO</p>
+                    <p className="mt-3 text-sm font-bold text-blue-500">{mes.concluido}</p>
                   </div>
                   <div className="flex flex-col justify-center p-6 text-left">
-                    <p className="text-[9px] font-bold tracking-[0.15em] text-zinc-600">TOTAL</p>
-                    <p className="mt-3 text-sm font-bold text-zinc-200">{mes.total}</p>
+                    <p className="text-[9px] font-bold tracking-[0.15em] text-zinc-600">CANCELADO</p>
+                    <p className="mt-3 text-sm font-bold text-red-600">{mes.cancelado}</p>
                   </div>
                 </div>
               </button>

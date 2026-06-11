@@ -120,9 +120,10 @@ export const agendamentoService = {
       return nomesMeses.map((nome, index) => ({
         mes: index + 1,
         nome,
-        confirmados: 0,
-        pendentes: 0,
-        cancelados: 0,
+        agendado: 0,
+        emAndamento: 0,
+        concluido: 0,
+        cancelado: 0,
         total: 0,
       }));
     }
@@ -133,9 +134,10 @@ export const agendamentoService = {
       const inicio = new Date(ano, m, 1);
       const fim = new Date(ano, m + 1, 0, 23, 59, 59);
 
-      let confirmados = 0;
-      let pendentes = 0;
-      let cancelados = 0;
+      let agendado = 0;
+      let emAndamento = 0;
+      let concluido = 0;
+      let cancelado = 0;
 
       try {
         const resp = await agendaService.consultarSimples({
@@ -147,25 +149,28 @@ export const agendamentoService = {
 
         for (const item of resp.data) {
           const s = item.status.toUpperCase();
-          if (s === 'AGENDADO' || s === 'EM_ANDAMENTO' || s === 'CONCLUIDO') {
-            confirmados++;
+          if (s === 'AGENDADO') {
+            agendado++;
+          } else if (s === 'EM_ANDAMENTO') {
+            emAndamento++;
+          } else if (s === 'CONCLUIDO') {
+            concluido++;
           } else if (s === 'CANCELADO') {
-            cancelados++;
-          } else {
-            pendentes++;
+            cancelado++;
           }
         }
       } catch {
         // Erro ao consultar agenda para o mês - valores padrão (0) serão usados
       }
 
-      const total = confirmados + pendentes + cancelados;
+      const total = agendado + emAndamento + concluido + cancelado;
       resultados.push({
         mes: m + 1,
         nome: nomesMeses[m]!,
-        confirmados,
-        pendentes,
-        cancelados,
+        agendado,
+        emAndamento,
+        concluido,
+        cancelado,
         total,
       });
     }

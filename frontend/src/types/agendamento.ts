@@ -63,9 +63,11 @@ export interface CriarAgendamentoResponse {
 export interface EstatisticasMes {
   mes: number;
   nome: string;
-  confirmados: number;
-  pendentes: number;
-  cancelados: number;
+  /** Contagem por status real do contrato da agenda (AGENDADO/EM_ANDAMENTO/CONCLUIDO/CANCELADO). */
+  agendado: number;
+  emAndamento: number;
+  concluido: number;
+  cancelado: number;
   total: number;
 }
 
