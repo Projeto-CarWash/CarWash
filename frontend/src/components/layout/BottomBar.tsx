@@ -18,7 +18,7 @@ export function BottomBar() {
   ];
 
   return (
-    <footer className="fixed bottom-0 left-64 right-0 z-50 flex h-7 items-center border-t border-zinc-800/60 bg-zinc-950 px-4 font-mono text-[10px] tracking-wider text-zinc-500">
+    <footer className="fixed bottom-0 left-64 right-0 z-50 flex h-7 items-center border-t border-border bg-background px-4 font-mono text-[10px] tracking-wider text-muted-foreground">
       <div className="flex flex-1 items-center gap-0 overflow-hidden">
         {items.map((item, index) => (
           <div key={index} className="flex shrink-0 items-center">
@@ -30,16 +30,16 @@ export function BottomBar() {
               </span>
             )}
             {item.type === 'box' && (
-              <span className="font-semibold text-zinc-400">{item.text}</span>
+              <span className="font-semibold text-foreground">{item.text}</span>
             )}
-            {item.type === 'car' && <span className="text-zinc-500">{item.text}</span>}
-            {item.type === 'time' && <span className="text-zinc-600">{item.text}</span>}
-            {item.type === 'telemetry' && <span className="text-zinc-500">{item.text}</span>}
+            {item.type === 'car' && <span className="text-muted-foreground">{item.text}</span>}
+            {item.type === 'time' && <span className="text-muted-foreground/70">{item.text}</span>}
+            {item.type === 'telemetry' && <span className="text-muted-foreground">{item.text}</span>}
           </div>
         ))}
       </div>
-      <div className="shrink-0 border-l border-zinc-800 pl-3">
-        <span className="text-zinc-600">VERSÃO v2.4.1</span>
+      <div className="shrink-0 border-l border-border pl-3">
+        <span className="text-muted-foreground">VERSÃO v2.4.1</span>
       </div>
     </footer>
   );

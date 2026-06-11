@@ -63,21 +63,21 @@ export function AgendamentosDashboardPage() {
     <div className="flex h-full flex-col px-6 lg:px-8 py-6">
       <div className="flex items-center justify-between pb-8">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold tracking-tight text-white">Agendamentos</h1>
-          <div className="flex h-6 items-center rounded-md border border-zinc-800 bg-zinc-900/50 px-2.5 text-[10px] font-semibold tracking-wider text-zinc-400">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Agendamentos</h1>
+          <div className="flex h-6 items-center rounded-md border border-border bg-muted px-2.5 text-[10px] font-semibold tracking-wider text-muted-foreground">
             {anoAtual}
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <label htmlFor="filial-dashboard" className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase">
+          <label htmlFor="filial-dashboard" className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
             Filial
           </label>
           <select
             id="filial-dashboard"
             value={filialId}
             onChange={(e) => setFilialId(e.target.value)}
-            className="h-9 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 text-sm text-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50 [color-scheme:dark]"
+            className="h-9 rounded-lg border border-border bg-muted px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50"
           >
             {filiais.length === 0 && <option value="">Carregando…</option>}
             {filiais.map((f) => (
@@ -101,11 +101,11 @@ export function AgendamentosDashboardPage() {
                 key={mes.mes}
                 type="button"
                 onClick={() => handleMesClick(mes.mes)}
-                className="group flex w-full cursor-pointer flex-col rounded-xl border border-zinc-800/60 bg-[#0c0c0e] p-6 text-left transition-all hover:border-red-600/30 hover:bg-zinc-900/40 hover:shadow-[0_0_20px_rgba(220,38,38,0.05)]"
+                className="group flex w-full cursor-pointer flex-col rounded-xl border border-border bg-card p-6 text-left transition-all hover:border-red-600/30 hover:bg-accent/50 hover:shadow-[0_0_20px_rgba(220,38,38,0.05)]"
               >
                 <div className="mb-6 flex w-full items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <h2 className="text-[11px] font-black tracking-[0.15em] text-zinc-100 uppercase transition-colors group-hover:text-white">
+                    <h2 className="text-[11px] font-black tracking-[0.15em] text-foreground uppercase transition-colors group-hover:text-foreground">
                       {mes.nome}
                     </h2>
                     {mes.mes === new Date().getMonth() + 1 &&
@@ -115,28 +115,28 @@ export function AgendamentosDashboardPage() {
                         </div>
                       )}
                   </div>
-                  <div className="flex items-center gap-1.5 rounded-md border border-zinc-800 bg-zinc-900/50 px-2.5 py-1 text-[9px] font-bold tracking-wider text-zinc-400 uppercase">
+                  <div className="flex items-center gap-1.5 rounded-md border border-border bg-muted px-2.5 py-1 text-[9px] font-bold tracking-wider text-muted-foreground uppercase">
                     Total
-                    <span className="text-zinc-100">{mes.total}</span>
+                    <span className="text-foreground">{mes.total}</span>
                   </div>
                 </div>
-                <div className="grid w-full flex-1 grid-cols-2 rounded-lg border border-zinc-800/60 bg-[#08080a] overflow-hidden transition-colors group-hover:border-zinc-700/50">
-                  <div className="flex flex-col justify-center border-b border-r border-zinc-800/60 p-6 text-left">
-                    <p className="text-[9px] font-bold tracking-[0.15em] text-zinc-600">AGENDADO</p>
+                <div className="grid w-full flex-1 grid-cols-2 rounded-lg border border-border bg-muted overflow-hidden transition-colors group-hover:border-border">
+                  <div className="flex flex-col justify-center border-b border-r border-border p-6 text-left">
+                    <p className="text-[9px] font-bold tracking-[0.15em] text-muted-foreground">AGENDADO</p>
                     <p className="mt-3 text-sm font-bold text-emerald-500">{mes.agendado}</p>
                   </div>
-                  <div className="flex flex-col justify-center border-b border-zinc-800/60 p-6 text-left">
-                    <p className="text-[9px] font-bold tracking-[0.15em] text-zinc-600">
+                  <div className="flex flex-col justify-center border-b border-border p-6 text-left">
+                    <p className="text-[9px] font-bold tracking-[0.15em] text-muted-foreground">
                       EM ANDAMENTO
                     </p>
                     <p className="mt-3 text-sm font-bold text-amber-500">{mes.emAndamento}</p>
                   </div>
-                  <div className="flex flex-col justify-center border-r border-zinc-800/60 p-6 text-left">
-                    <p className="text-[9px] font-bold tracking-[0.15em] text-zinc-600">CONCLUÍDO</p>
+                  <div className="flex flex-col justify-center border-r border-border p-6 text-left">
+                    <p className="text-[9px] font-bold tracking-[0.15em] text-muted-foreground">CONCLUÍDO</p>
                     <p className="mt-3 text-sm font-bold text-blue-500">{mes.concluido}</p>
                   </div>
                   <div className="flex flex-col justify-center p-6 text-left">
-                    <p className="text-[9px] font-bold tracking-[0.15em] text-zinc-600">CANCELADO</p>
+                    <p className="text-[9px] font-bold tracking-[0.15em] text-muted-foreground">CANCELADO</p>
                     <p className="mt-3 text-sm font-bold text-red-600">{mes.cancelado}</p>
                   </div>
                 </div>
