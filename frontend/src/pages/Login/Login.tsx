@@ -102,7 +102,7 @@ export default function Login() {
         <CardContent className="flex flex-col gap-6 px-8 py-10">
           <div className="flex flex-col items-center gap-3 text-center">
             <div className="flex h-24 w-40 items-center justify-center overflow-hidden rounded-2xl bg-black ring-1 ring-border shadow-sm">
-              <img src="/image.png" alt="CarWash" className="h-full w-full object-contain" />
+              <img src="/logo.png" alt="CarWash" className="h-full w-full object-contain" />
             </div>
             <div>
               <h1 className="text-xl font-semibold text-foreground">Acesse sua conta</h1>
