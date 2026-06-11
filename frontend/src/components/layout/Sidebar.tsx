@@ -89,8 +89,8 @@ export function Sidebar() {
   return (
     <aside className="fixed bottom-0 left-0 top-0 z-40 flex w-64 flex-col border-r border-border bg-background">
       <div className="flex items-center gap-3 px-5 py-5">
-        <div className="flex h-12 w-12 items-center justify-center">
-          <img src="/logo.png" alt="Logo CarWash" className="h-full w-full object-contain" />
+        <div className="h-11 w-11 shrink-0 overflow-hidden rounded-xl ring-1 ring-border">
+          <img src="/image.png" alt="CarWash" className="h-full w-full object-cover" />
         </div>
         <div>
           <h1 className="text-lg font-black tracking-wider">

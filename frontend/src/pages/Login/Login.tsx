@@ -5,7 +5,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 
-import logo from '@/assets/logo.png';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -102,7 +101,11 @@ export default function Login() {
       <Card className="w-full max-w-md gap-0 border border-border bg-card py-0 shadow-xl ring-ring">
         <CardContent className="flex flex-col gap-6 px-8 py-10">
           <div className="flex flex-col items-center gap-3 text-center">
-            <img src={logo} alt="CarWash" className="h-16 w-auto" />
+            <img
+              src="/image.png"
+              alt="CarWash"
+              className="h-20 w-auto rounded-2xl ring-1 ring-border shadow-sm"
+            />
             <div>
               <h1 className="text-xl font-semibold text-foreground">Acesse sua conta</h1>
               <p className="mt-1 text-sm text-muted-foreground">
