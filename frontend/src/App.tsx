@@ -5,7 +5,6 @@ import { NovoClientePage } from '@/components/clientes/NovoClientePage';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import PrivateRoute from '@/components/PrivateRoute';
 import { AuthProvider } from '@/contexts/AuthProvider';
-import { AgendaPage } from '@/pages/Agenda/AgendaPage';
 import { AgendamentosCalendarioPage } from '@/pages/Agendamentos/AgendamentosCalendarioPage';
 import { AgendamentosDashboardPage } from '@/pages/Agendamentos/AgendamentosDashboardPage';
 import { ClienteDetalhePage } from '@/pages/Clientes/ClienteDetalhePage';
@@ -210,17 +209,6 @@ function App() {
             <PrivateRoute>
               <DashboardLayout>
                 <FilialEditarPage />
-              </DashboardLayout>
-            </PrivateRoute>
-          }
-        />
-
-        <Route
-          path="/agenda"
-          element={
-            <PrivateRoute>
-              <DashboardLayout>
-                <AgendaPage />
               </DashboardLayout>
             </PrivateRoute>
           }
