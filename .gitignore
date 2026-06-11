@@ -58,3 +58,6 @@ bl9HqGGu*.json
 orchestration-log.md
 PULL_REQUEST_DESCRIPTION.md
 .claude/worktrees/
+
+# Scripts temporários de QA de UI (não versionar)
+frontend/uiqa_*.mjs

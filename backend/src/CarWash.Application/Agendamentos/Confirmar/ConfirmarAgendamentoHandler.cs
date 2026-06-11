@@ -230,13 +230,43 @@ public sealed class ConfirmarAgendamentoHandler
             respostaJson: JsonSerializer.Serialize(resposta, JsonOptions),
             recursoId: agendamentoId);
 
-        var resultado = await _agendamentos.AdicionarComIdempotenciaAsync(
-            agendamento,
-            itens,
-            historico,
-            idempotencia,
-            command.TraceId,
-            cancellationToken).ConfigureAwait(false);
+        ResultadoConfirmacaoIdempotente resultado;
+#pragma warning disable S2139 // Loga motivo de falha padronizado (RF024/CA009) e relança a MESMA exceção para o middleware traduzir em HTTP — observabilidade intencional.
+        try
+        {
+            resultado = await _agendamentos.AdicionarComIdempotenciaAsync(
+                agendamento,
+                itens,
+                historico,
+                idempotencia,
+                command.TraceId,
+                command.ResponsavelId,
+                command.ClienteId,
+                cancellationToken).ConfigureAwait(false);
+        }
+        catch (ConflictException ex) when (ex.Slug == "responsavel-nao-vinculado")
+        {
+            _logger.LogWarning(
+                ex,
+                "Confirmação rejeitada na transação — vínculo responsável alterado concorrentemente. ResponsavelId: {ResponsavelId}. ClienteId: {ClienteId}. MotivoFalha: {MotivoFalha}. TraceId: {TraceId}",
+                command.ResponsavelId,
+                command.ClienteId,
+                MotivosFalhaResponsavel.NaoVinculado,
+                command.TraceId);
+            throw;
+        }
+        catch (RecursoInativoException ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "Confirmação rejeitada na transação — responsável inativado concorrentemente. ResponsavelId: {ResponsavelId}. ClienteId: {ClienteId}. MotivoFalha: {MotivoFalha}. TraceId: {TraceId}",
+                command.ResponsavelId,
+                command.ClienteId,
+                MotivosFalhaResponsavel.Inativo,
+                command.TraceId);
+            throw;
+        }
+#pragma warning restore S2139
 
         // Corrida vencida por outra requisição com a MESMA chave: a UNIQUE da
         // idempotência disparou e o repositório releu o registro vencedor.
