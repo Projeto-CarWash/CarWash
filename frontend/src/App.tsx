@@ -7,6 +7,7 @@ import PrivateRoute from '@/components/PrivateRoute';
 import { AuthProvider } from '@/contexts/AuthProvider';
 import { AgendamentosCalendarioPage } from '@/pages/Agendamentos/AgendamentosCalendarioPage';
 import { AgendamentosDashboardPage } from '@/pages/Agendamentos/AgendamentosDashboardPage';
+import { EditarAgendamentoPage } from '@/pages/Agendamentos/EditarAgendamentoPage';
 import { ClienteDetalhePage } from '@/pages/Clientes/ClienteDetalhePage';
 import { ClientesListaPage } from '@/pages/Clientes/ClientesListaPage';
 import { EditarClientePage } from '@/pages/Clientes/EditarClientePage';
@@ -242,6 +243,17 @@ function App() {
             <PrivateRoute>
               <DashboardLayout>
                 <NovoAgendamentoPage />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/agendamentos/:id/editar"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <EditarAgendamentoPage />
               </DashboardLayout>
             </PrivateRoute>
           }

@@ -78,6 +78,30 @@ export interface AgendamentoSemana {
   status: StatusAgendamento;
 }
 
+/** Dados do `GET /api/v1/agendamentos/{id}` (RF010) usados na edição. */
+export interface AgendamentoDetalhe {
+  id: string;
+  filialId: string;
+  clienteId: string;
+  veiculoId: string;
+  responsavelId: string | null;
+  status: string;
+  inicio: string;
+  fim: string;
+  observacoes: string | null;
+}
+
+/**
+ * Campos editáveis do `PATCH /api/v1/agendamentos/{id}` (RF010). Todos
+ * opcionais — apenas os enviados são alterados. Edição só com status AGENDADO.
+ */
+export interface EditarAgendamentoPayload {
+  inicio?: string;
+  fim?: string;
+  responsavelId?: string | null;
+  observacoes?: string | null;
+}
+
 export interface CriarAgendamentoRequest {
   filialId: string;
   clienteId: string;

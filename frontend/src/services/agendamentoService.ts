@@ -4,10 +4,12 @@ import { clienteService } from './clienteService';
 import { filialService } from './filialService';
 import { servicoService } from './servicoService';
 
-import type { AgendaItemSimples } from '@/types/agenda';
+import type { AgendaItemDetalhado, AgendaItemSimples } from '@/types/agenda';
 import type {
+  AgendamentoDetalhe,
   AgendamentoResponse,
   AgendamentoSemana,
+  EditarAgendamentoPayload,
   ClienteResumido,
   ConfirmarAgendamentoRequest,
   CriarAgendamentoPayload,
@@ -196,6 +198,37 @@ export const agendamentoService = {
     }
   },
 
+  /**
+   * Busca o item DETALHADO de um agendamento dentro de uma janela de semana,
+   * reaproveitando o endpoint `GET /api/v1/agenda` no formato `detalhado`
+   * (mesma filial usada por {@link listarAgendamentosSemana}). Retorna `null`
+   * quando não encontrado. Usado pelo modal de detalhe do calendário.
+   */
+  async obterDetalheNaSemana(
+    agendamentoId: string,
+    dataInicio: Date,
+    dataFim: Date,
+  ): Promise<AgendaItemDetalhado | null> {
+    let filialId = '';
+    try {
+      const filiais = await filialService.listar();
+      filialId = filiais.itens?.[0]?.id ?? '';
+    } catch {
+      return null;
+    }
+
+    if (!filialId) return null;
+
+    const resp = await agendaService.consultarDetalhada({
+      formato: 'detalhado',
+      inicio: dataInicio.toISOString().slice(0, 16),
+      fim: dataFim.toISOString().slice(0, 16),
+      filialId,
+    });
+
+    return resp.data.find((item) => item.agendamentoId === agendamentoId) ?? null;
+  },
+
   async buscarResponsaveisPorCliente(clienteId: string): Promise<ResponsavelResumido[]> {
     try {
       const { data } = await api.get<{ id: string; nome: string; documento: string }[]>(
@@ -238,6 +271,24 @@ export const agendamentoService = {
     payload: { observacoes: string | null },
   ): Promise<AgendamentoResponse> {
     const { data } = await api.put<AgendamentoResponse>(`/api/v1/agendamentos/${id}`, payload);
+    return data;
+  },
+
+  /**
+   * Consulta detalhada de um agendamento — `GET /api/v1/agendamentos/{id}`
+   * (RF010). Resposta no envelope `{ message, data, traceId }`.
+   */
+  async obterPorId(id: string): Promise<AgendamentoDetalhe> {
+    const { data } = await api.get<{ data: AgendamentoDetalhe }>(`/api/v1/agendamentos/${id}`);
+    return data.data;
+  },
+
+  /**
+   * Edição de agendamento — `PATCH /api/v1/agendamentos/{id}` (RF010). Só os
+   * campos enviados são alterados; o backend só permite quando status=AGENDADO.
+   */
+  async editar(id: string, payload: EditarAgendamentoPayload): Promise<AgendamentoResponse> {
+    const { data } = await api.patch<AgendamentoResponse>(`/api/v1/agendamentos/${id}`, payload);
     return data;
   },
 };

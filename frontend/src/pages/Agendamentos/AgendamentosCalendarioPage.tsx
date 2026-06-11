@@ -12,8 +12,11 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
+import { AgendaItemDetalhadoCard } from '@/pages/Agenda/AgendaItemDetalhadoCard';
 import { agendamentoService } from '@/services/agendamentoService';
 
+import type { AgendaItemDetalhado } from '@/types/agenda';
 import type { AgendamentoSemana } from '@/types/agendamento';
 
 const parseQueryDate = (ano: string | null, mes: string | null): Date => {
@@ -49,6 +52,12 @@ export function AgendamentosCalendarioPage() {
   const [agendamentos, setAgendamentos] = useState<AgendamentoSemana[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Detalhe (modal) ao clicar num card do grid.
+  const [detalheAberto, setDetalheAberto] = useState(false);
+  const [itemDetalhado, setItemDetalhado] = useState<AgendaItemDetalhado | null>(null);
+  const [carregandoDetalhe, setCarregandoDetalhe] = useState(false);
+  const [erroDetalhe, setErroDetalhe] = useState<string | null>(null);
+
   const startDate = useMemo(() => startOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
   const endDate = useMemo(() => endOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
 
@@ -71,6 +80,29 @@ export function AgendamentosCalendarioPage() {
   const handlePrevWeek = () => setCurrentDate((prev) => subWeeks(prev, 1));
   const handleNextWeek = () => setCurrentDate((prev) => addWeeks(prev, 1));
   const handleCurrentWeek = () => setCurrentDate(new Date());
+
+  const abrirDetalhe = async (ag: AgendamentoSemana) => {
+    setDetalheAberto(true);
+    setItemDetalhado(null);
+    setErroDetalhe(null);
+    setCarregandoDetalhe(true);
+    try {
+      const detalhe = await agendamentoService.obterDetalheNaSemana(ag.id, startDate, endDate);
+      if (detalhe) {
+        setItemDetalhado(detalhe);
+      } else {
+        setErroDetalhe('Não foi possível carregar os detalhes deste agendamento.');
+      }
+    } catch {
+      setErroDetalhe('Erro ao carregar os detalhes do agendamento.');
+    } finally {
+      setCarregandoDetalhe(false);
+    }
+  };
+
+  const irParaEdicao = (item: AgendaItemDetalhado) => {
+    void navigate(`/agendamentos/${item.agendamentoId}/editar`, { state: { item } });
+  };
 
   const weekDays = Array.from({ length: 7 }).map((_, i) => addDays(startDate, i));
 
@@ -231,7 +263,17 @@ export function AgendamentosCalendarioPage() {
                     dayAgendamentos.map((ag) => (
                       <div
                         key={ag.id}
-                        className={`group relative flex flex-col gap-1.5 rounded-lg border bg-[#121214] p-3 shadow-sm transition-all cursor-pointer ${getStatusBorder(ag.status)}`}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`Ver detalhes do agendamento ${ag.titulo}`}
+                        onClick={() => void abrirDetalhe(ag)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            void abrirDetalhe(ag);
+                          }
+                        }}
+                        className={`group relative flex flex-col gap-1.5 rounded-lg border bg-[#121214] p-3 shadow-sm transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50 ${getStatusBorder(ag.status)}`}
                       >
                         <div className="absolute inset-0 border-t border-zinc-800/60 transition-colors group-hover:bg-zinc-800/20" />
                         <div className="pointer-events-none absolute inset-x-0 -top-px h-px bg-red-500/50 opacity-0 transition-opacity group-hover:opacity-100" />
@@ -267,6 +309,28 @@ export function AgendamentosCalendarioPage() {
           )}
         </div>
       </div>
+
+      <Dialog open={detalheAberto} onOpenChange={setDetalheAberto}>
+        <DialogContent className="!max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-zinc-200 dark:border-zinc-800/60 bg-white dark:bg-zinc-900 p-6 text-zinc-800 dark:text-zinc-100 shadow-2xl">
+          <DialogTitle className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+            Detalhes do agendamento
+          </DialogTitle>
+          <DialogDescription className="sr-only">
+            Visualização detalhada do agendamento selecionado, com opção de editar.
+          </DialogDescription>
+
+          {carregandoDetalhe ? (
+            <div className="flex items-center justify-center gap-2 py-10 text-sm text-zinc-500">
+              <Loader2 className="h-5 w-5 animate-spin text-red-600" />
+              Carregando detalhes…
+            </div>
+          ) : erroDetalhe ? (
+            <div className="py-8 text-center text-sm text-red-500">{erroDetalhe}</div>
+          ) : itemDetalhado ? (
+            <AgendaItemDetalhadoCard item={itemDetalhado} onEditar={irParaEdicao} />
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
