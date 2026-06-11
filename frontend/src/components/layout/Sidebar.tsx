@@ -33,8 +33,8 @@ const operacaoLinks: NavLinkItem[] = [
 
 const gestaoLinks: NavLinkItem[] = [
   { icon: CalendarDays, label: 'Agendamentos', to: '/agendamentos' },
-  { icon: DollarSign, label: 'Financeiro' },
-  { icon: BarChart3, label: 'Relatórios' },
+  { icon: DollarSign, label: 'Financeiro', to: '/financeiro' },
+  { icon: BarChart3, label: 'Relatórios', to: '/relatorios' },
   { icon: UserCog, label: 'Equipe', to: '/usuarios' },
 ];
 

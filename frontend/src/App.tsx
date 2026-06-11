@@ -16,7 +16,9 @@ import Dashboard from '@/pages/Dashboard/Dashboard';
 import { FiliaisListaPage } from '@/pages/Filiais/FiliaisListaPage';
 import { FilialEditarPage } from '@/pages/Filiais/FilialEditarPage';
 import { FilialFormPage } from '@/pages/Filiais/FilialFormPage';
+import { FinanceiroPage } from '@/pages/Financeiro/FinanceiroPage';
 import Login from '@/pages/Login/Login';
+import { RelatoriosPage } from '@/pages/Relatorios/RelatoriosPage';
 import { ServicoFormPage } from '@/pages/Servicos/ServicoFormPage';
 import { ServicosListaPage } from '@/pages/Servicos/ServicosListaPage';
 import { NovoUsuarioPage } from '@/pages/Usuarios/NovoUsuarioPage';
@@ -254,6 +256,28 @@ function App() {
             <PrivateRoute>
               <DashboardLayout>
                 <EditarAgendamentoPage />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/relatorios"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <RelatoriosPage />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/financeiro"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <FinanceiroPage />
               </DashboardLayout>
             </PrivateRoute>
           }
