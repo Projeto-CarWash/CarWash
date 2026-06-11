@@ -1,9 +1,14 @@
 using CarWash.Api.Filters;
 using CarWash.Application.Abstractions.Messaging;
+using CarWash.Application.Responsaveis.AlterarStatus;
+using CarWash.Application.Responsaveis.Atualizar;
+using CarWash.Application.Responsaveis.Common;
 using CarWash.Application.Responsaveis.Criar;
+using CarWash.Application.Responsaveis.Listar;
 using FluentValidation;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using ValidationException = CarWash.Application.Common.Exceptions.ValidationException;
 
 namespace CarWash.Api.Endpoints.Responsaveis;
 
@@ -28,6 +33,29 @@ public static class ResponsaveisEndpoints
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status409Conflict);
+
+        grupo.MapGet("/", ListarAsync)
+            .WithName("ListarResponsaveis")
+            .Produces<ListaResponsaveisResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
+        grupo.MapPut("/{id:guid}", AtualizarAsync)
+            .WithName("AtualizarResponsavel")
+            .Produces<ResponsavelResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict);
+
+        grupo.MapPatch("/{id:guid}/status", AlterarStatusAsync)
+            .WithName("AlterarStatusResponsavel")
+            .Produces<ResponsavelResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
         return app;
     }
@@ -78,6 +106,110 @@ public static class ResponsaveisEndpoints
             resposta);
     }
 
+    private static async Task<Ok<ListaResponsaveisResponse>> ListarAsync(
+        Guid clienteTitularId,
+        [FromServices] IQueryHandler<ListarResponsaveisQuery, ListaResponsaveisResponse> handler,
+        CancellationToken cancellationToken)
+    {
+        var resposta = await handler.HandleAsync(
+            new ListarResponsaveisQuery(clienteTitularId),
+            cancellationToken).ConfigureAwait(false);
+
+        return TypedResults.Ok(resposta);
+    }
+
+    private static async Task<Ok<ResponsavelResponse>> AtualizarAsync(
+        Guid clienteTitularId,
+        Guid id,
+        [FromBody] AtualizarResponsavelRequest? request,
+        [FromServices] ICommandHandler<AtualizarResponsavelCommand, ResponsavelResponse> handler,
+        [FromServices] IValidator<AtualizarResponsavelCommand> validator,
+        [FromServices] ILogger<AtualizarResponsavelEndpointMarker> logger,
+        HttpContext http,
+        CancellationToken cancellationToken)
+    {
+        if (request is null)
+        {
+            throw ValidationProblems.BodyAusente(
+                MensagemPayloadInvalido,
+                "Corpo da requisição ausente ou malformado.");
+        }
+
+        string traceId = http.TraceIdentifier;
+        var usuarioId = ObterUsuarioId(http);
+
+        var command = new AtualizarResponsavelCommand(
+            ResponsavelId: id,
+            ClienteTitularId: clienteTitularId,
+            Nome: request.Nome,
+            Telefone: request.Telefone,
+            Email: request.Email,
+            GrauVinculo: request.GrauVinculo,
+            CamposExtras: request.CamposExtras,
+            TraceId: traceId,
+            UsuarioId: usuarioId);
+
+        var resultado = await validator.ValidateAsync(command, cancellationToken).ConfigureAwait(false);
+        ValidationProblems.EnsureValid(resultado, MensagemPayloadInvalido);
+
+        var resposta = await handler.HandleAsync(command, cancellationToken).ConfigureAwait(false);
+
+        logger.LogInformation(
+            "Responsável atualizado. ResponsavelId: {ResponsavelId}. ClienteTitularId: {ClienteTitularId}. UsuarioId: {UsuarioId}",
+            id,
+            clienteTitularId,
+            usuarioId);
+
+        return TypedResults.Ok(resposta);
+    }
+
+    private static async Task<Ok<ResponsavelResponse>> AlterarStatusAsync(
+        Guid clienteTitularId,
+        Guid id,
+        [FromBody] AlterarStatusResponsavelRequest? request,
+        [FromServices] ICommandHandler<AlterarStatusResponsavelCommand, ResponsavelResponse> handler,
+        [FromServices] IValidator<AlterarStatusResponsavelCommand> validator,
+        [FromServices] ILogger<AlterarStatusResponsavelEndpointMarker> logger,
+        HttpContext http,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (request.Ativo is null)
+        {
+            throw new ValidationException(
+                MensagemPayloadInvalido,
+                new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["ativo"] = ["Campo 'ativo' é obrigatório."],
+                });
+        }
+
+        string traceId = http.TraceIdentifier;
+        var usuarioId = ObterUsuarioId(http);
+
+        var command = new AlterarStatusResponsavelCommand(
+            ResponsavelId: id,
+            ClienteTitularId: clienteTitularId,
+            Ativo: request.Ativo,
+            TraceId: traceId,
+            UsuarioId: usuarioId);
+
+        var resultado = await validator.ValidateAsync(command, cancellationToken).ConfigureAwait(false);
+        ValidationProblems.EnsureValid(resultado, MensagemPayloadInvalido);
+
+        var resposta = await handler.HandleAsync(command, cancellationToken).ConfigureAwait(false);
+
+        logger.LogInformation(
+            "Status do responsável alterado. ResponsavelId: {ResponsavelId}. Ativo: {Ativo}. ClienteTitularId: {ClienteTitularId}. UsuarioId: {UsuarioId}",
+            id,
+            request.Ativo.Value,
+            clienteTitularId,
+            usuarioId);
+
+        return TypedResults.Ok(resposta);
+    }
+
     private static Guid? ObterUsuarioId(HttpContext http)
     {
         string? sub = http.User.FindFirst("sub")?.Value
@@ -85,9 +217,17 @@ public static class ResponsaveisEndpoints
         return Guid.TryParse(sub, out var id) ? id : null;
     }
 
-#pragma warning disable S2094, SA1502, CA1812 // Marker para tipar o ILogger por endpoint (categoria estável).
+    #pragma warning disable S2094, SA1502, CA1812 // Markers para tipar o ILogger por endpoint (categoria estável).
     internal sealed class CriarResponsavelEndpointMarker
     {
     }
-#pragma warning restore S2094, SA1502, CA1812
+
+    internal sealed class AtualizarResponsavelEndpointMarker
+    {
+    }
+
+    internal sealed class AlterarStatusResponsavelEndpointMarker
+    {
+    }
+    #pragma warning restore S2094, SA1502, CA1812
 }

@@ -9,4 +9,8 @@ public interface IResponsavelRepository
     Task AdicionarAsync(Responsavel responsavel, string correlationId, Guid? usuarioId, CancellationToken cancellationToken);
 
     Task<IReadOnlyList<Responsavel>> ListarPorClienteTitularIdAsync(Guid clienteTitularId, CancellationToken cancellationToken);
+
+    Task<Responsavel?> ObterPorIdRastreadoAsync(Guid id, Guid clienteTitularId, CancellationToken cancellationToken);
+
+    Task SalvarAsync(string correlationId, Guid? usuarioId, CancellationToken cancellationToken);
 }
