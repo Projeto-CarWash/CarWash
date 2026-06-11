@@ -1,4 +1,5 @@
 using CarWash.Application.Agendamentos.Common;
+using CarWash.Application.Common.Exceptions;
 using CarWash.Domain.Entities;
 using CarWash.Domain.Enums;
 using CarWash.Domain.ValueObjects;
@@ -51,7 +52,8 @@ public class AgendamentoRepositoryTests : IAsyncLifetime
         var (agendamento, itens, historico) = MontarAgendamento(
             filialId, clienteId, veiculoId, criadoPor, servicoId, responsavelId, inicio);
 
-        await repo.AdicionarAsync(agendamento, itens, historico, "trace-int", CancellationToken.None);
+        await repo.AdicionarAsync(agendamento, itens, historico, "trace-int",
+            responsavelId, clienteId, CancellationToken.None);
 
         await using var verificacao = CarWashDbContextFactoryForTests.Create(_fixture);
         (await verificacao.Agendamentos.AnyAsync(a => a.Id == agendamento.Id)).Should().BeTrue();
@@ -69,7 +71,8 @@ public class AgendamentoRepositoryTests : IAsyncLifetime
 
         var inicio = DateTime.UtcNow.AddDays(2);
         var (primeiro, itens1, hist1) = MontarAgendamento(filialId, clienteId, veiculoId, criadoPor, servicoId, responsavelId, inicio);
-        await repo.AdicionarAsync(primeiro, itens1, hist1, "trace-1", CancellationToken.None);
+        await repo.AdicionarAsync(primeiro, itens1, hist1, "trace-1",
+            responsavelId, clienteId, CancellationToken.None);
 
         // Segundo agendamento do mesmo veículo com janela sobreposta — simula a
         // race condition que escapa do pré-check: vai direto ao banco.
@@ -78,7 +81,8 @@ public class AgendamentoRepositoryTests : IAsyncLifetime
         var (segundo, itens2, hist2) = MontarAgendamento(
             filialId, clienteId, veiculoId, criadoPor, servicoId, responsavelId, inicio.AddMinutes(10));
 
-        var act = () => repo2.AdicionarAsync(segundo, itens2, hist2, "trace-2", CancellationToken.None);
+        var act = () => repo2.AdicionarAsync(segundo, itens2, hist2, "trace-2",
+            responsavelId, clienteId, CancellationToken.None);
 
         var ex = await act.Should().ThrowAsync<AgendamentoConflitanteException>();
         ex.Which.Slug.Should().Be("agendamento-conflito-veiculo");
@@ -92,7 +96,8 @@ public class AgendamentoRepositoryTests : IAsyncLifetime
 
         var inicio = DateTime.UtcNow.AddDays(3);
         var (existente, itens, hist) = MontarAgendamento(filialId, clienteId, veiculoId, criadoPor, servicoId, responsavelId, inicio);
-        await repo.AdicionarAsync(existente, itens, hist, "trace-3", CancellationToken.None);
+        await repo.AdicionarAsync(existente, itens, hist, "trace-3",
+            responsavelId, clienteId, CancellationToken.None);
 
         var fim = existente.Fim;
 
@@ -106,7 +111,95 @@ public class AgendamentoRepositoryTests : IAsyncLifetime
 
         // Outro veículo → sem conflito.
         (await repo.ExisteConflitoVeiculoAsync(Guid.NewGuid(), inicio, fim, CancellationToken.None))
-            .Should().BeFalse();
+        .Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task AdicionarAsync_vinculo_responsavel_alterado_concorrentemente_lanca_ConflictException_CA009()
+    {
+        // RF024/CA009: a transação do agendamento revalida o vínculo
+        // responsável→cliente sob SELECT FOR UPDATE. Se uma transação
+        // concorrente alterou cliente_titular_id entre o pre-check
+        // (AsNoTracking) e o COMMIT, o agendamento é rejeitado com 409.
+        var (filialId, clienteId, veiculoId, criadoPor, servicoId, responsavelId) = await SemearAsync();
+        var outroClienteId = Guid.NewGuid();
+
+        // Cria um segundo cliente titular para simular a transferência.
+        await using (var dbSetup = CarWashDbContextFactoryForTests.Create(_fixture))
+        {
+            var outroCliente = Cliente.Criar(
+                id: outroClienteId,
+                nome: "Outro Cliente",
+                dataNascimento: new DateOnly(1985, 5, 15),
+                celular: new Telefone("11998765432"),
+                endereco: new Endereco("01310100", "Rua Augusta", "500", null, "Consolação", "São Paulo", "SP"),
+                cpf: new Cpf(GerarCpfValido()));
+            dbSetup.Clientes.Add(outroCliente);
+            await dbSetup.SaveChangesAsync();
+        }
+
+        // Altera o cliente_titular_id do responsável via SQL direto
+        // (simula operação administrativa concorrente que o domínio
+        // ainda não expõe via método).
+        await using (var dbAlt = CarWashDbContextFactoryForTests.Create(_fixture))
+        {
+            await dbAlt.Database.ExecuteSqlRawAsync(
+                "UPDATE public.responsaveis SET cliente_titular_id = {0} WHERE id = {1}",
+                outroClienteId, responsavelId);
+        }
+
+        // Tenta criar o agendamento com o clienteId original — o
+        // SELECT FOR UPDATE dentro da transação detecta que o vínculo
+        // foi alterado e lança ConflictException.
+        await using var db = CarWashDbContextFactoryForTests.Create(_fixture);
+        var repo = new AgendamentoRepository(db);
+        var inicio = DateTime.UtcNow.AddDays(4);
+        var (agendamento, itens, historico) = MontarAgendamento(
+            filialId, clienteId, veiculoId, criadoPor, servicoId, responsavelId, inicio);
+
+        var act = () => repo.AdicionarAsync(agendamento, itens, historico, "trace-ca009",
+            responsavelId, clienteId, CancellationToken.None);
+
+        var ex = await act.Should().ThrowAsync<ConflictException>();
+        ex.Which.Slug.Should().Be("responsavel-nao-vinculado");
+
+        // Nenhum agendamento parcial persiste — rollback total.
+        await using var dbVerificacao = CarWashDbContextFactoryForTests.Create(_fixture);
+        (await dbVerificacao.Agendamentos.AnyAsync(a => a.Id == agendamento.Id))
+            .Should().BeFalse("o agendamento rejeitado não deve persistir");
+        (await dbVerificacao.AgendamentoItens.AnyAsync(i => i.AgendamentoId == agendamento.Id))
+            .Should().BeFalse("nenhum item órfão deve persistir");
+    }
+
+    [Fact]
+    public async Task AdicionarAsync_responsavel_inativado_concorrentemente_lanca_RecursoInativoException_CA009()
+    {
+        // RF024/CA009: se o responsável for inativado concorrentemente,
+        // o SELECT FOR UPDATE detecta ativo=false e lança
+        // RecursoInativoException — rollback total.
+        var (filialId, clienteId, veiculoId, criadoPor, servicoId, responsavelId) = await SemearAsync();
+
+        await using (var dbAlt = CarWashDbContextFactoryForTests.Create(_fixture))
+        {
+            await dbAlt.Database.ExecuteSqlRawAsync(
+                "UPDATE public.responsaveis SET ativo = false WHERE id = {0}",
+                responsavelId);
+        }
+
+        await using var db = CarWashDbContextFactoryForTests.Create(_fixture);
+        var repo = new AgendamentoRepository(db);
+        var inicio = DateTime.UtcNow.AddDays(5);
+        var (agendamento, itens, historico) = MontarAgendamento(
+            filialId, clienteId, veiculoId, criadoPor, servicoId, responsavelId, inicio);
+
+        var act = () => repo.AdicionarAsync(agendamento, itens, historico, "trace-ca009-inativo",
+            responsavelId, clienteId, CancellationToken.None);
+
+        await act.Should().ThrowAsync<RecursoInativoException>();
+
+        await using var dbVerificacao = CarWashDbContextFactoryForTests.Create(_fixture);
+        (await dbVerificacao.Agendamentos.AnyAsync(a => a.Id == agendamento.Id))
+            .Should().BeFalse("o agendamento rejeitado não deve persistir");
     }
 
     private static (Agendamento Agendamento, IReadOnlyCollection<AgendamentoItem> Itens, AgendamentoHistorico Historico)

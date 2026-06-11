@@ -57,6 +57,94 @@ export const handlers = [
     });
   }),
 
+  http.get('*/api/v1/usuarios/me/preferencias', () => {
+    return HttpResponse.json({ tema: 'dark' });
+  }),
+
+  http.patch('*/api/v1/usuarios/me/preferencias', async ({ request }) => {
+    const { tema } = (await request.json()) as { tema: string };
+    return HttpResponse.json({ tema });
+  }),
+
+  http.get('*/api/v1/dashboard/metricas', ({ request }) => {
+    const url = new URL(request.url);
+    const inicio = url.searchParams.get('dataInicio');
+    const fim = url.searchParams.get('dataFim');
+    const filialId = url.searchParams.get('filialId');
+    const status = url.searchParams.get('status');
+
+    if (!inicio || !fim) {
+      return HttpResponse.json(
+        { message: 'dataInicio e dataFim são obrigatórios.' },
+        { status: 400 },
+      );
+    }
+
+    if (new Date(inicio) > new Date(fim)) {
+      return HttpResponse.json(
+        { message: 'A data inicial não pode ser maior que a data final.' },
+        { status: 400 },
+      );
+    }
+
+    const multiplicador = filialId ? (filialId.charCodeAt(0) % 5) / 10 + 0.8 : 1.0;
+
+    let total = Math.round(150 * multiplicador);
+    let pendentes = Math.round(45 * multiplicador);
+    let concluidos = Math.round(90 * multiplicador);
+    let cancelados = Math.round(15 * multiplicador);
+    let faturamento = Math.round(12450.9 * multiplicador * 100) / 100;
+
+    if (status) {
+      if (status === 'PENDENTE') {
+        total = pendentes;
+        concluidos = 0;
+        cancelados = 0;
+        faturamento = 0;
+      } else if (status === 'CONCLUIDO') {
+        total = concluidos;
+        pendentes = 0;
+        cancelados = 0;
+      } else if (status === 'CANCELADO') {
+        total = cancelados;
+        pendentes = 0;
+        concluidos = 0;
+        faturamento = 0;
+      }
+    }
+
+    const divisor = concluidos || total;
+    const ticketMedio =
+      divisor > 0 && faturamento > 0 ? Math.round((faturamento / divisor) * 100) / 100 : 0;
+    const ocupacao = total > 0 ? Math.min(100, Math.round((concluidos / total) * 1000) / 10) : 75.0;
+    const tempoMedio = 45;
+
+    // Envelope no mesmo formato do backend real (DashboardMetricasResponse).
+    return HttpResponse.json({
+      message: 'Métricas calculadas com sucesso.',
+      data: {
+        periodo: { dataInicio: inicio, dataFim: fim },
+        filtrosAplicados: { filialId, clienteId: null, status },
+        operacional: {
+          totalAtendimentos: total,
+          pendentes,
+          concluidos,
+          cancelados,
+          taxaConclusao: ocupacao,
+          tempoMedioAtendimentoMin: tempoMedio,
+        },
+        financeiro: {
+          faturamentoTotal: faturamento,
+          ticketMedio,
+          faturamentoPorFilial: [],
+          faturamentoPorServico: [],
+          valorMedioPorCliente: 0,
+        },
+      },
+      traceId: 'mock-trace',
+    });
+  }),
+
   http.post('*/api/v1/servicos', async ({ request }) => {
     const body = (await request.json()) as ServicoBody;
 
@@ -149,6 +237,15 @@ export const handlers = [
     atual.atualizadoEm = new Date().toISOString();
 
     return HttpResponse.json(atual, { status: 200 });
+  }),
+
+  http.get('*/api/v1/usuarios/me/preferencias', () => {
+    return HttpResponse.json({ tema: 'dark' });
+  }),
+
+  http.patch('*/api/v1/usuarios/me/preferencias', async ({ request }) => {
+    const { tema } = (await request.json()) as { tema: string };
+    return HttpResponse.json({ tema });
   }),
 
   http.get('*/api/v1/clientes/:id/responsaveis', ({ params }) => {

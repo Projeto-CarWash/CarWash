@@ -1,6 +1,7 @@
 using CarWash.Api.Filters;
 using CarWash.Application.Abstractions.Messaging;
 using CarWash.Application.Responsaveis.Criar;
+using CarWash.Application.Responsaveis.Listar;
 using FluentValidation;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -29,7 +30,29 @@ public static class ResponsaveisEndpoints
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status409Conflict);
 
+        // RF023/RF024 — lista os responsáveis do cliente (alimenta o dropdown de
+        // seleção de responsável no agendamento). Antes só havia POST → GET dava 405.
+        grupo.MapGet("/", ListarAsync)
+            .WithName("ListarResponsaveis")
+            .Produces<IReadOnlyList<ResponsavelListaItem>>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status401Unauthorized);
+
         return app;
+    }
+
+    private static async Task<Ok<IReadOnlyList<ResponsavelListaItem>>> ListarAsync(
+        Guid clienteTitularId,
+        [FromServices] IQueryHandler<ListarResponsaveisPorClienteQuery, IReadOnlyList<ResponsavelListaItem>> handler,
+        HttpContext http,
+        CancellationToken cancellationToken)
+    {
+        string traceId = http.TraceIdentifier;
+
+        var query = new ListarResponsaveisPorClienteQuery(clienteTitularId, traceId);
+
+        var resultado = await handler.HandleAsync(query, cancellationToken).ConfigureAwait(false);
+
+        return TypedResults.Ok(resultado);
     }
 
     private static async Task<Created<CriarResponsavelResponse>> CriarAsync(
@@ -69,12 +92,12 @@ public static class ResponsaveisEndpoints
         logger.LogInformation(
             "Responsável cadastrado com sucesso. TraceId: {TraceId}. ResponsavelId: {ResponsavelId}. ClienteTitularId: {ClienteTitularId}. UsuarioId: {UsuarioId}",
             traceId,
-            resposta.Id,
+            resposta.Data.ResponsavelId,
             clienteTitularId,
             usuarioId);
 
         return TypedResults.Created(
-            $"/api/v1/clientes/{clienteTitularId}/responsaveis/{resposta.Id}",
+            $"/api/v1/clientes/{clienteTitularId}/responsaveis/{resposta.Data.ResponsavelId}",
             resposta);
     }
 
