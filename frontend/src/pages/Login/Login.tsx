@@ -99,13 +99,13 @@ export default function Login() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
-      <Card className="w-full max-w-md gap-0 border border-zinc-800/60 bg-zinc-900/60 py-0 shadow-xl ring-zinc-800/50">
+      <Card className="w-full max-w-md gap-0 border border-border bg-card py-0 shadow-xl ring-ring">
         <CardContent className="flex flex-col gap-6 px-8 py-10">
           <div className="flex flex-col items-center gap-3 text-center">
             <img src={logo} alt="CarWash" className="h-16 w-auto" />
             <div>
-              <h1 className="text-xl font-semibold text-zinc-100">Acesse sua conta</h1>
-              <p className="mt-1 text-sm text-zinc-400">
+              <h1 className="text-xl font-semibold text-foreground">Acesse sua conta</h1>
+              <p className="mt-1 text-sm text-muted-foreground">
                 Informe suas credenciais para entrar no sistema.
               </p>
             </div>
@@ -129,7 +129,7 @@ export default function Login() {
             aria-busy={isSubmitting}
           >
             <div className="flex flex-col gap-2">
-              <Label htmlFor="login-email" className="text-zinc-300">
+              <Label htmlFor="login-email" className="text-foreground">
                 E-mail
               </Label>
               <Input
@@ -139,7 +139,7 @@ export default function Login() {
                 placeholder="voce@empresa.com"
                 aria-invalid={!!form.formState.errors.email}
                 aria-describedby={form.formState.errors.email ? 'login-email-error' : undefined}
-                className="h-10 rounded-lg border-zinc-700/60 bg-zinc-950/40 px-3 text-sm text-zinc-100 placeholder:text-zinc-500"
+                className="h-10 rounded-lg border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground"
                 {...form.register('email')}
               />
               {form.formState.errors.email && (
@@ -150,7 +150,7 @@ export default function Login() {
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label htmlFor="login-senha" className="text-zinc-300">
+              <Label htmlFor="login-senha" className="text-foreground">
                 Senha
               </Label>
               <div className="relative">
@@ -161,13 +161,13 @@ export default function Login() {
                   placeholder="••••••••"
                   aria-invalid={!!form.formState.errors.senha}
                   aria-describedby={form.formState.errors.senha ? 'login-senha-error' : undefined}
-                  className="h-10 rounded-lg border-zinc-700/60 bg-zinc-950/40 px-3 pr-10 text-sm text-zinc-100 placeholder:text-zinc-500"
+                  className="h-10 rounded-lg border-border bg-background px-3 pr-10 text-sm text-foreground placeholder:text-muted-foreground"
                   {...form.register('senha')}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-zinc-400 transition-colors hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                   aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
                   aria-pressed={showPassword}
                   tabIndex={0}
@@ -188,14 +188,14 @@ export default function Login() {
 
             <label
               htmlFor="login-remember"
-              className="flex items-center gap-2 text-sm text-zinc-400 select-none"
+              className="flex items-center gap-2 text-sm text-muted-foreground select-none"
             >
               <input
                 id="login-remember"
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="h-4 w-4 cursor-pointer rounded border-zinc-700 bg-zinc-950 text-red-600 accent-red-600 focus:ring-red-600"
+                className="h-4 w-4 cursor-pointer rounded border-border bg-background text-red-600 accent-red-600 focus:ring-red-600"
               />
               Lembrar meu e-mail neste dispositivo
             </label>
@@ -216,7 +216,7 @@ export default function Login() {
             </Button>
           </form>
 
-          <p className="text-center text-xs text-zinc-500">
+          <p className="text-center text-xs text-muted-foreground">
             Problemas para acessar? Contate o administrador do sistema.
           </p>
         </CardContent>

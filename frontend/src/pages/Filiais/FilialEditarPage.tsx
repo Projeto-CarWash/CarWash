@@ -107,7 +107,7 @@ export function FilialEditarPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-full items-center justify-center text-zinc-500">
+      <div className="flex h-full items-center justify-center text-muted-foreground">
         <Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden="true" />
         Carregando filial...
       </div>
@@ -131,7 +131,7 @@ export function FilialEditarPage() {
           type="button"
           variant="outline"
           onClick={() => void navigate('/filiais')}
-          className="mt-4 h-9 rounded-full border-zinc-700/60 bg-transparent px-4 text-sm text-zinc-300 hover:bg-zinc-800/50 hover:text-zinc-100"
+          className="mt-4 h-9 rounded-full border-border bg-transparent px-4 text-sm text-foreground hover:bg-accent hover:text-foreground"
         >
           <ArrowLeft className="mr-1 h-4 w-4" aria-hidden="true" /> Voltar
         </Button>
@@ -145,7 +145,7 @@ export function FilialEditarPage() {
         <div
           role="status"
           aria-live="polite"
-          className="fixed right-5 top-5 z-[600] flex items-center gap-3 rounded-lg border border-green-500/30 bg-zinc-950 px-4 py-3 text-sm text-green-400 shadow-xl shadow-black/60 duration-300 animate-in fade-in slide-in-from-top-5"
+          className="fixed right-5 top-5 z-[600] flex items-center gap-3 rounded-lg border border-green-500/30 bg-background px-4 py-3 text-sm text-green-400 shadow-xl shadow-black/60 duration-300 animate-in fade-in slide-in-from-top-5"
         >
           <span className="flex h-5 w-5 items-center justify-center rounded-full bg-green-500/20 text-green-500">
             <Check className="h-3 w-3" />
@@ -163,8 +163,8 @@ export function FilialEditarPage() {
             <Building2 className="h-5 w-5" />
           </span>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-zinc-50">Editar filial</h1>
-            <p className="mt-1 text-sm text-zinc-400">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Editar filial</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
               Ajuste a capacidade e o status operacional da unidade.
             </p>
           </div>
@@ -173,16 +173,16 @@ export function FilialEditarPage() {
           type="button"
           variant="outline"
           onClick={() => void navigate('/filiais')}
-          className="h-9 rounded-full border-zinc-700/60 bg-transparent px-4 text-sm text-zinc-300 hover:bg-zinc-800/50 hover:text-zinc-100"
+          className="h-9 rounded-full border-border bg-transparent px-4 text-sm text-foreground hover:bg-accent hover:text-foreground"
         >
           <ArrowLeft className="mr-1 h-4 w-4" aria-hidden="true" /> Voltar
         </Button>
       </div>
 
-      <Card className="max-w-3xl border border-zinc-800/60 bg-zinc-900/30">
+      <Card className="max-w-3xl border border-border bg-card">
         <CardHeader>
-          <CardTitle className="text-lg text-zinc-100">{filial.nome}</CardTitle>
-          <CardDescription className="text-zinc-400">
+          <CardTitle className="text-lg text-foreground">{filial.nome}</CardTitle>
+          <CardDescription className="text-muted-foreground">
             Apenas células ativas e status podem ser alterados nesta tela.
           </CardDescription>
         </CardHeader>
@@ -207,11 +207,11 @@ export function FilialEditarPage() {
           )}
 
           {/* Status operacional (somente leitura) */}
-          <div className="mb-6 rounded-xl border border-zinc-800/60 bg-zinc-950/40 px-4 py-3">
-            <p className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">STATUS</p>
+          <div className="mb-6 rounded-xl border border-border bg-background px-4 py-3">
+            <p className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground">STATUS</p>
             <span
               className={`mt-1 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                filial.ativa ? 'bg-green-500/10 text-green-400' : 'bg-zinc-800/50 text-zinc-500'
+                filial.ativa ? 'bg-green-500/10 text-green-400' : 'bg-muted text-muted-foreground'
               }`}
             >
               {filial.ativa ? 'Ativa' : 'Inativa'}
@@ -246,7 +246,7 @@ export function FilialEditarPage() {
                 variant="outline"
                 onClick={() => void navigate('/filiais')}
                 disabled={salvando}
-                className="h-10 rounded-full border-zinc-700/60 bg-transparent px-5 text-sm text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200"
+                className="h-10 rounded-full border-border bg-transparent px-5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
               >
                 Cancelar
               </Button>

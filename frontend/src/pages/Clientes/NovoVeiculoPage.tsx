@@ -259,7 +259,7 @@ export function NovoVeiculoPage() {
     : clientes;
 
   if (carregandoCliente && !selectedCliente && !globalError) {
-    return <div className="px-8 py-8 text-sm text-zinc-500">Carregando…</div>;
+    return <div className="px-8 py-8 text-sm text-muted-foreground">Carregando…</div>;
   }
 
   return (
@@ -269,7 +269,7 @@ export function NovoVeiculoPage() {
         <div
           role="status"
           aria-live="polite"
-          className="fixed right-5 top-5 z-[600] flex items-center gap-3 rounded-lg border border-green-500/30 bg-zinc-950 px-4 py-3 text-sm text-green-400 shadow-xl shadow-black/60 animate-in fade-in slide-in-from-top-5 duration-300"
+          className="fixed right-5 top-5 z-[600] flex items-center gap-3 rounded-lg border border-green-500/30 bg-background px-4 py-3 text-sm text-green-400 shadow-xl shadow-black/60 animate-in fade-in slide-in-from-top-5 duration-300"
         >
           <span className="flex h-5 w-5 items-center justify-center rounded-full bg-green-500/20 text-green-500">
             <Check className="h-3 w-3" />
@@ -287,8 +287,8 @@ export function NovoVeiculoPage() {
             <Car className="h-5 w-5" />
           </span>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-zinc-50">Novo veículo</h1>
-            <p className="mt-1 text-sm text-zinc-400">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Novo veículo</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
               Cadastre um veículo para um cliente existente no sistema.
             </p>
           </div>
@@ -304,17 +304,17 @@ export function NovoVeiculoPage() {
             }
           }}
           disabled={isSubmitting}
-          className="h-9 rounded-full border-zinc-700/60 bg-transparent px-4 text-sm text-zinc-300 hover:bg-zinc-800/50 hover:text-zinc-100"
+          className="h-9 rounded-full border-border bg-transparent px-4 text-sm text-foreground hover:bg-accent hover:text-foreground"
         >
           <ArrowLeft className="mr-1 h-4 w-4" aria-hidden="true" />
           Voltar
         </Button>
       </div>
 
-      <Card className="border border-zinc-800/60 bg-zinc-900/30">
+      <Card className="border border-border bg-card">
         <CardHeader>
-          <CardTitle className="text-lg text-zinc-100">Dados do veículo</CardTitle>
-          <CardDescription className="text-zinc-400">
+          <CardTitle className="text-lg text-foreground">Dados do veículo</CardTitle>
+          <CardDescription className="text-muted-foreground">
             Todos os campos são validados conforme as regras de negócio do CarWash.
           </CardDescription>
         </CardHeader>
@@ -346,11 +346,11 @@ export function NovoVeiculoPage() {
           >
             {/* Cliente (Dropdown/Autocomplete) */}
             <div className="flex flex-col gap-2 md:col-span-2 relative" ref={dropdownRef}>
-              <Label htmlFor="veiculo-cliente-search" className="text-zinc-300">
+              <Label htmlFor="veiculo-cliente-search" className="text-foreground">
                 Cliente
               </Label>
               <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-zinc-500" />
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="veiculo-cliente-search"
                   type="text"
@@ -367,18 +367,18 @@ export function NovoVeiculoPage() {
                   }}
                   aria-invalid={!!errors.clienteId}
                   aria-describedby={errors.clienteId ? 'veiculo-cliente-error' : undefined}
-                  className={`h-10 rounded-lg border pl-9 pr-10 text-sm text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-0 ${
+                  className={`h-10 rounded-lg border pl-9 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-0 ${
                     selectedCliente
-                      ? 'bg-zinc-800/50 text-zinc-400 cursor-not-allowed border-zinc-700/60 focus-visible:border-zinc-700/60'
+                      ? 'bg-muted text-muted-foreground cursor-not-allowed border-border focus-visible:border-ring'
                       : errors.clienteId
                         ? 'border-red-500/60 bg-red-950/20 focus-visible:border-red-500'
-                        : 'border-zinc-700/60 bg-zinc-950/40 focus-visible:border-zinc-600'
+                        : 'border-border bg-background focus-visible:border-ring'
                   }`}
                 />
                 {selectedCliente ? (
-                  <Lock className="absolute right-3 top-3 h-4 w-4 text-zinc-600 pointer-events-none" />
+                  <Lock className="absolute right-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none" />
                 ) : (
-                  <ChevronDown className="absolute right-3 top-3 h-4 w-4 text-zinc-500 pointer-events-none" />
+                  <ChevronDown className="absolute right-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none" />
                 )}
               </div>
 
@@ -390,7 +390,7 @@ export function NovoVeiculoPage() {
 
               {/* Lista flutuante do Autocomplete */}
               {isOpen && (
-                <div className="absolute top-[72px] left-0 right-0 z-50 max-h-60 overflow-y-auto rounded-lg border border-zinc-800 bg-zinc-950 shadow-xl">
+                <div className="absolute top-[72px] left-0 right-0 z-50 max-h-60 overflow-y-auto rounded-lg border border-border bg-background shadow-xl">
                   {filteredClientes.length > 0 ? (
                     filteredClientes.map((c) => (
                       <button
@@ -402,11 +402,11 @@ export function NovoVeiculoPage() {
                           form.setValue('clienteId', c.id, { shouldValidate: true });
                           setIsOpen(false);
                         }}
-                        className="flex w-full items-center justify-between px-4 py-2.5 text-left text-sm text-zinc-300 hover:bg-zinc-900 transition-colors"
+                        className="flex w-full items-center justify-between px-4 py-2.5 text-left text-sm text-foreground hover:bg-accent transition-colors"
                       >
                         <div>
-                          <p className="font-semibold text-zinc-200">{c.nome}</p>
-                          <p className="text-xs text-zinc-500">
+                          <p className="font-semibold text-foreground">{c.nome}</p>
+                          <p className="text-xs text-muted-foreground">
                             {c.cpf ? `CPF: ${c.cpf}` : c.cnpj ? `CNPJ: ${c.cnpj}` : 'Sem documento'}
                           </p>
                         </div>
@@ -414,7 +414,7 @@ export function NovoVeiculoPage() {
                       </button>
                     ))
                   ) : (
-                    <div className="px-4 py-3 text-sm text-zinc-500 italic">
+                    <div className="px-4 py-3 text-sm text-muted-foreground italic">
                       Nenhum cliente encontrado
                     </div>
                   )}
@@ -424,7 +424,7 @@ export function NovoVeiculoPage() {
 
             {/* Placa */}
             <div className="flex flex-col gap-2">
-              <Label htmlFor="veiculo-placa" className="text-zinc-300">
+              <Label htmlFor="veiculo-placa" className="text-foreground">
                 Placa
               </Label>
               <Controller
@@ -448,10 +448,10 @@ export function NovoVeiculoPage() {
                       aria-describedby={
                         fieldState.error ? 'veiculo-placa-error' : 'veiculo-placa-hint'
                       }
-                      className={`h-10 rounded-lg border px-3 text-sm text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-0 ${
+                      className={`h-10 rounded-lg border px-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-0 ${
                         fieldState.error
                           ? 'border-red-500/60 bg-red-950/20 focus-visible:border-red-500'
-                          : 'border-zinc-700/60 bg-zinc-950/40 focus-visible:border-zinc-600'
+                          : 'border-border bg-background focus-visible:border-ring'
                       }`}
                     />
                     {fieldState.error ? (
@@ -459,7 +459,7 @@ export function NovoVeiculoPage() {
                         {fieldState.error.message}
                       </p>
                     ) : (
-                      <p id="veiculo-placa-hint" className="text-xs text-zinc-500">
+                      <p id="veiculo-placa-hint" className="text-xs text-muted-foreground">
                         Formatos aceitos: AAA0000 ou AAA0A00.
                       </p>
                     )}
@@ -470,7 +470,7 @@ export function NovoVeiculoPage() {
 
             {/* Fabricante */}
             <div className="flex flex-col gap-2">
-              <Label htmlFor="veiculo-fabricante" className="text-zinc-300">
+              <Label htmlFor="veiculo-fabricante" className="text-foreground">
                 Fabricante
               </Label>
               <Controller
@@ -492,10 +492,10 @@ export function NovoVeiculoPage() {
                       ref={field.ref}
                       aria-invalid={!!fieldState.error}
                       aria-describedby={fieldState.error ? 'veiculo-fabricante-error' : undefined}
-                      className={`h-10 rounded-lg border px-3 text-sm text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-0 ${
+                      className={`h-10 rounded-lg border px-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-0 ${
                         fieldState.error
                           ? 'border-red-500/60 bg-red-950/20 focus-visible:border-red-500'
-                          : 'border-zinc-700/60 bg-zinc-950/40 focus-visible:border-zinc-600'
+                          : 'border-border bg-background focus-visible:border-ring'
                       }`}
                     />
                     {fieldState.error && (
@@ -514,7 +514,7 @@ export function NovoVeiculoPage() {
 
             {/* Modelo */}
             <div className="flex flex-col gap-2">
-              <Label htmlFor="veiculo-modelo" className="text-zinc-300">
+              <Label htmlFor="veiculo-modelo" className="text-foreground">
                 Modelo
               </Label>
               <Controller
@@ -536,10 +536,10 @@ export function NovoVeiculoPage() {
                       ref={field.ref}
                       aria-invalid={!!fieldState.error}
                       aria-describedby={fieldState.error ? 'veiculo-modelo-error' : undefined}
-                      className={`h-10 rounded-lg border px-3 text-sm text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-0 ${
+                      className={`h-10 rounded-lg border px-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-0 ${
                         fieldState.error
                           ? 'border-red-500/60 bg-red-950/20 focus-visible:border-red-500'
-                          : 'border-zinc-700/60 bg-zinc-950/40 focus-visible:border-zinc-600'
+                          : 'border-border bg-background focus-visible:border-ring'
                       }`}
                     />
                     {fieldState.error && (
@@ -554,7 +554,7 @@ export function NovoVeiculoPage() {
 
             {/* Cor */}
             <div className="flex flex-col gap-2">
-              <Label htmlFor="veiculo-cor" className="text-zinc-300">
+              <Label htmlFor="veiculo-cor" className="text-foreground">
                 Cor Predominante
               </Label>
               <Controller
@@ -578,8 +578,8 @@ export function NovoVeiculoPage() {
                             }}
                             className={`group flex flex-col items-center gap-1.5 rounded-xl p-2 transition-all ${
                               field.value === c.hex || field.value === c.name
-                                ? 'bg-zinc-800 ring-2 ring-red-500/60'
-                                : 'hover:bg-zinc-800/50'
+                                ? 'bg-muted ring-2 ring-red-500/60'
+                                : 'hover:bg-accent'
                             }`}
                             title={c.name}
                           >
@@ -593,7 +593,7 @@ export function NovoVeiculoPage() {
                                     : 'transparent',
                               }}
                             />
-                            <span className="text-[9px] font-medium tracking-wider text-zinc-500">
+                            <span className="text-[9px] font-medium tracking-wider text-muted-foreground">
                               {c.name}
                             </span>
                           </button>
@@ -601,16 +601,16 @@ export function NovoVeiculoPage() {
                       </div>
 
                       {field.value && selectedCor && (
-                        <div className="flex items-center gap-2 rounded-lg border border-zinc-800/60 bg-zinc-900/40 p-3 w-fit">
+                        <div className="flex items-center gap-2 rounded-lg border border-border bg-card p-3 w-fit">
                           <div
-                            className="h-6 w-6 rounded-full border border-zinc-700"
+                            className="h-6 w-6 rounded-full border border-border"
                             style={{ backgroundColor: selectedCor.hex }}
                           />
                           <div>
-                            <p className="text-[9px] tracking-wider text-zinc-500">SELECIONADA</p>
-                            <p className="text-sm font-semibold text-zinc-200">
+                            <p className="text-[9px] tracking-wider text-muted-foreground">SELECIONADA</p>
+                            <p className="text-sm font-semibold text-foreground">
                               {selectedCor.name}{' '}
-                              <span className="font-normal text-zinc-500">· {selectedCor.hex}</span>
+                              <span className="font-normal text-muted-foreground">· {selectedCor.hex}</span>
                             </p>
                           </div>
                         </div>
@@ -640,7 +640,7 @@ export function NovoVeiculoPage() {
                   }
                 }}
                 disabled={isSubmitting}
-                className="h-10 rounded-full border-zinc-700/60 bg-transparent px-5 text-sm text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200"
+                className="h-10 rounded-full border-border bg-transparent px-5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
               >
                 Cancelar
               </Button>

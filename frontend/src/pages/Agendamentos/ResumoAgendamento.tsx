@@ -24,24 +24,24 @@ export function ResumoAgendamento({ servicosSelecionados }: ResumoAgendamentoPro
   return (
     <aside
       aria-label="Resumo do agendamento"
-      className="rounded-2xl border border-zinc-800/60 bg-zinc-900/40 p-5"
+      className="rounded-2xl border border-border bg-card p-5"
     >
-      <h2 className="text-sm font-semibold tracking-wide text-zinc-200">Resumo estimado</h2>
-      <p className="mt-1 text-xs text-zinc-500">
+      <h2 className="text-sm font-semibold tracking-wide text-foreground">Resumo estimado</h2>
+      <p className="mt-1 text-xs text-muted-foreground">
         Valores calculados a partir dos serviços. O total definitivo é confirmado pelo servidor.
       </p>
 
       {vazio ? (
-        <p className="mt-4 text-sm text-zinc-500">Selecione serviços para ver os totais.</p>
+        <p className="mt-4 text-sm text-muted-foreground">Selecione serviços para ver os totais.</p>
       ) : (
         <ul className="mt-4 space-y-2" aria-live="polite">
           {servicosSelecionados.map((servico) => (
             <li
               key={servico.id}
-              className="flex items-center justify-between gap-3 text-sm text-zinc-300"
+              className="flex items-center justify-between gap-3 text-sm text-foreground"
             >
               <span className="min-w-0 truncate">{servico.nome}</span>
-              <span className="shrink-0 tabular-nums text-zinc-400">
+              <span className="shrink-0 tabular-nums text-muted-foreground">
                 {formatarReais(servico.precoBase)}
               </span>
             </li>
@@ -49,18 +49,18 @@ export function ResumoAgendamento({ servicosSelecionados }: ResumoAgendamentoPro
         </ul>
       )}
 
-      <div className="mt-4 space-y-2 border-t border-zinc-800/60 pt-4">
+      <div className="mt-4 space-y-2 border-t border-border pt-4">
         <div className="flex items-center justify-between text-sm">
-          <span className="flex items-center gap-2 text-zinc-400">
+          <span className="flex items-center gap-2 text-muted-foreground">
             <Clock className="h-4 w-4" aria-hidden="true" />
             Duração total
           </span>
-          <span data-testid="resumo-duracao" className="font-medium tabular-nums text-zinc-100">
+          <span data-testid="resumo-duracao" className="font-medium tabular-nums text-foreground">
             {formatarDuracao(duracaoTotal)}
           </span>
         </div>
         <div className="flex items-center justify-between text-sm">
-          <span className="flex items-center gap-2 text-zinc-400">
+          <span className="flex items-center gap-2 text-muted-foreground">
             <Receipt className="h-4 w-4" aria-hidden="true" />
             Valor total
           </span>

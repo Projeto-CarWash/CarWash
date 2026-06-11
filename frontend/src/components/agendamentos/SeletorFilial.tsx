@@ -64,13 +64,13 @@ export function SeletorFilial({
 
   return (
     <div className="space-y-1.5">
-      <Label htmlFor="ag-filial" className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">
+      <Label htmlFor="ag-filial" className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
         FILIAL <span className="text-red-500">*</span>
       </Label>
 
       {carregando && (
         <div
-          className="flex items-center gap-2 rounded-xl border border-zinc-800/40 bg-zinc-900/20 px-4 py-3 text-sm text-zinc-500"
+          className="flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-3 text-sm text-muted-foreground"
           aria-live="polite"
         >
           <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
@@ -106,7 +106,7 @@ export function SeletorFilial({
         <>
           <div className="relative">
             <Building2
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500"
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
               aria-hidden="true"
             />
             <select
@@ -118,11 +118,11 @@ export function SeletorFilial({
               aria-describedby={temErroValidacao ? erroIdRef : undefined}
               className={`h-10 w-full cursor-pointer appearance-none rounded-xl pl-9 pr-4 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50 disabled:cursor-not-allowed disabled:opacity-50 [color-scheme:dark] ${
                 temErroValidacao
-                  ? 'border border-red-500/60 bg-red-950/20 text-zinc-200'
-                  : 'border border-zinc-700/60 bg-zinc-900/50 text-zinc-200'
+                  ? 'border border-red-500/60 bg-red-950/20 text-foreground'
+                  : 'border border-border bg-card text-foreground'
               }`}
             >
-              <option value="" disabled className="text-zinc-600">
+              <option value="" disabled className="text-muted-foreground">
                 Selecione uma filial
               </option>
               {filiais.map((f) => (

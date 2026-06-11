@@ -28,7 +28,7 @@ export function FiliaisListaPage() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between border-b border-zinc-800/60 bg-zinc-950/50 px-8 py-6">
+      <div className="flex items-center justify-between border-b border-border bg-background px-8 py-6">
         <div className="flex items-center gap-3">
           <span
             className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-600/10 text-red-500"
@@ -37,8 +37,8 @@ export function FiliaisListaPage() {
             <Building2 className="h-5 w-5" />
           </span>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-zinc-50">Filiais</h1>
-            <p className="text-sm text-zinc-400">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Filiais</h1>
+            <p className="text-sm text-muted-foreground">
               Unidades operacionais disponíveis para agendamento.
             </p>
           </div>
@@ -52,7 +52,7 @@ export function FiliaisListaPage() {
         </Button>
       </div>
 
-      <div className="flex-1 overflow-auto bg-zinc-950 p-8">
+      <div className="flex-1 overflow-auto bg-background p-8">
         {isError && (
           <div
             role="alert"
@@ -75,29 +75,29 @@ export function FiliaisListaPage() {
           </div>
         )}
 
-        <div className="overflow-hidden rounded-xl border border-zinc-800/60 bg-zinc-900/30 shadow-xl">
+        <div className="overflow-hidden rounded-xl border border-border bg-card shadow-xl">
           <Table>
-            <TableHeader className="bg-zinc-900/80">
-              <TableRow className="border-zinc-800/60 hover:bg-transparent">
-                <TableHead className="w-[260px] text-zinc-400">Nome</TableHead>
-                <TableHead className="text-zinc-400">Código</TableHead>
-                <TableHead className="text-zinc-400">Cidade</TableHead>
-                <TableHead className="w-[80px] text-zinc-400">UF</TableHead>
-                <TableHead className="w-[120px] text-zinc-400">Status</TableHead>
-                <TableHead className="w-[80px] text-right text-zinc-400">Ações</TableHead>
+            <TableHeader className="bg-card">
+              <TableRow className="border-border hover:bg-transparent">
+                <TableHead className="w-[260px] text-muted-foreground">Nome</TableHead>
+                <TableHead className="text-muted-foreground">Código</TableHead>
+                <TableHead className="text-muted-foreground">Cidade</TableHead>
+                <TableHead className="w-[80px] text-muted-foreground">UF</TableHead>
+                <TableHead className="w-[120px] text-muted-foreground">Status</TableHead>
+                <TableHead className="w-[80px] text-right text-muted-foreground">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-32 text-center text-zinc-500">
+                  <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
                     <Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin" aria-hidden="true" />
                     Carregando filiais...
                   </TableCell>
                 </TableRow>
               ) : filiais.length === 0 && !isError ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-32 text-center text-zinc-500">
+                  <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
                     Nenhuma filial cadastrada.
                   </TableCell>
                 </TableRow>
@@ -105,20 +105,20 @@ export function FiliaisListaPage() {
                 filiais.map((filial) => (
                   <TableRow
                     key={filial.id}
-                    className="border-zinc-800/40 transition-colors hover:bg-zinc-800/30"
+                    className="border-border transition-colors hover:bg-accent"
                   >
-                    <TableCell className="font-medium text-zinc-200">{filial.nome}</TableCell>
-                    <TableCell className="font-mono text-zinc-300">
+                    <TableCell className="font-medium text-foreground">{filial.nome}</TableCell>
+                    <TableCell className="font-mono text-foreground">
                       {filial.codigo ?? '—'}
                     </TableCell>
-                    <TableCell className="text-zinc-300">{filial.cidade ?? '—'}</TableCell>
-                    <TableCell className="text-zinc-300">{filial.uf ?? '—'}</TableCell>
+                    <TableCell className="text-foreground">{filial.cidade ?? '—'}</TableCell>
+                    <TableCell className="text-foreground">{filial.uf ?? '—'}</TableCell>
                     <TableCell>
                       <span
                         className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
                           filial.ativo
                             ? 'bg-green-500/10 text-green-400'
-                            : 'bg-zinc-800/50 text-zinc-500'
+                            : 'bg-muted text-muted-foreground'
                         }`}
                       >
                         {filial.ativo ? 'Ativa' : 'Inativa'}
@@ -129,7 +129,7 @@ export function FiliaisListaPage() {
                         variant="ghost"
                         size="icon"
                         onClick={() => void navigate(`/filiais/${filial.id}/editar`)}
-                        className="h-8 w-8 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
+                        className="h-8 w-8 text-muted-foreground hover:bg-accent hover:text-foreground"
                       >
                         <Edit2 className="h-4 w-4" />
                         <span className="sr-only">Editar {filial.nome}</span>
@@ -143,7 +143,7 @@ export function FiliaisListaPage() {
         </div>
 
         {isRefetching && (
-          <p className="mt-3 flex items-center gap-2 text-xs text-zinc-500" aria-live="polite">
+          <p className="mt-3 flex items-center gap-2 text-xs text-muted-foreground" aria-live="polite">
             <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" /> Atualizando lista...
           </p>
         )}

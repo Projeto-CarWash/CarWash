@@ -112,8 +112,8 @@ export function UsuariosListaPage() {
     <div className="px-8 py-8">
       <div className="mb-6 flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-zinc-50">Usuários internos</h1>
-          <p className="mt-1 text-sm text-zinc-500">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Usuários internos</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
             {total === 0 ? 'Nenhum usuário cadastrado' : `${total} usuário(s) no total`}
           </p>
         </div>
@@ -129,7 +129,7 @@ export function UsuariosListaPage() {
       <div className="mb-4 flex items-center gap-3">
         <div className="relative max-w-md flex-1">
           <Search
-            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500"
+            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
             aria-hidden="true"
           />
           <Input
@@ -140,13 +140,13 @@ export function UsuariosListaPage() {
               setBusca(e.target.value);
             }}
             placeholder="Buscar por nome ou e-mail…"
-            className="h-10 rounded-xl border-zinc-700/60 bg-zinc-900/50 pl-9 text-sm text-zinc-200 placeholder:text-zinc-600 focus-visible:ring-0"
+            className="h-10 rounded-xl border-border bg-card pl-9 text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-0"
           />
         </div>
 
         {/* ── Filtro por status ── */}
-        <div className="flex items-center gap-1.5 rounded-xl border border-zinc-700/60 bg-zinc-900/50 p-1">
-          <Filter className="ml-2 h-3.5 w-3.5 text-zinc-500" aria-hidden="true" />
+        <div className="flex items-center gap-1.5 rounded-xl border border-border bg-card p-1">
+          <Filter className="ml-2 h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
           {(['todos', 'ativo', 'inativo'] as FiltroStatus[]).map((f) => (
             <button
               key={f}
@@ -157,8 +157,8 @@ export function UsuariosListaPage() {
               }}
               className={`rounded-lg px-3 py-1.5 text-[11px] font-semibold tracking-wide transition-colors ${
                 filtroStatus === f
-                  ? 'bg-zinc-700/60 text-zinc-100'
-                  : 'text-zinc-500 hover:text-zinc-300'
+                  ? 'bg-muted text-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               {f === 'todos' ? 'Todos' : f === 'ativo' ? 'Ativos' : 'Inativos'}
@@ -176,9 +176,9 @@ export function UsuariosListaPage() {
         </div>
       )}
 
-      <div className="overflow-hidden rounded-2xl border border-zinc-800/60 bg-zinc-900/30">
+      <div className="overflow-hidden rounded-2xl border border-border bg-card">
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-zinc-800/60 bg-zinc-900/60 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
+          <thead className="border-b border-border bg-card text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
             <tr>
               <th className="px-4 py-3">Nome</th>
               <th className="px-4 py-3">E-mail</th>
@@ -187,35 +187,35 @@ export function UsuariosListaPage() {
               <th className="px-4 py-3 text-center">Ações</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-zinc-800/60">
+          <tbody className="divide-y divide-border">
             {carregando && (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-zinc-500">
+                <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
                   Carregando…
                 </td>
               </tr>
             )}
             {!carregando && itens.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-zinc-500">
+                <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
                   Nenhum usuário encontrado.
                 </td>
               </tr>
             )}
             {!carregando &&
               itens.map((u) => (
-                <tr key={u.id} className="text-zinc-200 hover:bg-zinc-800/30">
+                <tr key={u.id} className="text-foreground hover:bg-accent">
                   <td className="px-4 py-3">
-                    <span className="font-medium text-zinc-100">{u.nome}</span>
+                    <span className="font-medium text-foreground">{u.nome}</span>
                   </td>
-                  <td className="px-4 py-3 text-zinc-400">{u.email}</td>
-                  <td className="px-4 py-3 text-zinc-400">{u.perfil}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{u.email}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{u.perfil}</td>
                   <td className="px-4 py-3">
                     <span
                       className={
                         u.ativo
                           ? 'rounded-full bg-green-500/10 px-2 py-1 text-[10px] font-bold tracking-[0.15em] text-green-400'
-                          : 'rounded-full bg-zinc-700/40 px-2 py-1 text-[10px] font-bold tracking-[0.15em] text-zinc-500'
+                          : 'rounded-full bg-muted px-2 py-1 text-[10px] font-bold tracking-[0.15em] text-muted-foreground'
                       }
                     >
                       {u.ativo ? 'ATIVO' : 'INATIVO'}
@@ -229,7 +229,7 @@ export function UsuariosListaPage() {
                         size="icon"
                         onClick={() => void navigate(`/usuarios/${u.id}`)}
                         title="Visualizar usuário"
-                        className="h-8 w-8 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
+                        className="h-8 w-8 text-muted-foreground hover:bg-accent hover:text-foreground"
                       >
                         <Eye className="h-4 w-4" />
                         <span className="sr-only">Visualizar {u.nome}</span>
@@ -240,7 +240,7 @@ export function UsuariosListaPage() {
                         size="icon"
                         onClick={() => void navigate(`/usuarios/${u.id}`)}
                         title="Editar usuário"
-                        className="h-8 w-8 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
+                        className="h-8 w-8 text-muted-foreground hover:bg-accent hover:text-foreground"
                       >
                         <Pencil className="h-4 w-4" />
                         <span className="sr-only">Editar {u.nome}</span>
@@ -251,7 +251,7 @@ export function UsuariosListaPage() {
                         size="icon"
                         onClick={() => abrirModalStatus(u)}
                         title={u.ativo ? 'Inativar usuário' : 'Ativar usuário'}
-                        className="h-8 w-8 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
+                        className="h-8 w-8 text-muted-foreground hover:bg-accent hover:text-foreground"
                         aria-label={`${u.ativo ? 'Inativar' : 'Ativar'} ${u.nome}`}
                       >
                         <Power className="h-4 w-4" />
@@ -265,7 +265,7 @@ export function UsuariosListaPage() {
       </div>
 
       <div className="mt-4 flex items-center justify-between">
-        <span className="text-xs text-zinc-500">
+        <span className="text-xs text-muted-foreground">
           Página {pagina} de {totalPaginas}
         </span>
         <div className="flex items-center gap-2">
@@ -274,7 +274,7 @@ export function UsuariosListaPage() {
             variant="outline"
             disabled={pagina <= 1}
             onClick={() => setPagina((p) => Math.max(1, p - 1))}
-            className="h-9 rounded-full border-zinc-700/60 bg-transparent px-3 text-sm disabled:opacity-40"
+            className="h-9 rounded-full border-border bg-transparent px-3 text-sm disabled:opacity-40"
           >
             <ChevronLeft className="h-4 w-4" /> Anterior
           </Button>
@@ -283,7 +283,7 @@ export function UsuariosListaPage() {
             variant="outline"
             disabled={pagina >= totalPaginas}
             onClick={() => setPagina((p) => p + 1)}
-            className="h-9 rounded-full border-zinc-700/60 bg-transparent px-3 text-sm disabled:opacity-40"
+            className="h-9 rounded-full border-border bg-transparent px-3 text-sm disabled:opacity-40"
           >
             Próxima <ChevronRight className="h-4 w-4" />
           </Button>
@@ -302,12 +302,12 @@ export function UsuariosListaPage() {
           }
         }}
       >
-        <DialogContent className="sm:max-w-[425px] bg-zinc-950 border-zinc-800">
+        <DialogContent className="sm:max-w-[425px] bg-background border-border">
           <DialogHeader>
-            <DialogTitle className="text-zinc-100">
+            <DialogTitle className="text-foreground">
               {usuarioAtivacao?.ativo ? 'Inativar usuário' : 'Ativar usuário'}
             </DialogTitle>
-            <DialogDescription className="text-zinc-400">
+            <DialogDescription className="text-muted-foreground">
               {usuarioAtivacao?.ativo
                 ? `Deseja realmente inativar o usuário "${usuarioAtivacao?.nome}"? O acesso dele ao sistema será bloqueado.`
                 : `Deseja reativar o usuário "${usuarioAtivacao?.nome}"? O acesso dele ao sistema será restaurado.`}
@@ -331,7 +331,7 @@ export function UsuariosListaPage() {
                 setErroStatus(null);
               }}
               disabled={salvandoStatus}
-              className="border-zinc-700 bg-transparent text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100"
+              className="border-border bg-transparent text-foreground hover:bg-accent hover:text-foreground"
             >
               Cancelar
             </Button>

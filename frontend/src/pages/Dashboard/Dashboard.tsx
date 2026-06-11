@@ -19,7 +19,7 @@ export default function Dashboard() {
   return (
     <DashboardLayout>
       <div className="px-8 py-8">
-        <Card className="border border-zinc-800/60 bg-zinc-900/30">
+        <Card className="border border-border bg-card">
           <CardHeader>
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-3">
@@ -30,10 +30,10 @@ export default function Dashboard() {
                   <LayoutDashboard className="h-5 w-5" />
                 </span>
                 <div>
-                  <CardTitle className="text-lg text-zinc-100">
+                  <CardTitle className="text-lg text-foreground">
                     Bem-vindo{user?.nome ? `, ${user.nome}` : ''}
                   </CardTitle>
-                  <CardDescription className="text-zinc-400">
+                  <CardDescription className="text-muted-foreground">
                     Perfil: {user?.perfil ?? '—'}
                   </CardDescription>
                 </div>
@@ -43,7 +43,7 @@ export default function Dashboard() {
                 type="button"
                 variant="outline"
                 onClick={handleLogout}
-                className="h-9 rounded-full border-zinc-700/60 bg-transparent px-4 text-sm text-zinc-300 hover:bg-zinc-800/50 hover:text-zinc-100"
+                className="h-9 rounded-full border-border bg-transparent px-4 text-sm text-foreground hover:bg-accent hover:text-foreground"
               >
                 <LogOut className="mr-1 h-4 w-4" aria-hidden="true" />
                 Sair
@@ -51,7 +51,7 @@ export default function Dashboard() {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-zinc-400">
+            <p className="text-sm text-muted-foreground">
               Login realizado com sucesso. Os módulos de gestão (clientes, veículos, agenda) serão
               integrados nesta área conforme avançamos no roadmap.
             </p>

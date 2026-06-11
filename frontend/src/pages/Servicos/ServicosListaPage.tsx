@@ -76,10 +76,10 @@ export function ServicosListaPage() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between border-b border-zinc-800/60 bg-zinc-950/50 px-8 py-6">
+      <div className="flex items-center justify-between border-b border-border bg-background px-8 py-6">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-50">Serviços</h1>
-          <p className="text-sm text-zinc-400">Catálogo de serviços oferecidos pelo CarWash.</p>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Serviços</h1>
+          <p className="text-sm text-muted-foreground">Catálogo de serviços oferecidos pelo CarWash.</p>
         </div>
         <Button
           type="button"
@@ -90,7 +90,7 @@ export function ServicosListaPage() {
         </Button>
       </div>
 
-      <div className="flex-1 overflow-auto bg-zinc-950 p-8">
+      <div className="flex-1 overflow-auto bg-background p-8">
         {erro && (
           <div className="mb-6 flex items-start gap-3 rounded-xl border border-red-500/30 bg-red-950/30 px-4 py-3">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
@@ -98,28 +98,28 @@ export function ServicosListaPage() {
           </div>
         )}
 
-        <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 shadow-xl overflow-hidden">
+        <div className="rounded-xl border border-border bg-card shadow-xl overflow-hidden">
           <Table>
-            <TableHeader className="bg-zinc-900/80">
-              <TableRow className="border-zinc-800/60 hover:bg-transparent">
-                <TableHead className="w-[300px] text-zinc-400">Nome</TableHead>
-                <TableHead className="text-zinc-400">Preço</TableHead>
-                <TableHead className="text-zinc-400">Duração</TableHead>
-                <TableHead className="w-[120px] text-zinc-400">Status</TableHead>
-                <TableHead className="w-[100px] text-right text-zinc-400">Ações</TableHead>
+            <TableHeader className="bg-card">
+              <TableRow className="border-border hover:bg-transparent">
+                <TableHead className="w-[300px] text-muted-foreground">Nome</TableHead>
+                <TableHead className="text-muted-foreground">Preço</TableHead>
+                <TableHead className="text-muted-foreground">Duração</TableHead>
+                <TableHead className="w-[120px] text-muted-foreground">Status</TableHead>
+                <TableHead className="w-[100px] text-right text-muted-foreground">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {carregando ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-32 text-center text-zinc-500">
+                  <TableCell colSpan={5} className="h-32 text-center text-muted-foreground">
                     <Loader2 className="mx-auto h-5 w-5 animate-spin mb-2" />
                     Carregando serviços...
                   </TableCell>
                 </TableRow>
               ) : servicos.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-32 text-center text-zinc-500">
+                  <TableCell colSpan={5} className="h-32 text-center text-muted-foreground">
                     Nenhum serviço cadastrado.
                   </TableCell>
                 </TableRow>
@@ -127,22 +127,22 @@ export function ServicosListaPage() {
                 servicos.map((servico) => (
                   <TableRow
                     key={servico.id}
-                    className="border-zinc-800/40 hover:bg-zinc-800/30 transition-colors"
+                    className="border-border hover:bg-accent transition-colors"
                   >
-                    <TableCell className="font-medium text-zinc-200">{servico.nome}</TableCell>
-                    <TableCell className="text-zinc-300">
+                    <TableCell className="font-medium text-foreground">{servico.nome}</TableCell>
+                    <TableCell className="text-foreground">
                       {new Intl.NumberFormat('pt-BR', {
                         style: 'currency',
                         currency: 'BRL',
                       }).format(servico.preco)}
                     </TableCell>
-                    <TableCell className="text-zinc-300">{servico.duracaoMin} min</TableCell>
+                    <TableCell className="text-foreground">{servico.duracaoMin} min</TableCell>
                     <TableCell>
                       <span
                         className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
                           servico.ativo
                             ? 'bg-green-500/10 text-green-400'
-                            : 'bg-zinc-800/50 text-zinc-500'
+                            : 'bg-muted text-muted-foreground'
                         }`}
                       >
                         {servico.ativo ? 'Ativo' : 'Inativo'}
@@ -154,7 +154,7 @@ export function ServicosListaPage() {
                           variant="ghost"
                           size="icon"
                           onClick={() => void navigate(`/servicos/${servico.id}/editar`)}
-                          className="h-8 w-8 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
+                          className="h-8 w-8 text-muted-foreground hover:bg-accent hover:text-foreground"
                         >
                           <Edit2 className="h-4 w-4" />
                           <span className="sr-only">Editar</span>
@@ -163,7 +163,7 @@ export function ServicosListaPage() {
                           variant="ghost"
                           size="icon"
                           onClick={() => abrirModalStatus(servico)}
-                          className="h-8 w-8 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
+                          className="h-8 w-8 text-muted-foreground hover:bg-accent hover:text-foreground"
                         >
                           <Power className="h-4 w-4" />
                           <span className="sr-only">{servico.ativo ? 'Desativar' : 'Ativar'}</span>
@@ -179,12 +179,12 @@ export function ServicosListaPage() {
       </div>
 
       <Dialog open={modalAtivacaoAberto} onOpenChange={setModalAtivacaoAberto}>
-        <DialogContent className="sm:max-w-[425px] bg-zinc-950 border-zinc-800">
+        <DialogContent className="sm:max-w-[425px] bg-background border-border">
           <DialogHeader>
-            <DialogTitle className="text-zinc-100">
+            <DialogTitle className="text-foreground">
               {servicoAtivacao?.ativo ? 'Desativar serviço' : 'Ativar serviço'}
             </DialogTitle>
-            <DialogDescription className="text-zinc-400">
+            <DialogDescription className="text-muted-foreground">
               {servicoAtivacao?.ativo
                 ? `Deseja realmente desativar o serviço "${servicoAtivacao?.nome}"? Ele não estará mais disponível para novos agendamentos.`
                 : `Deseja reativar o serviço "${servicoAtivacao?.nome}"? Ele voltará a estar disponível no catálogo.`}
@@ -196,7 +196,7 @@ export function ServicosListaPage() {
               variant="outline"
               onClick={() => setModalAtivacaoAberto(false)}
               disabled={salvandoStatus}
-              className="border-zinc-700 bg-transparent text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100"
+              className="border-border bg-transparent text-foreground hover:bg-accent hover:text-foreground"
             >
               Cancelar
             </Button>

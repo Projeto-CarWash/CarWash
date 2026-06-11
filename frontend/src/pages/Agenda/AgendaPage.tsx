@@ -82,7 +82,7 @@ function ehDetalhado(item: AgendaItemSimples | AgendaItemDetalhado): item is Age
 }
 
 const classeCampo =
-  'h-10 rounded-lg border border-zinc-300 bg-white px-3 text-sm text-zinc-800 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none disabled:opacity-50 dark:border-zinc-700/60 dark:bg-zinc-950/40 dark:text-zinc-100';
+  'h-10 rounded-lg border border-border bg-white px-3 text-sm text-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none disabled:opacity-50 dark:border-zinc-700/60 dark:bg-zinc-950/40 dark:text-zinc-100';
 
 /**
  * Tela de visualização de agenda (RF009 / card 132).
@@ -413,10 +413,10 @@ export function AgendaPage() {
           <CalendarRange className="h-5 w-5" />
         </span>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground dark:text-zinc-50">
             Agenda
           </h1>
-          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="mt-1 text-sm text-muted-foreground dark:text-zinc-400">
             Visualize os agendamentos em formato simples ou detalhado (RF009).
           </p>
         </div>
@@ -426,12 +426,12 @@ export function AgendaPage() {
       <form
         onSubmit={handleBuscar}
         aria-label="Filtros da agenda"
-        className="mb-6 rounded-2xl border border-zinc-200/70 bg-white/60 p-4 dark:border-zinc-800/60 dark:bg-zinc-900/30"
+        className="mb-6 rounded-2xl border border-border bg-white/60 p-4 dark:border-zinc-800/60 dark:bg-zinc-900/30"
       >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {/* Período início */}
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="ag-inicio" className="text-zinc-600 dark:text-zinc-300">
+            <Label htmlFor="ag-inicio" className="text-muted-foreground dark:text-zinc-300">
               Início do período
             </Label>
             <Input
@@ -445,7 +445,7 @@ export function AgendaPage() {
 
           {/* Período fim */}
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="ag-fim" className="text-zinc-600 dark:text-zinc-300">
+            <Label htmlFor="ag-fim" className="text-muted-foreground dark:text-zinc-300">
               Fim do período
             </Label>
             <Input
@@ -459,7 +459,7 @@ export function AgendaPage() {
 
           {/* Filial */}
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="ag-filial" className="text-zinc-600 dark:text-zinc-300">
+            <Label htmlFor="ag-filial" className="text-muted-foreground dark:text-zinc-300">
               Filial
             </Label>
             {filiaisIndisponivel ? (
@@ -498,8 +498,8 @@ export function AgendaPage() {
 
           {/* Cliente (opcional) */}
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="ag-cliente" className="text-zinc-600 dark:text-zinc-300">
-              Cliente <span className="text-zinc-400">(opcional)</span>
+            <Label htmlFor="ag-cliente" className="text-muted-foreground dark:text-zinc-300">
+              Cliente <span className="text-muted-foreground">(opcional)</span>
             </Label>
             <select
               id="ag-cliente"
@@ -524,8 +524,8 @@ export function AgendaPage() {
 
           {/* Responsável (opcional) */}
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="ag-responsavel" className="text-zinc-600 dark:text-zinc-300">
-              Responsável <span className="text-zinc-400">(opcional)</span>
+            <Label htmlFor="ag-responsavel" className="text-muted-foreground dark:text-zinc-300">
+              Responsável <span className="text-muted-foreground">(opcional)</span>
             </Label>
             <Input
               id="ag-responsavel"
@@ -539,8 +539,8 @@ export function AgendaPage() {
 
           {/* Status (opcional) */}
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="ag-status" className="text-zinc-600 dark:text-zinc-300">
-              Status <span className="text-zinc-400">(opcional)</span>
+            <Label htmlFor="ag-status" className="text-muted-foreground dark:text-zinc-300">
+              Status <span className="text-muted-foreground">(opcional)</span>
             </Label>
             <select
               id="ag-status"
@@ -563,7 +563,7 @@ export function AgendaPage() {
           <div
             role="group"
             aria-label="Formato de visualização"
-            className="inline-flex rounded-full border border-zinc-300 p-0.5 dark:border-zinc-700/60"
+            className="inline-flex rounded-full border border-border p-0.5 dark:border-zinc-700/60"
           >
             <button
               type="button"
@@ -572,7 +572,7 @@ export function AgendaPage() {
               className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
                 formato === 'simples'
                   ? 'bg-red-600 text-white'
-                  : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+                  : 'text-muted-foreground hover:text-foreground dark:hover:text-foreground'
               }`}
             >
               Simples
@@ -584,7 +584,7 @@ export function AgendaPage() {
               className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
                 formato === 'detalhado'
                   ? 'bg-red-600 text-white'
-                  : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+                  : 'text-muted-foreground hover:text-foreground dark:hover:text-foreground'
               }`}
             >
               Detalhado
@@ -642,7 +642,7 @@ export function AgendaPage() {
         {consultou && agendaQuery.isLoading && (
           <div
             role="status"
-            className="flex items-center justify-center gap-2 rounded-2xl border border-zinc-200/70 bg-white/40 px-4 py-16 text-sm text-zinc-500 dark:border-zinc-800/60 dark:bg-zinc-900/20 dark:text-zinc-400"
+            className="flex items-center justify-center gap-2 rounded-2xl border border-border bg-white/40 px-4 py-16 text-sm text-muted-foreground dark:border-zinc-800/60 dark:bg-zinc-900/20 dark:text-zinc-400"
           >
             <Loader2 className="h-5 w-5 animate-spin text-red-500" aria-hidden="true" />
             Carregando agenda…
@@ -686,7 +686,7 @@ export function AgendaPage() {
 
         {consultou && agendaQuery.isSuccess && itens.length > 0 && (
           <>
-            <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">
+            <p className="mb-3 text-xs text-muted-foreground dark:text-zinc-400">
               {itens.length} agendamento(s) no período.
             </p>
             {formato === 'simples' ? (
@@ -755,7 +755,7 @@ export function AgendaPage() {
 
             {/* Dialog Content */}
             <div
-              className="relative z-10 mx-4 max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-zinc-200/70 bg-white p-6 shadow-2xl dark:border-zinc-800/60 dark:bg-zinc-900"
+              className="relative z-10 mx-4 max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-border bg-white p-6 shadow-2xl dark:border-zinc-800/60 dark:bg-zinc-900"
               role="dialog"
               aria-modal="true"
               aria-label="Detalhe do agendamento"
@@ -763,14 +763,14 @@ export function AgendaPage() {
               <button
                 type="button"
                 onClick={() => setItemSelecionado(null)}
-                className="absolute right-4 top-4 rounded-full p-1 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+                className="absolute right-4 top-4 rounded-full p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground dark:hover:bg-muted dark:hover:text-foreground"
                 aria-label="Fechar detalhe"
               >
                 <AlertCircle className="h-5 w-5 rotate-45" aria-hidden="true" />
               </button>
 
-              <div className="mb-4 flex items-center justify-between border-b border-zinc-200/60 pb-3 dark:border-zinc-800/40">
-                <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
+              <div className="mb-4 flex items-center justify-between border-b border-border pb-3 dark:border-zinc-800/40">
+                <h2 className="text-lg font-bold text-foreground dark:text-zinc-50">
                   Detalhe do Agendamento
                 </h2>
                 <span
@@ -786,28 +786,28 @@ export function AgendaPage() {
                 <AgendaItemDetalhadoCard item={itemSelecionado} />
               ) : (
                 <div className="space-y-3">
-                  <div className="rounded-xl border border-zinc-200/60 bg-zinc-50/50 p-4 dark:border-zinc-800/40 dark:bg-zinc-950/30">
-                    <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                  <div className="rounded-xl border border-border bg-muted p-4 dark:border-zinc-800/40 dark:bg-zinc-950/30">
+                    <p className="text-sm font-semibold text-foreground dark:text-zinc-50">
                       {itemSelecionado.titulo}
                     </p>
-                    <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                    <p className="mt-1 text-xs text-muted-foreground dark:text-zinc-400">
                       {itemSelecionado.servicosResumo}
                     </p>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="rounded-xl border border-zinc-200/60 bg-zinc-50/50 p-3 dark:border-zinc-800/40 dark:bg-zinc-950/30">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-zinc-400">
+                    <div className="rounded-xl border border-border bg-muted p-3 dark:border-zinc-800/40 dark:bg-zinc-950/30">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
                         Cliente
                       </p>
-                      <p className="text-sm text-zinc-700 dark:text-zinc-200">
+                      <p className="text-sm text-muted-foreground dark:text-zinc-200">
                         {itemSelecionado.clienteNome}
                       </p>
                     </div>
-                    <div className="rounded-xl border border-zinc-200/60 bg-zinc-50/50 p-3 dark:border-zinc-800/40 dark:bg-zinc-950/30">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-zinc-400">
+                    <div className="rounded-xl border border-border bg-muted p-3 dark:border-zinc-800/40 dark:bg-zinc-950/30">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
                         Placa
                       </p>
-                      <p className="font-mono text-sm text-zinc-700 dark:text-zinc-200">
+                      <p className="font-mono text-sm text-muted-foreground dark:text-zinc-200">
                         {itemSelecionado.veiculoPlaca}
                       </p>
                     </div>
@@ -816,12 +816,12 @@ export function AgendaPage() {
               )}
 
               {/* Ações do Agendamento */}
-              <div className="mt-6 flex flex-col gap-3 border-t border-zinc-200/60 pt-4 dark:border-zinc-800/40">
+              <div className="mt-6 flex flex-col gap-3 border-t border-border pt-4 dark:border-zinc-800/40">
                 {/* Se não editável e não cancelado, exibir motivo do bloqueio */}
                 {itemSelecionado.status !== 'AGENDADO' &&
                   itemSelecionado.status !== 'CANCELADO' && (
-                    <div className="flex items-center gap-2 rounded-lg bg-zinc-50 dark:bg-zinc-950/30 p-3 text-xs text-zinc-500 dark:text-zinc-400 border border-zinc-200/60 dark:border-zinc-800/40">
-                      <AlertCircle className="h-4 w-4 text-zinc-400" />
+                    <div className="flex items-center gap-2 rounded-lg bg-muted dark:bg-zinc-950/30 p-3 text-xs text-muted-foreground dark:text-zinc-400 border border-border dark:border-zinc-800/40">
+                      <AlertCircle className="h-4 w-4 text-muted-foreground" />
                       <span>
                         {itemSelecionado.status === 'CONCLUIDO'
                           ? 'Agendamento finalizado não pode ser editado.'
@@ -880,7 +880,7 @@ export function AgendaPage() {
                   <button
                     type="button"
                     onClick={() => setItemSelecionado(null)}
-                    className="rounded-full bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 px-5 py-2 text-sm font-semibold text-zinc-800 dark:text-zinc-200 transition-colors"
+                    className="rounded-full bg-muted hover:bg-accent dark:bg-zinc-800 dark:hover:bg-muted px-5 py-2 text-sm font-semibold text-foreground dark:text-zinc-200 transition-colors"
                   >
                     Fechar
                   </button>
@@ -902,12 +902,12 @@ export function AgendaPage() {
             />
 
             <div
-              className="relative z-10 mx-4 w-full max-w-md rounded-2xl border border-zinc-200/70 bg-white p-6 shadow-2xl dark:border-zinc-800/60 dark:bg-zinc-900 animate-in zoom-in-95 duration-150"
+              className="relative z-10 mx-4 w-full max-w-md rounded-2xl border border-border bg-white p-6 shadow-2xl dark:border-zinc-800/60 dark:bg-zinc-900 animate-in zoom-in-95 duration-150"
               role="dialog"
               aria-modal="true"
               aria-labelledby="cancel-title"
             >
-              <h2 id="cancel-title" className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
+              <h2 id="cancel-title" className="text-lg font-bold text-foreground dark:text-zinc-50">
                 Confirmar cancelamento do agendamento
               </h2>
 
@@ -915,7 +915,7 @@ export function AgendaPage() {
                 <div className="flex flex-col gap-1.5">
                   <Label
                     htmlFor="cancel-motivo"
-                    className="text-sm font-semibold text-zinc-700 dark:text-zinc-300"
+                    className="text-sm font-semibold text-muted-foreground dark:text-zinc-300"
                   >
                     Motivo do cancelamento <span className="text-red-500">*</span>
                   </Label>
@@ -933,14 +933,14 @@ export function AgendaPage() {
                     placeholder="Descreva o motivo do cancelamento..."
                     aria-describedby="cancel-description cancel-error"
                     disabled={cancelLoading}
-                    className="w-full min-h-[100px] rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-800 focus-visible:border-red-500 focus-visible:ring-3 focus-visible:ring-red-500/20 focus-visible:outline-none disabled:opacity-50 dark:border-zinc-700/60 dark:bg-zinc-950/40 dark:text-zinc-100 resize-none"
+                    className="w-full min-h-[100px] rounded-lg border border-border bg-white px-3 py-2 text-sm text-foreground focus-visible:border-red-500 focus-visible:ring-3 focus-visible:ring-red-500/20 focus-visible:outline-none disabled:opacity-50 dark:border-zinc-700/60 dark:bg-zinc-950/40 dark:text-zinc-100 resize-none"
                   />
                   <div className="flex justify-between items-center text-xs">
-                    <span id="cancel-description" className="text-zinc-400 dark:text-zinc-500">
+                    <span id="cancel-description" className="text-muted-foreground dark:text-zinc-500">
                       Mínimo de 5 caracteres.
                     </span>
                     <span
-                      className={`font-medium ${motivoCancelamento.length > 500 ? 'text-red-500' : 'text-zinc-500 dark:text-zinc-400'}`}
+                      className={`font-medium ${motivoCancelamento.length > 500 ? 'text-red-500' : 'text-muted-foreground dark:text-zinc-400'}`}
                     >
                       {motivoCancelamento.length}/500
                     </span>
@@ -997,12 +997,12 @@ export function AgendaPage() {
             />
 
             <div
-              className="relative z-10 mx-4 w-full max-w-md rounded-2xl border border-zinc-200/70 bg-white p-6 shadow-2xl dark:border-zinc-800/60 dark:bg-zinc-900 animate-in zoom-in-95 duration-150"
+              className="relative z-10 mx-4 w-full max-w-md rounded-2xl border border-border bg-white p-6 shadow-2xl dark:border-zinc-800/60 dark:bg-zinc-900 animate-in zoom-in-95 duration-150"
               role="dialog"
               aria-modal="true"
               aria-labelledby="edit-title"
             >
-              <h2 id="edit-title" className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
+              <h2 id="edit-title" className="text-lg font-bold text-foreground dark:text-zinc-50">
                 Editar agendamento
               </h2>
 
@@ -1010,7 +1010,7 @@ export function AgendaPage() {
                 <div className="flex flex-col gap-1.5">
                   <Label
                     htmlFor="edit-obs"
-                    className="text-sm font-semibold text-zinc-700 dark:text-zinc-300"
+                    className="text-sm font-semibold text-muted-foreground dark:text-zinc-300"
                   >
                     Observações do agendamento
                   </Label>
@@ -1022,7 +1022,7 @@ export function AgendaPage() {
                     onChange={(e) => setObservacoesEdit(e.target.value)}
                     placeholder="Adicione observações para este agendamento..."
                     disabled={editLoading}
-                    className="w-full min-h-[100px] rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-800 focus-visible:border-red-500 focus-visible:ring-3 focus-visible:ring-red-500/20 focus-visible:outline-none disabled:opacity-50 dark:border-zinc-700/60 dark:bg-zinc-950/40 dark:text-zinc-100 resize-none"
+                    className="w-full min-h-[100px] rounded-lg border border-border bg-white px-3 py-2 text-sm text-foreground focus-visible:border-red-500 focus-visible:ring-3 focus-visible:ring-red-500/20 focus-visible:outline-none disabled:opacity-50 dark:border-zinc-700/60 dark:bg-zinc-950/40 dark:text-zinc-100 resize-none"
                   />
                   {editError && (
                     <p role="alert" className="text-xs font-medium text-red-600 dark:text-red-400">
@@ -1086,10 +1086,10 @@ export function AgendaPage() {
 /** Estado vazio reutilizável (sem consulta ainda ou consulta sem resultados). */
 function EstadoVazio({ titulo, descricao }: { titulo: string; descricao: string }) {
   return (
-    <div className="rounded-2xl border border-dashed border-zinc-300 bg-white/40 px-4 py-16 text-center dark:border-zinc-800/60 dark:bg-zinc-900/20">
-      <CalendarSearch className="mx-auto mb-3 h-8 w-8 text-zinc-400" aria-hidden="true" />
-      <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">{titulo}</p>
-      <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">{descricao}</p>
+    <div className="rounded-2xl border border-dashed border-border bg-white/40 px-4 py-16 text-center dark:border-zinc-800/60 dark:bg-zinc-900/20">
+      <CalendarSearch className="mx-auto mb-3 h-8 w-8 text-muted-foreground" aria-hidden="true" />
+      <p className="text-sm font-semibold text-muted-foreground dark:text-zinc-200">{titulo}</p>
+      <p className="mt-1 text-sm text-muted-foreground dark:text-zinc-400">{descricao}</p>
     </div>
   );
 }

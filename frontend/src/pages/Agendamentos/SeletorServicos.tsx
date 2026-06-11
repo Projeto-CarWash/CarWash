@@ -35,7 +35,7 @@ export function SeletorServicos({
   if (carregando) {
     return (
       <div
-        className="flex items-center gap-2 rounded-xl border border-zinc-700/60 bg-zinc-900/40 px-4 py-6 text-sm text-zinc-400"
+        className="flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-6 text-sm text-muted-foreground"
         aria-live="polite"
       >
         <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
@@ -59,7 +59,7 @@ export function SeletorServicos({
 
   if (servicos.length === 0) {
     return (
-      <div className="rounded-xl border border-zinc-700/60 bg-zinc-900/40 px-4 py-6 text-center text-sm text-zinc-500">
+      <div className="rounded-xl border border-border bg-card px-4 py-6 text-center text-sm text-muted-foreground">
         Nenhum serviço ativo no catálogo.
       </div>
     );
@@ -84,13 +84,13 @@ export function SeletorServicos({
               className={cn(
                 'flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50 disabled:cursor-not-allowed disabled:opacity-50',
                 ativo
-                  ? 'border-red-500/60 bg-red-950/30 text-zinc-100'
-                  : 'border-zinc-700/60 bg-zinc-900/40 text-zinc-300 hover:border-zinc-600 hover:bg-zinc-800/40',
+                  ? 'border-red-500/60 bg-red-950/30 text-foreground'
+                  : 'border-border bg-card text-foreground hover:border-ring hover:bg-accent',
               )}
             >
               <span className="min-w-0">
                 <span className="block truncate font-medium">{servico.nome}</span>
-                <span className="mt-0.5 block text-xs text-zinc-500">
+                <span className="mt-0.5 block text-xs text-muted-foreground">
                   {formatarReais(servico.precoBase)} · {formatarDuracao(servico.duracaoMin)}
                 </span>
               </span>
@@ -100,7 +100,7 @@ export function SeletorServicos({
                   'flex h-5 w-5 shrink-0 items-center justify-center rounded-full border',
                   ativo
                     ? 'border-red-500 bg-red-600 text-white'
-                    : 'border-zinc-600 bg-transparent text-transparent',
+                    : 'border-border bg-transparent text-transparent',
                 )}
               >
                 <Check className="h-3 w-3" />

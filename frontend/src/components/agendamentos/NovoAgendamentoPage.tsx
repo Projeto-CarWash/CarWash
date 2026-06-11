@@ -314,7 +314,7 @@ export function NovoAgendamentoPage() {
       <div className="grid grid-cols-[minmax(240px,300px)_minmax(0,1fr)] gap-6 px-8">
         <AgendamentoStepper currentStep={currentStep} />
 
-        <div className="rounded-2xl border border-zinc-800/60 bg-zinc-900/30 p-8">
+        <div className="rounded-2xl border border-border bg-card p-8">
           {globalError && (
             <div
               role="alert"
@@ -380,7 +380,7 @@ export function NovoAgendamentoPage() {
 
           {currentStep === 2 && (
             <>
-              <Separator className="mb-6 bg-zinc-800/50" />
+              <Separator className="mb-6 bg-muted" />
               <ServicosStep
                 servicosSelecionados={wizardState.servicos}
                 onServicosChange={handleServicosChange}
@@ -392,7 +392,7 @@ export function NovoAgendamentoPage() {
 
           {currentStep === 3 && (
             <>
-              <Separator className="mb-6 bg-zinc-800/50" />
+              <Separator className="mb-6 bg-muted" />
               <ResumoConfirmacaoStep
                 wizardState={wizardState}
                 isSubmitting={isSubmitting}

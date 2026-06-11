@@ -113,8 +113,8 @@ export function ClientesListaPage() {
     <div className="px-8 py-8">
       <div className="mb-6 flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-zinc-50">Clientes</h1>
-          <p className="mt-1 text-sm text-zinc-500">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Clientes</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
             {total === 0 ? 'Nenhum cliente cadastrado' : `${total} cliente(s) no total`}
           </p>
         </div>
@@ -130,7 +130,7 @@ export function ClientesListaPage() {
       <div className="mb-4 flex items-center gap-3">
         <div className="relative max-w-md flex-1">
           <Search
-            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500"
+            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
             aria-hidden="true"
           />
           <Input
@@ -141,7 +141,7 @@ export function ClientesListaPage() {
               setBusca(e.target.value);
             }}
             placeholder="Buscar por nome, CPF, CNPJ, e-mail ou cidade…"
-            className="h-10 rounded-xl border-zinc-700/60 bg-zinc-900/50 pl-9 text-sm text-zinc-200 placeholder:text-zinc-600 focus-visible:ring-0"
+            className="h-10 rounded-xl border-border bg-card pl-9 text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-0"
           />
         </div>
       </div>
@@ -166,9 +166,9 @@ export function ClientesListaPage() {
         </div>
       )}
 
-      <div className="overflow-hidden rounded-2xl border border-zinc-800/60 bg-zinc-900/30">
+      <div className="overflow-hidden rounded-2xl border border-border bg-card">
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-zinc-800/60 bg-zinc-900/60 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
+          <thead className="border-b border-border bg-card text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
             <tr>
               <th className="px-4 py-3">Nome</th>
               <th className="px-4 py-3">Documento</th>
@@ -178,34 +178,34 @@ export function ClientesListaPage() {
               <th className="px-4 py-3 text-right">Ações</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-zinc-800/60">
+          <tbody className="divide-y divide-border">
             {carregando && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-zinc-500">
+                <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
                   Carregando…
                 </td>
               </tr>
             )}
             {!carregando && itens.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-zinc-500">
+                <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
                   Nenhum cliente encontrado.
                 </td>
               </tr>
             )}
             {!carregando &&
               itens.map((c) => (
-                <tr key={c.id} className="text-zinc-200 hover:bg-zinc-800/30">
+                <tr key={c.id} className="text-foreground hover:bg-accent">
                   <td className="px-4 py-3">
-                    <span className="font-medium text-zinc-100">{c.nome}</span>
+                    <span className="font-medium text-foreground">{c.nome}</span>
                   </td>
-                  <td className="px-4 py-3 tabular-nums text-zinc-400">
+                  <td className="px-4 py-3 tabular-nums text-muted-foreground">
                     {formatarDocumento(c.cpf, c.cnpj)}
                   </td>
-                  <td className="px-4 py-3 tabular-nums text-zinc-400">
+                  <td className="px-4 py-3 tabular-nums text-muted-foreground">
                     {formatarCelular(c.celular)}
                   </td>
-                  <td className="px-4 py-3 text-zinc-400">
+                  <td className="px-4 py-3 text-muted-foreground">
                     {c.cidade} / {c.uf}
                   </td>
                   <td className="px-4 py-3">
@@ -213,7 +213,7 @@ export function ClientesListaPage() {
                       className={
                         c.ativo
                           ? 'rounded-full bg-green-500/10 px-2 py-1 text-[10px] font-bold tracking-[0.15em] text-green-400'
-                          : 'rounded-full bg-zinc-700/40 px-2 py-1 text-[10px] font-bold tracking-[0.15em] text-zinc-500'
+                          : 'rounded-full bg-muted px-2 py-1 text-[10px] font-bold tracking-[0.15em] text-muted-foreground'
                       }
                     >
                       {c.ativo ? 'ATIVO' : 'INATIVO'}
@@ -227,7 +227,7 @@ export function ClientesListaPage() {
                         size="icon"
                         onClick={() => void navigate(`/clientes/${c.id}`)}
                         title="Visualizar cliente"
-                        className="h-8 w-8 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
+                        className="h-8 w-8 text-muted-foreground hover:bg-accent hover:text-foreground"
                       >
                         <Eye className="h-4 w-4" />
                         <span className="sr-only">Visualizar {c.nome}</span>
@@ -238,7 +238,7 @@ export function ClientesListaPage() {
                         size="icon"
                         onClick={() => void navigate(`/clientes/${c.id}/editar`)}
                         title="Editar cliente"
-                        className="h-8 w-8 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
+                        className="h-8 w-8 text-muted-foreground hover:bg-accent hover:text-foreground"
                       >
                         <Pencil className="h-4 w-4" />
                         <span className="sr-only">Editar {c.nome}</span>
@@ -249,7 +249,7 @@ export function ClientesListaPage() {
                         size="icon"
                         onClick={() => abrirModalStatus(c)}
                         title={c.ativo ? 'Inativar cliente' : 'Reativar cliente'}
-                        className="h-8 w-8 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
+                        className="h-8 w-8 text-muted-foreground hover:bg-accent hover:text-foreground"
                       >
                         <Power className="h-4 w-4" />
                         <span className="sr-only">
@@ -265,7 +265,7 @@ export function ClientesListaPage() {
       </div>
 
       <div className="mt-4 flex items-center justify-between">
-        <span className="text-xs text-zinc-500">
+        <span className="text-xs text-muted-foreground">
           Página {pagina} de {totalPaginas}
         </span>
         <div className="flex items-center gap-2">
@@ -274,7 +274,7 @@ export function ClientesListaPage() {
             variant="outline"
             disabled={!podeVoltar}
             onClick={() => setPagina((p) => Math.max(1, p - 1))}
-            className="h-9 rounded-full border-zinc-700/60 bg-transparent px-3 text-sm disabled:opacity-40"
+            className="h-9 rounded-full border-border bg-transparent px-3 text-sm disabled:opacity-40"
           >
             <ChevronLeft className="h-4 w-4" /> Anterior
           </Button>
@@ -283,7 +283,7 @@ export function ClientesListaPage() {
             variant="outline"
             disabled={!podeAvancar}
             onClick={() => setPagina((p) => p + 1)}
-            className="h-9 rounded-full border-zinc-700/60 bg-transparent px-3 text-sm disabled:opacity-40"
+            className="h-9 rounded-full border-border bg-transparent px-3 text-sm disabled:opacity-40"
           >
             Próxima <ChevronRight className="h-4 w-4" />
           </Button>
@@ -302,12 +302,12 @@ export function ClientesListaPage() {
           }
         }}
       >
-        <DialogContent className="sm:max-w-[425px] bg-zinc-950 border-zinc-800">
+        <DialogContent className="sm:max-w-[425px] bg-background border-border">
           <DialogHeader>
-            <DialogTitle className="text-zinc-100">
+            <DialogTitle className="text-foreground">
               {clienteStatus?.ativo ? 'Inativar cliente' : 'Reativar cliente'}
             </DialogTitle>
-            <DialogDescription className="text-zinc-400">
+            <DialogDescription className="text-muted-foreground">
               {clienteStatus?.ativo
                 ? `Deseja realmente inativar o cliente "${clienteStatus?.nome}"? Ele não estará mais disponível para novos agendamentos.`
                 : `Deseja reativar o cliente "${clienteStatus?.nome}"? Ele voltará a estar disponível para novos agendamentos.`}
@@ -326,7 +326,7 @@ export function ClientesListaPage() {
               variant="outline"
               onClick={() => setModalStatusAberto(false)}
               disabled={salvandoStatus}
-              className="border-zinc-700 bg-transparent text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100"
+              className="border-border bg-transparent text-foreground hover:bg-accent hover:text-foreground"
             >
               Cancelar
             </Button>

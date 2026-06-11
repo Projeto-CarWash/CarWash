@@ -90,7 +90,7 @@ export function FiliadoModal({ open, onOpenChange, existingCpfs, onSave }: Filia
     >
       <DialogContent
         showCloseButton={false}
-        className="!max-w-md overflow-y-auto max-h-[90vh] rounded-2xl border border-zinc-800/60 bg-zinc-900 p-0 text-zinc-100 shadow-2xl sm:!max-w-md"
+        className="!max-w-md overflow-y-auto max-h-[90vh] rounded-2xl border border-border bg-card p-0 text-foreground shadow-2xl sm:!max-w-md"
       >
         <DialogTitle className="sr-only">Adicionar filiado</DialogTitle>
         <DialogDescription className="sr-only">
@@ -101,15 +101,15 @@ export function FiliadoModal({ open, onOpenChange, existingCpfs, onSave }: Filia
           {/* Header */}
           <div className="flex items-start justify-between">
             <div>
-              <h3 className="text-base font-semibold text-zinc-100">Filiação</h3>
-              <p className="mt-0.5 text-sm text-zinc-500">
+              <h3 className="text-base font-semibold text-foreground">Filiação</h3>
+              <p className="mt-0.5 text-sm text-muted-foreground">
                 Dados pessoais do filiado. O CPF/CNPJ é único por pessoa vinculada.
               </p>
             </div>
             <button
               type="button"
               onClick={handleClose}
-              className="rounded-full p-1 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-300"
+              className="rounded-full p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
               <X className="h-4 w-4" />
             </button>
@@ -117,17 +117,17 @@ export function FiliadoModal({ open, onOpenChange, existingCpfs, onSave }: Filia
 
           {/* CPF */}
           <div className="mt-5 space-y-1.5">
-            <Label className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">CPF/CNPJ</Label>
+            <Label className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground">CPF/CNPJ</Label>
             <Input
               value={cpf}
               onChange={(e) => setCpf(maskCpfCnpj(e.target.value))}
               placeholder="123.567.891-23 ou 12.345.678/0001-90"
-              className={`h-10 rounded-xl text-sm text-zinc-200 placeholder:text-zinc-600 focus-visible:ring-0 ${
+              className={`h-10 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-0 ${
                 errors.cpf || (docIsComplete && !docIsValid)
                   ? 'border-red-500/60 bg-red-950/20'
                   : docIsComplete && docIsValid && docIsUnique && !errors.cpf
                     ? 'border-green-500/60 bg-green-950/20'
-                    : 'border-zinc-700/60 bg-zinc-900/50'
+                    : 'border-border bg-card'
               }`}
             />
             {errors.cpf && (
@@ -147,7 +147,7 @@ export function FiliadoModal({ open, onOpenChange, existingCpfs, onSave }: Filia
 
           {/* Nome completo */}
           <div className="mt-4 space-y-1.5">
-            <Label className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">
+            <Label className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
               NOME COMPLETO
             </Label>
             <Input
@@ -160,10 +160,10 @@ export function FiliadoModal({ open, onOpenChange, existingCpfs, onSave }: Filia
                 setNome(sanitized);
               }}
               placeholder="Helena Quintanilha Freitas"
-              className={`h-10 rounded-xl text-sm text-zinc-200 placeholder:text-zinc-600 focus-visible:ring-0 ${
+              className={`h-10 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-0 ${
                 errors.nome
                   ? 'border-red-500/60 bg-red-950/20'
-                  : 'border-zinc-700/60 bg-zinc-900/50'
+                  : 'border-border bg-card'
               }`}
             />
             {errors.nome && (
@@ -175,8 +175,8 @@ export function FiliadoModal({ open, onOpenChange, existingCpfs, onSave }: Filia
 
           {/* Contato */}
           <div className="mt-6">
-            <h3 className="text-base font-semibold text-zinc-100">Contato</h3>
-            <p className="mt-0.5 text-sm text-zinc-500">
+            <h3 className="text-base font-semibold text-foreground">Contato</h3>
+            <p className="mt-0.5 text-sm text-muted-foreground">
               Usamos telefone e e-mail para confirmações e lembretes de agendamento. Deixe vazio
               caso não o filiado não queira receber notificações.
             </p>
@@ -184,32 +184,32 @@ export function FiliadoModal({ open, onOpenChange, existingCpfs, onSave }: Filia
 
           <div className="mt-4 grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">
+              <Label className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
                 TELEFONE
               </Label>
               <div className="flex items-center">
-                <span className="flex h-10 items-center rounded-l-xl border border-r-0 border-zinc-700/60 bg-zinc-800/40 px-3 text-sm text-zinc-500">
+                <span className="flex h-10 items-center rounded-l-xl border border-r-0 border-border bg-muted px-3 text-sm text-muted-foreground">
                   +55
                 </span>
                 <Input
                   value={telefone}
                   onChange={(e) => setTelefone(maskCelular(e.target.value))}
                   placeholder="(21) 99999-9999"
-                  className="h-10 rounded-l-none rounded-r-xl border-zinc-700/60 bg-zinc-900/50 text-sm text-zinc-200 placeholder:text-zinc-600 focus-visible:ring-0"
+                  className="h-10 rounded-l-none rounded-r-xl border-border bg-card text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-0"
                 />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">E-MAIL</Label>
+              <Label className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground">E-MAIL</Label>
               <Input
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="email@exemplo.com"
-                className={`h-10 rounded-xl text-sm text-zinc-200 placeholder:text-zinc-600 focus-visible:ring-0 ${
+                className={`h-10 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-0 ${
                   errors.email
                     ? 'border-red-500/60 bg-red-950/20'
-                    : 'border-zinc-700/60 bg-zinc-900/50'
+                    : 'border-border bg-card'
                 }`}
               />
               {errors.email && (
@@ -222,12 +222,12 @@ export function FiliadoModal({ open, onOpenChange, existingCpfs, onSave }: Filia
         </div>
 
         {/* Footer */}
-        <div className="mt-6 flex items-center justify-end gap-3 border-t border-zinc-800/60 px-6 py-4">
+        <div className="mt-6 flex items-center justify-end gap-3 border-t border-border px-6 py-4">
           <Button
             type="button"
             variant="outline"
             onClick={handleClose}
-            className="h-10 rounded-full border-zinc-700/60 bg-transparent px-6 text-sm text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200"
+            className="h-10 rounded-full border-border bg-transparent px-6 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
           >
             Cancelar
           </Button>

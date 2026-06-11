@@ -182,7 +182,7 @@ export function FilialFormPage() {
         <div
           role="status"
           aria-live="polite"
-          className="fixed right-5 top-5 z-[600] flex items-center gap-3 rounded-lg border border-green-500/30 bg-zinc-950 px-4 py-3 text-sm text-green-400 shadow-xl shadow-black/60 duration-300 animate-in fade-in slide-in-from-top-5"
+          className="fixed right-5 top-5 z-[600] flex items-center gap-3 rounded-lg border border-green-500/30 bg-background px-4 py-3 text-sm text-green-400 shadow-xl shadow-black/60 duration-300 animate-in fade-in slide-in-from-top-5"
         >
           <span className="flex h-5 w-5 items-center justify-center rounded-full bg-green-500/20 text-green-500">
             <Check className="h-3 w-3" />
@@ -200,8 +200,8 @@ export function FilialFormPage() {
             <Building2 className="h-5 w-5" />
           </span>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-zinc-50">Nova filial</h1>
-            <p className="mt-1 text-sm text-zinc-400">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Nova filial</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
               Cadastre uma nova unidade operacional do CarWash.
             </p>
           </div>
@@ -211,17 +211,17 @@ export function FilialFormPage() {
           variant="outline"
           onClick={() => void navigate('/filiais')}
           disabled={isPending}
-          className="h-9 rounded-full border-zinc-700/60 bg-transparent px-4 text-sm text-zinc-300 hover:bg-zinc-800/50 hover:text-zinc-100"
+          className="h-9 rounded-full border-border bg-transparent px-4 text-sm text-foreground hover:bg-accent hover:text-foreground"
         >
           <ArrowLeft className="mr-1 h-4 w-4" aria-hidden="true" />
           Voltar
         </Button>
       </div>
 
-      <Card className="max-w-3xl border border-zinc-800/60 bg-zinc-900/30">
+      <Card className="max-w-3xl border border-border bg-card">
         <CardHeader>
-          <CardTitle className="text-lg text-zinc-100">Dados da filial</CardTitle>
-          <CardDescription className="text-zinc-400">
+          <CardTitle className="text-lg text-foreground">Dados da filial</CardTitle>
+          <CardDescription className="text-muted-foreground">
             A filial é considerada ativa logo após o cadastro e fica disponível para agendamentos.
           </CardDescription>
         </CardHeader>
@@ -301,7 +301,7 @@ export function FilialFormPage() {
             />
 
             <div className="mt-2 md:col-span-2">
-              <p className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">ENDEREÇO</p>
+              <p className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground">ENDEREÇO</p>
             </div>
 
             <CampoFilial
@@ -379,7 +379,7 @@ export function FilialFormPage() {
                 variant="outline"
                 onClick={() => void navigate('/filiais')}
                 disabled={isPending}
-                className="h-10 rounded-full border-zinc-700/60 bg-transparent px-5 text-sm text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200"
+                className="h-10 rounded-full border-border bg-transparent px-5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
               >
                 Cancelar
               </Button>
@@ -444,8 +444,8 @@ function CampoFilial({
   const errorId = `${id}-error`;
   return (
     <div className={`flex flex-col gap-2 ${colSpan2 ? 'md:col-span-2' : ''}`}>
-      <Label htmlFor={id} className="text-zinc-300">
-        {label} {labelHint && <span className="text-zinc-500">{labelHint}</span>}
+      <Label htmlFor={id} className="text-foreground">
+        {label} {labelHint && <span className="text-muted-foreground">{labelHint}</span>}
       </Label>
       <Controller
         control={control}
@@ -468,10 +468,10 @@ function CampoFilial({
                 ref={field.ref}
                 aria-invalid={!!fieldState.error}
                 aria-describedby={fieldState.error ? errorId : hint ? `${id}-hint` : undefined}
-                className={`h-10 rounded-lg border px-3 text-sm text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-0 ${
+                className={`h-10 rounded-lg border px-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-0 ${
                   fieldState.error
                     ? 'border-red-500/60 bg-red-950/20 focus-visible:border-red-500'
-                    : 'border-zinc-700/60 bg-zinc-950/40 focus-visible:border-zinc-600'
+                    : 'border-border bg-background focus-visible:border-ring'
                 } ${inputClassName}`}
               />
               {fieldState.error ? (
@@ -480,7 +480,7 @@ function CampoFilial({
                 </p>
               ) : (
                 hint && (
-                  <p id={`${id}-hint`} className="text-xs text-zinc-500">
+                  <p id={`${id}-hint`} className="text-xs text-muted-foreground">
                     {hint}
                   </p>
                 )

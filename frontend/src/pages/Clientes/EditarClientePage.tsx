@@ -202,7 +202,7 @@ export function EditarClientePage() {
 
   if (carregando) {
     return (
-      <div className="flex h-full items-center justify-center text-zinc-500">
+      <div className="flex h-full items-center justify-center text-muted-foreground">
         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
         Carregando cliente…
       </div>
@@ -215,7 +215,7 @@ export function EditarClientePage() {
         <div
           role="status"
           aria-live="polite"
-          className="fixed right-5 top-5 z-[600] flex items-center gap-3 rounded-lg border border-green-500/30 bg-zinc-950 px-4 py-3 text-sm text-green-400 shadow-xl shadow-black/60 animate-in fade-in slide-in-from-top-5 duration-300"
+          className="fixed right-5 top-5 z-[600] flex items-center gap-3 rounded-lg border border-green-500/30 bg-background px-4 py-3 text-sm text-green-400 shadow-xl shadow-black/60 animate-in fade-in slide-in-from-top-5 duration-300"
         >
           <span className="flex h-5 w-5 items-center justify-center rounded-full bg-green-500/20 text-green-500">
             <Check className="h-3 w-3" />
@@ -233,8 +233,8 @@ export function EditarClientePage() {
             <UserCog className="h-5 w-5" />
           </span>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-zinc-50">Editar cliente</h1>
-            <p className="mt-1 text-sm text-zinc-400">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Editar cliente</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
               Atualize os dados cadastrais do cliente. CPF/CNPJ e veículos não são alterados aqui.
             </p>
           </div>
@@ -244,16 +244,16 @@ export function EditarClientePage() {
           variant="outline"
           onClick={() => void navigate(`/clientes/${id}`)}
           disabled={isSubmitting}
-          className="h-9 rounded-full border-zinc-700/60 bg-transparent px-4 text-sm text-zinc-300 hover:bg-zinc-800/50 hover:text-zinc-100"
+          className="h-9 rounded-full border-border bg-transparent px-4 text-sm text-foreground hover:bg-accent hover:text-foreground"
         >
           <ArrowLeft className="mr-1 h-4 w-4" aria-hidden="true" /> Voltar
         </Button>
       </div>
 
-      <Card className="max-w-4xl border border-zinc-800/60 bg-zinc-900/30">
+      <Card className="max-w-4xl border border-border bg-card">
         <CardHeader>
-          <CardTitle className="text-lg text-zinc-100">Dados do cliente</CardTitle>
-          <CardDescription className="text-zinc-400">
+          <CardTitle className="text-lg text-foreground">Dados do cliente</CardTitle>
+          <CardDescription className="text-muted-foreground">
             Identificação, contato e endereço. Campos marcados com{' '}
             <span className="text-red-500">*</span> são obrigatórios.
           </CardDescription>
@@ -288,7 +288,7 @@ export function EditarClientePage() {
           >
             {/* CPF/CNPJ — somente leitura (não editável via PUT) */}
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">
+              <Label className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
                 CPF / CNPJ
               </Label>
               <Input
@@ -297,9 +297,9 @@ export function EditarClientePage() {
                 readOnly
                 disabled
                 aria-label="CPF ou CNPJ (não editável)"
-                className="h-10 cursor-not-allowed rounded-xl border-zinc-800/60 bg-zinc-950/60 text-sm text-zinc-500"
+                className="h-10 cursor-not-allowed rounded-xl border-border bg-background text-sm text-muted-foreground"
               />
-              <p className="text-[11px] text-zinc-600">Documento não pode ser alterado.</p>
+              <p className="text-[11px] text-muted-foreground">Documento não pode ser alterado.</p>
             </div>
 
             <Field
@@ -434,7 +434,7 @@ export function EditarClientePage() {
                 variant="outline"
                 onClick={() => void navigate(`/clientes/${id}`)}
                 disabled={isSubmitting}
-                className="h-10 rounded-full border-zinc-700/60 bg-transparent px-5 text-sm text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200"
+                className="h-10 rounded-full border-border bg-transparent px-5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
               >
                 Cancelar
               </Button>
@@ -488,9 +488,9 @@ function Field({
   const errorId = `${name}-error`;
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={name} className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">
+      <Label htmlFor={name} className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
         {label} {required && <span className="text-red-500">*</span>}
-        {optional && <span className="font-normal tracking-normal text-zinc-600">(opcional)</span>}
+        {optional && <span className="font-normal tracking-normal text-muted-foreground">(opcional)</span>}
       </Label>
       <Controller
         control={control}
@@ -508,10 +508,10 @@ function Field({
             aria-invalid={!!error}
             aria-required={required}
             aria-describedby={error ? errorId : undefined}
-            className={`h-10 rounded-xl text-sm text-zinc-200 placeholder:text-zinc-600 focus-visible:ring-0 ${
+            className={`h-10 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-0 ${
               error
                 ? 'border-red-500/60 bg-red-950/20 focus-visible:border-red-500'
-                : 'border-zinc-700/60 bg-zinc-900/50 focus-visible:border-zinc-600'
+                : 'border-border bg-card focus-visible:border-ring'
             }`}
           />
         )}

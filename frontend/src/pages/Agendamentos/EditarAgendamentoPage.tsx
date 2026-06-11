@@ -127,7 +127,7 @@ export function EditarAgendamentoPage() {
 
   if (carregando) {
     return (
-      <div className="flex h-full items-center justify-center text-zinc-400">
+      <div className="flex h-full items-center justify-center text-muted-foreground">
         <Loader2 className="h-6 w-6 animate-spin text-red-600" />
       </div>
     );
@@ -137,7 +137,7 @@ export function EditarAgendamentoPage() {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
         <AlertCircle className="h-6 w-6 text-red-500" />
-        <p className="text-sm text-zinc-400">{erro ?? 'Agendamento não encontrado.'}</p>
+        <p className="text-sm text-muted-foreground">{erro ?? 'Agendamento não encontrado.'}</p>
         <Button variant="outline" onClick={() => navigate('/agendamentos/calendario')}>
           Voltar ao calendário
         </Button>
@@ -150,16 +150,16 @@ export function EditarAgendamentoPage() {
       <button
         type="button"
         onClick={() => navigate(-1)}
-        className="mb-6 flex items-center gap-2 text-sm font-medium text-zinc-400 transition-colors hover:text-zinc-200"
+        className="mb-6 flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
         Voltar
       </button>
 
-      <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
+      <h1 className="text-2xl font-bold tracking-tight text-foreground dark:text-foreground">
         Editar agendamento
       </h1>
-      <p className="mt-1 text-sm text-zinc-500">
+      <p className="mt-1 text-sm text-muted-foreground">
         Cliente, veículo e serviços não são editáveis — apenas horário, responsável e observações
         (RF010).
       </p>
@@ -177,17 +177,17 @@ export function EditarAgendamentoPage() {
       {/* Referência: cliente / veículo / serviços (read-only) */}
       {itemNav && (
         <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="rounded-xl border border-zinc-200 dark:border-zinc-800/60 bg-zinc-50 dark:bg-zinc-900/40 p-4">
-            <h2 className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-zinc-600 dark:text-zinc-300">
+          <div className="rounded-xl border border-border dark:border-zinc-800/60 bg-muted dark:bg-zinc-900/40 p-4">
+            <h2 className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground dark:text-zinc-300">
               <User className="h-3.5 w-3.5 text-red-500" /> Cliente <Lock className="h-3 w-3" />
             </h2>
-            <p className="text-sm text-zinc-700 dark:text-zinc-200">{itemNav.cliente.nome}</p>
+            <p className="text-sm text-muted-foreground dark:text-zinc-200">{itemNav.cliente.nome}</p>
           </div>
-          <div className="rounded-xl border border-zinc-200 dark:border-zinc-800/60 bg-zinc-50 dark:bg-zinc-900/40 p-4">
-            <h2 className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-zinc-600 dark:text-zinc-300">
+          <div className="rounded-xl border border-border dark:border-zinc-800/60 bg-muted dark:bg-zinc-900/40 p-4">
+            <h2 className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground dark:text-zinc-300">
               <Car className="h-3.5 w-3.5 text-red-500" /> Veículo <Lock className="h-3 w-3" />
             </h2>
-            <p className="text-sm text-zinc-700 dark:text-zinc-200">
+            <p className="text-sm text-muted-foreground dark:text-zinc-200">
               {itemNav.veiculo.placa} — {itemNav.veiculo.modelo}
             </p>
           </div>
@@ -198,7 +198,7 @@ export function EditarAgendamentoPage() {
       <div className="mt-6 space-y-5">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <Label htmlFor="edit-inicio" className="text-xs font-bold tracking-wider text-zinc-500">
+            <Label htmlFor="edit-inicio" className="text-xs font-bold tracking-wider text-muted-foreground">
               INÍCIO
             </Label>
             <Input
@@ -210,7 +210,7 @@ export function EditarAgendamentoPage() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="edit-fim" className="text-xs font-bold tracking-wider text-zinc-500">
+            <Label htmlFor="edit-fim" className="text-xs font-bold tracking-wider text-muted-foreground">
               FIM
             </Label>
             <Input
@@ -224,7 +224,7 @@ export function EditarAgendamentoPage() {
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="edit-responsavel" className="text-xs font-bold tracking-wider text-zinc-500">
+          <Label htmlFor="edit-responsavel" className="text-xs font-bold tracking-wider text-muted-foreground">
             RESPONSÁVEL
           </Label>
           <select
@@ -232,7 +232,7 @@ export function EditarAgendamentoPage() {
             value={responsavelId}
             disabled={!podeEditar || salvando}
             onChange={(e) => setResponsavelId(e.target.value)}
-            className="h-10 w-full rounded-xl border border-zinc-200 dark:border-zinc-700/60 bg-zinc-50 dark:bg-zinc-950/40 px-3 text-sm text-zinc-800 dark:text-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50 disabled:opacity-60 dark:[color-scheme:dark]"
+            className="h-10 w-full rounded-xl border border-border dark:border-zinc-700/60 bg-muted dark:bg-zinc-950/40 px-3 text-sm text-foreground dark:text-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50 disabled:opacity-60 dark:[color-scheme:dark]"
           >
             <option value="" disabled>
               Selecione o responsável
@@ -249,7 +249,7 @@ export function EditarAgendamentoPage() {
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="edit-obs" className="text-xs font-bold tracking-wider text-zinc-500">
+          <Label htmlFor="edit-obs" className="text-xs font-bold tracking-wider text-muted-foreground">
             OBSERVAÇÕES
           </Label>
           <textarea
@@ -260,7 +260,7 @@ export function EditarAgendamentoPage() {
             rows={4}
             maxLength={1000}
             placeholder="Observações do agendamento (opcional)"
-            className="w-full rounded-xl border border-zinc-200 dark:border-zinc-700/60 bg-zinc-50 dark:bg-zinc-950/40 p-3 text-sm text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50 disabled:opacity-60"
+            className="w-full rounded-xl border border-border dark:border-zinc-700/60 bg-muted dark:bg-zinc-950/40 p-3 text-sm text-foreground dark:text-zinc-200 placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50 disabled:opacity-60"
           />
         </div>
 

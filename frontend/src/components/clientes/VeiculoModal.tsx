@@ -164,7 +164,7 @@ export function VeiculoModal({
     >
       <DialogContent
         showCloseButton={false}
-        className="!max-w-lg overflow-y-auto max-h-[90vh] rounded-2xl border border-zinc-800/60 bg-zinc-900 p-0 text-zinc-100 shadow-2xl sm:!max-w-lg"
+        className="!max-w-lg overflow-y-auto max-h-[90vh] rounded-2xl border border-border bg-card p-0 text-foreground shadow-2xl sm:!max-w-lg"
       >
         <DialogTitle className="sr-only">Adicionar veículo</DialogTitle>
         <DialogDescription className="sr-only">
@@ -176,29 +176,29 @@ export function VeiculoModal({
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
               {placa.length > 0 ? (
-                <div className="flex items-center gap-1.5 rounded-lg border-2 border-zinc-600 bg-zinc-800 px-3 py-1.5">
+                <div className="flex items-center gap-1.5 rounded-lg border-2 border-border bg-muted px-3 py-1.5">
                   <div className="flex h-5 items-center rounded bg-blue-700 px-1.5">
-                    <span className="text-[8px] font-bold leading-none text-white">BR · RJ</span>
+                    <span className="text-[8px] font-bold leading-none text-foreground">BR · RJ</span>
                   </div>
-                  <span className="font-mono text-lg font-bold tracking-wider text-zinc-100">
+                  <span className="font-mono text-lg font-bold tracking-wider text-foreground">
                     {placaDisplay || '---'}
                   </span>
                 </div>
               ) : (
-                <div className="flex h-10 items-center gap-2 rounded-lg border border-dashed border-zinc-700 bg-zinc-800/40 px-4">
-                  <Car className="h-4 w-4 text-zinc-500" />
-                  <span className="text-sm text-zinc-500">Digite a placa</span>
+                <div className="flex h-10 items-center gap-2 rounded-lg border border-dashed border-border bg-muted px-4">
+                  <Car className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Digite a placa</span>
                 </div>
               )}
             </div>
             <div className="flex items-center gap-2">
-              <span className="rounded-full border border-zinc-700 bg-zinc-800/60 px-3 py-1 text-[10px] font-bold tracking-[0.15em] text-zinc-400">
+              <span className="rounded-full border border-border bg-muted px-3 py-1 text-[10px] font-bold tracking-[0.15em] text-muted-foreground">
                 VEÍCULO Nº {veiculoNumero}
               </span>
               <button
                 type="button"
                 onClick={handleClose}
-                className="rounded-full p-1 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-300"
+                className="rounded-full p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -207,15 +207,15 @@ export function VeiculoModal({
 
           {/* Identificação do veículo */}
           <div className="mt-6">
-            <h3 className="text-base font-semibold text-zinc-100">Identificação do veículo</h3>
-            <p className="mt-0.5 text-sm text-zinc-500">
+            <h3 className="text-base font-semibold text-foreground">Identificação do veículo</h3>
+            <p className="mt-0.5 text-sm text-muted-foreground">
               Comece pela placa e preencha os dados do veículo.
             </p>
           </div>
 
           <div className="mt-4 grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">PLACA</Label>
+              <Label className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground">PLACA</Label>
               <Input
                 value={placa}
                 onChange={(e) =>
@@ -227,12 +227,12 @@ export function VeiculoModal({
                   )
                 }
                 placeholder="AAA0000"
-                className={`h-10 rounded-xl text-sm text-zinc-200 placeholder:text-zinc-600 focus-visible:ring-0 ${
+                className={`h-10 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-0 ${
                   errors.placa
                     ? 'border-red-500/60 bg-red-950/20'
                     : placaIsValid
                       ? 'border-green-500/60 bg-green-950/20'
-                      : 'border-zinc-700/60 bg-zinc-900/50'
+                      : 'border-border bg-card'
                 }`}
               />
               {errors.placa && (
@@ -246,8 +246,8 @@ export function VeiculoModal({
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">
-                ANO <span className="font-normal tracking-normal text-zinc-600">(opcional)</span>
+              <Label className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
+                ANO <span className="font-normal tracking-normal text-muted-foreground">(opcional)</span>
               </Label>
               <Input
                 value={ano}
@@ -257,10 +257,10 @@ export function VeiculoModal({
                 }}
                 placeholder="2024"
                 maxLength={4}
-                className={`h-10 rounded-xl text-sm text-zinc-200 placeholder:text-zinc-600 focus-visible:ring-0 ${
+                className={`h-10 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-0 ${
                   errors.ano
                     ? 'border-red-500/60 bg-red-950/20'
-                    : 'border-zinc-700/60 bg-zinc-900/50'
+                    : 'border-border bg-card'
                 }`}
               />
               {errors.ano && (
@@ -271,7 +271,7 @@ export function VeiculoModal({
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">
+              <Label className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
                 FABRICANTE
               </Label>
               <Input
@@ -279,10 +279,10 @@ export function VeiculoModal({
                 onChange={(e) => setFabricante(e.target.value.slice(0, 80))}
                 placeholder="Porsche"
                 maxLength={80}
-                className={`h-10 rounded-xl text-sm text-zinc-200 placeholder:text-zinc-600 focus-visible:ring-0 ${
+                className={`h-10 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-0 ${
                   errors.fabricante
                     ? 'border-red-500/60 bg-red-950/20'
-                    : 'border-zinc-700/60 bg-zinc-900/50'
+                    : 'border-border bg-card'
                 }`}
               />
               {errors.fabricante && (
@@ -293,16 +293,16 @@ export function VeiculoModal({
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">MODELO</Label>
+              <Label className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground">MODELO</Label>
               <Input
                 value={modelo}
                 onChange={(e) => setModelo(e.target.value.slice(0, 80))}
                 placeholder="911 Carrera S"
                 maxLength={80}
-                className={`h-10 rounded-xl text-sm text-zinc-200 placeholder:text-zinc-600 focus-visible:ring-0 ${
+                className={`h-10 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-0 ${
                   errors.modelo
                     ? 'border-red-500/60 bg-red-950/20'
-                    : 'border-zinc-700/60 bg-zinc-900/50'
+                    : 'border-border bg-card'
                 }`}
               />
               {errors.modelo && (
@@ -315,14 +315,14 @@ export function VeiculoModal({
 
           {/* Visual */}
           <div className="mt-6">
-            <h3 className="text-base font-semibold text-zinc-100">Visual</h3>
-            <p className="mt-0.5 text-sm text-zinc-500">
+            <h3 className="text-base font-semibold text-foreground">Visual</h3>
+            <p className="mt-0.5 text-sm text-muted-foreground">
               Ajuda o atendente a identificar o carro na pista.
             </p>
           </div>
 
           <div className="mt-4">
-            <Label className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">
+            <Label className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
               COR PREDOMINANTE
             </Label>
             <div className="mt-2 flex flex-wrap gap-2">
@@ -332,7 +332,7 @@ export function VeiculoModal({
                   type="button"
                   onClick={() => handleSelectColor(c.name, c.hex)}
                   className={`group flex flex-col items-center gap-1.5 rounded-xl p-2 transition-all ${
-                    corHex === c.hex ? 'bg-zinc-800 ring-2 ring-red-500/60' : 'hover:bg-zinc-800/50'
+                    corHex === c.hex ? 'bg-muted ring-2 ring-red-500/60' : 'hover:bg-accent'
                   }`}
                   title={c.name}
                 >
@@ -343,7 +343,7 @@ export function VeiculoModal({
                       borderColor: corHex === c.hex ? '#EF4444' : 'transparent',
                     }}
                   />
-                  <span className="text-[9px] font-medium tracking-wider text-zinc-500">
+                  <span className="text-[9px] font-medium tracking-wider text-muted-foreground">
                     {c.name}
                   </span>
                 </button>
@@ -353,13 +353,13 @@ export function VeiculoModal({
             {corHex && (
               <div className="mt-3 flex items-center gap-2">
                 <div
-                  className="h-6 w-6 rounded-full border border-zinc-700"
+                  className="h-6 w-6 rounded-full border border-border"
                   style={{ backgroundColor: corHex }}
                 />
                 <div>
-                  <p className="text-[9px] tracking-wider text-zinc-500">SELECIONADA</p>
-                  <p className="text-sm font-semibold text-zinc-200">
-                    {corNomeDisplay} <span className="font-normal text-zinc-500">· {corHex}</span>
+                  <p className="text-[9px] tracking-wider text-muted-foreground">SELECIONADA</p>
+                  <p className="text-sm font-semibold text-foreground">
+                    {corNomeDisplay} <span className="font-normal text-muted-foreground">· {corHex}</span>
                   </p>
                 </div>
               </div>
@@ -373,12 +373,12 @@ export function VeiculoModal({
         </div>
 
         {/* Footer */}
-        <div className="mt-6 flex items-center justify-end gap-3 border-t border-zinc-800/60 px-6 py-4">
+        <div className="mt-6 flex items-center justify-end gap-3 border-t border-border px-6 py-4">
           <Button
             type="button"
             variant="outline"
             onClick={handleClose}
-            className="h-10 rounded-full border-zinc-700/60 bg-transparent px-6 text-sm text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200"
+            className="h-10 rounded-full border-border bg-transparent px-6 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
           >
             Cancelar
           </Button>

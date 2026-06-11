@@ -134,12 +134,12 @@ export function ClienteDetalhePage() {
           type="button"
           variant="outline"
           onClick={() => void navigate('/clientes')}
-          className="mb-4 h-9 rounded-full border-zinc-700/60 bg-transparent px-4 text-sm"
+          className="mb-4 h-9 rounded-full border-border bg-transparent px-4 text-sm"
         >
           <ArrowLeft className="mr-1 h-4 w-4" /> Voltar
         </Button>
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-zinc-800 bg-zinc-950/20 py-12 text-center">
-          <ShieldOff className="mb-3 h-10 w-10 text-zinc-600" />
+        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-background py-12 text-center">
+          <ShieldOff className="mb-3 h-10 w-10 text-muted-foreground" />
           <p role="alert" className="text-sm text-red-400">
             {erro}
           </p>
@@ -155,7 +155,7 @@ export function ClienteDetalhePage() {
           type="button"
           variant="outline"
           onClick={() => void navigate('/clientes')}
-          className="h-9 rounded-full border-zinc-700/60 bg-transparent px-4 text-sm hover:bg-zinc-800/50 hover:text-zinc-200 text-zinc-400"
+          className="h-9 rounded-full border-border bg-transparent px-4 text-sm hover:bg-accent hover:text-foreground text-muted-foreground"
         >
           <ArrowLeft className="mr-1 h-4 w-4" /> Voltar
         </Button>
@@ -165,7 +165,7 @@ export function ClienteDetalhePage() {
             variant="outline"
             disabled={carregando || !cliente}
             onClick={() => void navigate(`/clientes/${id}/editar`)}
-            className="h-9 rounded-full border-zinc-700/60 bg-transparent px-4 text-sm hover:bg-zinc-800/50 hover:text-zinc-200 text-zinc-400"
+            className="h-9 rounded-full border-border bg-transparent px-4 text-sm hover:bg-accent hover:text-foreground text-muted-foreground"
           >
             <Pencil className="mr-1 h-4 w-4" /> Editar
           </Button>
@@ -174,7 +174,7 @@ export function ClienteDetalhePage() {
             variant="outline"
             disabled={salvando || carregando || !cliente}
             onClick={() => setModalStatusAberto(true)}
-            className="h-9 rounded-full border-zinc-700/60 bg-transparent px-4 text-sm hover:bg-zinc-800/50 hover:text-zinc-200 text-zinc-400"
+            className="h-9 rounded-full border-border bg-transparent px-4 text-sm hover:bg-accent hover:text-foreground text-muted-foreground"
           >
             {salvando ? (
               <Loader2 className="mr-1 h-4 w-4 animate-spin" />
@@ -197,16 +197,16 @@ export function ClienteDetalhePage() {
         </div>
       )}
 
-      <Card className="border-zinc-800/60 bg-zinc-900/30">
+      <Card className="border-border bg-card">
         <CardHeader>
-          <CardTitle className="flex items-center gap-3 text-xl text-zinc-100">
+          <CardTitle className="flex items-center gap-3 text-xl text-foreground">
             {carregando && !cliente ? 'Carregando...' : cliente?.nome}
             {cliente && (
               <span
                 className={
                   cliente.ativo
                     ? 'rounded-full bg-green-500/10 px-2 py-0.5 text-[10px] font-bold tracking-[0.15em] text-green-400'
-                    : 'rounded-full bg-zinc-700/40 px-2 py-0.5 text-[10px] font-bold tracking-[0.15em] text-zinc-500'
+                    : 'rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold tracking-[0.15em] text-muted-foreground'
                 }
               >
                 {cliente.ativo ? 'ATIVO' : 'INATIVO'}
@@ -214,9 +214,9 @@ export function ClienteDetalhePage() {
             )}
           </CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-4 text-sm text-zinc-300 sm:grid-cols-3">
+        <CardContent className="grid grid-cols-2 gap-4 text-sm text-foreground sm:grid-cols-3">
           {carregando && !cliente ? (
-            <div className="col-span-3 h-32 animate-pulse bg-zinc-800/30 rounded-lg" />
+            <div className="col-span-3 h-32 animate-pulse bg-muted rounded-lg" />
           ) : cliente ? (
             <>
               <Campo label="DOCUMENTO" valor={cliente.cpf ?? cliente.cnpj ?? '—'} />
@@ -244,15 +244,15 @@ export function ClienteDetalhePage() {
       </Card>
 
       {/* ─── Seção de Veículos ─────────────────────────────────────────────── */}
-      <Card className="border-zinc-800/60 bg-zinc-900/30">
+      <Card className="border-border bg-card">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <div>
-            <CardTitle className="text-lg text-zinc-100 flex items-center gap-2 font-semibold">
+            <CardTitle className="text-lg text-foreground flex items-center gap-2 font-semibold">
               <Car className="h-5 w-5 text-red-500" />
               Veículos do cliente{' '}
-              <span className="text-sm font-normal text-zinc-400">({veiculos.length})</span>
+              <span className="text-sm font-normal text-muted-foreground">({veiculos.length})</span>
             </CardTitle>
-            <p className="text-xs text-zinc-400 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               Veículos associados a este cliente para ordens de serviço.
             </p>
           </div>
@@ -272,13 +272,13 @@ export function ClienteDetalhePage() {
               {[1, 2, 3].map((skeleton) => (
                 <li
                   key={skeleton}
-                  className="flex h-20 items-center justify-between rounded-xl border border-zinc-800/40 bg-zinc-900/20 p-4 animate-pulse"
+                  className="flex h-20 items-center justify-between rounded-xl border border-border bg-card p-4 animate-pulse"
                 >
                   <div className="flex items-center gap-3 w-full">
-                    <div className="h-9 w-9 rounded-lg bg-zinc-800/50" />
+                    <div className="h-9 w-9 rounded-lg bg-muted" />
                     <div className="space-y-2 w-full">
-                      <div className="h-4 w-1/2 rounded bg-zinc-800/50" />
-                      <div className="h-3 w-1/3 rounded bg-zinc-800/50" />
+                      <div className="h-4 w-1/2 rounded bg-muted" />
+                      <div className="h-3 w-1/3 rounded bg-muted" />
                     </div>
                   </div>
                 </li>
@@ -286,18 +286,18 @@ export function ClienteDetalhePage() {
             </ul>
           ) : veiculos.length === 0 ? (
             /* ── Empty State ── */
-            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-zinc-800 bg-zinc-950/20 py-8 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-800/40 text-zinc-500 mb-3">
+            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-background py-8 text-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground mb-3">
                 <Car className="h-6 w-6" />
               </div>
-              <h4 className="text-sm font-semibold text-zinc-200">Nenhum veículo cadastrado</h4>
-              <p className="mt-1 text-xs text-zinc-500 max-w-[280px]">
+              <h4 className="text-sm font-semibold text-foreground">Nenhum veículo cadastrado</h4>
+              <p className="mt-1 text-xs text-muted-foreground max-w-[280px]">
                 Este cliente ainda não possui veículos vinculados à sua conta.
               </p>
               <Button
                 type="button"
                 onClick={() => void navigate(`/clientes/${id}/veiculos/novo`)}
-                className="mt-4 h-9 rounded-full bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-zinc-200 px-4 border border-zinc-700/60"
+                className="mt-4 h-9 rounded-full bg-muted hover:bg-accent text-xs font-semibold text-foreground px-4 border border-border"
               >
                 <Plus className="mr-1 h-3.5 w-3.5" /> Cadastrar primeiro veículo
               </Button>
@@ -308,20 +308,20 @@ export function ClienteDetalhePage() {
               {[...veiculos].reverse().map((veiculo) => (
                 <li
                   key={veiculo.id || veiculo.placa}
-                  className="flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-950/30 p-4 hover:border-zinc-700 transition-colors"
+                  className="flex items-center justify-between rounded-xl border border-border bg-background p-4 hover:border-ring transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-800/60 text-zinc-400">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
                       <Car className="h-5 w-5" />
                     </div>
                     <div>
-                      <h4 className="text-sm font-semibold text-zinc-200">
+                      <h4 className="text-sm font-semibold text-foreground">
                         {veiculo.fabricante} {veiculo.modelo}
                       </h4>
                       <div className="flex items-center gap-1.5 mt-0.5">
                         {veiculo.cor && (
                           <span
-                            className="inline-block h-4 w-4 rounded-full border border-zinc-600 shadow-sm"
+                            className="inline-block h-4 w-4 rounded-full border border-border shadow-sm"
                             style={{ backgroundColor: getCorCSS(veiculo.cor) }}
                             title={`Cor: ${veiculo.cor}`}
                           />
@@ -329,7 +329,7 @@ export function ClienteDetalhePage() {
                       </div>
                     </div>
                   </div>
-                  <div className="rounded-md border border-zinc-700 bg-zinc-900 px-2.5 py-1 text-xs font-mono font-bold tracking-wider text-zinc-200 uppercase shadow-inner">
+                  <div className="rounded-md border border-border bg-card px-2.5 py-1 text-xs font-mono font-bold tracking-wider text-foreground uppercase shadow-inner">
                     {formatarPlacaExibicao(veiculo.placa)}
                   </div>
                 </li>
@@ -355,12 +355,12 @@ export function ClienteDetalhePage() {
           setModalStatusAberto(aberto);
         }}
       >
-        <DialogContent className="sm:max-w-[425px] bg-zinc-950 border-zinc-800">
+        <DialogContent className="sm:max-w-[425px] bg-background border-border">
           <DialogHeader>
-            <DialogTitle className="text-zinc-100">
+            <DialogTitle className="text-foreground">
               {cliente?.ativo ? 'Inativar cliente' : 'Reativar cliente'}
             </DialogTitle>
-            <DialogDescription className="text-zinc-400">
+            <DialogDescription className="text-muted-foreground">
               {cliente?.ativo
                 ? `Deseja realmente inativar o cliente "${cliente?.nome}"? Ele não estará mais disponível para novos agendamentos.`
                 : `Deseja reativar o cliente "${cliente?.nome}"? Ele voltará a estar disponível para novos agendamentos.`}
@@ -372,7 +372,7 @@ export function ClienteDetalhePage() {
               variant="outline"
               onClick={() => setModalStatusAberto(false)}
               disabled={salvando}
-              className="border-zinc-700 bg-transparent text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100"
+              className="border-border bg-transparent text-foreground hover:bg-accent hover:text-foreground"
             >
               Cancelar
             </Button>
@@ -407,8 +407,8 @@ function formatarPlacaExibicao(placa: string) {
 function Campo({ label, valor }: { label: string; valor: string }) {
   return (
     <div>
-      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">{label}</p>
-      <p className="mt-1 text-zinc-200">{valor}</p>
+      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">{label}</p>
+      <p className="mt-1 text-foreground">{valor}</p>
     </div>
   );
 }
