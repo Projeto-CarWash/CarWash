@@ -230,9 +230,9 @@ public sealed class HistoricoAtendimentosClienteRepository : IHistoricoAtendimen
                 ai.preco_aplicado,
                 o.observacoes_logisticas
             from agendamentos_filtrados a
-            inner join filiais f on f.id = a.filial_id
-            inner join veiculos v on v.id = a.veiculo_id
-            inner join filiados r on r.id = a.responsavel_id
+            left join filiais f on f.id = a.filial_id
+            left join veiculos v on v.id = a.veiculo_id
+            left join filiados r on r.id = a.responsavel_id
             left join agendamento_itens ai on ai.agendamento_id = a.id
             left join servicos s on s.id = ai.servico_id
             left join observacoes o on o.agendamento_id = a.id
@@ -260,12 +260,29 @@ public sealed class HistoricoAtendimentosClienteRepository : IHistoricoAtendimen
                 Status = reader.GetString(reader.GetOrdinal("status")),
                 DuracaoTotalMin = reader.GetInt32(reader.GetOrdinal("duracao_total_min")),
                 ValorTotal = reader.GetDecimal(reader.GetOrdinal("valor_total")),
-                FilialId = reader.GetGuid(reader.GetOrdinal("filial_id")),
-                FilialNome = reader.GetString(reader.GetOrdinal("filial_nome")),
-                Placa = reader.GetString(reader.GetOrdinal("placa")),
-                Modelo = reader.GetString(reader.GetOrdinal("modelo")),
-                ResponsavelId = reader.GetGuid(reader.GetOrdinal("responsavel_id")),
-                ResponsavelNome = reader.GetString(reader.GetOrdinal("responsavel_nome")),
+                FilialId = await reader.IsDBNullAsync(reader.GetOrdinal("filial_id"), cancellationToken)
+                    ? Guid.Empty
+                    : reader.GetGuid(reader.GetOrdinal("filial_id")),
+
+                FilialNome = await reader.IsDBNullAsync(reader.GetOrdinal("filial_nome"), cancellationToken)
+                    ? string.Empty
+                    : reader.GetString(reader.GetOrdinal("filial_nome")),
+
+                Placa = await reader.IsDBNullAsync(reader.GetOrdinal("placa"), cancellationToken)
+                    ? string.Empty
+                    : reader.GetString(reader.GetOrdinal("placa")),
+
+                Modelo = await reader.IsDBNullAsync(reader.GetOrdinal("modelo"), cancellationToken)
+                    ? string.Empty
+                    : reader.GetString(reader.GetOrdinal("modelo")),
+
+                ResponsavelId = await reader.IsDBNullAsync(reader.GetOrdinal("responsavel_id"), cancellationToken)
+                    ? Guid.Empty
+                    : reader.GetGuid(reader.GetOrdinal("responsavel_id")),
+
+                ResponsavelNome = await reader.IsDBNullAsync(reader.GetOrdinal("responsavel_nome"), cancellationToken)
+                    ? string.Empty
+                    : reader.GetString(reader.GetOrdinal("responsavel_nome")),
                 ServicoId = await reader.IsDBNullAsync(reader.GetOrdinal("servico_id"), cancellationToken)
                     ? null
                     : reader.GetGuid(reader.GetOrdinal("servico_id")),
