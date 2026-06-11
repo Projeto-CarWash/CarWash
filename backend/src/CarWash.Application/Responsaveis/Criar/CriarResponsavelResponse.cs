@@ -1,22 +1,27 @@
 namespace CarWash.Application.Responsaveis.Criar;
 
-public class CriarResponsavelResponse
+public sealed class CriarResponsavelResponse
 {
-    public Guid Id { get; set; }
+    public string Message { get; init; } = "Responsável cadastrado com sucesso.";
 
-    public Guid ClienteTitularId { get; set; }
+    public CriarResponsavelData Data { get; init; } = new();
 
-    public string Nome { get; set; } = string.Empty;
+    public string TraceId { get; init; } = string.Empty;
+}
 
-    public string Documento { get; set; } = string.Empty;
+public sealed class CriarResponsavelData
+{
+    public Guid ResponsavelId { get; init; }
 
-    public string? Telefone { get; set; }
+    public Guid ClienteTitularId { get; init; }
 
-    public string? Email { get; set; }
+    public string Nome { get; init; } = string.Empty;
 
-    public string? GrauVinculo { get; set; }
+    public string Documento { get; init; } = string.Empty;
 
-    public string Mensagem { get; set; } = "Responsável cadastrado com sucesso.";
+    public string? Telefone { get; init; }
 
-    public string TraceId { get; set; } = string.Empty;
+    public string? Email { get; init; }
+
+    public string? GrauVinculo { get; init; }
 }

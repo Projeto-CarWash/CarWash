@@ -59,7 +59,9 @@ public class CriarAgendamentoCommandValidatorTests
     {
         var resultado = _validator.Validate(ComandoValido() with { Inicio = DateTime.UtcNow.AddHours(-1) });
         resultado.IsValid.Should().BeFalse();
-        resultado.Errors.Should().Contain(e => e.ErrorMessage.Contains("futura", StringComparison.Ordinal));
+        resultado.Errors.Should().Contain(e =>
+            e.PropertyName == nameof(CriarAgendamentoCommand.Inicio)
+            && e.ErrorMessage == "A data/hora de início não pode estar no passado.");
     }
 
     [Fact]
@@ -138,7 +140,9 @@ public class CriarAgendamentoCommandValidatorTests
     {
         var resultado = _validator.Validate(ComandoValido() with { Inicio = DateTime.UtcNow.AddYears(-1) });
         resultado.IsValid.Should().BeFalse();
-        resultado.Errors.Should().Contain(e => e.ErrorMessage.Contains("futura", StringComparison.Ordinal));
+        resultado.Errors.Should().Contain(e =>
+            e.PropertyName == nameof(CriarAgendamentoCommand.Inicio)
+            && e.ErrorMessage == "A data/hora de início não pode estar no passado.");
     }
 
     private static CriarAgendamentoCommand ComandoValido() => new(

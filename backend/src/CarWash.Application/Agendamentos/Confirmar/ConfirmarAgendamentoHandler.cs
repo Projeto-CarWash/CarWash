@@ -231,6 +231,7 @@ public sealed class ConfirmarAgendamentoHandler
             recursoId: agendamentoId);
 
         ResultadoConfirmacaoIdempotente resultado;
+#pragma warning disable S2139 // Loga motivo de falha padronizado (RF024/CA009) e relança a MESMA exceção para o middleware traduzir em HTTP — observabilidade intencional.
         try
         {
             resultado = await _agendamentos.AdicionarComIdempotenciaAsync(
@@ -265,6 +266,7 @@ public sealed class ConfirmarAgendamentoHandler
                 command.TraceId);
             throw;
         }
+#pragma warning restore S2139
 
         // Corrida vencida por outra requisição com a MESMA chave: a UNIQUE da
         // idempotência disparou e o repositório releu o registro vencedor.

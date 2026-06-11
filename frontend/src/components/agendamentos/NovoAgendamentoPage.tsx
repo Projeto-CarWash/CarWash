@@ -56,8 +56,8 @@ export function NovoAgendamentoPage() {
 
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [conflitoVeiculo, setConflitoVeiculo] = useState(false);
 
-  // RF019 — carrega filiais ativas para o seletor.
   const {
     data: filiaisData,
     isLoading: filiaisCarregando,
@@ -79,6 +79,7 @@ export function NovoAgendamentoPage() {
   const handleVeiculoChange = useCallback((veiculo: VeiculoResumido | null) => {
     setWizardState((prev) => ({ ...prev, veiculo }));
     setGlobalError(null);
+    setConflitoVeiculo(false);
   }, []);
 
   const handleResponsavelChange = useCallback((responsavel: ResponsavelResumido | null) => {
@@ -89,11 +90,13 @@ export function NovoAgendamentoPage() {
   const handleDataChange = useCallback((dataAgendamento: string) => {
     setWizardState((prev) => ({ ...prev, dataAgendamento }));
     setGlobalError(null);
+    setConflitoVeiculo(false);
   }, []);
 
   const handleHoraChange = useCallback((horaInicio: string) => {
     setWizardState((prev) => ({ ...prev, horaInicio }));
     setGlobalError(null);
+    setConflitoVeiculo(false);
   }, []);
 
   const handleServicosChange = useCallback((servicos: ServicoAtivo[]) => {
@@ -117,6 +120,7 @@ export function NovoAgendamentoPage() {
     setGlobalError(null);
     setSuccessMsg(null);
     setConfirmado(false);
+    setConflitoVeiculo(false);
     void navigate('/dashboard', { replace: true });
   }, [navigate]);
 
@@ -174,6 +178,7 @@ export function NovoAgendamentoPage() {
 
     setGlobalError(null);
     setSuccessMsg(null);
+    setConflitoVeiculo(false);
     setIsSubmitting(true);
 
     try {
@@ -221,10 +226,26 @@ export function NovoAgendamentoPage() {
             'A filial selecionada está inativa e não pode receber novos agendamentos.',
           );
           goToStep(1);
+        } else if (
+          texto.includes('respons') ||
+          texto.includes('vínculo') ||
+          texto.includes('vinculo') ||
+          texto.includes('relação') ||
+          texto.includes('relacao')
+        ) {
+          // Conflito de vínculo entre veículo e responsável (RF024)
+          setGlobalError(
+            problem?.title ??
+              problem?.detail ??
+              'O responsável selecionado possui um vínculo inválido com o veículo ou cliente.',
+          );
+          setWizardState((prev) => ({ ...prev, responsavel: null }));
+          setConfirmado(false);
+          goToStep(1);
         } else if (texto.includes('capacidade')) {
           setGlobalError('Capacidade da filial atingida para o horário informado.');
         } else if (texto.includes('veículo') || texto.includes('veiculo')) {
-          setGlobalError('Já existe agendamento para este veículo no horário informado.');
+          setConflitoVeiculo(true);
         } else {
           // Fallback: usa título do backend se reconhecível, senão mensagem genérica.
           setGlobalError(
@@ -344,6 +365,7 @@ export function NovoAgendamentoPage() {
               }}
               cliente={wizardState.cliente}
               veiculo={wizardState.veiculo}
+              responsavel={wizardState.responsavel}
               dataAgendamento={wizardState.dataAgendamento}
               horaInicio={wizardState.horaInicio}
               onClienteChange={handleClienteChange}
@@ -352,6 +374,7 @@ export function NovoAgendamentoPage() {
               onDataChange={handleDataChange}
               onHoraChange={handleHoraChange}
               onNext={() => goToStep(2)}
+              conflitoVeiculo={conflitoVeiculo}
             />
           )}
 
@@ -380,6 +403,7 @@ export function NovoAgendamentoPage() {
                 observacoesLogisticas={wizardState.observacoesLogisticas ?? ''}
                 onObservacoesLogisticasChange={handleObservacoesLogisticasChange}
                 observacoesLogisticasErro={obsLogisticasErro ?? undefined}
+                conflitoVeiculo={conflitoVeiculo}
               />
             </>
           )}

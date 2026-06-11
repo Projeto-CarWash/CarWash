@@ -16,6 +16,7 @@ import Dashboard from '@/pages/Dashboard/Dashboard';
 import { FiliaisListaPage } from '@/pages/Filiais/FiliaisListaPage';
 import { FilialEditarPage } from '@/pages/Filiais/FilialEditarPage';
 import { FilialFormPage } from '@/pages/Filiais/FilialFormPage';
+import { HistoricoPage } from '@/pages/Historico/HistoricoPage';
 import Login from '@/pages/Login/Login';
 import { ServicoFormPage } from '@/pages/Servicos/ServicoFormPage';
 import { ServicosListaPage } from '@/pages/Servicos/ServicosListaPage';
@@ -254,6 +255,17 @@ function App() {
             <PrivateRoute>
               <DashboardLayout>
                 <AgendaPage />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/historico"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <HistoricoPage />
               </DashboardLayout>
             </PrivateRoute>
           }

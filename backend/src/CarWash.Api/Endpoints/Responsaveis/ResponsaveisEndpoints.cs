@@ -60,6 +60,21 @@ public static class ResponsaveisEndpoints
         return app;
     }
 
+    private static async Task<Ok<IReadOnlyList<ResponsavelListaItem>>> ListarAsync(
+        Guid clienteTitularId,
+        [FromServices] IQueryHandler<ListarResponsaveisPorClienteQuery, IReadOnlyList<ResponsavelListaItem>> handler,
+        HttpContext http,
+        CancellationToken cancellationToken)
+    {
+        string traceId = http.TraceIdentifier;
+
+        var query = new ListarResponsaveisPorClienteQuery(clienteTitularId, traceId);
+
+        var resultado = await handler.HandleAsync(query, cancellationToken).ConfigureAwait(false);
+
+        return TypedResults.Ok(resultado);
+    }
+
     private static async Task<Created<CriarResponsavelResponse>> CriarAsync(
         Guid clienteTitularId,
         [FromBody] CriarResponsavelRequest? request,
@@ -97,12 +112,12 @@ public static class ResponsaveisEndpoints
         logger.LogInformation(
             "Responsável cadastrado com sucesso. TraceId: {TraceId}. ResponsavelId: {ResponsavelId}. ClienteTitularId: {ClienteTitularId}. UsuarioId: {UsuarioId}",
             traceId,
-            resposta.Id,
+            resposta.Data.ResponsavelId,
             clienteTitularId,
             usuarioId);
 
         return TypedResults.Created(
-            $"/api/v1/clientes/{clienteTitularId}/responsaveis/{resposta.Id}",
+            $"/api/v1/clientes/{clienteTitularId}/responsaveis/{resposta.Data.ResponsavelId}",
             resposta);
     }
 
