@@ -17,21 +17,13 @@ import { responsavelService } from '@/services/responsavelService';
 
 import { ResponsavelModal } from './ResponsavelModal';
 
+import { VINCULO_LABELS } from '@/types/responsavel';
+
 import type { Responsavel } from '@/types/responsavel';
 
 interface ResponsaveisSectionProps {
   clienteId: string;
 }
-
-const VINCULO_LABELS: Record<string, string> = {
-  PAI: 'Pai',
-  MAE: 'Mãe',
-  CONJUGE: 'Cônjuge',
-  FILHO: 'Filho(a)',
-  SOCIO: 'Sócio(a)',
-  FUNCIONARIO: 'Funcionário(a)',
-  OUTRO: 'Outro',
-};
 
 export function ResponsaveisSection({ clienteId }: ResponsaveisSectionProps) {
   const queryClient = useQueryClient();

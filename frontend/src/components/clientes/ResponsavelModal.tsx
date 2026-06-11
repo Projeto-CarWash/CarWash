@@ -11,6 +11,8 @@ import { isValidCnpj, isValidCpf } from '@/lib/validators';
 import { responsavelSchema } from '@/schemas/responsavelSchema';
 import { responsavelService } from '@/services/responsavelService';
 
+import { GRAUS_VINCULO, VINCULO_LABELS } from '@/types/responsavel';
+
 import type { GrauVinculo, Responsavel } from '@/types/responsavel';
 
 interface ResponsavelModalProps {
@@ -84,7 +86,9 @@ export function ResponsavelModal({
       const payload = {
         nome: parseResult.data.nome,
         documento: parseResult.data.documento.replace(/\D/g, ''),
-        telefone: parseResult.data.telefone ?? null,
+        telefone: parseResult.data.telefone
+          ? parseResult.data.telefone.replace(/\D/g, '')
+          : null,
         email: parseResult.data.email ?? null,
         grauVinculo: parseResult.data.grauVinculo,
       };
@@ -271,13 +275,11 @@ export function ResponsavelModal({
               <option value="" disabled className="text-zinc-400 dark:text-zinc-600">
                 Selecione o vínculo
               </option>
-              <option value="PAI">Pai</option>
-              <option value="MAE">Mãe</option>
-              <option value="CONJUGE">Cônjuge</option>
-              <option value="FILHO">Filho(a)</option>
-              <option value="SOCIO">Sócio(a)</option>
-              <option value="FUNCIONARIO">Funcionário(a)</option>
-              <option value="OUTRO">Outro</option>
+              {GRAUS_VINCULO.map((grau) => (
+                <option key={grau} value={grau}>
+                  {VINCULO_LABELS[grau]}
+                </option>
+              ))}
             </select>
             {errors.grauVinculo && (
               <p className="text-xs text-red-500 flex items-center gap-1">✕ {errors.grauVinculo}</p>
