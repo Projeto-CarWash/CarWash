@@ -15,9 +15,11 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { AgendaItemDetalhadoCard } from '@/pages/Agenda/AgendaItemDetalhadoCard';
 import { agendamentoService } from '@/services/agendamentoService';
+import { filialService } from '@/services/filialService';
 
 import type { AgendaItemDetalhado } from '@/types/agenda';
 import type { AgendamentoSemana } from '@/types/agendamento';
+import type { FilialResumo } from '@/types/filial';
 
 const parseQueryDate = (ano: string | null, mes: string | null): Date => {
   const parsedAno = Number(ano);
@@ -36,6 +38,7 @@ export function AgendamentosCalendarioPage() {
 
   const paramAno = searchParams.get('ano');
   const paramMes = searchParams.get('mes');
+  const paramFilial = searchParams.get('filialId');
 
   const [currentDate, setCurrentDate] = useState(() => parseQueryDate(paramAno, paramMes));
 
@@ -51,6 +54,8 @@ export function AgendamentosCalendarioPage() {
 
   const [agendamentos, setAgendamentos] = useState<AgendamentoSemana[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filiais, setFiliais] = useState<FilialResumo[]>([]);
+  const [filialId, setFilialId] = useState(paramFilial ?? '');
 
   // Detalhe (modal) ao clicar num card do grid.
   const [detalheAberto, setDetalheAberto] = useState(false);
@@ -61,21 +66,48 @@ export function AgendamentosCalendarioPage() {
   const startDate = useMemo(() => startOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
   const endDate = useMemo(() => endOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
 
+  // Carrega filiais e define a inicial (URL > primeira da lista).
   useEffect(() => {
+    let ignore = false;
+    void filialService
+      .listar()
+      .then((lista) => {
+        if (ignore) return;
+        setFiliais(lista.itens);
+        setFilialId((atual) => (atual ? atual : (lista.itens[0]?.id ?? '')));
+      })
+      .catch(() => {
+        /* sem filiais: lista fica vazia */
+      });
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!filialId) return;
+    let ignore = false;
     const fetchAgendamentos = async () => {
       setLoading(true);
       try {
-        const dados = await agendamentoService.listarAgendamentosSemana(startDate, endDate);
-        setAgendamentos(dados);
+        const dados = await agendamentoService.listarAgendamentosSemana(
+          startDate,
+          endDate,
+          filialId,
+        );
+        if (!ignore) setAgendamentos(dados);
       } catch (error) {
         console.error('Erro ao buscar agendamentos:', error);
       } finally {
-        setLoading(false);
+        if (!ignore) setLoading(false);
       }
     };
 
     void fetchAgendamentos();
-  }, [startDate, endDate]);
+    return () => {
+      ignore = true;
+    };
+  }, [startDate, endDate, filialId]);
 
   const handlePrevWeek = () => setCurrentDate((prev) => subWeeks(prev, 1));
   const handleNextWeek = () => setCurrentDate((prev) => addWeeks(prev, 1));
@@ -87,7 +119,12 @@ export function AgendamentosCalendarioPage() {
     setErroDetalhe(null);
     setCarregandoDetalhe(true);
     try {
-      const detalhe = await agendamentoService.obterDetalheNaSemana(ag.id, startDate, endDate);
+      const detalhe = await agendamentoService.obterDetalheNaSemana(
+        ag.id,
+        startDate,
+        endDate,
+        filialId,
+      );
       if (detalhe) {
         setItemDetalhado(detalhe);
       } else {
@@ -161,6 +198,25 @@ export function AgendamentosCalendarioPage() {
                 </div>
               )}
           </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <label htmlFor="filial-calendario" className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase">
+            Filial
+          </label>
+          <select
+            id="filial-calendario"
+            value={filialId}
+            onChange={(e) => setFilialId(e.target.value)}
+            className="h-9 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 text-sm text-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50 [color-scheme:dark]"
+          >
+            {filiais.length === 0 && <option value="">Carregando…</option>}
+            {filiais.map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.nome}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 

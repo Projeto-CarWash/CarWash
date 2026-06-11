@@ -3,33 +3,60 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { agendamentoService } from '@/services/agendamentoService';
+import { filialService } from '@/services/filialService';
 
 import type { EstatisticasMes } from '@/types/agendamento';
+import type { FilialResumo } from '@/types/filial';
 
 export function AgendamentosDashboardPage() {
   const navigate = useNavigate();
   const [meses, setMeses] = useState<EstatisticasMes[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filiais, setFiliais] = useState<FilialResumo[]>([]);
+  const [filialId, setFilialId] = useState('');
   const anoAtual = new Date().getFullYear();
 
+  // Carrega as filiais e define a inicial (a primeira da lista).
   useEffect(() => {
+    let ignore = false;
+    void filialService
+      .listar()
+      .then((lista) => {
+        if (ignore) return;
+        setFiliais(lista.itens);
+        setFilialId((atual) => (atual ? atual : (lista.itens[0]?.id ?? '')));
+      })
+      .catch(() => {
+        /* sem filiais: estatísticas ficam zeradas */
+      });
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!filialId) return;
+    let ignore = false;
     const carregarEstatisticas = async () => {
       try {
         setLoading(true);
-        const dados = await agendamentoService.obterEstatisticasAno(anoAtual);
-        setMeses(dados);
+        const dados = await agendamentoService.obterEstatisticasAno(anoAtual, filialId);
+        if (!ignore) setMeses(dados);
       } catch (error) {
         console.error('Erro ao carregar estatísticas:', error);
       } finally {
-        setLoading(false);
+        if (!ignore) setLoading(false);
       }
     };
 
     void carregarEstatisticas();
-  }, [anoAtual]);
+    return () => {
+      ignore = true;
+    };
+  }, [anoAtual, filialId]);
 
   const handleMesClick = (mes: number) => {
-    void navigate(`/agendamentos/calendario?ano=${anoAtual}&mes=${mes}`);
+    void navigate(`/agendamentos/calendario?ano=${anoAtual}&mes=${mes}&filialId=${filialId}`);
   };
 
   return (
@@ -40,6 +67,25 @@ export function AgendamentosDashboardPage() {
           <div className="flex h-6 items-center rounded-md border border-zinc-800 bg-zinc-900/50 px-2.5 text-[10px] font-semibold tracking-wider text-zinc-400">
             {anoAtual}
           </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <label htmlFor="filial-dashboard" className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase">
+            Filial
+          </label>
+          <select
+            id="filial-dashboard"
+            value={filialId}
+            onChange={(e) => setFilialId(e.target.value)}
+            className="h-9 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 text-sm text-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50 [color-scheme:dark]"
+          >
+            {filiais.length === 0 && <option value="">Carregando…</option>}
+            {filiais.map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.nome}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 

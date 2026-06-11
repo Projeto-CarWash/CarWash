@@ -23,6 +23,19 @@ import type {
   CancelarAgendamentoResponse,
 } from '@/types/agendamento';
 
+/**
+ * Resolve a filial padrão (primeira ativa retornada pelo backend) quando a tela
+ * não informa explicitamente uma filial. Retorna '' se não houver/erro.
+ */
+async function resolverFilialPadrao(): Promise<string> {
+  try {
+    const filiais = await filialService.listar();
+    return filiais.itens?.[0]?.id ?? '';
+  } catch {
+    return '';
+  }
+}
+
 export const agendamentoService = {
   async buscarClientes(busca: string): Promise<ClienteResumido[]> {
     const { data } = await api.get<{ itens: ClienteResumido[] }>('/api/v1/clientes', {
@@ -84,7 +97,7 @@ export const agendamentoService = {
     return data;
   },
 
-  async obterEstatisticasAno(ano: number): Promise<EstatisticasMes[]> {
+  async obterEstatisticasAno(ano: number, filialId?: string): Promise<EstatisticasMes[]> {
     const nomesMeses = [
       'JANEIRO',
       'FEVEREIRO',
@@ -100,16 +113,10 @@ export const agendamentoService = {
       'DEZEMBRO',
     ];
 
-    // Busca a primeira filial ativa para usar como filtro obrigatório da agenda.
-    let filialId = '';
-    try {
-      const filiais = await filialService.listar();
-      filialId = filiais.itens?.[0]?.id ?? '';
-    } catch {
-      // Falha ao buscar filiais - continuará com filialId vazio retornando valores padrão
-    }
+    // Usa a filial informada pela tela; sem ela, cai na filial padrão.
+    const filialEfetiva = filialId ?? (await resolverFilialPadrao());
 
-    if (!filialId) {
+    if (!filialEfetiva) {
       return nomesMeses.map((nome, index) => ({
         mes: index + 1,
         nome,
@@ -135,7 +142,7 @@ export const agendamentoService = {
           formato: 'simples',
           inicio: inicio.toISOString().slice(0, 16),
           fim: fim.toISOString().slice(0, 16),
-          filialId,
+          filialId: filialEfetiva,
         });
 
         for (const item of resp.data) {
@@ -166,23 +173,20 @@ export const agendamentoService = {
     return resultados;
   },
 
-  async listarAgendamentosSemana(dataInicio: Date, dataFim: Date): Promise<AgendamentoSemana[]> {
-    let filialId = '';
-    try {
-      const filiais = await filialService.listar();
-      filialId = filiais.itens?.[0]?.id ?? '';
-    } catch {
-      return [];
-    }
-
-    if (!filialId) return [];
+  async listarAgendamentosSemana(
+    dataInicio: Date,
+    dataFim: Date,
+    filialId?: string,
+  ): Promise<AgendamentoSemana[]> {
+    const filialEfetiva = filialId ?? (await resolverFilialPadrao());
+    if (!filialEfetiva) return [];
 
     try {
       const resp = await agendaService.consultarSimples({
         formato: 'simples',
         inicio: dataInicio.toISOString().slice(0, 16),
         fim: dataFim.toISOString().slice(0, 16),
-        filialId,
+        filialId: filialEfetiva,
       });
 
       return resp.data.map((item: AgendaItemSimples) => ({
@@ -208,22 +212,16 @@ export const agendamentoService = {
     agendamentoId: string,
     dataInicio: Date,
     dataFim: Date,
+    filialId?: string,
   ): Promise<AgendaItemDetalhado | null> {
-    let filialId = '';
-    try {
-      const filiais = await filialService.listar();
-      filialId = filiais.itens?.[0]?.id ?? '';
-    } catch {
-      return null;
-    }
-
-    if (!filialId) return null;
+    const filialEfetiva = filialId ?? (await resolverFilialPadrao());
+    if (!filialEfetiva) return null;
 
     const resp = await agendaService.consultarDetalhada({
       formato: 'detalhado',
       inicio: dataInicio.toISOString().slice(0, 16),
       fim: dataFim.toISOString().slice(0, 16),
-      filialId,
+      filialId: filialEfetiva,
     });
 
     return resp.data.find((item) => item.agendamentoId === agendamentoId) ?? null;
