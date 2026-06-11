@@ -2,18 +2,6 @@ import axios, { AxiosError, AxiosHeaders, type InternalAxiosRequestConfig } from
 
 import { accessTokenStore } from './accessTokenStore';
 
-declare module 'axios' {
-  interface AxiosRequestConfig {
-    /**
-     * Quando `true`, um 401 nesta requisição NÃO dispara o refresh global nem o
-     * redirecionamento para /login. Usado por chamadas best-effort (ex.: buscar
-     * preferência de tema no mount) que não devem competir com a restauração de
-     * sessão do AuthProvider — evita refresh duplicado (token rotativo) na recarga.
-     */
-    _skipAuthRefresh?: boolean;
-  }
-}
-
 const baseURL: string = import.meta.env.VITE_API_URL
   ? String(import.meta.env.VITE_API_URL).trim()
   : '';
@@ -86,9 +74,6 @@ function redirecionarParaLogin(): void {
     return;
   }
   if (window.location.pathname !== '/login') {
-    if (import.meta.env.MODE === 'test') {
-      return;
-    }
     window.location.href = '/login';
   }
 }
@@ -104,7 +89,7 @@ api.interceptors.response.use(
     const config = error.config as FailedConfig;
     const isAuthEndpoint = typeof config.url === 'string' && config.url.startsWith('/api/v1/auth/');
 
-    if (status === 401 && !config._retry && !isAuthEndpoint && !config._skipAuthRefresh) {
+    if (status === 401 && !config._retry && !isAuthEndpoint) {
       config._retry = true;
 
       if (!refreshEmAndamento) {

@@ -73,8 +73,6 @@ export interface AgendaItemDetalhado {
   veiculo: AgendaVeiculo;
   servicos: AgendaServico[];
   observacoes: string | null;
-  /** Observações logísticas — campo a ser exposto pelo backend. */
-  observacoesLogisticas?: string | null;
   criadoEm: string;
   atualizadoEm: string;
 }

@@ -1,8 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import '@/tokens';
-
-import { preferenciaService } from '@/services/preferenciaService';
 
 import { ThemeContext, type Theme } from './ThemeContext';
 
@@ -22,19 +20,10 @@ const STORAGE_KEY = 'carwash_theme';
  * <c>localStorage[carwash_theme]</c>. No primeiro mount, lê a preferência
  * salva — se ausente, cai no <c>defaultTheme</c> e, secundariamente, em
  * <c>prefers-color-scheme</c>.
- *
- * Sincroniza com o backend via `preferenciaService`:
- * - No mount: tenta buscar o tema salvo no backend (GET).
- * - No toggle: tenta salvar a nova preferência no backend (PATCH).
- * - Se qualquer chamada falhar, mantém o tema local e exibe toast (se disponível).
  */
 export function ThemeProvider({ children, defaultTheme = 'dark' }: ThemeProviderProps) {
   const [theme, setThemeState] = useState<Theme>(() => carregarTema(defaultTheme));
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [toastMsg, setToastMsg] = useState<string | null>(null);
-  const mountedRef = useRef(true);
 
-  // Aplica a classe no DOM e persiste no localStorage
   useEffect(() => {
     aplicarClasse(theme);
     if (typeof window !== 'undefined') {
@@ -42,62 +31,17 @@ export function ThemeProvider({ children, defaultTheme = 'dark' }: ThemeProvider
     }
   }, [theme]);
 
-  // Tenta buscar o tema do backend no mount (sem bloquear a renderização)
-  useEffect(() => {
-    mountedRef.current = true;
-    void preferenciaService.obterTema().then((temaBackend) => {
-      if (mountedRef.current && temaBackend && temaBackend !== theme) {
-        setThemeState(temaBackend);
-      }
-    });
-    return () => {
-      mountedRef.current = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Toast auto-dismiss
-  useEffect(() => {
-    if (!toastMsg) return;
-    const timer = setTimeout(() => setToastMsg(null), 4000);
-    return () => clearTimeout(timer);
-  }, [toastMsg]);
-
   const setTheme = useCallback((next: Theme) => {
     setThemeState(next);
   }, []);
 
   const toggle = useCallback(() => {
-    setThemeState((prev) => {
-      const next = prev === 'dark' ? 'light' : 'dark';
-
-      // Sincroniza com o backend de forma assíncrona (fire-and-forget com tratamento de erro)
-      setIsSyncing(true);
-      void preferenciaService
-        .salvarTema(next)
-        .catch(() => {
-          // RF016: NÃO desfaz o tema visualmente. Mantém o tema local para a sessão.
-          setToastMsg('Não foi possível salvar sua preferência de tema no momento.');
-        })
-        .finally(() => {
-          setIsSyncing(false);
-        });
-
-      return next;
-    });
+    setThemeState((prev) => (prev === 'dark' ? 'light' : 'dark'));
   }, []);
 
-  const value = useMemo(
-    () => ({ theme, toggle, setTheme, isSyncing }),
-    [theme, toggle, setTheme, isSyncing],
-  );
+  const value = useMemo(() => ({ theme, toggle, setTheme }), [theme, toggle, setTheme]);
 
-  return (
-    <ThemeContext.Provider value={value}>
-      {children}
-      {toastMsg && <ThemeToast message={toastMsg} onDismiss={() => setToastMsg(null)} />}
-    </ThemeContext.Provider>
-  );
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 
 function carregarTema(fallback: Theme): Theme {
@@ -125,28 +69,4 @@ function aplicarClasse(theme: Theme): void {
   } else {
     root.classList.remove('dark');
   }
-}
-
-/**
- * Toast minimalista para feedback de falha ao salvar tema.
- * Renderizado diretamente pelo ThemeProvider para evitar dependências circulares.
- */
-function ThemeToast({ message, onDismiss }: { message: string; onDismiss: () => void }) {
-  return (
-    <div
-      role="status"
-      aria-live="polite"
-      className="fixed bottom-6 right-6 z-[9999] flex max-w-sm items-center gap-3 rounded-xl border border-amber-500/30 bg-amber-950/90 px-4 py-3 text-sm text-amber-200 shadow-lg backdrop-blur-sm dark:border-amber-500/30 dark:bg-amber-950/90 dark:text-amber-200"
-    >
-      <span className="flex-1">{message}</span>
-      <button
-        type="button"
-        onClick={onDismiss}
-        className="shrink-0 text-amber-400/60 transition-colors hover:text-amber-300"
-        aria-label="Fechar notificação"
-      >
-        ✕
-      </button>
-    </div>
-  );
 }

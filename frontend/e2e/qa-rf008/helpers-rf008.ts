@@ -80,7 +80,10 @@ async function jsonId(
 }
 
 /** Pega o 1º cliente já existente no seed/banco de hom. */
-export async function primeiroClienteId(request: APIRequestContext, s: SessaoApi): Promise<string> {
+export async function primeiroClienteId(
+  request: APIRequestContext,
+  s: SessaoApi,
+): Promise<string> {
   const resp = await request.get('/api/v1/clientes?tamanhoPagina=1', { headers: headers(s) });
   if (!resp.ok()) throw new Error(`GET clientes falhou (${resp.status()})`);
   const body = (await resp.json()) as { itens?: { id: string }[] };
@@ -212,7 +215,7 @@ export async function semearSimultaneos(
  * aleatório e a hora é sorteada num intervalo amplo — cada run usa um slot
  * virgem. A hora cheia mantém a janela alinhada ao minuto.
  */
-export function slotFuturoIso(dias: number): string {
+export function slotFuturoIso(dias: number, _horaBase: number): string {
   const d = new Date();
   // Deslocamento aleatório de dias (60..420) + o offset do chamador, garantindo
   // janelas distintas entre execuções e entre os diferentes testes do lote.

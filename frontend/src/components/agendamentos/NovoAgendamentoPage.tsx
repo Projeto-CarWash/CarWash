@@ -17,7 +17,6 @@ import type {
   AgendamentoWizardState,
   ClienteResumido,
   CriarAgendamentoPayload,
-  ResponsavelResumido,
   ServicoAtivo,
   VeiculoResumido,
 } from '@/types/agendamento';
@@ -37,11 +36,9 @@ const INITIAL_STATE: AgendamentoWizardState = {
   filialNome: '',
   cliente: null,
   veiculo: null,
-  responsavel: null,
   dataAgendamento: '',
   horaInicio: '',
   servicos: [],
-  observacoesLogisticas: '',
 };
 
 export function NovoAgendamentoPage() {
@@ -56,8 +53,8 @@ export function NovoAgendamentoPage() {
 
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
-  const [conflitoVeiculo, setConflitoVeiculo] = useState(false);
 
+  // RF019 — carrega filiais ativas para o seletor.
   const {
     data: filiaisData,
     isLoading: filiaisCarregando,
@@ -79,36 +76,22 @@ export function NovoAgendamentoPage() {
   const handleVeiculoChange = useCallback((veiculo: VeiculoResumido | null) => {
     setWizardState((prev) => ({ ...prev, veiculo }));
     setGlobalError(null);
-    setConflitoVeiculo(false);
-  }, []);
-
-  const handleResponsavelChange = useCallback((responsavel: ResponsavelResumido | null) => {
-    setWizardState((prev) => ({ ...prev, responsavel }));
-    setGlobalError(null);
   }, []);
 
   const handleDataChange = useCallback((dataAgendamento: string) => {
     setWizardState((prev) => ({ ...prev, dataAgendamento }));
     setGlobalError(null);
-    setConflitoVeiculo(false);
   }, []);
 
   const handleHoraChange = useCallback((horaInicio: string) => {
     setWizardState((prev) => ({ ...prev, horaInicio }));
     setGlobalError(null);
-    setConflitoVeiculo(false);
   }, []);
 
   const handleServicosChange = useCallback((servicos: ServicoAtivo[]) => {
     setWizardState((prev) => ({ ...prev, servicos }));
     setGlobalError(null);
   }, []);
-
-  const handleObservacoesLogisticasChange = useCallback((observacoesLogisticas: string) => {
-    setWizardState((prev) => ({ ...prev, observacoesLogisticas }));
-  }, []);
-
-  const [obsLogisticasErro, setObsLogisticasErro] = useState<string | null>(null);
 
   const goToStep = useCallback((step: number) => {
     setCurrentStep(step);
@@ -120,7 +103,6 @@ export function NovoAgendamentoPage() {
     setGlobalError(null);
     setSuccessMsg(null);
     setConfirmado(false);
-    setConflitoVeiculo(false);
     void navigate('/dashboard', { replace: true });
   }, [navigate]);
 
@@ -128,16 +110,9 @@ export function NovoAgendamentoPage() {
     if (isSubmitting) return;
     if (!confirmado) return;
 
-    const { cliente, veiculo, responsavel, dataAgendamento, horaInicio, servicos } = wizardState;
+    const { cliente, veiculo, dataAgendamento, horaInicio, servicos } = wizardState;
 
-    if (
-      !cliente ||
-      !veiculo ||
-      !responsavel ||
-      !dataAgendamento ||
-      !horaInicio ||
-      servicos.length === 0
-    ) {
+    if (!cliente || !veiculo || !dataAgendamento || !horaInicio || servicos.length === 0) {
       setGlobalError(
         'Existem campos obrigatorios nao preenchidos. Revise as etapas e tente novamente.',
       );
@@ -160,31 +135,23 @@ export function NovoAgendamentoPage() {
 
     const inicio = new Date(`${dataAgendamento}T${horaInicio}:00`);
 
-    // RF019/RF024 — payload real com responsável obrigatório.
+    // RF019/RF024 — payload real, sem valores mockados. `responsavelId` é
+    // opcional e omitido enquanto o fluxo não tem seleção de responsável.
     const payload: CriarAgendamentoPayload = {
       clienteId: cliente.id,
       veiculoId: veiculo.id,
       filialId: wizardState.filialId,
-      responsavelId: responsavel.id,
       inicio: inicio.toISOString(),
       servicoIds: servicos.map((s) => s.id),
     };
 
-    // Inclui observações logísticas apenas quando informadas (trim no envio).
-    const obsLogisticas = wizardState.observacoesLogisticas?.trim();
-    if (obsLogisticas) {
-      payload.observacoesLogisticas = obsLogisticas;
-    }
-
     setGlobalError(null);
     setSuccessMsg(null);
-    setConflitoVeiculo(false);
     setIsSubmitting(true);
 
     try {
       await agendamentoService.criarAgendamento(payload);
-      setSuccessMsg('Agendamento salvo com sucesso.');
-      setObsLogisticasErro(null);
+      setSuccessMsg('Agendamento criado com sucesso!');
 
       setTimeout(() => {
         void navigate('/dashboard', { replace: true });
@@ -226,26 +193,10 @@ export function NovoAgendamentoPage() {
             'A filial selecionada está inativa e não pode receber novos agendamentos.',
           );
           goToStep(1);
-        } else if (
-          texto.includes('respons') ||
-          texto.includes('vínculo') ||
-          texto.includes('vinculo') ||
-          texto.includes('relação') ||
-          texto.includes('relacao')
-        ) {
-          // Conflito de vínculo entre veículo e responsável (RF024)
-          setGlobalError(
-            problem?.title ??
-              problem?.detail ??
-              'O responsável selecionado possui um vínculo inválido com o veículo ou cliente.',
-          );
-          setWizardState((prev) => ({ ...prev, responsavel: null }));
-          setConfirmado(false);
-          goToStep(1);
         } else if (texto.includes('capacidade')) {
           setGlobalError('Capacidade da filial atingida para o horário informado.');
         } else if (texto.includes('veículo') || texto.includes('veiculo')) {
-          setConflitoVeiculo(true);
+          setGlobalError('Já existe agendamento para este veículo no horário informado.');
         } else {
           // Fallback: usa título do backend se reconhecível, senão mensagem genérica.
           setGlobalError(
@@ -260,26 +211,7 @@ export function NovoAgendamentoPage() {
       // caso contrário, usa a mensagem padrão associada ao campo Filial.
       if (status === 400) {
         const erroFilial = problem?.errors?.filialId?.[0] ?? problem?.errors?.FilialId?.[0];
-        const erroObsLog =
-          problem?.errors?.observacoesLogisticas?.[0] ??
-          problem?.errors?.ObservacoesLogisticas?.[0];
-        if (erroObsLog) {
-          setObsLogisticasErro('Dados da observação inválidos. Verifique e tente novamente.');
-        }
         setGlobalError(erroFilial ?? problem?.title ?? API_MESSAGES[400]!);
-        return;
-      }
-
-      // 409: agendamento no estado atual não permite edição da observação.
-      if (status === 409) {
-        setObsLogisticasErro('A observação não pode ser alterada no estado atual do agendamento.');
-        setGlobalError(API_MESSAGES[status] ?? API_MESSAGES[500]!);
-        return;
-      }
-
-      // 403: sem permissão para gerenciar observações logísticas.
-      if (status === 403) {
-        setGlobalError('Você não possui permissão para gerenciar observações logísticas.');
         return;
       }
 
@@ -365,16 +297,13 @@ export function NovoAgendamentoPage() {
               }}
               cliente={wizardState.cliente}
               veiculo={wizardState.veiculo}
-              responsavel={wizardState.responsavel}
               dataAgendamento={wizardState.dataAgendamento}
               horaInicio={wizardState.horaInicio}
               onClienteChange={handleClienteChange}
               onVeiculoChange={handleVeiculoChange}
-              onResponsavelChange={handleResponsavelChange}
               onDataChange={handleDataChange}
               onHoraChange={handleHoraChange}
               onNext={() => goToStep(2)}
-              conflitoVeiculo={conflitoVeiculo}
             />
           )}
 
@@ -400,10 +329,6 @@ export function NovoAgendamentoPage() {
                 onConfirmadoChange={setConfirmado}
                 onConfirm={handleConfirm}
                 onBack={() => goToStep(2)}
-                observacoesLogisticas={wizardState.observacoesLogisticas ?? ''}
-                onObservacoesLogisticasChange={handleObservacoesLogisticasChange}
-                observacoesLogisticasErro={obsLogisticasErro ?? undefined}
-                conflitoVeiculo={conflitoVeiculo}
               />
             </>
           )}

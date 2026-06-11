@@ -182,22 +182,6 @@ export function AgendaItemDetalhadoCard({
           </section>
         )}
 
-        {/* Observações logísticas */}
-        {item.observacoesLogisticas && (
-          <section
-            aria-label="Observações logísticas"
-            className="rounded-lg border border-zinc-200/60 bg-zinc-50/50 p-3 dark:border-zinc-800/40 dark:bg-zinc-950/30"
-          >
-            <h3 className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-zinc-600 dark:text-zinc-300">
-              <FileText className="h-3.5 w-3.5 text-red-500" aria-hidden="true" />
-              Observações Logísticas
-            </h3>
-            <p className="whitespace-pre-line text-sm text-zinc-700 dark:text-zinc-300">
-              {item.observacoesLogisticas}
-            </p>
-          </section>
-        )}
-
         {/* Totais */}
         <div className="flex flex-wrap items-center justify-end gap-x-6 gap-y-1 border-t border-zinc-200/60 pt-3 text-sm dark:border-zinc-800/40">
           <span className="flex items-center gap-1.5 text-zinc-500 dark:text-zinc-400">

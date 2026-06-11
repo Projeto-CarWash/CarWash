@@ -12,7 +12,6 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
-import { ResponsaveisSection } from '@/components/clientes/ResponsaveisSection';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -338,8 +337,6 @@ export function ClienteDetalhePage() {
           )}
         </CardContent>
       </Card>
-
-      {!carregando && cliente && <ResponsaveisSection clienteId={id} />}
 
       {erro && erroHttp !== 404 && erroHttp !== 403 && (
         <p role="alert" className="text-sm text-red-400">

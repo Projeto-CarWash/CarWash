@@ -189,11 +189,7 @@ describe('NovoUsuarioPage (RF014) — submit', () => {
     });
 
     // Avança o timer de 2s do redirect.
-    await import('@testing-library/react').then(({ act }) =>
-      act(async () => {
-        await vi.advanceTimersByTimeAsync(2000);
-      }),
-    );
+    await vi.advanceTimersByTimeAsync(2000);
     expect(await screen.findByText('Pagina Dashboard')).toBeInTheDocument();
   });
 
