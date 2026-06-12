@@ -99,8 +99,8 @@ export function PreferenciasFidelidadeForm({ isSubmitting }: PreferenciasFidelid
     <div>
       {/* Lembretes de agendamento */}
       <div className="mb-8">
-        <h3 className="text-base font-semibold text-zinc-100">Lembretes de agendamento</h3>
-        <p className="mt-0.5 text-sm text-zinc-500">
+        <h3 className="text-base font-semibold text-foreground">Lembretes de agendamento</h3>
+        <p className="mt-0.5 text-sm text-muted-foreground">
           Quando o cliente deve receber lembretes antes do serviço?
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
@@ -113,8 +113,8 @@ export function PreferenciasFidelidadeForm({ isSubmitting }: PreferenciasFidelid
                 onClick={() => toggleLembrete(opt.value)}
                 className={`rounded-lg border px-4 py-2 text-[11px] font-bold tracking-[0.1em] transition-all ${
                   isSelected
-                    ? 'border-[#FF1F2E] bg-[#FF1F2E1F] text-zinc-100'
-                    : 'border-zinc-700/60 bg-transparent text-zinc-500 hover:border-zinc-600 hover:text-zinc-300'
+                    ? 'border-[#FF1F2E] bg-[#FF1F2E1F] text-foreground'
+                    : 'border-border bg-transparent text-muted-foreground hover:border-ring hover:text-foreground'
                 }`}
               >
                 {opt.label}
@@ -126,8 +126,10 @@ export function PreferenciasFidelidadeForm({ isSubmitting }: PreferenciasFidelid
 
       {/* Canais de contato preferenciais */}
       <div className="mb-8">
-        <h3 className="text-base font-semibold text-zinc-100">Canais de contato preferenciais</h3>
-        <p className="mt-0.5 text-sm text-zinc-500">Como o cliente prefere receber lembretes?</p>
+        <h3 className="text-base font-semibold text-foreground">Canais de contato preferenciais</h3>
+        <p className="mt-0.5 text-sm text-muted-foreground">
+          Como o cliente prefere receber lembretes?
+        </p>
         <div className="mt-3 flex flex-wrap gap-2">
           {CANAIS_OPTIONS.map((opt) => {
             const isSelected = (watchedCanais ?? []).includes(opt.value);
@@ -138,8 +140,8 @@ export function PreferenciasFidelidadeForm({ isSubmitting }: PreferenciasFidelid
                 onClick={() => toggleCanal(opt.value)}
                 className={`rounded-lg border px-4 py-2 text-[11px] font-bold tracking-[0.1em] transition-all ${
                   isSelected
-                    ? 'border-[#FF1F2E] bg-[#FF1F2E1F] text-zinc-100'
-                    : 'border-zinc-700/60 bg-transparent text-zinc-500 hover:border-zinc-600 hover:text-zinc-300'
+                    ? 'border-[#FF1F2E] bg-[#FF1F2E1F] text-foreground'
+                    : 'border-border bg-transparent text-muted-foreground hover:border-ring hover:text-foreground'
                 }`}
               >
                 {opt.label}
@@ -151,30 +153,32 @@ export function PreferenciasFidelidadeForm({ isSubmitting }: PreferenciasFidelid
 
       {/* Observações gerais */}
       <div className="mb-8">
-        <h3 className="text-base font-semibold text-zinc-100">Observações gerais</h3>
-        <p className="mt-0.5 text-sm text-zinc-500">Notas importantes sobre este cliente.</p>
+        <h3 className="text-base font-semibold text-foreground">Observações gerais</h3>
+        <p className="mt-0.5 text-sm text-muted-foreground">
+          Notas importantes sobre este cliente.
+        </p>
         <textarea
           value={observacoesGerais}
           onChange={(e) => setValue('observacoesGerais', e.target.value, { shouldDirty: true })}
           placeholder="Ex.: cliente corporativo, atende terça a quinta..."
           rows={4}
-          className="mt-3 w-full resize-none rounded-xl border border-zinc-700/60 bg-zinc-900/50 px-4 py-3 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-zinc-600 focus:outline-none"
+          className="mt-3 w-full resize-none rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-border focus:outline-none"
           maxLength={1000}
         />
       </div>
 
       {/* Filiados */}
       <div className="mb-8">
-        <h3 className="text-base font-semibold text-zinc-100">Filiados</h3>
-        <p className="mt-0.5 text-sm text-zinc-500">
+        <h3 className="text-base font-semibold text-foreground">Filiados</h3>
+        <p className="mt-0.5 text-sm text-muted-foreground">
           Adicione outras pessoas que são filiadas a este cliente. Elas também podem receber
           lembretes de agendamentos.
         </p>
 
         <div className="mt-4 space-y-3">
           {filiados.length === 0 ? (
-            <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/20 px-4 py-6 text-center">
-              <p className="text-[11px] font-bold tracking-[0.15em] text-zinc-500">
+            <div className="rounded-xl border border-border bg-card px-4 py-6 text-center">
+              <p className="text-[11px] font-bold tracking-[0.15em] text-muted-foreground">
                 NENHUM FILIADO ADICIONADO AINDA
               </p>
             </div>
@@ -192,18 +196,18 @@ export function PreferenciasFidelidadeForm({ isSubmitting }: PreferenciasFidelid
                 return (
                   <div
                     key={filiado.id}
-                    className="flex items-center justify-between rounded-xl border border-zinc-800/60 bg-zinc-900/20 px-4 py-3 transition-colors hover:bg-zinc-800/20"
+                    className="flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3 transition-colors hover:bg-accent"
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-zinc-200">{filiado.nome}</p>
-                      <p className="text-xs text-zinc-500">{detalhes}</p>
+                      <p className="text-sm font-medium text-foreground">{filiado.nome}</p>
+                      <p className="text-xs text-muted-foreground">{detalhes}</p>
                     </div>
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
                       onClick={() => removeFiliado(index)}
-                      className="ml-3 h-8 w-8 shrink-0 text-zinc-400 hover:bg-red-500/10 hover:text-red-400"
+                      className="ml-3 h-8 w-8 shrink-0 text-muted-foreground hover:bg-red-500/10 hover:text-red-400"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -216,7 +220,7 @@ export function PreferenciasFidelidadeForm({ isSubmitting }: PreferenciasFidelid
           <button
             type="button"
             onClick={() => setFiliadoModalOpen(true)}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-zinc-700/60 px-4 py-4 text-[11px] font-bold tracking-[0.15em] text-zinc-500 transition-colors hover:border-zinc-600 hover:text-zinc-300"
+            className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border px-4 py-4 text-[11px] font-bold tracking-[0.15em] text-muted-foreground transition-colors hover:border-ring hover:text-foreground"
           >
             <Plus className="h-3.5 w-3.5" />
             ADICIONAR FILIADO

@@ -64,9 +64,9 @@ export function ObservacoesLogisticasField({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-baseline justify-between gap-2">
-        <Label htmlFor={id} className="text-zinc-300">
+        <Label htmlFor={id} className="text-foreground">
           Observações logísticas{' '}
-          <span className="text-xs font-normal text-zinc-500">(opcional)</span>
+          <span className="text-xs font-normal text-muted-foreground">(opcional)</span>
         </Label>
 
         {/* Contador de caracteres — aria-live anuncia mudanças para leitores de tela */}
@@ -79,7 +79,7 @@ export function ObservacoesLogisticasField({
               ? 'font-semibold text-red-400'
               : comprimento >= MAX_CHARS * 0.9
                 ? 'text-amber-400'
-                : 'text-zinc-500'
+                : 'text-muted-foreground'
           }`}
         >
           {comprimento}/{MAX_CHARS}
@@ -102,12 +102,12 @@ export function ObservacoesLogisticasField({
         aria-invalid={!!error}
         aria-readonly={readonly}
         aria-describedby={describeBy}
-        className={`w-full resize-y rounded-lg border px-3 py-2.5 text-sm leading-relaxed transition-colors placeholder:text-zinc-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-0 dark:[color-scheme:dark] ${
+        className={`w-full resize-y rounded-lg border px-3 py-2.5 text-sm leading-relaxed transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-0 dark:[color-scheme:dark] ${
           readonly || disabled
-            ? 'cursor-default border-zinc-700/40 bg-zinc-900/20 text-zinc-400 focus-visible:ring-0'
+            ? 'cursor-default border-border bg-card text-muted-foreground focus-visible:ring-0'
             : error
-              ? 'border-red-500/60 bg-red-950/20 text-zinc-100 focus-visible:border-red-500 focus-visible:ring-red-500/30'
-              : 'border-zinc-700/60 bg-zinc-950/40 text-zinc-100 focus-visible:border-zinc-500 focus-visible:ring-zinc-500/20'
+              ? 'border-red-500/60 bg-red-950/20 text-foreground focus-visible:border-red-500 focus-visible:ring-red-500/30'
+              : 'border-border bg-background text-foreground focus-visible:border-ring focus-visible:ring-ring'
         }`}
       />
 
@@ -117,7 +117,7 @@ export function ObservacoesLogisticasField({
           {error}
         </p>
       ) : (
-        <p id={hintId} className="text-xs text-zinc-500">
+        <p id={hintId} className="text-xs text-muted-foreground">
           {readonly
             ? 'Campo somente leitura no status atual do agendamento.'
             : 'Máximo 1000 caracteres. Quebras de linha são preservadas.'}

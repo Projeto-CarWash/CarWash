@@ -4,6 +4,7 @@ using CarWash.Application.Agendamentos.Persistence;
 using CarWash.Application.Common.Exceptions;
 using CarWash.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Npgsql;
 
 namespace CarWash.Infrastructure.Persistence.Repositories;
@@ -12,7 +13,9 @@ namespace CarWash.Infrastructure.Persistence.Repositories;
 /// Implementação concreta de <see cref="IAgendamentoRepository"/> sobre EF Core.
 /// Persiste o agregado (agendamento + itens + histórico) em transação única e
 /// traduz a violação da constraint EXCLUDE <c>ex_ag_veiculo_janela</c> (RN011)
-/// em <see cref="AgendamentoConflitanteException"/>.
+/// em <see cref="AgendamentoConflitanteException"/>. RF008: o <c>AdicionarAsync</c>
+/// usa <c>SELECT … FOR UPDATE</c> na linha da filial como lock de concorrência
+/// antes de verificar a capacidade.
 /// </summary>
 public sealed class AgendamentoRepository : IAgendamentoRepository
 {
@@ -38,10 +41,14 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
     private static readonly string[] ConcorrenciaSqlStates = ["40P01", "40001"];
 
     private readonly CarWashDbContext _db;
+    private readonly ILogger<AgendamentoRepository> _logger;
 
-    public AgendamentoRepository(CarWashDbContext db)
+    public AgendamentoRepository(
+        CarWashDbContext db,
+        ILogger<AgendamentoRepository> logger)
     {
         _db = db;
+        _logger = logger;
     }
 
     /// <inheritdoc/>
@@ -52,13 +59,15 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
         CancellationToken cancellationToken)
     {
         // Espelha a EXCLUDE ex_ag_veiculo_janela: janela meio-aberta [inicio, fim),
-        // apenas status 'agendado'. Sobreposição ⇔ inicio_existente < fim_novo
+        // status 'agendado' e 'em_andamento'. Sobreposição ⇔ inicio_existente < fim_novo
         // && fim_existente > inicio_novo.
+        // Comparações explícitas (sem array.Contains): tradução EF estável e
+        // compatível com os analyzers estritos do CI.
         return _db.Agendamentos
             .AsNoTracking()
             .AnyAsync(
                 a => a.VeiculoId == veiculoId
-                    && a.StatusRaw == "agendado"
+                    && (a.StatusRaw == "agendado" || a.StatusRaw == "em_andamento")
                     && a.Inicio < fim
                     && a.Fim > inicio,
                 cancellationToken);
@@ -73,9 +82,9 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
     {
         // RF008/RN009: a filial aceita atendimentos simultâneos até o número de
         // células ativas. Lê o teto e conta a ocupação da janela [inicio, fim)
-        // (apenas status 'agendado', mesma semântica de sobreposição do conflito
-        // de veículo). Filial inexistente → false (existência validada antes pela
-        // CalculadoraResumoAgendamento).
+        // (status 'agendado' e 'em_andamento' — atendimento em execução ocupa
+        // célula; concluído/cancelado liberam a vaga). Filial inexistente →
+        // false (existência validada antes pela CalculadoraResumoAgendamento).
         int? celulasAtivas = await _db.Filiais
             .AsNoTracking()
             .Where(f => f.Id == filialId)
@@ -92,13 +101,33 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
             .AsNoTracking()
             .CountAsync(
                 a => a.FilialId == filialId
-                    && a.StatusRaw == "agendado"
+                    && (a.StatusRaw == "agendado" || a.StatusRaw == "em_andamento")
                     && a.Inicio < fim
                     && a.Fim > inicio,
                 cancellationToken)
             .ConfigureAwait(false);
 
         return ocupacao >= teto;
+    }
+
+    /// <inheritdoc/>
+    public async Task<int> ContarOcupacaoAsync(
+        Guid filialId,
+        DateTime inicio,
+        DateTime fim,
+        CancellationToken cancellationToken)
+    {
+        // RF008: conta agendamentos por status de ocupação (agendado + em_andamento)
+        // na janela [inicio, fim) — cálculo correto de vagas por status.
+        return await _db.Agendamentos
+            .AsNoTracking()
+            .CountAsync(
+                a => a.FilialId == filialId
+                    && a.Inicio < fim
+                    && a.Fim > inicio
+                    && (a.StatusRaw == "agendado" || a.StatusRaw == "em_andamento"),
+                cancellationToken)
+            .ConfigureAwait(false);
     }
 
     /// <inheritdoc/>
@@ -149,6 +178,17 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
         {
             await _db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException pg
+            && pg.ConstraintName == "ex_ag_veiculo_janela")
+        {
+            await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
+            _logger.LogWarning(ex, "EXCLUDE constraint violada (concorrencia). CorrelationId: {CorrelationId}", correlationId);
+            throw new AgendamentoConflitanteException(ex);
+        }
+        catch (CapacidadeFilialAtingidaException)
+        {
+            throw;
         }
 #pragma warning disable CA1031 // Toda falha de persistência é reavaliada como conflito da RN011 antes de subir.
         catch (Exception ex)
@@ -372,6 +412,18 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
         return ehUniqueViolation && ehConstraintDeIdempotencia;
     }
 
+    /// <inheritdoc/>
+    public async Task<Agendamento?> ObterPorIdAsync(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        return await _db.Agendamentos
+            .AsNoTracking()
+            .FirstOrDefaultAsync(a => a.Id == id, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc/>
     public async Task<Agendamento?> ObterPorIdRastreadoAsync(
         Guid id,
         CancellationToken cancellationToken)
@@ -461,7 +513,12 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
         catch (DbUpdateConcurrencyException)
         {
             await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
-            throw;
+
+            // Concorrência otimista (Versao): o agendamento mudou entre o lookup
+            // e o commit — desfecho contratado do RF010 é 409, não 500.
+            throw new ConflictException(
+                "O agendamento foi alterado por outra operação. Recarregue os dados e tente novamente.",
+                "agendamento-conflito-concorrencia");
         }
 #pragma warning disable CA1031
         catch (Exception ex)
@@ -473,6 +530,15 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
             }
 
             await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
+
+            // RN011 no caminho de EDIÇÃO (RF020): reagendar para uma janela já
+            // ocupada pelo mesmo veículo viola a EXCLUDE ex_ag_veiculo_janela.
+            // Sem esta tradução o PATCH devolvia 500 em vez do 409 contratado.
+            if (ex is DbUpdateException due && IsConflitoVeiculoViolation(due))
+            {
+                throw new AgendamentoConflitanteException(ex);
+            }
+
             throw;
         }
     }

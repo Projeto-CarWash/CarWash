@@ -235,7 +235,7 @@ export function NovoClientePage() {
         >
           <Stepper currentStep={currentStep} />
 
-          <div className="rounded-2xl border border-zinc-800/60 bg-zinc-900/30 p-8">
+          <div className="rounded-2xl border border-border bg-card p-8">
             {globalError && (
               <div
                 role="alert"
@@ -282,7 +282,7 @@ export function NovoClientePage() {
                   : 'mt-0 max-h-0 translate-y-4 opacity-0'
               }`}
             >
-              <div className="border-t border-zinc-800/60 pt-8">
+              <div className="border-t border-border pt-8">
                 <ContatoEnderecoForm />
               </div>
             </div>
@@ -295,7 +295,7 @@ export function NovoClientePage() {
                   : 'mt-0 max-h-0 translate-y-4 opacity-0'
               }`}
             >
-              <div className="border-t border-zinc-800/60 pt-8">
+              <div className="border-t border-border pt-8">
                 <VeiculosClienteForm />
               </div>
             </div>
@@ -308,7 +308,7 @@ export function NovoClientePage() {
                   : 'mt-0 max-h-0 translate-y-4 opacity-0'
               }`}
             >
-              <div className="border-t border-zinc-800/60 pt-8">
+              <div className="border-t border-border pt-8">
                 <PreferenciasFidelidadeForm isSubmitting={isSubmitting} />
               </div>
             </div>

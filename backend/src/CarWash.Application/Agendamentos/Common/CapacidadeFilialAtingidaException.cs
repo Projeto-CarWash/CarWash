@@ -4,7 +4,7 @@ namespace CarWash.Application.Agendamentos.Common;
 
 public sealed class CapacidadeFilialAtingidaException : ConflictException
 {
-    public const string MensagemPadrao = "Capacidade da filial atingida para o horário informado.";
+    public const string MensagemPadrao = "Capacidade máxima da filial atingida para este horário.";
     public const string SlugPadrao = "capacidade-filial";
 
     public CapacidadeFilialAtingidaException()

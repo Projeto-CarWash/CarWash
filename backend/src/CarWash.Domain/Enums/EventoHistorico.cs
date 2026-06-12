@@ -7,6 +7,7 @@ public enum EventoHistorico
 {
     Criado,
     Editado,
+    Iniciado,
     Cancelado,
     Finalizado,
 }
@@ -17,6 +18,7 @@ public static class EventoHistoricoExtensions
     {
         EventoHistorico.Criado => "CRIADO",
         EventoHistorico.Editado => "EDITADO",
+        EventoHistorico.Iniciado => "INICIADO",
         EventoHistorico.Cancelado => "CANCELADO",
         EventoHistorico.Finalizado => "FINALIZADO",
         _ => throw new ArgumentOutOfRangeException(nameof(evento), evento, "Evento desconhecido."),
@@ -26,6 +28,7 @@ public static class EventoHistoricoExtensions
     {
         "CRIADO" => EventoHistorico.Criado,
         "EDITADO" => EventoHistorico.Editado,
+        "INICIADO" => EventoHistorico.Iniciado,
         "CANCELADO" => EventoHistorico.Cancelado,
         "FINALIZADO" => EventoHistorico.Finalizado,
         _ => throw new ArgumentOutOfRangeException(nameof(raw), raw, "Evento persistido inválido."),

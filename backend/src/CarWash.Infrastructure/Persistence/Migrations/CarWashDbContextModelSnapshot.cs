@@ -194,7 +194,7 @@ namespace CarWash.Infrastructure.Persistence.Migrations
 
                     b.ToTable("agendamento_historico", "public", t =>
                         {
-                            t.HasCheckConstraint("ck_hist_evento", "evento IN ('CRIADO','EDITADO','CANCELADO','FINALIZADO')");
+                            t.HasCheckConstraint("ck_hist_evento", "evento IN ('CRIADO','EDITADO','INICIADO','CANCELADO','FINALIZADO')");
                         });
                 });
 

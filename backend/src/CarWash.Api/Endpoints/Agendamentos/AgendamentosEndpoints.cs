@@ -5,6 +5,8 @@ using CarWash.Application.Agendamentos.Common;
 using CarWash.Application.Agendamentos.Confirmar;
 using CarWash.Application.Agendamentos.Criar;
 using CarWash.Application.Agendamentos.Editar;
+using CarWash.Application.Agendamentos.Finalizar;
+using CarWash.Application.Agendamentos.Iniciar;
 using CarWash.Application.Agendamentos.ObterPorId;
 using CarWash.Application.Agendamentos.PreConfirmar;
 using FluentValidation;
@@ -76,6 +78,26 @@ public static class AgendamentosEndpoints
         grupo.MapPatch("/{id:guid}/cancelar", CancelarAsync)
             .WithName("CancelarAgendamento")
             .Produces<CancelarAgendamentoResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict)
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
+
+        // RF010/RF013 — início do atendimento (AGENDADO → EM_ANDAMENTO).
+        grupo.MapPatch("/{id:guid}/iniciar", IniciarAsync)
+            .WithName("IniciarAgendamento")
+            .Produces<IniciarAgendamentoResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict)
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
+
+        // RF010/RF013 — finalização do atendimento (EM_ANDAMENTO → FINALIZADO).
+        grupo.MapPatch("/{id:guid}/finalizar", FinalizarAsync)
+            .WithName("FinalizarAgendamento")
+            .Produces<FinalizarAgendamentoResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status404NotFound)
@@ -301,6 +323,66 @@ public static class AgendamentosEndpoints
 
         logger.LogInformation(
             "Agendamento cancelado via endpoint. TraceId: {TraceId}. AgendamentoId: {AgendamentoId}. UsuarioId: {UsuarioId}",
+            traceId,
+            id,
+            usuarioId);
+
+        return TypedResults.Ok(resposta);
+    }
+
+    private static async Task<Ok<IniciarAgendamentoResponse>> IniciarAsync(
+        Guid id,
+        [FromServices] ICommandHandler<IniciarAgendamentoCommand, IniciarAgendamentoResponse> handler,
+        [FromServices] IValidator<IniciarAgendamentoCommand> validator,
+        [FromServices] ILogger<CriarAgendamentoEndpointMarker> logger,
+        HttpContext http,
+        CancellationToken cancellationToken)
+    {
+        string traceId = http.TraceIdentifier;
+        var usuarioId = ObterUsuarioId(http);
+
+        var command = new IniciarAgendamentoCommand(
+            AgendamentoId: id,
+            TraceId: traceId,
+            UsuarioId: usuarioId);
+
+        var resultado = await validator.ValidateAsync(command, cancellationToken).ConfigureAwait(false);
+        ValidationProblems.EnsureValid(resultado, MensagemPayloadInvalido);
+
+        var resposta = await handler.HandleAsync(command, cancellationToken).ConfigureAwait(false);
+
+        logger.LogInformation(
+            "Atendimento iniciado via endpoint. TraceId: {TraceId}. AgendamentoId: {AgendamentoId}. UsuarioId: {UsuarioId}",
+            traceId,
+            id,
+            usuarioId);
+
+        return TypedResults.Ok(resposta);
+    }
+
+    private static async Task<Ok<FinalizarAgendamentoResponse>> FinalizarAsync(
+        Guid id,
+        [FromServices] ICommandHandler<FinalizarAgendamentoCommand, FinalizarAgendamentoResponse> handler,
+        [FromServices] IValidator<FinalizarAgendamentoCommand> validator,
+        [FromServices] ILogger<CriarAgendamentoEndpointMarker> logger,
+        HttpContext http,
+        CancellationToken cancellationToken)
+    {
+        string traceId = http.TraceIdentifier;
+        var usuarioId = ObterUsuarioId(http);
+
+        var command = new FinalizarAgendamentoCommand(
+            AgendamentoId: id,
+            TraceId: traceId,
+            UsuarioId: usuarioId);
+
+        var resultado = await validator.ValidateAsync(command, cancellationToken).ConfigureAwait(false);
+        ValidationProblems.EnsureValid(resultado, MensagemPayloadInvalido);
+
+        var resposta = await handler.HandleAsync(command, cancellationToken).ConfigureAwait(false);
+
+        logger.LogInformation(
+            "Atendimento finalizado via endpoint. TraceId: {TraceId}. AgendamentoId: {AgendamentoId}. UsuarioId: {UsuarioId}",
             traceId,
             id,
             usuarioId);

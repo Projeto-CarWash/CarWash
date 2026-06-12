@@ -93,7 +93,11 @@ public class SchemaShapeTests
         def.Should().NotBeNullOrWhiteSpace();
         def.Should().Contain("EXCLUDE USING gist");
         def.Should().Contain("tstzrange(inicio, fim, '[)'::text)");
-        def.Should().Contain("status)::text = 'agendado'");
+
+        // RN011 cobre 'agendado' E 'em_andamento' — atendimento em execução
+        // continua ocupando o veículo (migration AtendimentoEmAndamentoEConclusao).
+        def.Should().Contain("'agendado'");
+        def.Should().Contain("'em_andamento'");
     }
 
     [Fact]

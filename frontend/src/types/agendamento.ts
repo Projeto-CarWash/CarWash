@@ -1,4 +1,10 @@
-export type StatusAgendamento = 'agendado' | 'cancelado' | 'finalizado' | 'pendente';
+export type StatusAgendamento =
+  | 'agendado'
+  | 'em_andamento'
+  | 'concluido'
+  | 'cancelado'
+  | 'finalizado'
+  | 'pendente';
 
 export interface ClienteResumido {
   id: string;
@@ -63,9 +69,11 @@ export interface CriarAgendamentoResponse {
 export interface EstatisticasMes {
   mes: number;
   nome: string;
-  confirmados: number;
-  pendentes: number;
-  cancelados: number;
+  /** Contagem por status real do contrato da agenda (AGENDADO/EM_ANDAMENTO/CONCLUIDO/CANCELADO). */
+  agendado: number;
+  emAndamento: number;
+  concluido: number;
+  cancelado: number;
   total: number;
 }
 
@@ -76,6 +84,30 @@ export interface AgendamentoSemana {
   inicio: string;
   fim: string;
   status: StatusAgendamento;
+}
+
+/** Dados do `GET /api/v1/agendamentos/{id}` (RF010) usados na edição. */
+export interface AgendamentoDetalhe {
+  id: string;
+  filialId: string;
+  clienteId: string;
+  veiculoId: string;
+  responsavelId: string | null;
+  status: string;
+  inicio: string;
+  fim: string;
+  observacoes: string | null;
+}
+
+/**
+ * Campos editáveis do `PATCH /api/v1/agendamentos/{id}` (RF010). Todos
+ * opcionais — apenas os enviados são alterados. Edição só com status AGENDADO.
+ */
+export interface EditarAgendamentoPayload {
+  inicio?: string;
+  fim?: string;
+  responsavelId?: string | null;
+  observacoes?: string | null;
 }
 
 export interface CriarAgendamentoRequest {
@@ -158,5 +190,18 @@ export interface CancelarAgendamentoData {
 export interface CancelarAgendamentoResponse {
   message: string;
   data: CancelarAgendamentoData;
+  traceId: string;
+}
+
+/** Resposta das transições de status iniciar/finalizar (RF010/RF013). */
+export interface TransicaoAgendamentoData {
+  id: string;
+  status: string;
+  atualizadoEm: string;
+}
+
+export interface TransicaoAgendamentoResponse {
+  message: string;
+  data: TransicaoAgendamentoData;
   traceId: string;
 }

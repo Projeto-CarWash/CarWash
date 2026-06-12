@@ -47,6 +47,13 @@ public sealed class HistoricoAtendimentosClienteRepository : IHistoricoAtendimen
             ? null
             : status.Trim().ToLowerInvariant();
 
+        // Contrato da API usa CONCLUIDO (RF012); o banco persiste 'finalizado'
+        // (CHECK ck_ag_status). Traduz o filtro para o valor persistido.
+        if (string.Equals(statusNormalizado, "concluido", StringComparison.Ordinal))
+        {
+            statusNormalizado = "finalizado";
+        }
+
         int offset = (page - 1) * pageSize;
 
         await using var connection = context.Database.GetDbConnection();
@@ -97,7 +104,7 @@ public sealed class HistoricoAtendimentosClienteRepository : IHistoricoAtendimen
                 Data = DateOnly.FromDateTime(group.Key.Inicio.UtcDateTime.Date),
                 HoraInicio = group.Key.Inicio,
                 HoraFim = group.Key.Fim,
-                Status = group.Key.Status.ToUpperInvariant(),
+                Status = TraduzirStatusParaContrato(group.Key.Status),
                 Filial = new HistoricoFilialResponse
                 {
                     Id = group.Key.FilialId,
@@ -127,7 +134,7 @@ public sealed class HistoricoAtendimentosClienteRepository : IHistoricoAtendimen
                 },
                 ObservacoesLogisticas = group.Key.ObservacoesLogisticas,
                 MotivoCancelamento = null,
-                ConcluidoEm = group.Key.Status.Equals("concluido", StringComparison.OrdinalIgnoreCase)
+                ConcluidoEm = group.Key.Status.Equals("finalizado", StringComparison.OrdinalIgnoreCase)
                     ? group.Key.Fim
                     : null,
                 CanceladoEm = group.Key.Status.Equals("cancelado", StringComparison.OrdinalIgnoreCase)
@@ -232,7 +239,7 @@ public sealed class HistoricoAtendimentosClienteRepository : IHistoricoAtendimen
             from agendamentos_filtrados a
             left join filiais f on f.id = a.filial_id
             left join veiculos v on v.id = a.veiculo_id
-            left join filiados r on r.id = a.responsavel_id
+            left join responsaveis r on r.id = a.responsavel_id
             left join agendamento_itens ai on ai.agendamento_id = a.id
             left join servicos s on s.id = ai.servico_id
             left join observacoes o on o.agendamento_id = a.id
@@ -302,6 +309,19 @@ public sealed class HistoricoAtendimentosClienteRepository : IHistoricoAtendimen
         }
 
         return linhas;
+    }
+
+    /// <summary>
+    /// Traduz o status persistido (CHECK <c>ck_ag_status</c>) para o vocabulário
+    /// do contrato da API (RF012): <c>finalizado</c> → <c>CONCLUIDO</c>; demais
+    /// valores apenas em caixa alta (<c>AGENDADO</c>, <c>EM_ANDAMENTO</c>,
+    /// <c>CANCELADO</c>).
+    /// </summary>
+    private static string TraduzirStatusParaContrato(string statusDb)
+    {
+        return statusDb.Equals("finalizado", StringComparison.OrdinalIgnoreCase)
+            ? "CONCLUIDO"
+            : statusDb.ToUpperInvariant();
     }
 
     private static void AddParameter(

@@ -12,9 +12,16 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
+import { tratarErroApi } from '@/lib/apiError';
+import { AgendaItemDetalhadoCard } from '@/pages/Agenda/AgendaItemDetalhadoCard';
 import { agendamentoService } from '@/services/agendamentoService';
+import { filialService } from '@/services/filialService';
 
+import type { AgendaItemDetalhado } from '@/types/agenda';
 import type { AgendamentoSemana } from '@/types/agendamento';
+import type { FilialResumo } from '@/types/filial';
 
 const parseQueryDate = (ano: string | null, mes: string | null): Date => {
   const parsedAno = Number(ano);
@@ -33,6 +40,7 @@ export function AgendamentosCalendarioPage() {
 
   const paramAno = searchParams.get('ano');
   const paramMes = searchParams.get('mes');
+  const paramFilial = searchParams.get('filialId');
 
   const [currentDate, setCurrentDate] = useState(() => parseQueryDate(paramAno, paramMes));
 
@@ -48,29 +56,146 @@ export function AgendamentosCalendarioPage() {
 
   const [agendamentos, setAgendamentos] = useState<AgendamentoSemana[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filiais, setFiliais] = useState<FilialResumo[]>([]);
+  const [filialId, setFilialId] = useState(paramFilial ?? '');
+
+  // Detalhe (modal) ao clicar num card do grid.
+  const [detalheAberto, setDetalheAberto] = useState(false);
+  const [itemDetalhado, setItemDetalhado] = useState<AgendaItemDetalhado | null>(null);
+  const [carregandoDetalhe, setCarregandoDetalhe] = useState(false);
+  const [erroDetalhe, setErroDetalhe] = useState<string | null>(null);
+
+  // Transição de status do atendimento dentro do modal (RF010/RF013).
+  const [transicaoLoading, setTransicaoLoading] = useState(false);
+  const [feedbackModal, setFeedbackModal] = useState<{
+    tipo: 'sucesso' | 'erro';
+    mensagem: string;
+  } | null>(null);
 
   const startDate = useMemo(() => startOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
   const endDate = useMemo(() => endOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
 
+  // Carrega filiais e define a inicial (URL > primeira da lista).
   useEffect(() => {
+    let ignore = false;
+    void filialService
+      .listar()
+      .then((lista) => {
+        if (ignore) return;
+        setFiliais(lista.itens);
+        setFilialId((atual) => (atual ? atual : (lista.itens[0]?.id ?? '')));
+      })
+      .catch(() => {
+        /* sem filiais: lista fica vazia */
+      });
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!filialId) return;
+    let ignore = false;
     const fetchAgendamentos = async () => {
       setLoading(true);
       try {
-        const dados = await agendamentoService.listarAgendamentosSemana(startDate, endDate);
-        setAgendamentos(dados);
+        const dados = await agendamentoService.listarAgendamentosSemana(
+          startDate,
+          endDate,
+          filialId,
+        );
+        if (!ignore) setAgendamentos(dados);
       } catch (error) {
         console.error('Erro ao buscar agendamentos:', error);
       } finally {
-        setLoading(false);
+        if (!ignore) setLoading(false);
       }
     };
 
     void fetchAgendamentos();
-  }, [startDate, endDate]);
+    return () => {
+      ignore = true;
+    };
+  }, [startDate, endDate, filialId]);
 
   const handlePrevWeek = () => setCurrentDate((prev) => subWeeks(prev, 1));
   const handleNextWeek = () => setCurrentDate((prev) => addWeeks(prev, 1));
   const handleCurrentWeek = () => setCurrentDate(new Date());
+
+  const abrirDetalhe = async (ag: AgendamentoSemana) => {
+    setDetalheAberto(true);
+    setItemDetalhado(null);
+    setErroDetalhe(null);
+    setFeedbackModal(null);
+    setCarregandoDetalhe(true);
+    try {
+      const detalhe = await agendamentoService.obterDetalheNaSemana(
+        ag.id,
+        startDate,
+        endDate,
+        filialId,
+      );
+      if (detalhe) {
+        setItemDetalhado(detalhe);
+      } else {
+        setErroDetalhe('Não foi possível carregar os detalhes deste agendamento.');
+      }
+    } catch {
+      setErroDetalhe('Erro ao carregar os detalhes do agendamento.');
+    } finally {
+      setCarregandoDetalhe(false);
+    }
+  };
+
+  const irParaEdicao = (item: AgendaItemDetalhado) => {
+    void navigate(`/agendamentos/${item.agendamentoId}/editar`, { state: { item } });
+  };
+
+  /**
+   * Transição de status do atendimento (RF010/RF013):
+   * iniciar (AGENDADO → EM_ANDAMENTO) e finalizar (EM_ANDAMENTO → CONCLUIDO).
+   * Atualiza o modal e o card correspondente da grade da semana.
+   */
+  const transicionarStatus = async (item: AgendaItemDetalhado, acao: 'iniciar' | 'finalizar') => {
+    setTransicaoLoading(true);
+    setFeedbackModal(null);
+    const statusNovo = acao === 'iniciar' ? 'EM_ANDAMENTO' : 'CONCLUIDO';
+
+    try {
+      if (acao === 'iniciar') {
+        await agendamentoService.iniciar(item.agendamentoId);
+      } else {
+        await agendamentoService.finalizar(item.agendamentoId);
+      }
+
+      setItemDetalhado((prev) => (prev ? { ...prev, status: statusNovo } : prev));
+      setAgendamentos((prev) =>
+        prev.map((ag) =>
+          ag.id === item.agendamentoId
+            ? { ...ag, status: statusNovo.toLowerCase() as AgendamentoSemana['status'] }
+            : ag,
+        ),
+      );
+      setFeedbackModal({
+        tipo: 'sucesso',
+        mensagem:
+          acao === 'iniciar'
+            ? 'Atendimento iniciado com sucesso.'
+            : 'Atendimento finalizado com sucesso.',
+      });
+    } catch (err: unknown) {
+      const erro = tratarErroApi(err);
+      setFeedbackModal({
+        tipo: 'erro',
+        mensagem:
+          erro.status === 409
+            ? (erro.mensagem ?? 'Agendamento no status atual não permite a operação.')
+            : 'Não foi possível concluir a operação no momento. Tente novamente.',
+      });
+    } finally {
+      setTransicaoLoading(false);
+    }
+  };
 
   const weekDays = Array.from({ length: 7 }).map((_, i) => addDays(startDate, i));
 
@@ -87,10 +212,13 @@ export function AgendamentosCalendarioPage() {
     switch (status) {
       case 'agendado':
         return <CheckCircle2 className="h-3 w-3 text-emerald-500" />;
+      case 'em_andamento':
+        return <Clock className="h-3 w-3 text-sky-500" />;
       case 'pendente':
         return <Clock className="h-3 w-3 text-amber-500" />;
       case 'cancelado':
         return <XCircle className="h-3 w-3 text-red-600" />;
+      case 'concluido':
       case 'finalizado':
         return <CheckCircle2 className="h-3 w-3 text-blue-500" />;
       default:
@@ -102,24 +230,27 @@ export function AgendamentosCalendarioPage() {
     switch (status) {
       case 'agendado':
         return 'border-emerald-500/30 hover:border-emerald-500/60';
+      case 'em_andamento':
+        return 'border-sky-500/30 hover:border-sky-500/60';
       case 'pendente':
         return 'border-amber-500/30 hover:border-amber-500/60';
       case 'cancelado':
         return 'border-red-600/30 hover:border-red-600/60';
+      case 'concluido':
       case 'finalizado':
         return 'border-blue-500/30 hover:border-blue-500/60';
       default:
-        return 'border-zinc-800/60';
+        return 'border-border';
     }
   };
 
   return (
-    <div className="flex h-full flex-col px-6 lg:px-8 py-6 text-white">
+    <div className="flex h-full flex-col px-6 lg:px-8 py-6 text-foreground">
       <div className="flex items-center justify-between pb-8">
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-bold tracking-tight">Agendamentos</h1>
           <div className="flex items-center gap-2">
-            <div className="flex h-6 items-center rounded-md border border-zinc-800 bg-zinc-900/50 px-2.5 text-[10px] font-semibold tracking-wider text-zinc-400 uppercase">
+            <div className="flex h-6 items-center rounded-md border border-border bg-muted px-2.5 text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
               {format(startDate, 'yyyy - MMMM', { locale: ptBR })}
             </div>
             {startDate.getMonth() === new Date().getMonth() &&
@@ -130,27 +261,49 @@ export function AgendamentosCalendarioPage() {
               )}
           </div>
         </div>
+
+        <div className="flex items-center gap-2">
+          <label
+            htmlFor="filial-calendario"
+            className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase"
+          >
+            Filial
+          </label>
+          <select
+            id="filial-calendario"
+            value={filialId}
+            onChange={(e) => setFilialId(e.target.value)}
+            className="h-9 rounded-lg border border-border bg-muted px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50"
+          >
+            {filiais.length === 0 && <option value="">Carregando…</option>}
+            {filiais.map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.nome}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="flex items-center justify-between pb-6">
         <button
           onClick={() => navigate('/agendamentos')}
-          className="flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/50 px-4 py-2 text-xs font-semibold text-zinc-300 transition-colors hover:bg-zinc-800 hover:text-white"
+          className="flex items-center gap-2 rounded-lg border border-border bg-muted px-4 py-2 text-xs font-semibold text-foreground transition-colors hover:bg-accent hover:text-foreground"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           Voltar aos Meses
         </button>
 
         <div className="flex items-center gap-4">
-          <div className="flex items-center rounded-lg border border-zinc-800 bg-zinc-900/50 p-1">
+          <div className="flex items-center rounded-lg border border-border bg-muted p-1">
             <button
               onClick={handlePrevWeek}
-              className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-zinc-400 hover:bg-zinc-800 hover:text-white"
+              className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
             >
               <ChevronLeft className="h-3.5 w-3.5" />
               Semana Anterior
             </button>
-            <div className="mx-1 h-4 w-px bg-zinc-800" />
+            <div className="mx-1 h-4 w-px bg-muted" />
             <button
               onClick={handleCurrentWeek}
               className="rounded-md px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-500/10 border border-transparent hover:border-red-500/30"
@@ -165,39 +318,39 @@ export function AgendamentosCalendarioPage() {
             >
               Semana Atual
             </button>
-            <div className="mx-1 h-4 w-px bg-zinc-800" />
+            <div className="mx-1 h-4 w-px bg-muted" />
             <button
               onClick={handleNextWeek}
-              className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-zinc-400 hover:bg-zinc-800 hover:text-white"
+              className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
             >
               Próxima Semana
               <ChevronRight className="h-3.5 w-3.5" />
             </button>
           </div>
 
-          <div className="text-xs font-medium text-zinc-400 tracking-wider">
+          <div className="text-xs font-medium text-muted-foreground tracking-wider">
             {format(startDate, "dd 'de' MMM.", { locale: ptBR })} -{' '}
             {format(endDate, "dd 'de' MMM.", { locale: ptBR })}
           </div>
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-zinc-800/60 bg-[#0c0c0e]">
-        <div className="grid grid-cols-7 border-b border-zinc-800/60 bg-zinc-900/50">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-card">
+        <div className="grid grid-cols-7 border-b border-border bg-muted">
           {weekDays.map((day) => {
             const isToday = isSameDay(day, new Date());
             return (
               <div
                 key={day.toISOString()}
-                className={`flex flex-col items-center justify-center py-4 border-r border-zinc-800/60 last:border-r-0 ${isToday ? 'bg-zinc-800/30' : ''}`}
+                className={`flex flex-col items-center justify-center py-4 border-r border-border last:border-r-0 ${isToday ? 'bg-muted/40' : ''}`}
               >
                 <span
-                  className={`text-[10px] font-bold tracking-[0.15em] uppercase ${isToday ? 'text-red-500' : 'text-zinc-500'}`}
+                  className={`text-[10px] font-bold tracking-[0.15em] uppercase ${isToday ? 'text-red-500' : 'text-muted-foreground'}`}
                 >
                   {format(day, 'E', { locale: ptBR }).substring(0, 3)}
                 </span>
                 <span
-                  className={`mt-1 text-lg font-bold ${isToday ? 'text-red-500' : 'text-zinc-200'}`}
+                  className={`mt-1 text-lg font-bold ${isToday ? 'text-red-500' : 'text-foreground'}`}
                 >
                   {format(day, 'd')}
                 </span>
@@ -219,11 +372,11 @@ export function AgendamentosCalendarioPage() {
               return (
                 <div
                   key={day.toISOString()}
-                  className={`border-r border-zinc-800/60 last:border-r-0 p-3 flex flex-col gap-3 min-h-[400px] ${isToday ? 'bg-red-500/5' : ''}`}
+                  className={`border-r border-border last:border-r-0 p-3 flex flex-col gap-3 min-h-[400px] ${isToday ? 'bg-red-500/5' : ''}`}
                 >
                   {dayAgendamentos.length === 0 ? (
                     <div className="flex h-full items-center justify-center">
-                      <span className="text-[10px] font-medium text-zinc-600 uppercase tracking-wider">
+                      <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
                         Sem agendamentos
                       </span>
                     </div>
@@ -231,22 +384,34 @@ export function AgendamentosCalendarioPage() {
                     dayAgendamentos.map((ag) => (
                       <div
                         key={ag.id}
-                        className={`group relative flex flex-col gap-1.5 rounded-lg border bg-[#121214] p-3 shadow-sm transition-all cursor-pointer ${getStatusBorder(ag.status)}`}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`Ver detalhes do agendamento ${ag.titulo}`}
+                        onClick={() => void abrirDetalhe(ag)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            void abrirDetalhe(ag);
+                          }
+                        }}
+                        className={`group relative flex flex-col gap-1.5 rounded-lg border bg-card p-3 shadow-sm transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50 ${getStatusBorder(ag.status)}`}
                       >
-                        <div className="absolute inset-0 border-t border-zinc-800/60 transition-colors group-hover:bg-zinc-800/20" />
+                        <div className="absolute inset-0 border-t border-border transition-colors group-hover:bg-accent/50" />
                         <div className="pointer-events-none absolute inset-x-0 -top-px h-px bg-red-500/50 opacity-0 transition-opacity group-hover:opacity-100" />
                         <div className="relative">
                           <h3
-                            className="text-xs font-bold text-zinc-200 truncate"
+                            className="text-xs font-bold text-foreground truncate"
                             title={ag.titulo}
                           >
                             {ag.titulo}
                           </h3>
-                          <div className="text-[10px] text-zinc-400">
+                          <div className="text-[10px] text-muted-foreground">
                             {format(new Date(ag.inicio), 'HH:mm')} -{' '}
                             {format(new Date(ag.fim), 'HH:mm')}
                           </div>
-                          <div className="text-[10px] text-zinc-500 truncate">{ag.cliente}</div>
+                          <div className="text-[10px] text-muted-foreground truncate">
+                            {ag.cliente}
+                          </div>
                           <div className="mt-1">{getStatusIcon(ag.status)}</div>
                         </div>
                       </div>
@@ -256,7 +421,7 @@ export function AgendamentosCalendarioPage() {
                   <div className="mt-auto pt-4">
                     <button
                       onClick={() => navigate('/agendamentos/novo')}
-                      className="w-full rounded border border-dashed border-zinc-700 py-2 text-[10px] font-bold text-zinc-500 transition-colors hover:border-zinc-500 hover:text-zinc-300 uppercase tracking-wider"
+                      className="w-full rounded border border-dashed border-border py-2 text-[10px] font-bold text-muted-foreground transition-colors hover:border-muted-foreground hover:text-foreground uppercase tracking-wider"
                     >
                       + Novo
                     </button>
@@ -267,6 +432,73 @@ export function AgendamentosCalendarioPage() {
           )}
         </div>
       </div>
+
+      <Dialog open={detalheAberto} onOpenChange={setDetalheAberto}>
+        <DialogContent className="!max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-border dark:border-border bg-white dark:bg-card p-6 text-foreground dark:text-foreground shadow-2xl">
+          <DialogTitle className="text-base font-semibold text-foreground dark:text-foreground">
+            Detalhes do agendamento
+          </DialogTitle>
+          <DialogDescription className="sr-only">
+            Visualização detalhada do agendamento selecionado, com opção de editar.
+          </DialogDescription>
+
+          {carregandoDetalhe ? (
+            <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin text-red-600" />
+              Carregando detalhes…
+            </div>
+          ) : erroDetalhe ? (
+            <div className="py-8 text-center text-sm text-red-500">{erroDetalhe}</div>
+          ) : itemDetalhado ? (
+            <>
+              <AgendaItemDetalhadoCard item={itemDetalhado} onEditar={irParaEdicao} />
+
+              {feedbackModal && (
+                <p
+                  role="status"
+                  className={`mt-3 text-sm font-medium ${
+                    feedbackModal.tipo === 'sucesso' ? 'text-emerald-500' : 'text-red-500'
+                  }`}
+                >
+                  {feedbackModal.mensagem}
+                </p>
+              )}
+
+              {/* Transição de status (RF010/RF013): iniciar e finalizar atendimento. */}
+              {(itemDetalhado.status === 'AGENDADO' || itemDetalhado.status === 'EM_ANDAMENTO') && (
+                <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border pt-4">
+                  {itemDetalhado.status === 'AGENDADO' && (
+                    <Button
+                      type="button"
+                      className="h-10 rounded-full bg-red-600 px-5 text-sm font-semibold text-white hover:bg-red-700"
+                      disabled={transicaoLoading}
+                      onClick={() => void transicionarStatus(itemDetalhado, 'iniciar')}
+                    >
+                      {transicaoLoading ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+                      ) : null}
+                      Iniciar atendimento
+                    </Button>
+                  )}
+                  {itemDetalhado.status === 'EM_ANDAMENTO' && (
+                    <Button
+                      type="button"
+                      className="h-10 rounded-full bg-red-600 px-5 text-sm font-semibold text-white hover:bg-red-700"
+                      disabled={transicaoLoading}
+                      onClick={() => void transicionarStatus(itemDetalhado, 'finalizar')}
+                    >
+                      {transicaoLoading ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+                      ) : null}
+                      Finalizar atendimento
+                    </Button>
+                  )}
+                </div>
+              )}
+            </>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -10,6 +10,7 @@ import { maskCelular, maskCpfCnpj } from '@/lib/masks';
 import { isValidCnpj, isValidCpf } from '@/lib/validators';
 import { responsavelSchema } from '@/schemas/responsavelSchema';
 import { responsavelService } from '@/services/responsavelService';
+import { GRAUS_VINCULO, VINCULO_LABELS } from '@/types/responsavel';
 
 import type { GrauVinculo, Responsavel } from '@/types/responsavel';
 
@@ -84,7 +85,7 @@ export function ResponsavelModal({
       const payload = {
         nome: parseResult.data.nome,
         documento: parseResult.data.documento.replace(/\D/g, ''),
-        telefone: parseResult.data.telefone ?? null,
+        telefone: parseResult.data.telefone ? parseResult.data.telefone.replace(/\D/g, '') : null,
         email: parseResult.data.email ?? null,
         grauVinculo: parseResult.data.grauVinculo,
       };
@@ -146,7 +147,7 @@ export function ResponsavelModal({
     >
       <DialogContent
         showCloseButton={false}
-        className="!max-w-md overflow-y-auto max-h-[90vh] rounded-2xl border border-zinc-200 dark:border-zinc-800/60 bg-white dark:bg-zinc-900 p-0 text-zinc-800 dark:text-zinc-100 shadow-2xl sm:!max-w-md"
+        className="!max-w-md overflow-y-auto max-h-[90vh] rounded-2xl border border-border dark:border-zinc-800/60 bg-white dark:bg-zinc-900 p-0 text-foreground dark:text-zinc-100 shadow-2xl sm:!max-w-md"
       >
         <DialogTitle className="sr-only">Cadastrar responsável</DialogTitle>
         <DialogDescription className="sr-only">
@@ -157,10 +158,10 @@ export function ResponsavelModal({
           {/* Header */}
           <div className="flex items-start justify-between">
             <div>
-              <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+              <h3 className="text-base font-semibold text-foreground dark:text-zinc-100">
                 Novo Responsável
               </h3>
-              <p className="mt-0.5 text-sm text-zinc-500">
+              <p className="mt-0.5 text-sm text-muted-foreground">
                 Cadastre um responsável legal ou pessoa autorizada para este cliente.
               </p>
             </div>
@@ -168,7 +169,7 @@ export function ResponsavelModal({
               type="button"
               disabled={isSubmitting}
               onClick={handleClose}
-              className="rounded-full p-1 text-zinc-400 dark:text-zinc-500 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-700 dark:hover:text-zinc-300 disabled:opacity-50"
+              className="rounded-full p-1 text-muted-foreground dark:text-zinc-500 transition-colors hover:bg-accent dark:hover:bg-muted hover:text-foreground dark:hover:text-foreground disabled:opacity-50"
             >
               <X className="h-4 w-4" />
             </button>
@@ -189,7 +190,7 @@ export function ResponsavelModal({
           <div className="space-y-1.5">
             <Label
               htmlFor="resp-nome"
-              className="text-[10px] font-bold tracking-[0.2em] text-zinc-500"
+              className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground"
             >
               NOME COMPLETO *
             </Label>
@@ -205,10 +206,10 @@ export function ResponsavelModal({
                 setNome(sanitized);
               }}
               placeholder="Digite o nome completo"
-              className={`h-10 rounded-xl text-sm border bg-zinc-50 dark:bg-zinc-950/40 text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus-visible:ring-0 ${
+              className={`h-10 rounded-xl text-sm border bg-muted dark:bg-zinc-950/40 text-foreground dark:text-zinc-200 placeholder:text-muted-foreground dark:placeholder:text-muted-foreground focus-visible:ring-0 ${
                 errors.nome
                   ? 'border-red-500/60 bg-red-950/20'
-                  : 'border-zinc-200 dark:border-zinc-700/60'
+                  : 'border-border dark:border-zinc-700/60'
               }`}
             />
             {errors.nome && (
@@ -220,7 +221,7 @@ export function ResponsavelModal({
           <div className="space-y-1.5">
             <Label
               htmlFor="resp-doc"
-              className="text-[10px] font-bold tracking-[0.2em] text-zinc-500"
+              className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground"
             >
               DOCUMENTO (CPF/CNPJ) *
             </Label>
@@ -230,12 +231,12 @@ export function ResponsavelModal({
               disabled={isSubmitting}
               onChange={(e) => setDocumento(maskCpfCnpj(e.target.value))}
               placeholder="000.000.000-00 ou 00.000.000/0000-00"
-              className={`h-10 rounded-xl text-sm border bg-zinc-50 dark:bg-zinc-950/40 text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus-visible:ring-0 ${
+              className={`h-10 rounded-xl text-sm border bg-muted dark:bg-zinc-950/40 text-foreground dark:text-zinc-200 placeholder:text-muted-foreground dark:placeholder:text-muted-foreground focus-visible:ring-0 ${
                 errors.documento || (docIsComplete && !docIsValid)
                   ? 'border-red-500/60 bg-red-950/20'
                   : docIsComplete && docIsValid
                     ? 'border-green-500/60 bg-green-950/20'
-                    : 'border-zinc-200 dark:border-zinc-700/60'
+                    : 'border-border dark:border-zinc-700/60'
               }`}
             />
             {errors.documento && (
@@ -253,7 +254,7 @@ export function ResponsavelModal({
           <div className="space-y-1.5">
             <Label
               htmlFor="resp-vinculo"
-              className="text-[10px] font-bold tracking-[0.2em] text-zinc-500"
+              className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground"
             >
               GRAU DE VÍNCULO *
             </Label>
@@ -262,22 +263,20 @@ export function ResponsavelModal({
               value={grauVinculo}
               disabled={isSubmitting}
               onChange={(e) => setGrauVinculo(e.target.value as GrauVinculo)}
-              className={`h-10 w-full cursor-pointer appearance-none rounded-xl border bg-zinc-50 dark:bg-zinc-950/40 px-3 text-sm text-zinc-800 dark:text-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50 dark:[color-scheme:dark] ${
+              className={`h-10 w-full cursor-pointer appearance-none rounded-xl border bg-muted dark:bg-zinc-950/40 px-3 text-sm text-foreground dark:text-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50 dark:[color-scheme:dark] ${
                 errors.grauVinculo
                   ? 'border-red-500/60 bg-red-950/20'
-                  : 'border-zinc-200 dark:border-zinc-700/60'
+                  : 'border-border dark:border-zinc-700/60'
               }`}
             >
-              <option value="" disabled className="text-zinc-400 dark:text-zinc-600">
+              <option value="" disabled className="text-muted-foreground dark:text-zinc-600">
                 Selecione o vínculo
               </option>
-              <option value="PAI">Pai</option>
-              <option value="MAE">Mãe</option>
-              <option value="CONJUGE">Cônjuge</option>
-              <option value="FILHO">Filho(a)</option>
-              <option value="SOCIO">Sócio(a)</option>
-              <option value="FUNCIONARIO">Funcionário(a)</option>
-              <option value="OUTRO">Outro</option>
+              {GRAUS_VINCULO.map((grau) => (
+                <option key={grau} value={grau}>
+                  {VINCULO_LABELS[grau]}
+                </option>
+              ))}
             </select>
             {errors.grauVinculo && (
               <p className="text-xs text-red-500 flex items-center gap-1">✕ {errors.grauVinculo}</p>
@@ -286,10 +285,10 @@ export function ResponsavelModal({
 
           {/* Contato Section */}
           <div className="pt-2">
-            <h4 className="text-sm font-semibold text-zinc-900 dark:text-zinc-200">
+            <h4 className="text-sm font-semibold text-foreground dark:text-zinc-200">
               Informações de Contato
             </h4>
-            <p className="mt-0.5 text-xs text-zinc-500">
+            <p className="mt-0.5 text-xs text-muted-foreground">
               Campos opcionais para notificação direta do responsável.
             </p>
           </div>
@@ -298,12 +297,12 @@ export function ResponsavelModal({
             <div className="space-y-1.5">
               <Label
                 htmlFor="resp-telefone"
-                className="text-[10px] font-bold tracking-[0.2em] text-zinc-500"
+                className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground"
               >
                 TELEFONE
               </Label>
               <div className="flex items-center">
-                <span className="flex h-10 items-center rounded-l-xl border border-r-0 border-zinc-200 dark:border-zinc-700/60 bg-zinc-100 dark:bg-zinc-800/40 px-3 text-sm text-zinc-500">
+                <span className="flex h-10 items-center rounded-l-xl border border-r-0 border-border dark:border-zinc-700/60 bg-muted dark:bg-zinc-800/40 px-3 text-sm text-muted-foreground">
                   +55
                 </span>
                 <Input
@@ -312,7 +311,7 @@ export function ResponsavelModal({
                   disabled={isSubmitting}
                   onChange={(e) => setTelefone(maskCelular(e.target.value))}
                   placeholder="(21) 99999-9999"
-                  className="h-10 rounded-l-none rounded-r-xl border border-zinc-200 dark:border-zinc-700/60 bg-zinc-50 dark:bg-zinc-950/40 text-sm text-zinc-850 dark:text-zinc-200 placeholder:text-zinc-400 dark:placeholder:text-zinc-650 focus-visible:ring-0"
+                  className="h-10 rounded-l-none rounded-r-xl border border-border dark:border-zinc-700/60 bg-muted dark:bg-zinc-950/40 text-sm text-foreground dark:text-zinc-200 placeholder:text-muted-foreground dark:placeholder:text-foreground focus-visible:ring-0"
                 />
               </div>
             </div>
@@ -320,7 +319,7 @@ export function ResponsavelModal({
             <div className="space-y-1.5">
               <Label
                 htmlFor="resp-email"
-                className="text-[10px] font-bold tracking-[0.2em] text-zinc-500"
+                className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground"
               >
                 E-MAIL
               </Label>
@@ -330,10 +329,10 @@ export function ResponsavelModal({
                 disabled={isSubmitting}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="email@exemplo.com"
-                className={`h-10 rounded-xl text-sm border bg-zinc-50 dark:bg-zinc-950/40 text-zinc-850 dark:text-zinc-200 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus-visible:ring-0 ${
+                className={`h-10 rounded-xl text-sm border bg-muted dark:bg-zinc-950/40 text-foreground dark:text-zinc-200 placeholder:text-muted-foreground dark:placeholder:text-muted-foreground focus-visible:ring-0 ${
                   errors.email
                     ? 'border-red-500/60 bg-red-950/20'
-                    : 'border-zinc-200 dark:border-zinc-700/60'
+                    : 'border-border dark:border-zinc-700/60'
                 }`}
               />
               {errors.email && (
@@ -344,13 +343,13 @@ export function ResponsavelModal({
         </div>
 
         {/* Footer */}
-        <div className="mt-6 flex items-center justify-end gap-3 border-t border-zinc-100 dark:border-zinc-800/60 px-6 py-4">
+        <div className="mt-6 flex items-center justify-end gap-3 border-t border-border dark:border-zinc-800/60 px-6 py-4">
           <Button
             type="button"
             variant="outline"
             disabled={isSubmitting}
             onClick={handleClose}
-            className="h-10 rounded-full border-zinc-200 dark:border-zinc-700/60 bg-transparent px-6 text-sm text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 hover:text-zinc-800 dark:hover:text-zinc-200"
+            className="h-10 rounded-full border-border dark:border-zinc-700/60 bg-transparent px-6 text-sm text-muted-foreground hover:bg-accent dark:hover:bg-muted hover:text-foreground dark:hover:text-foreground"
           >
             Cancelar
           </Button>

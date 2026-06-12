@@ -5,7 +5,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 
-import logo from '@/assets/logo.png';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -99,15 +98,15 @@ export default function Login() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
-      <Card className="w-full max-w-md gap-0 border border-zinc-200 dark:border-zinc-800/60 bg-white dark:bg-zinc-900/60 py-0 shadow-xl dark:shadow-none ring-zinc-200 dark:ring-zinc-800/50">
+      <Card className="w-full max-w-md gap-0 border border-border bg-card py-0 shadow-xl ring-ring">
         <CardContent className="flex flex-col gap-6 px-8 py-10">
           <div className="flex flex-col items-center gap-3 text-center">
-            <img src={logo} alt="CarWash" className="h-16 w-auto" />
+            <div className="flex h-24 w-40 items-center justify-center overflow-hidden rounded-2xl bg-black ring-1 ring-border shadow-sm">
+              <img src="/logo.png" alt="CarWash" className="h-full w-full object-contain" />
+            </div>
             <div>
-              <h1 className="text-xl font-semibold text-zinc-800 dark:text-zinc-100">
-                Acesse sua conta
-              </h1>
-              <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+              <h1 className="text-xl font-semibold text-foreground">Acesse sua conta</h1>
+              <p className="mt-1 text-sm text-muted-foreground">
                 Informe suas credenciais para entrar no sistema.
               </p>
             </div>
@@ -117,13 +116,10 @@ export default function Login() {
             <div
               role="alert"
               aria-live="assertive"
-              className="flex items-start gap-3 rounded-xl border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-950/30 px-4 py-3"
+              className="flex items-start gap-3 rounded-xl border border-red-500/30 bg-red-950/30 px-4 py-3"
             >
-              <AlertCircle
-                className="mt-0.5 h-4 w-4 shrink-0 text-red-600 dark:text-red-500"
-                aria-hidden="true"
-              />
-              <p className="text-sm font-medium text-red-600 dark:text-red-400">{globalError}</p>
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" aria-hidden="true" />
+              <p className="text-sm font-medium text-red-400">{globalError}</p>
             </div>
           )}
 
@@ -134,7 +130,7 @@ export default function Login() {
             aria-busy={isSubmitting}
           >
             <div className="flex flex-col gap-2">
-              <Label htmlFor="login-email" className="text-zinc-600 dark:text-zinc-300">
+              <Label htmlFor="login-email" className="text-foreground">
                 E-mail
               </Label>
               <Input
@@ -144,18 +140,18 @@ export default function Login() {
                 placeholder="voce@empresa.com"
                 aria-invalid={!!form.formState.errors.email}
                 aria-describedby={form.formState.errors.email ? 'login-email-error' : undefined}
-                className="h-10 rounded-lg border-zinc-200 dark:border-zinc-700/60 bg-zinc-50 dark:bg-zinc-950/40 px-3 text-sm text-zinc-800 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
+                className="h-10 rounded-lg border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground"
                 {...form.register('email')}
               />
               {form.formState.errors.email && (
-                <p id="login-email-error" className="text-xs text-red-600 dark:text-red-400">
+                <p id="login-email-error" className="text-xs text-red-400">
                   {form.formState.errors.email.message}
                 </p>
               )}
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label htmlFor="login-senha" className="text-zinc-600 dark:text-zinc-300">
+              <Label htmlFor="login-senha" className="text-foreground">
                 Senha
               </Label>
               <div className="relative">
@@ -166,13 +162,13 @@ export default function Login() {
                   placeholder="••••••••"
                   aria-invalid={!!form.formState.errors.senha}
                   aria-describedby={form.formState.errors.senha ? 'login-senha-error' : undefined}
-                  className="h-10 rounded-lg border-zinc-200 dark:border-zinc-700/60 bg-zinc-50 dark:bg-zinc-950/40 px-3 pr-10 text-sm text-zinc-800 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
+                  className="h-10 rounded-lg border-border bg-background px-3 pr-10 text-sm text-foreground placeholder:text-muted-foreground"
                   {...form.register('senha')}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-zinc-500 dark:text-zinc-400 transition-colors hover:text-zinc-700 dark:hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                   aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
                   aria-pressed={showPassword}
                   tabIndex={0}
@@ -185,7 +181,7 @@ export default function Login() {
                 </button>
               </div>
               {form.formState.errors.senha && (
-                <p id="login-senha-error" className="text-xs text-red-600 dark:text-red-400">
+                <p id="login-senha-error" className="text-xs text-red-400">
                   {form.formState.errors.senha.message}
                 </p>
               )}
@@ -193,14 +189,14 @@ export default function Login() {
 
             <label
               htmlFor="login-remember"
-              className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400 select-none"
+              className="flex items-center gap-2 text-sm text-muted-foreground select-none"
             >
               <input
                 id="login-remember"
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="h-4 w-4 cursor-pointer rounded border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-red-600 accent-red-600 focus:ring-red-600"
+                className="h-4 w-4 cursor-pointer rounded border-border bg-background text-red-600 accent-red-600 focus:ring-red-600"
               />
               Lembrar meu e-mail neste dispositivo
             </label>
@@ -221,7 +217,7 @@ export default function Login() {
             </Button>
           </form>
 
-          <p className="text-center text-xs text-zinc-500 dark:text-zinc-600">
+          <p className="text-center text-xs text-muted-foreground">
             Problemas para acessar? Contate o administrador do sistema.
           </p>
         </CardContent>

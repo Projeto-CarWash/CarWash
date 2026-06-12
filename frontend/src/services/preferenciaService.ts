@@ -2,16 +2,18 @@ import api from './api';
 
 import type { Theme } from '@/providers/ThemeContext';
 
+/** Envelope do backend: `{ message, data: { theme }, traceId }` (RF016). */
 interface PreferenciasResponse {
-  tema: Theme;
+  data: { theme: string };
 }
 
 /**
  * Service de preferências do usuário (RF016 — alternância de tema).
  *
- * <p>Comunica com `GET/PATCH /api/v1/usuarios/me/preferencias` para persistir
- * o tema escolhido no backend. Se a API não estiver pronta, falha
- * silenciosamente e o tema é mantido apenas no `localStorage`.</p>
+ * <p>Comunica com o backend para persistir o tema escolhido:
+ * `GET /api/v1/usuarios/me/preferencias` e
+ * `PATCH /api/v1/usuarios/me/preferencias/tema` (body `{ theme }`).
+ * Se a API falhar, o tema é mantido apenas no `localStorage`.</p>
  */
 export const preferenciaService = {
   /**
@@ -23,8 +25,9 @@ export const preferenciaService = {
       const { data } = await api.get<PreferenciasResponse>('/api/v1/usuarios/me/preferencias', {
         _skipAuthRefresh: true,
       });
-      if (data.tema === 'light' || data.tema === 'dark') {
-        return data.tema;
+      const theme = data.data?.theme;
+      if (theme === 'light' || theme === 'dark') {
+        return theme;
       }
       return null;
     } catch {
@@ -37,6 +40,6 @@ export const preferenciaService = {
    * Lança o erro original para que o caller possa exibir o toast amigável.
    */
   async salvarTema(tema: Theme): Promise<void> {
-    await api.patch('/api/v1/usuarios/me/preferencias', { tema });
+    await api.patch('/api/v1/usuarios/me/preferencias/tema', { theme: tema });
   },
 };

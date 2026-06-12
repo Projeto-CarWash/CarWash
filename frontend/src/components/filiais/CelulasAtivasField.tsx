@@ -83,7 +83,7 @@ export function CelulasAtivasField({
 
   return (
     <div className="flex flex-col gap-2">
-      <Label htmlFor={id} className="text-zinc-300">
+      <Label htmlFor={id} className="text-foreground">
         Células ativas
       </Label>
       <Input
@@ -103,10 +103,10 @@ export function CelulasAtivasField({
         ref={inputRef}
         aria-invalid={!!error}
         aria-describedby={error ? errorId : hintId}
-        className={`h-10 rounded-lg border px-3 text-sm text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-0 ${
+        className={`h-10 rounded-lg border px-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-0 ${
           error
             ? 'border-red-500/60 bg-red-950/20 focus-visible:border-red-500'
-            : 'border-zinc-700/60 bg-zinc-950/40 focus-visible:border-zinc-600'
+            : 'border-border bg-background focus-visible:border-ring'
         }`}
       />
       {error ? (
@@ -114,7 +114,7 @@ export function CelulasAtivasField({
           {error}
         </p>
       ) : (
-        <p id={hintId} className="text-xs text-zinc-500">
+        <p id={hintId} className="text-xs text-muted-foreground">
           {TEXTO_AUXILIAR}
         </p>
       )}

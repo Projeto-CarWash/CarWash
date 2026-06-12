@@ -292,8 +292,8 @@ export function ClienteVeiculoStep({
   return (
     <div>
       <div className="mb-5">
-        <h3 className="text-xl font-semibold text-zinc-100">Cliente e Veículo</h3>
-        <p className="mt-1 text-sm text-zinc-500">
+        <h3 className="text-xl font-semibold text-foreground">Cliente e Veículo</h3>
+        <p className="mt-1 text-sm text-muted-foreground">
           Selecione o cliente, veículo e escolha a data e hora do agendamento.
         </p>
       </div>
@@ -311,23 +311,25 @@ export function ClienteVeiculoStep({
 
         {/* Cliente Selection */}
         <div className="space-y-1.5">
-          <Label className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">
+          <Label className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
             CLIENTE <span className="text-red-500">*</span>
           </Label>
 
           {cliente ? (
-            <div className="flex items-center gap-3 rounded-xl border border-zinc-700/60 bg-zinc-900/50 px-4 py-3">
+            <div className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-red-600/10">
                 <User className="h-4 w-4 text-red-500" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-zinc-100">{cliente.nome}</p>
-                <p className="text-xs text-zinc-500">{formatarDoc(cliente.cpf, cliente.cnpj)}</p>
+                <p className="text-sm font-medium text-foreground">{cliente.nome}</p>
+                <p className="text-xs text-muted-foreground">
+                  {formatarDoc(cliente.cpf, cliente.cnpj)}
+                </p>
               </div>
               <button
                 type="button"
                 onClick={handleClearCliente}
-                className="shrink-0 rounded-full border border-zinc-700/60 bg-zinc-800/50 p-1.5 text-zinc-400 transition-colors hover:bg-zinc-700/50 hover:text-zinc-200"
+                className="shrink-0 rounded-full border border-border bg-muted p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                 aria-label="Remover cliente"
               >
                 <X className="h-3.5 w-3.5" />
@@ -336,7 +338,7 @@ export function ClienteVeiculoStep({
           ) : (
             <div className="relative" ref={dropdownRef}>
               <Search
-                className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500"
+                className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
                 aria-hidden="true"
               />
               <Input
@@ -345,32 +347,34 @@ export function ClienteVeiculoStep({
                 onChange={(e) => setBusca(e.target.value)}
                 onFocus={() => setShowDropdown(true)}
                 placeholder="Buscar por nome, CPF ou CNPJ…"
-                className={`h-10 rounded-xl pl-9 text-sm text-zinc-200 placeholder:text-zinc-650 focus-visible:ring-0 ${
+                className={`h-10 rounded-xl pl-9 text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-0 ${
                   tentouAvancar && !cliente
                     ? 'border-red-500/60 bg-red-950/20'
-                    : 'border-zinc-700/60 bg-zinc-900/50'
+                    : 'border-border bg-card'
                 }`}
               />
               {buscando && (
                 <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                  <RefreshCw className="h-4 w-4 animate-spin text-zinc-500" />
+                  <RefreshCw className="h-4 w-4 animate-spin text-muted-foreground" />
                 </div>
               )}
               {showDropdown && resultados.length > 0 && (
-                <div className="absolute left-0 right-0 top-full z-20 mt-1 max-h-52 overflow-y-auto rounded-xl border border-zinc-700/60 bg-zinc-900 shadow-xl">
+                <div className="absolute left-0 right-0 top-full z-20 mt-1 max-h-52 overflow-y-auto rounded-xl border border-border bg-card shadow-xl">
                   {resultados.map((c) => (
                     <button
                       key={c.id}
                       type="button"
                       onClick={() => handleSelectCliente(c)}
-                      className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-zinc-800/60"
+                      className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-accent"
                     >
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-800">
-                        <User className="h-3.5 w-3.5 text-zinc-400" />
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
+                        <User className="h-3.5 w-3.5 text-muted-foreground" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-zinc-200">{c.nome}</p>
-                        <p className="text-xs text-zinc-500">{formatarDoc(c.cpf, c.cnpj)}</p>
+                        <p className="truncate text-sm font-medium text-foreground">{c.nome}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatarDoc(c.cpf, c.cnpj)}
+                        </p>
                       </div>
                     </button>
                   ))}
@@ -378,7 +382,7 @@ export function ClienteVeiculoStep({
               )}
 
               {showDropdown && !buscando && resultados.length === 0 && (
-                <div className="absolute left-0 right-0 top-full z-20 mt-1 rounded-xl border border-zinc-700/60 bg-zinc-900 px-4 py-3 text-sm text-zinc-500 shadow-xl">
+                <div className="absolute left-0 right-0 top-full z-20 mt-1 rounded-xl border border-border bg-card px-4 py-3 text-sm text-muted-foreground shadow-xl">
                   {busca.trim() ? 'Nenhum cliente encontrado.' : 'Nenhum cliente cadastrado.'}
                 </div>
               )}
@@ -400,7 +404,7 @@ export function ClienteVeiculoStep({
           tabIndex={-1}
           aria-invalid={conflitoVeiculo ? 'true' : undefined}
         >
-          <Label className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">
+          <Label className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
             VEÍCULO <span className="text-red-500">*</span>
           </Label>
 
@@ -423,11 +427,11 @@ export function ClienteVeiculoStep({
           )}
 
           {!cliente ? (
-            <p className="rounded-xl border border-zinc-800/40 bg-zinc-900/20 px-4 py-3 text-sm text-zinc-600">
+            <p className="rounded-xl border border-border bg-card px-4 py-3 text-sm text-muted-foreground">
               Selecione um cliente primeiro para ver os veículos disponíveis.
             </p>
           ) : carregandoVeiculos ? (
-            <div className="flex items-center gap-2 rounded-xl border border-zinc-800/40 bg-zinc-900/20 px-4 py-3 text-sm text-zinc-500">
+            <div className="flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-3 text-sm text-muted-foreground">
               <RefreshCw className="h-4 w-4 animate-spin" />
               Carregando veículos…
             </div>
@@ -463,23 +467,25 @@ export function ClienteVeiculoStep({
                         ? 'border-red-500 bg-red-950/20 shadow-[0_0_0_1px_rgba(239,68,68,0.5)]'
                         : selected
                           ? 'border-red-500/50 bg-red-950/20 shadow-[0_0_0_1px_rgba(239,68,68,0.3)]'
-                          : 'border-zinc-700/60 bg-zinc-900/50 hover:border-zinc-600 hover:bg-zinc-800/40'
+                          : 'border-border bg-card hover:border-ring hover:bg-accent'
                     }`}
                   >
                     <div
                       className={`flex h-9 w-9 items-center justify-center rounded-full ${
-                        selected ? 'bg-red-600/20' : 'bg-zinc-800'
+                        selected ? 'bg-red-600/20' : 'bg-muted'
                       }`}
                     >
-                      <Car className={`h-4 w-4 ${selected ? 'text-red-500' : 'text-zinc-400'}`} />
+                      <Car
+                        className={`h-4 w-4 ${selected ? 'text-red-500' : 'text-muted-foreground'}`}
+                      />
                     </div>
                     <div className="min-w-0 flex-1">
                       <p
-                        className={`text-sm font-medium ${selected ? 'text-zinc-100' : 'text-zinc-300'}`}
+                        className={`text-sm font-medium ${selected ? 'text-foreground' : 'text-foreground'}`}
                       >
                         {v.modelo}
                       </p>
-                      <p className="text-xs text-zinc-500">
+                      <p className="text-xs text-muted-foreground">
                         {v.placa} · {v.cor}
                         {v.ano ? ` · ${v.ano}` : ''}
                       </p>
@@ -487,7 +493,7 @@ export function ClienteVeiculoStep({
                     {selected && (
                       <div className="flex h-5 w-5 items-center justify-center rounded-full bg-red-600">
                         <svg
-                          className="h-3 w-3 text-white"
+                          className="h-3 w-3 text-foreground"
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
@@ -515,17 +521,17 @@ export function ClienteVeiculoStep({
         <div className="space-y-1.5">
           <Label
             htmlFor="ag-responsavel"
-            className="text-[10px] font-bold tracking-[0.2em] text-zinc-500"
+            className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground"
           >
             RESPONSÁVEL <span className="text-red-500">*</span>
           </Label>
 
           {!cliente ? (
-            <p className="rounded-xl border border-zinc-200 dark:border-zinc-850 bg-zinc-50 dark:bg-zinc-950/20 px-4 py-3 text-sm text-zinc-400">
+            <p className="rounded-xl border border-border dark:border-zinc-850 bg-muted dark:bg-zinc-950/20 px-4 py-3 text-sm text-muted-foreground">
               Selecione um cliente primeiro para ver os responsáveis disponíveis.
             </p>
           ) : carregandoResponsaveis ? (
-            <div className="flex items-center gap-2 rounded-xl border border-zinc-200 dark:border-zinc-850 bg-zinc-50 dark:bg-zinc-950/20 px-4 py-3 text-sm text-zinc-500">
+            <div className="flex items-center gap-2 rounded-xl border border-border dark:border-zinc-850 bg-muted dark:bg-zinc-950/20 px-4 py-3 text-sm text-muted-foreground">
               <RefreshCw className="h-4 w-4 animate-spin" />
               Carregando responsáveis…
             </div>
@@ -546,7 +552,7 @@ export function ClienteVeiculoStep({
           ) : (
             <div className="relative">
               <User
-                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500"
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
                 aria-hidden="true"
               />
               <select
@@ -560,11 +566,11 @@ export function ClienteVeiculoStep({
                 }}
                 className={`h-10 w-full cursor-pointer appearance-none rounded-xl border pl-9 pr-4 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50 dark:[color-scheme:dark] ${
                   tentouAvancar && !responsavel
-                    ? 'border-red-500/60 bg-red-950/20 text-zinc-200'
-                    : 'border-zinc-200 dark:border-zinc-700/60 bg-zinc-50 dark:bg-zinc-900/50 text-zinc-800 dark:text-zinc-200'
+                    ? 'border-red-500/60 bg-red-950/20 text-foreground'
+                    : 'border-border dark:border-zinc-700/60 bg-muted dark:bg-zinc-900/50 text-foreground dark:text-zinc-200'
                 }`}
               >
-                <option value="" disabled className="text-zinc-400 dark:text-zinc-600">
+                <option value="" disabled className="text-muted-foreground dark:text-zinc-600">
                   Selecione o responsável
                 </option>
                 {responsaveis.map((r) => (
@@ -595,7 +601,7 @@ export function ClienteVeiculoStep({
           <div className="space-y-1.5">
             <Label
               htmlFor="ag-data"
-              className="text-[10px] font-bold tracking-[0.2em] text-zinc-500"
+              className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground"
             >
               DATA <span className="text-red-500">*</span>
             </Label>
@@ -612,10 +618,10 @@ export function ClienteVeiculoStep({
                   void e;
                 }
               }}
-              className={`h-10 rounded-xl text-sm text-zinc-200 focus-visible:ring-0 [color-scheme:dark] ${
+              className={`h-10 rounded-xl text-sm text-foreground focus-visible:ring-0 [color-scheme:dark] ${
                 (tentouAvancar && !dataAgendamento) || isDomingo || conflitoVeiculo
                   ? 'border-red-500/60 bg-red-950/20'
-                  : 'border-zinc-700/60 bg-zinc-900/50'
+                  : 'border-border bg-card'
               }`}
               aria-invalid={
                 conflitoVeiculo || (tentouAvancar && !dataAgendamento) || isDomingo
@@ -640,7 +646,7 @@ export function ClienteVeiculoStep({
           <div className="space-y-1.5">
             <Label
               htmlFor="ag-hora"
-              className="text-[10px] font-bold tracking-[0.2em] text-zinc-500"
+              className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground"
             >
               HORÁRIO DE INÍCIO <span className="text-red-500">*</span>
             </Label>
@@ -656,10 +662,10 @@ export function ClienteVeiculoStep({
                   void e;
                 }
               }}
-              className={`h-10 rounded-xl text-sm text-zinc-200 focus-visible:ring-0 [color-scheme:dark] ${
+              className={`h-10 rounded-xl text-sm text-foreground focus-visible:ring-0 [color-scheme:dark] ${
                 (tentouAvancar && !horaInicio) || !!erroHora || isDomingo || conflitoVeiculo
                   ? 'border-red-500/60 bg-red-950/20'
-                  : 'border-zinc-700/60 bg-zinc-900/50'
+                  : 'border-border bg-card'
               }`}
               aria-invalid={
                 conflitoVeiculo || (tentouAvancar && !horaInicio) || !!erroHora || isDomingo

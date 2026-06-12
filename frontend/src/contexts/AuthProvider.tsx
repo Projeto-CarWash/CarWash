@@ -33,18 +33,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     let cancelado = false;
 
     void (async () => {
-      try {
-        const refreshed = await authService.refresh();
-        if (!cancelado) {
-          if (refreshed) {
-            setSession({ user: refreshed.usuario, token: refreshed.accessToken });
-          }
-        }
-      } finally {
-        if (!cancelado) {
-          setIsLoading(false);
-        }
+      const refreshed = await authService.refresh();
+      if (cancelado) {
+        return;
       }
+      if (refreshed) {
+        setSession({ user: refreshed.usuario, token: refreshed.accessToken });
+      }
+      setIsLoading(false);
     })();
 
     return () => {

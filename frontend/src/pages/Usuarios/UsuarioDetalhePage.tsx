@@ -103,7 +103,7 @@ export function UsuarioDetalhePage() {
           type="button"
           variant="outline"
           onClick={() => void navigate('/usuarios')}
-          className="mb-4 h-9 rounded-full border-zinc-700/60 bg-transparent px-4 text-sm"
+          className="mb-4 h-9 rounded-full border-border bg-transparent px-4 text-sm"
         >
           <ArrowLeft className="mr-1 h-4 w-4" /> Voltar
         </Button>
@@ -115,7 +115,7 @@ export function UsuarioDetalhePage() {
   }
 
   if (!usuario) {
-    return <div className="px-8 py-8 text-sm text-zinc-500">Carregando…</div>;
+    return <div className="px-8 py-8 text-sm text-muted-foreground">Carregando…</div>;
   }
 
   const isBusy = salvando || alterandoStatus;
@@ -127,7 +127,7 @@ export function UsuarioDetalhePage() {
           type="button"
           variant="outline"
           onClick={() => void navigate('/usuarios')}
-          className="h-9 rounded-full border-zinc-700/60 bg-transparent px-4 text-sm"
+          className="h-9 rounded-full border-border bg-transparent px-4 text-sm"
         >
           <ArrowLeft className="mr-1 h-4 w-4" /> Voltar
         </Button>
@@ -139,7 +139,7 @@ export function UsuarioDetalhePage() {
             setErroStatus(null);
             setModalStatusAberto(true);
           }}
-          className="h-9 rounded-full border-zinc-700/60 bg-transparent px-4 text-sm hover:bg-zinc-800/50 hover:text-zinc-200 text-zinc-400"
+          className="h-9 rounded-full border-border bg-transparent px-4 text-sm hover:bg-accent hover:text-foreground text-muted-foreground"
         >
           {alterandoStatus ? (
             <Loader2 className="mr-1 h-4 w-4 animate-spin" />
@@ -151,15 +151,15 @@ export function UsuarioDetalhePage() {
       </div>
 
       {/* ── Card principal: dados + status ── */}
-      <Card className="border-zinc-800/60 bg-zinc-900/30">
+      <Card className="border-border bg-card">
         <CardHeader>
-          <CardTitle className="flex items-center gap-3 text-xl text-zinc-100">
+          <CardTitle className="flex items-center gap-3 text-xl text-foreground">
             {usuario.nome}
             <span
               className={
                 usuario.ativo
                   ? 'rounded-full bg-green-500/10 px-2 py-0.5 text-[10px] font-bold tracking-[0.15em] text-green-400'
-                  : 'rounded-full bg-zinc-700/40 px-2 py-0.5 text-[10px] font-bold tracking-[0.15em] text-zinc-500'
+                  : 'rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold tracking-[0.15em] text-muted-foreground'
               }
             >
               {usuario.ativo ? 'ATIVO' : 'INATIVO'}
@@ -172,7 +172,7 @@ export function UsuarioDetalhePage() {
             <div className="space-y-1.5">
               <Label
                 htmlFor="detalhe-nome"
-                className="text-[10px] font-bold tracking-[0.2em] text-zinc-500"
+                className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground"
               >
                 NOME
               </Label>
@@ -181,13 +181,13 @@ export function UsuarioDetalhePage() {
                 type="text"
                 value={nome}
                 onChange={(e) => setNome(e.target.value)}
-                className="h-10 rounded-xl border-zinc-700/60 bg-zinc-900/50 text-sm text-zinc-200 placeholder:text-zinc-600 focus-visible:ring-0"
+                className="h-10 rounded-xl border-border bg-card text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-0"
               />
             </div>
             <div className="space-y-1.5">
               <Label
                 htmlFor="detalhe-email"
-                className="text-[10px] font-bold tracking-[0.2em] text-zinc-500"
+                className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground"
               >
                 E-MAIL
               </Label>
@@ -196,13 +196,13 @@ export function UsuarioDetalhePage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="h-10 rounded-xl border-zinc-700/60 bg-zinc-900/50 text-sm text-zinc-200 placeholder:text-zinc-600 focus-visible:ring-0"
+                className="h-10 rounded-xl border-border bg-card text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-0"
               />
             </div>
             <div className="space-y-1.5">
               <Label
                 htmlFor="detalhe-perfil"
-                className="text-[10px] font-bold tracking-[0.2em] text-zinc-500"
+                className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground"
               >
                 PERFIL
               </Label>
@@ -210,7 +210,7 @@ export function UsuarioDetalhePage() {
                 id="detalhe-perfil"
                 value={perfil}
                 onChange={(e) => setPerfil(e.target.value as PerfilUsuario)}
-                className="h-10 w-full rounded-xl border border-zinc-700/60 bg-zinc-900/50 px-3 text-sm text-zinc-200 focus-visible:ring-0"
+                className="h-10 w-full rounded-xl border border-border bg-card px-3 text-sm text-foreground focus-visible:ring-0"
               >
                 {PERFIS.map((p) => (
                   <option key={p} value={p}>
@@ -222,14 +222,14 @@ export function UsuarioDetalhePage() {
           </div>
 
           {/* ── Separador visual ── */}
-          <div className="border-t border-zinc-800/60" />
+          <div className="border-t border-border" />
 
           {/* ── Controle de Status ── */}
-          <div className="rounded-xl border border-zinc-800/60 bg-zinc-950/30 p-4">
+          <div className="rounded-xl border border-border bg-background p-4">
             <div className="space-y-1.5">
               <Label
                 htmlFor="detalhe-status-input"
-                className="text-[10px] font-bold tracking-[0.2em] text-zinc-500"
+                className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground"
               >
                 STATUS DO USUÁRIO
               </Label>
@@ -242,11 +242,11 @@ export function UsuarioDetalhePage() {
                     ? 'Ativo — acesso ao sistema permitido'
                     : 'Inativo — acesso ao sistema bloqueado'
                 }
-                className={`h-10 rounded-xl border-zinc-700/60 bg-zinc-900/50 text-sm font-medium focus-visible:ring-0 ${
-                  usuario.ativo ? 'text-green-400' : 'text-zinc-500'
+                className={`h-10 rounded-xl border-border bg-card text-sm font-medium focus-visible:ring-0 ${
+                  usuario.ativo ? 'text-green-400' : 'text-muted-foreground'
                 }`}
               />
-              <p className="text-[11px] text-zinc-600">
+              <p className="text-[11px] text-muted-foreground">
                 {usuario.ativo
                   ? 'Use o botão "Inativar usuário" acima para bloquear o login deste usuário.'
                   : 'Use o botão "Ativar usuário" acima para restaurar o acesso deste usuário ao sistema.'}
@@ -320,12 +320,12 @@ export function UsuarioDetalhePage() {
           if (!aberto) setErroStatus(null);
         }}
       >
-        <DialogContent className="sm:max-w-[425px] bg-zinc-950 border-zinc-800">
+        <DialogContent className="sm:max-w-[425px] bg-background border-border">
           <DialogHeader>
-            <DialogTitle className="text-zinc-100">
+            <DialogTitle className="text-foreground">
               {usuario.ativo ? 'Inativar usuário' : 'Ativar usuário'}
             </DialogTitle>
-            <DialogDescription className="text-zinc-400">
+            <DialogDescription className="text-muted-foreground">
               {usuario.ativo
                 ? `Deseja realmente inativar o usuário "${usuario.nome}"? O acesso dele ao sistema será bloqueado.`
                 : `Deseja reativar o usuário "${usuario.nome}"? O acesso dele ao sistema será restaurado.`}
@@ -348,7 +348,7 @@ export function UsuarioDetalhePage() {
                 setErroStatus(null);
               }}
               disabled={alterandoStatus}
-              className="border-zinc-700 bg-transparent text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100"
+              className="border-border bg-transparent text-foreground hover:bg-accent hover:text-foreground"
             >
               Cancelar
             </Button>
