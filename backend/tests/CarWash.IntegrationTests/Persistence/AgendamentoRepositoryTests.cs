@@ -152,7 +152,7 @@ public class AgendamentoRepositoryTests : IAsyncLifetime
         // SELECT FOR UPDATE dentro da transação detecta que o vínculo
         // foi alterado e lança ConflictException.
         await using var db = CarWashDbContextFactoryForTests.Create(_fixture);
-        var repo = new AgendamentoRepository(db);
+        var repo = new AgendamentoRepository(db, NullLogger<AgendamentoRepository>.Instance);
         var inicio = DateTime.UtcNow.AddDays(4);
         var (agendamento, itens, historico) = MontarAgendamento(
             filialId, clienteId, veiculoId, criadoPor, servicoId, responsavelId, inicio);
@@ -187,7 +187,7 @@ public class AgendamentoRepositoryTests : IAsyncLifetime
         }
 
         await using var db = CarWashDbContextFactoryForTests.Create(_fixture);
-        var repo = new AgendamentoRepository(db);
+        var repo = new AgendamentoRepository(db, NullLogger<AgendamentoRepository>.Instance);
         var inicio = DateTime.UtcNow.AddDays(5);
         var (agendamento, itens, historico) = MontarAgendamento(
             filialId, clienteId, veiculoId, criadoPor, servicoId, responsavelId, inicio);

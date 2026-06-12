@@ -40,11 +40,6 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
     /// </summary>
     private static readonly string[] ConcorrenciaSqlStates = ["40P01", "40001"];
 
-    /// <summary>
-    /// Status que contam como ocupação de célula (RF008): agendados e em andamento.
-    /// </summary>
-    private static readonly string[] StatusOcupacao = ["agendado", "em_andamento"];
-
     private readonly CarWashDbContext _db;
     private readonly ILogger<AgendamentoRepository> _logger;
 
@@ -66,11 +61,13 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
         // Espelha a EXCLUDE ex_ag_veiculo_janela: janela meio-aberta [inicio, fim),
         // status 'agendado' e 'em_andamento'. Sobreposição ⇔ inicio_existente < fim_novo
         // && fim_existente > inicio_novo.
+        // Comparações explícitas (sem array.Contains): tradução EF estável e
+        // compatível com os analyzers estritos do CI.
         return _db.Agendamentos
             .AsNoTracking()
             .AnyAsync(
                 a => a.VeiculoId == veiculoId
-                    && StatusOcupacao.Contains(a.StatusRaw)
+                    && (a.StatusRaw == "agendado" || a.StatusRaw == "em_andamento")
                     && a.Inicio < fim
                     && a.Fim > inicio,
                 cancellationToken);
@@ -85,9 +82,9 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
     {
         // RF008/RN009: a filial aceita atendimentos simultâneos até o número de
         // células ativas. Lê o teto e conta a ocupação da janela [inicio, fim)
-        // (apenas status 'agendado', mesma semântica de sobreposição do conflito
-        // de veículo). Filial inexistente → false (existência validada antes pela
-        // CalculadoraResumoAgendamento).
+        // (status 'agendado' e 'em_andamento' — atendimento em execução ocupa
+        // célula; concluído/cancelado liberam a vaga). Filial inexistente →
+        // false (existência validada antes pela CalculadoraResumoAgendamento).
         int? celulasAtivas = await _db.Filiais
             .AsNoTracking()
             .Where(f => f.Id == filialId)
@@ -104,7 +101,7 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
             .AsNoTracking()
             .CountAsync(
                 a => a.FilialId == filialId
-                    && a.StatusRaw == "agendado"
+                    && (a.StatusRaw == "agendado" || a.StatusRaw == "em_andamento")
                     && a.Inicio < fim
                     && a.Fim > inicio,
                 cancellationToken)
@@ -128,7 +125,7 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
                 a => a.FilialId == filialId
                     && a.Inicio < fim
                     && a.Fim > inicio
-                    && StatusOcupacao.Contains(a.StatusRaw),
+                    && (a.StatusRaw == "agendado" || a.StatusRaw == "em_andamento"),
                 cancellationToken)
             .ConfigureAwait(false);
     }

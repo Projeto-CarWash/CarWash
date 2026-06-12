@@ -95,7 +95,7 @@ public interface IAgendamentoRepository
 
     /// <summary>
     /// Obtém o agendamento por <paramref name="id"/>, rastreado pelo change tracker
-    /// do EF Core, para permitir alterações posteriores via <see cref="SalvarAsync"/>. 
+    /// do EF Core, para permitir alterações posteriores via <see cref="SalvarAsync"/>.
     /// Retorna <c>null</c> se não existir.
     /// </summary>
     Task<Agendamento?> ObterPorIdRastreadoAsync(
