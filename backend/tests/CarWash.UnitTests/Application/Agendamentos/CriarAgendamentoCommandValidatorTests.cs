@@ -19,6 +19,8 @@ public class CriarAgendamentoCommandValidatorTests
     [Fact]
     public void Filial_vazia_falha_RF019_com_mensagem_do_card()
     {
+        // RF019/card 142: a mensagem ao usuário não cita mais "RF019" — usa o texto
+        // exato do card. A tag de rastreabilidade fica no comentário XML do validator.
         var resultado = _validator.Validate(ComandoValido() with { FilialId = Guid.Empty });
 
         resultado.IsValid.Should().BeFalse();
@@ -57,14 +59,9 @@ public class CriarAgendamentoCommandValidatorTests
     {
         var resultado = _validator.Validate(ComandoValido() with { Inicio = DateTime.UtcNow.AddHours(-1) });
         resultado.IsValid.Should().BeFalse();
-        resultado.Errors.Should().Contain(e => e.ErrorMessage.Contains("passado", StringComparison.Ordinal));
-    }
-
-    [Fact]
-    public void Inicio_agora_passa()
-    {
-        var resultado = _validator.Validate(ComandoValido() with { Inicio = DateTime.UtcNow });
-        resultado.IsValid.Should().BeTrue();
+        resultado.Errors.Should().Contain(e =>
+            e.PropertyName == nameof(CriarAgendamentoCommand.Inicio)
+            && e.ErrorMessage == "A data/hora de início não pode estar no passado.");
     }
 
     [Fact]
@@ -101,14 +98,15 @@ public class CriarAgendamentoCommandValidatorTests
     [Fact]
     public void Observacoes_muito_longas_falha()
     {
-        var resultado = _validator.Validate(ComandoValido() with { Observacoes = new string('x', 1001) });
+        var resultado = _validator.Validate(ComandoValido() with { Observacoes = new string('x', 501) });
         resultado.IsValid.Should().BeFalse();
     }
 
     [Fact]
-    public void Observacoes_com_exatamente_1000_caracteres_passa()
+    public void Observacoes_com_exatamente_500_caracteres_passa()
     {
-        var resultado = _validator.Validate(ComandoValido() with { Observacoes = new string('x', 1000) });
+        // Boundary do limite máximo (500) — valor no limite deve ser aceito.
+        var resultado = _validator.Validate(ComandoValido() with { Observacoes = new string('x', 500) });
         resultado.IsValid.Should().BeTrue();
     }
 
@@ -142,7 +140,9 @@ public class CriarAgendamentoCommandValidatorTests
     {
         var resultado = _validator.Validate(ComandoValido() with { Inicio = DateTime.UtcNow.AddYears(-1) });
         resultado.IsValid.Should().BeFalse();
-        resultado.Errors.Should().Contain(e => e.ErrorMessage.Contains("passado", StringComparison.Ordinal));
+        resultado.Errors.Should().Contain(e =>
+            e.PropertyName == nameof(CriarAgendamentoCommand.Inicio)
+            && e.ErrorMessage == "A data/hora de início não pode estar no passado.");
     }
 
     private static CriarAgendamentoCommand ComandoValido() => new(
@@ -150,7 +150,7 @@ public class CriarAgendamentoCommandValidatorTests
         ClienteId: Guid.NewGuid(),
         VeiculoId: Guid.NewGuid(),
         ResponsavelId: Guid.NewGuid(),
-        Inicio: DateTime.UtcNow.AddHours(1),
+        Inicio: DateTime.UtcNow.AddDays(1),
         ServicoIds: new[] { Guid.NewGuid() },
         Observacoes: null,
         TraceId: "trace-1",

@@ -20,18 +20,18 @@ public sealed class CriarAgendamentoCommandValidator : AbstractValidator<CriarAg
         RuleFor(x => x.ClienteId)
             .NotEmpty().WithMessage("Cliente é obrigatório para o agendamento.");
 
-    RuleFor(x => x.VeiculoId)
-        .NotEmpty().WithMessage("Veículo é obrigatório para o agendamento.");
+        RuleFor(x => x.VeiculoId)
+            .NotEmpty().WithMessage("Veículo é obrigatório para o agendamento.");
 
-    RuleFor(x => x.ResponsavelId)
-        .NotEmpty().WithMessage("Selecione um responsável para prosseguir.");
+        RuleFor(x => x.ResponsavelId)
+            .NotEmpty().WithMessage("Selecione um responsável para prosseguir.");
 
-    RuleFor(x => x.Inicio)
-        .Cascade(CascadeMode.Stop)
-        .NotNull().WithMessage("Data e hora de início são obrigatórias.")
-        .Must(inicio => inicio!.Value.ToUniversalTime() >= DateTime.UtcNow.AddMinutes(-1))
-        .When(x => x.Inicio.HasValue, ApplyConditionTo.CurrentValidator)
-        .WithMessage("A data/hora de início não pode estar no passado.");
+        RuleFor(x => x.Inicio)
+            .Cascade(CascadeMode.Stop)
+            .NotNull().WithMessage("Data e hora de início são obrigatórias.")
+            .Must(inicio => inicio!.Value.ToUniversalTime() >= DateTime.UtcNow.AddMinutes(-1))
+            .When(x => x.Inicio.HasValue, ApplyConditionTo.CurrentValidator)
+            .WithMessage("A data/hora de início não pode estar no passado.");
 
         RuleFor(x => x.ServicoIds)
             .Cascade(CascadeMode.Stop)
@@ -46,10 +46,10 @@ public sealed class CriarAgendamentoCommandValidator : AbstractValidator<CriarAg
             .When(x => x.ServicoIds is { Count: > 0 }, ApplyConditionTo.CurrentValidator)
             .WithMessage("Não é permitido repetir o mesmo serviço no agendamento (CA007).");
 
-    RuleFor(x => x.Observacoes)
-        .MaximumLength(1000)
-        .When(x => !string.IsNullOrWhiteSpace(x.Observacoes))
-        .WithMessage("Observações devem ter no máximo 1000 caracteres.");
+        RuleFor(x => x.Observacoes)
+            .MaximumLength(500)
+            .When(x => !string.IsNullOrWhiteSpace(x.Observacoes))
+            .WithMessage("Observações devem ter no máximo 500 caracteres.");
     }
 
     /// <summary>
