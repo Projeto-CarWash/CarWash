@@ -46,13 +46,6 @@ public sealed class ConsultarAgendaHandler : IQueryHandler<ConsultarAgendaQuery,
             "detalhado",
             StringComparison.OrdinalIgnoreCase);
 
-        // ADR 0004 — L1: EM_ANDAMENTO é filtro válido mas sem correspondente
-        // persistido; curto-circuita para data vazia sem tocar o banco.
-        if (StatusAgendaMapper.EhEmAndamento(query.Status))
-        {
-            return RespostaVazia(query.TraceId);
-        }
-
         ConsultarAgendaQueryValidator.TentarParsearData(query.Inicio, out var inicioUtc);
         ConsultarAgendaQueryValidator.TentarParsearData(query.Fim, out var fimUtc);
 

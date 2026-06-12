@@ -460,24 +460,39 @@ public class ConsultarAgendaEndpointTests : IAsyncDisposable
     }
 
     // ---------------------------------------------------------------------
-    // Extra — EM_ANDAMENTO: filtro valido (nao 400) que resolve para data: [].
+    // Extra — EM_ANDAMENTO: filtro resolve no banco (RF010/RF013) e a agenda
+    // projeta o status sem erro após o atendimento ser iniciado.
     // ---------------------------------------------------------------------
     [Fact]
-    public async Task GET_status_em_andamento_retorna_200_com_lista_vazia()
+    public async Task GET_status_em_andamento_filtra_e_projeta_atendimento_iniciado()
     {
         var client = await AuthenticatedHttpClient.CreateAsync(_factory);
 
-        // Mesmo havendo agendamentos no periodo, EM_ANDAMENTO curto-circuita p/ vazio.
         var cenario = await SemearAgendamentoAsync(servicos: 1);
         var url = new Uri(MontarUrl("simples", cenario).OriginalString + "&status=EM_ANDAMENTO", UriKind.Relative);
 
-        var response = await client.GetAsync(url);
+        // Antes de iniciar: nenhum em_andamento no período.
+        var antes = await client.GetAsync(url);
+        antes.StatusCode.Should().Be(HttpStatusCode.OK);
+        var corpoAntes = await antes.Content.ReadFromJsonAsync<JsonElement>(_json);
+        corpoAntes.GetProperty("data").GetArrayLength().Should().Be(0);
 
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var corpo = await response.Content.ReadFromJsonAsync<JsonElement>(_json);
-        corpo.GetProperty("data").GetArrayLength().Should().Be(0);
-        corpo.GetProperty("message").GetString()
-            .Should().Be("Nenhum evento encontrado para o período selecionado.");
+        // Inicia o atendimento (AGENDADO → EM_ANDAMENTO).
+        var iniciar = await client.PatchAsJsonAsync(
+            new Uri($"/api/v1/agendamentos/{cenario.AgendamentoId}/iniciar", UriKind.Relative),
+            new { },
+            _json);
+        iniciar.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        // Depois: o filtro devolve o item e a projeção não quebra (regressão do
+        // ParaApi que lançava para 'em_andamento').
+        var depois = await client.GetAsync(url);
+        depois.StatusCode.Should().Be(HttpStatusCode.OK);
+        var corpoDepois = await depois.Content.ReadFromJsonAsync<JsonElement>(_json);
+        corpoDepois.GetProperty("data").GetArrayLength().Should().Be(1);
+        var item = corpoDepois.GetProperty("data")[0];
+        item.GetProperty("agendamentoId").GetGuid().Should().Be(cenario.AgendamentoId);
+        item.GetProperty("status").GetString().Should().Be("EM_ANDAMENTO");
     }
 
     // ---------------------------------------------------------------------
