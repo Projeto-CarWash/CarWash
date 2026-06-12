@@ -12,7 +12,9 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 
+import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
+import { tratarErroApi } from '@/lib/apiError';
 import { AgendaItemDetalhadoCard } from '@/pages/Agenda/AgendaItemDetalhadoCard';
 import { agendamentoService } from '@/services/agendamentoService';
 import { filialService } from '@/services/filialService';
@@ -62,6 +64,13 @@ export function AgendamentosCalendarioPage() {
   const [itemDetalhado, setItemDetalhado] = useState<AgendaItemDetalhado | null>(null);
   const [carregandoDetalhe, setCarregandoDetalhe] = useState(false);
   const [erroDetalhe, setErroDetalhe] = useState<string | null>(null);
+
+  // Transição de status do atendimento dentro do modal (RF010/RF013).
+  const [transicaoLoading, setTransicaoLoading] = useState(false);
+  const [feedbackModal, setFeedbackModal] = useState<{
+    tipo: 'sucesso' | 'erro';
+    mensagem: string;
+  } | null>(null);
 
   const startDate = useMemo(() => startOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
   const endDate = useMemo(() => endOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
@@ -117,6 +126,7 @@ export function AgendamentosCalendarioPage() {
     setDetalheAberto(true);
     setItemDetalhado(null);
     setErroDetalhe(null);
+    setFeedbackModal(null);
     setCarregandoDetalhe(true);
     try {
       const detalhe = await agendamentoService.obterDetalheNaSemana(
@@ -141,6 +151,52 @@ export function AgendamentosCalendarioPage() {
     void navigate(`/agendamentos/${item.agendamentoId}/editar`, { state: { item } });
   };
 
+  /**
+   * Transição de status do atendimento (RF010/RF013):
+   * iniciar (AGENDADO → EM_ANDAMENTO) e finalizar (EM_ANDAMENTO → CONCLUIDO).
+   * Atualiza o modal e o card correspondente da grade da semana.
+   */
+  const transicionarStatus = async (item: AgendaItemDetalhado, acao: 'iniciar' | 'finalizar') => {
+    setTransicaoLoading(true);
+    setFeedbackModal(null);
+    const statusNovo = acao === 'iniciar' ? 'EM_ANDAMENTO' : 'CONCLUIDO';
+
+    try {
+      if (acao === 'iniciar') {
+        await agendamentoService.iniciar(item.agendamentoId);
+      } else {
+        await agendamentoService.finalizar(item.agendamentoId);
+      }
+
+      setItemDetalhado((prev) => (prev ? { ...prev, status: statusNovo } : prev));
+      setAgendamentos((prev) =>
+        prev.map((ag) =>
+          ag.id === item.agendamentoId
+            ? { ...ag, status: statusNovo.toLowerCase() as AgendamentoSemana['status'] }
+            : ag,
+        ),
+      );
+      setFeedbackModal({
+        tipo: 'sucesso',
+        mensagem:
+          acao === 'iniciar'
+            ? 'Atendimento iniciado com sucesso.'
+            : 'Atendimento finalizado com sucesso.',
+      });
+    } catch (err: unknown) {
+      const erro = tratarErroApi(err);
+      setFeedbackModal({
+        tipo: 'erro',
+        mensagem:
+          erro.status === 409
+            ? (erro.mensagem ?? 'Agendamento no status atual não permite a operação.')
+            : 'Não foi possível concluir a operação no momento. Tente novamente.',
+      });
+    } finally {
+      setTransicaoLoading(false);
+    }
+  };
+
   const weekDays = Array.from({ length: 7 }).map((_, i) => addDays(startDate, i));
 
   const getAgendamentosPorDia = (date: Date) => {
@@ -156,10 +212,13 @@ export function AgendamentosCalendarioPage() {
     switch (status) {
       case 'agendado':
         return <CheckCircle2 className="h-3 w-3 text-emerald-500" />;
+      case 'em_andamento':
+        return <Clock className="h-3 w-3 text-sky-500" />;
       case 'pendente':
         return <Clock className="h-3 w-3 text-amber-500" />;
       case 'cancelado':
         return <XCircle className="h-3 w-3 text-red-600" />;
+      case 'concluido':
       case 'finalizado':
         return <CheckCircle2 className="h-3 w-3 text-blue-500" />;
       default:
@@ -171,10 +230,13 @@ export function AgendamentosCalendarioPage() {
     switch (status) {
       case 'agendado':
         return 'border-emerald-500/30 hover:border-emerald-500/60';
+      case 'em_andamento':
+        return 'border-sky-500/30 hover:border-sky-500/60';
       case 'pendente':
         return 'border-amber-500/30 hover:border-amber-500/60';
       case 'cancelado':
         return 'border-red-600/30 hover:border-red-600/60';
+      case 'concluido':
       case 'finalizado':
         return 'border-blue-500/30 hover:border-blue-500/60';
       default:
@@ -388,7 +450,52 @@ export function AgendamentosCalendarioPage() {
           ) : erroDetalhe ? (
             <div className="py-8 text-center text-sm text-red-500">{erroDetalhe}</div>
           ) : itemDetalhado ? (
-            <AgendaItemDetalhadoCard item={itemDetalhado} onEditar={irParaEdicao} />
+            <>
+              <AgendaItemDetalhadoCard item={itemDetalhado} onEditar={irParaEdicao} />
+
+              {feedbackModal && (
+                <p
+                  role="status"
+                  className={`mt-3 text-sm font-medium ${
+                    feedbackModal.tipo === 'sucesso' ? 'text-emerald-500' : 'text-red-500'
+                  }`}
+                >
+                  {feedbackModal.mensagem}
+                </p>
+              )}
+
+              {/* Transição de status (RF010/RF013): iniciar e finalizar atendimento. */}
+              {(itemDetalhado.status === 'AGENDADO' || itemDetalhado.status === 'EM_ANDAMENTO') && (
+                <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border pt-4">
+                  {itemDetalhado.status === 'AGENDADO' && (
+                    <Button
+                      type="button"
+                      className="h-10 rounded-full bg-red-600 px-5 text-sm font-semibold text-white hover:bg-red-700"
+                      disabled={transicaoLoading}
+                      onClick={() => void transicionarStatus(itemDetalhado, 'iniciar')}
+                    >
+                      {transicaoLoading ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+                      ) : null}
+                      Iniciar atendimento
+                    </Button>
+                  )}
+                  {itemDetalhado.status === 'EM_ANDAMENTO' && (
+                    <Button
+                      type="button"
+                      className="h-10 rounded-full bg-red-600 px-5 text-sm font-semibold text-white hover:bg-red-700"
+                      disabled={transicaoLoading}
+                      onClick={() => void transicionarStatus(itemDetalhado, 'finalizar')}
+                    >
+                      {transicaoLoading ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+                      ) : null}
+                      Finalizar atendimento
+                    </Button>
+                  )}
+                </div>
+              )}
+            </>
           ) : null}
         </DialogContent>
       </Dialog>
