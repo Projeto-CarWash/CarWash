@@ -83,8 +83,8 @@ export function ServicosStep({
   return (
     <div>
       <div className="mb-5">
-        <h3 className="text-xl font-semibold text-zinc-100">Serviços</h3>
-        <p className="mt-1 text-sm text-zinc-500">
+        <h3 className="text-xl font-semibold text-foreground">Serviços</h3>
+        <p className="mt-1 text-sm text-muted-foreground">
           Selecione os serviços que serão realizados neste agendamento.
         </p>
       </div>
@@ -104,7 +104,7 @@ export function ServicosStep({
       )}
 
       {carregando && (
-        <div className="flex items-center gap-2 rounded-xl border border-zinc-800/40 bg-zinc-900/20 px-4 py-8 text-sm text-zinc-500">
+        <div className="flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-8 text-sm text-muted-foreground">
           <RefreshCw className="h-4 w-4 animate-spin" />
           Carregando catálogo de serviços…
         </div>
@@ -122,22 +122,22 @@ export function ServicosStep({
                 className={`group relative flex flex-col gap-2 rounded-xl border px-4 py-3 text-left transition-all ${
                   selected
                     ? 'border-red-500/50 bg-red-950/20 shadow-[0_0_0_1px_rgba(239,68,68,0.3)]'
-                    : 'border-zinc-700/60 bg-zinc-900/50 hover:border-zinc-600 hover:bg-zinc-800/40'
+                    : 'border-border bg-card hover:border-ring hover:bg-accent'
                 }`}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <div
                       className={`flex h-8 w-8 items-center justify-center rounded-lg ${
-                        selected ? 'bg-red-600/20' : 'bg-zinc-800'
+                        selected ? 'bg-red-600/20' : 'bg-muted'
                       }`}
                     >
                       <Wrench
-                        className={`h-3.5 w-3.5 ${selected ? 'text-red-500' : 'text-zinc-400'}`}
+                        className={`h-3.5 w-3.5 ${selected ? 'text-red-500' : 'text-muted-foreground'}`}
                       />
                     </div>
                     <p
-                      className={`text-sm font-medium ${selected ? 'text-zinc-100' : 'text-zinc-300'}`}
+                      className={`text-sm font-medium ${selected ? 'text-foreground' : 'text-foreground'}`}
                     >
                       {servico.nome}
                     </p>
@@ -145,7 +145,7 @@ export function ServicosStep({
                   {selected && (
                     <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-600">
                       <svg
-                        className="h-3 w-3 text-white"
+                        className="h-3 w-3 text-foreground"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -157,9 +157,11 @@ export function ServicosStep({
                   )}
                 </div>
                 {servico.descricao && (
-                  <p className="text-xs leading-relaxed text-zinc-500">{servico.descricao}</p>
+                  <p className="text-xs leading-relaxed text-muted-foreground">
+                    {servico.descricao}
+                  </p>
                 )}
-                <div className="flex items-center gap-3 text-xs text-zinc-400">
+                <div className="flex items-center gap-3 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <DollarSign className="h-3 w-3" />
                     {formatarPreco(servico.preco)}
@@ -183,18 +185,18 @@ export function ServicosStep({
       )}
 
       {servicosSelecionados.length > 0 && (
-        <div className="mt-4 flex items-center gap-4 rounded-xl border border-zinc-700/40 bg-zinc-900/40 px-4 py-3">
+        <div className="mt-4 flex items-center gap-4 rounded-xl border border-border bg-card px-4 py-3">
           <div className="flex-1">
-            <p className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">
+            <p className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
               {servicosSelecionados.length} SERVIÇO(S) SELECIONADO(S)
             </p>
           </div>
           <div className="flex items-center gap-4 text-sm">
-            <span className="flex items-center gap-1.5 text-zinc-400">
+            <span className="flex items-center gap-1.5 text-muted-foreground">
               <Clock className="h-3.5 w-3.5" />
               {formatarDuracao(duracaoTotal)}
             </span>
-            <span className="flex items-center gap-1.5 font-semibold text-zinc-200">
+            <span className="flex items-center gap-1.5 font-semibold text-foreground">
               <DollarSign className="h-3.5 w-3.5" />
               {formatarPreco(valorTotal)}
             </span>
@@ -207,7 +209,7 @@ export function ServicosStep({
           type="button"
           variant="outline"
           onClick={onBack}
-          className="h-10 rounded-full border-zinc-700/60 bg-transparent px-5 text-sm text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200"
+          className="h-10 rounded-full border-border bg-transparent px-5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
         >
           <ChevronLeft className="mr-1 h-4 w-4" />
           Voltar

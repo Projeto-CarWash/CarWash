@@ -1,6 +1,7 @@
 using CarWash.Api.Filters;
 using CarWash.Application.Abstractions.Messaging;
 using CarWash.Application.Filiais.AlterarCelulasAtivas;
+using CarWash.Application.Filiais.AlterarStatus;
 using CarWash.Application.Filiais.Common;
 using CarWash.Application.Filiais.Criar;
 using CarWash.Application.Filiais.Listar;
@@ -62,6 +63,16 @@ public static class FiliaisEndpoints
         // Autenticação simples (sem policy Admin; 403 fica para RF-FUT003).
         grupo.MapPatch("/{id:guid}/celulas-ativas", AlterarCelulasAtivasAsync)
             .WithName("AlterarCelulasAtivasFilial")
+            .Produces<FilialResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
+
+        // PATCH /api/v1/filiais/{id}/status — ativar/inativar filial (RF017).
+        // Filial inativa não aceita novos agendamentos (RF019 → 409 filial-inativa).
+        grupo.MapPatch("/{id:guid}/status", AlterarStatusAsync)
+            .WithName("AlterarStatusFilial")
             .Produces<FilialResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status401Unauthorized)
@@ -183,6 +194,34 @@ public static class FiliaisEndpoints
         }
 
         var command = new AlterarCelulasAtivasCommand(id, request.CelulasAtivas);
+
+        var resultado = await validator.ValidateAsync(command, cancellationToken).ConfigureAwait(false);
+        ValidationProblems.EnsureValid(resultado, MensagemPayloadInvalido);
+
+        var resposta = await handler.HandleAsync(command, cancellationToken).ConfigureAwait(false);
+        return TypedResults.Ok(resposta);
+    }
+
+    /// <summary>
+    /// <c>PATCH /api/v1/filiais/{id}/status</c> (RF017). O <c>id</c> vem da
+    /// rota; o body carrega apenas <c>ativo</c>. Validação inline — mesmo
+    /// padrão de <see cref="AlterarCelulasAtivasAsync"/>.
+    /// </summary>
+    private static async Task<Ok<FilialResponse>> AlterarStatusAsync(
+        Guid id,
+        [FromBody] AlterarStatusFilialRequest? request,
+        [FromServices] ICommandHandler<AlterarStatusFilialCommand, FilialResponse> handler,
+        [FromServices] IValidator<AlterarStatusFilialCommand> validator,
+        CancellationToken cancellationToken)
+    {
+        if (request is null)
+        {
+            throw ValidationProblems.BodyAusente(
+                MensagemPayloadInvalido,
+                "Corpo da requisição ausente ou malformado.");
+        }
+
+        var command = new AlterarStatusFilialCommand(id, request.Ativo);
 
         var resultado = await validator.ValidateAsync(command, cancellationToken).ConfigureAwait(false);
         ValidationProblems.EnsureValid(resultado, MensagemPayloadInvalido);

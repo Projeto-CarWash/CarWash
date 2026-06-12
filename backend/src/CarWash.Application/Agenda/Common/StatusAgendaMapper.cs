@@ -2,24 +2,24 @@ namespace CarWash.Application.Agenda.Common;
 
 /// <summary>
 /// Mapeador estático entre os 4 status do contrato da API (RF009 / card 132) e
-/// os 3 status reais do domínio persistido. Decisão da ADR 0004 (L1):
+/// os status persistidos no domínio:
 /// <list type="bullet">
 ///   <item><c>AGENDADO</c> ↔ <c>agendado</c>.</item>
+///   <item><c>EM_ANDAMENTO</c> ↔ <c>em_andamento</c> (atendimento iniciado — RF010/RF013).</item>
 ///   <item><c>CONCLUIDO</c> ↔ <c>finalizado</c> (alias do contrato).</item>
 ///   <item><c>CANCELADO</c> ↔ <c>cancelado</c>.</item>
-///   <item><c>EM_ANDAMENTO</c> — valor de contrato sem correspondente persistido;
-///   é filtro válido (não causa 400) mas sempre resolve para conjunto vazio.</item>
 /// </list>
 /// </summary>
 public static class StatusAgendaMapper
 {
-    /// <summary>Status do contrato da API que não tem correspondente no domínio.</summary>
+    /// <summary>Status do contrato da API para atendimento em execução.</summary>
     public const string EmAndamento = "EM_ANDAMENTO";
 
     private static readonly Dictionary<string, string> ApiParaDb =
         new(StringComparer.OrdinalIgnoreCase)
         {
             ["AGENDADO"] = "agendado",
+            [EmAndamento] = "em_andamento",
             ["CONCLUIDO"] = "finalizado",
             ["CANCELADO"] = "cancelado",
         };
@@ -28,6 +28,7 @@ public static class StatusAgendaMapper
         new(StringComparer.Ordinal)
         {
             ["agendado"] = "AGENDADO",
+            ["em_andamento"] = EmAndamento,
             ["finalizado"] = "CONCLUIDO",
             ["cancelado"] = "CANCELADO",
         };
@@ -54,8 +55,10 @@ public static class StatusAgendaMapper
     }
 
     /// <summary>
-    /// Indica se <paramref name="statusApi"/> é o valor <c>EM_ANDAMENTO</c>, que
-    /// curto-circuita a consulta para uma lista vazia (ADR 0004 — L1).
+    /// Indica se <paramref name="statusApi"/> é o valor <c>EM_ANDAMENTO</c>.
+    /// Histórico: na ADR 0004 (L1) o status não existia persistido e a agenda
+    /// curto-circuitava para lista vazia; com o ciclo iniciar/finalizar
+    /// (RF010/RF013) o filtro passou a resolver normalmente no banco.
     /// </summary>
     /// <returns></returns>
     public static bool EhEmAndamento(string? statusApi) =>
@@ -64,8 +67,7 @@ public static class StatusAgendaMapper
 
     /// <summary>
     /// Converte um status do contrato da API para o valor persistido no banco.
-    /// Retorna <c>null</c> para <c>EM_ANDAMENTO</c> (curto-circuito) ou para
-    /// valores fora do contrato.
+    /// Retorna <c>null</c> para valores fora do contrato.
     /// </summary>
     /// <returns></returns>
     public static string? ParaDb(string? statusApi)

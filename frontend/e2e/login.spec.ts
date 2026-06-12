@@ -78,7 +78,7 @@ test.describe('Login (RF001)', () => {
 
     await expect(page).toHaveURL(/\/dashboard$/);
     // Âncora estável do Dashboard renderizado.
-    await expect(page.getByText(/painel de métricas/i)).toBeVisible();
+    await expect(page.getByText(/login realizado com sucesso/i)).toBeVisible();
   });
 
   test('2. sessão persiste após reload (cookie httpOnly restaura via refresh)', async ({
@@ -94,7 +94,7 @@ test.describe('Login (RF001)', () => {
     await page.reload();
 
     await expect(page).toHaveURL(/\/dashboard$/);
-    await expect(page.getByText(/painel de métricas/i)).toBeVisible();
+    await expect(page.getByText(/login realizado com sucesso/i)).toBeVisible();
   });
 
   test('3. "lembrar meu e-mail" pré-preenche o campo no próximo acesso a /login', async ({
@@ -193,6 +193,6 @@ test.describe('Login (RF001)', () => {
     // Com sessão ativa (cookie + memória), o useEffect do Login salta pro dashboard.
     await page.goto('/login');
     await expect(page).toHaveURL(/\/dashboard$/);
-    await expect(page.getByText(/painel de métricas/i)).toBeVisible();
+    await expect(page.getByText(/login realizado com sucesso/i)).toBeVisible();
   });
 });

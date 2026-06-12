@@ -8,9 +8,10 @@ public class StatusAgendaMapperTests
 {
     [Theory]
     [InlineData("AGENDADO", "agendado")]
+    [InlineData("EM_ANDAMENTO", "em_andamento")]
     [InlineData("CONCLUIDO", "finalizado")]
     [InlineData("CANCELADO", "cancelado")]
-    public void ParaDb_mapeia_os_tres_status_persistidos(string api, string db)
+    public void ParaDb_mapeia_os_quatro_status_persistidos(string api, string db)
     {
         StatusAgendaMapper.ParaDb(api).Should().Be(db);
     }
@@ -20,13 +21,6 @@ public class StatusAgendaMapperTests
     {
         StatusAgendaMapper.ParaDb("agendado").Should().Be("agendado");
         StatusAgendaMapper.ParaDb("Concluido").Should().Be("finalizado");
-    }
-
-    [Fact]
-    public void ParaDb_de_em_andamento_retorna_null_curto_circuito()
-    {
-        // L1: EM_ANDAMENTO não tem correspondente persistido.
-        StatusAgendaMapper.ParaDb("EM_ANDAMENTO").Should().BeNull();
     }
 
     [Theory]
@@ -41,6 +35,7 @@ public class StatusAgendaMapperTests
 
     [Theory]
     [InlineData("agendado", "AGENDADO")]
+    [InlineData("em_andamento", "EM_ANDAMENTO")]
     [InlineData("finalizado", "CONCLUIDO")]
     [InlineData("cancelado", "CANCELADO")]
     public void ParaApi_mapeia_para_uppercase_do_contrato(string db, string api)
@@ -51,7 +46,7 @@ public class StatusAgendaMapperTests
     [Fact]
     public void ParaApi_de_status_persistido_invalido_lanca()
     {
-        var act = () => StatusAgendaMapper.ParaApi("em_andamento");
+        var act = () => StatusAgendaMapper.ParaApi("inexistente");
         act.Should().Throw<ArgumentOutOfRangeException>();
     }
 

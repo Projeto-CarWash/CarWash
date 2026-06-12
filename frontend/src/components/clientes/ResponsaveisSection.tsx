@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/table';
 import { maskCelular, maskCpfCnpj } from '@/lib/masks';
 import { responsavelService } from '@/services/responsavelService';
+import { VINCULO_LABELS } from '@/types/responsavel';
 
 import { ResponsavelModal } from './ResponsavelModal';
 
@@ -22,16 +23,6 @@ import type { Responsavel } from '@/types/responsavel';
 interface ResponsaveisSectionProps {
   clienteId: string;
 }
-
-const VINCULO_LABELS: Record<string, string> = {
-  PAI: 'Pai',
-  MAE: 'Mãe',
-  CONJUGE: 'Cônjuge',
-  FILHO: 'Filho(a)',
-  SOCIO: 'Sócio(a)',
-  FUNCIONARIO: 'Funcionário(a)',
-  OUTRO: 'Outro',
-};
 
 export function ResponsaveisSection({ clienteId }: ResponsaveisSectionProps) {
   const queryClient = useQueryClient();
@@ -73,14 +64,14 @@ export function ResponsaveisSection({ clienteId }: ResponsaveisSectionProps) {
         </div>
       )}
 
-      <Card className="border border-zinc-200 dark:border-zinc-800/60 bg-white dark:bg-zinc-900/30">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b border-zinc-100 dark:border-zinc-800/60">
+      <Card className="border border-border dark:border-zinc-800/60 bg-white dark:bg-zinc-900/30">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b border-border dark:border-zinc-800/60">
           <div>
-            <CardTitle className="text-lg text-zinc-800 dark:text-zinc-100 flex items-center gap-2">
+            <CardTitle className="text-lg text-foreground dark:text-zinc-100 flex items-center gap-2">
               <Users className="h-5 w-5 text-red-500" />
               Responsáveis
             </CardTitle>
-            <CardDescription className="text-zinc-500 dark:text-zinc-400">
+            <CardDescription className="text-muted-foreground dark:text-zinc-400">
               Contatos autorizados ou representantes legais deste cliente.
             </CardDescription>
           </div>
@@ -96,7 +87,7 @@ export function ResponsaveisSection({ clienteId }: ResponsaveisSectionProps) {
         <CardContent className="p-0">
           {isLoading ? (
             <div
-              className="flex items-center justify-center py-10 gap-2 text-sm text-zinc-500"
+              className="flex items-center justify-center py-10 gap-2 text-sm text-muted-foreground"
               aria-live="polite"
             >
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -105,14 +96,14 @@ export function ResponsaveisSection({ clienteId }: ResponsaveisSectionProps) {
           ) : isError ? (
             <div className="flex flex-col items-center justify-center py-8 px-4 text-center gap-3">
               <AlertCircle className="h-6 w-6 text-red-500" />
-              <p className="text-sm text-zinc-500">
+              <p className="text-sm text-muted-foreground">
                 Não foi possível carregar os responsáveis para este cliente.
               </p>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => void refetch()}
-                className="h-8 rounded-full border-zinc-200 dark:border-zinc-700/60 bg-transparent px-4 text-xs text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/50"
+                className="h-8 rounded-full border-border dark:border-zinc-700/60 bg-transparent px-4 text-xs text-muted-foreground dark:text-zinc-300 hover:bg-accent dark:hover:bg-muted"
               >
                 <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
                 Tentar novamente
@@ -120,26 +111,28 @@ export function ResponsaveisSection({ clienteId }: ResponsaveisSectionProps) {
             </div>
           ) : !responsaveis || responsaveis.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 px-4 text-center gap-2">
-              <p className="text-sm text-zinc-500">Nenhum responsável vinculado a este cliente.</p>
+              <p className="text-sm text-muted-foreground">
+                Nenhum responsável vinculado a este cliente.
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="border-b border-zinc-100 dark:border-zinc-800/60">
-                    <TableHead className="text-[10px] font-bold tracking-[0.2em] text-zinc-500 uppercase">
+                  <TableRow className="border-b border-border dark:border-zinc-800/60">
+                    <TableHead className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground uppercase">
                       Nome
                     </TableHead>
-                    <TableHead className="text-[10px] font-bold tracking-[0.2em] text-zinc-500 uppercase">
+                    <TableHead className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground uppercase">
                       Documento
                     </TableHead>
-                    <TableHead className="text-[10px] font-bold tracking-[0.2em] text-zinc-500 uppercase">
+                    <TableHead className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground uppercase">
                       Grau de Vínculo
                     </TableHead>
-                    <TableHead className="text-[10px] font-bold tracking-[0.2em] text-zinc-500 uppercase">
+                    <TableHead className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground uppercase">
                       Telefone
                     </TableHead>
-                    <TableHead className="text-[10px] font-bold tracking-[0.2em] text-zinc-500 uppercase">
+                    <TableHead className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground uppercase">
                       E-mail
                     </TableHead>
                   </TableRow>
@@ -148,21 +141,23 @@ export function ResponsaveisSection({ clienteId }: ResponsaveisSectionProps) {
                   {responsaveis.map((resp) => (
                     <TableRow
                       key={resp.id}
-                      className="border-b border-zinc-100 dark:border-zinc-850/30 hover:bg-zinc-50/50 dark:hover:bg-zinc-950/20"
+                      className="border-b border-border dark:border-zinc-850/30 hover:bg-accent dark:hover:bg-background"
                     >
-                      <TableCell className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+                      <TableCell className="text-sm font-semibold text-foreground dark:text-zinc-200">
                         {resp.nome}
                       </TableCell>
-                      <TableCell className="text-sm text-zinc-500">
+                      <TableCell className="text-sm text-muted-foreground">
                         {maskCpfCnpj(resp.documento)}
                       </TableCell>
-                      <TableCell className="text-sm text-zinc-500">
+                      <TableCell className="text-sm text-muted-foreground">
                         {VINCULO_LABELS[resp.grauVinculo] ?? resp.grauVinculo}
                       </TableCell>
-                      <TableCell className="text-sm text-zinc-500">
+                      <TableCell className="text-sm text-muted-foreground">
                         {resp.telefone ? maskCelular(resp.telefone) : '—'}
                       </TableCell>
-                      <TableCell className="text-sm text-zinc-500">{resp.email ?? '—'}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {resp.email ?? '—'}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

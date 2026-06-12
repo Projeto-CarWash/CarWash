@@ -63,12 +63,12 @@ export function RevisaoAgendamento({
   }, []);
 
   return (
-    <Card className="border border-zinc-800/60 bg-zinc-900/30">
+    <Card className="border border-border bg-card">
       <CardHeader>
-        <CardTitle ref={tituloRef} tabIndex={-1} className="text-lg text-zinc-100 outline-none">
+        <CardTitle ref={tituloRef} tabIndex={-1} className="text-lg text-foreground outline-none">
           Revise antes de confirmar
         </CardTitle>
-        <p className="text-sm text-zinc-400">
+        <p className="text-sm text-muted-foreground">
           Confira os dados abaixo. O agendamento só é registrado após a sua confirmação (RF015).
         </p>
       </CardHeader>
@@ -104,12 +104,12 @@ export function RevisaoAgendamento({
 
           <CampoRevisao icone={<User className="h-4 w-4" aria-hidden="true" />} rotulo="Cliente">
             <span className="block">{resumo.cliente.nome}</span>
-            <span className="block text-xs text-zinc-500">{resumo.cliente.documento}</span>
+            <span className="block text-xs text-muted-foreground">{resumo.cliente.documento}</span>
           </CampoRevisao>
 
           <CampoRevisao icone={<Car className="h-4 w-4" aria-hidden="true" />} rotulo="Veículo">
             <span className="block font-mono tracking-wide">{resumo.veiculo.placa}</span>
-            <span className="block text-xs text-zinc-500">
+            <span className="block text-xs text-muted-foreground">
               {resumo.veiculo.modelo} · {resumo.veiculo.cor}
             </span>
           </CampoRevisao>
@@ -119,26 +119,28 @@ export function RevisaoAgendamento({
             rotulo="Início e fim"
           >
             <span className="block">{formatarDataHora(resumo.inicio)}</span>
-            <span className="block text-xs text-zinc-500">até {formatarDataHora(resumo.fim)}</span>
+            <span className="block text-xs text-muted-foreground">
+              até {formatarDataHora(resumo.fim)}
+            </span>
           </CampoRevisao>
         </dl>
 
         {/* Serviços */}
         <div className="mt-6">
-          <h3 className="text-sm font-semibold tracking-wide text-zinc-200">Serviços</h3>
-          <ul className="mt-2 divide-y divide-zinc-800/60 rounded-xl border border-zinc-800/60">
+          <h3 className="text-sm font-semibold tracking-wide text-foreground">Serviços</h3>
+          <ul className="mt-2 divide-y divide-border rounded-xl border border-border">
             {resumo.servicos.map((servico) => (
               <li
                 key={servico.id}
                 className="flex items-center justify-between gap-3 px-4 py-3 text-sm"
               >
                 <span className="min-w-0">
-                  <span className="block truncate font-medium text-zinc-200">{servico.nome}</span>
-                  <span className="mt-0.5 block text-xs text-zinc-500">
+                  <span className="block truncate font-medium text-foreground">{servico.nome}</span>
+                  <span className="mt-0.5 block text-xs text-muted-foreground">
                     {formatarDuracao(servico.duracaoMin)}
                   </span>
                 </span>
-                <span className="shrink-0 tabular-nums text-zinc-300">
+                <span className="shrink-0 tabular-nums text-foreground">
                   {formatarReais(servico.preco)}
                 </span>
               </li>
@@ -149,8 +151,8 @@ export function RevisaoAgendamento({
         {/* Observações */}
         {resumo.observacoes && (
           <div className="mt-6">
-            <h3 className="text-sm font-semibold tracking-wide text-zinc-200">Observações</h3>
-            <p className="mt-2 rounded-xl border border-zinc-800/60 bg-zinc-950/40 px-4 py-3 text-sm whitespace-pre-line text-zinc-300">
+            <h3 className="text-sm font-semibold tracking-wide text-foreground">Observações</h3>
+            <p className="mt-2 rounded-xl border border-border bg-background px-4 py-3 text-sm whitespace-pre-line text-foreground">
               {resumo.observacoes}
             </p>
           </div>
@@ -159,28 +161,31 @@ export function RevisaoAgendamento({
         {/* Observações logísticas */}
         {resumo.observacoesLogisticas && (
           <div className="mt-6">
-            <h3 className="text-sm font-semibold tracking-wide text-zinc-200">
+            <h3 className="text-sm font-semibold tracking-wide text-foreground">
               Observações Logísticas
             </h3>
-            <p className="mt-2 rounded-xl border border-zinc-800/60 bg-zinc-950/40 px-4 py-3 text-sm whitespace-pre-line text-zinc-300">
+            <p className="mt-2 rounded-xl border border-border bg-background px-4 py-3 text-sm whitespace-pre-line text-foreground">
               {resumo.observacoesLogisticas}
             </p>
           </div>
         )}
 
         {/* Totais */}
-        <div className="mt-6 space-y-2 border-t border-zinc-800/60 pt-4">
+        <div className="mt-6 space-y-2 border-t border-border pt-4">
           <div className="flex items-center justify-between text-sm">
-            <span className="flex items-center gap-2 text-zinc-400">
+            <span className="flex items-center gap-2 text-muted-foreground">
               <Clock className="h-4 w-4" aria-hidden="true" />
               Duração total
             </span>
-            <span data-testid="revisao-duracao" className="font-medium tabular-nums text-zinc-100">
+            <span
+              data-testid="revisao-duracao"
+              className="font-medium tabular-nums text-foreground"
+            >
               {formatarDuracao(resumo.duracaoTotalMin)}
             </span>
           </div>
           <div className="flex items-center justify-between text-sm">
-            <span className="flex items-center gap-2 text-zinc-400">
+            <span className="flex items-center gap-2 text-muted-foreground">
               <Receipt className="h-4 w-4" aria-hidden="true" />
               Valor total
             </span>
@@ -200,7 +205,7 @@ export function RevisaoAgendamento({
             variant="outline"
             onClick={onEditar}
             disabled={confirmando}
-            className="h-10 rounded-full border-zinc-700/60 bg-transparent px-5 text-sm text-zinc-300 hover:bg-zinc-800/50 hover:text-zinc-100"
+            className="h-10 rounded-full border-border bg-transparent px-5 text-sm text-foreground hover:bg-accent hover:text-foreground"
           >
             <Pencil className="mr-2 h-4 w-4" aria-hidden="true" />
             Editar
@@ -238,12 +243,12 @@ interface CampoRevisaoProps {
 /** Linha rótulo/valor do resumo, com ícone consistente com as demais telas. */
 function CampoRevisao({ icone, rotulo, children }: CampoRevisaoProps) {
   return (
-    <div className="rounded-xl border border-zinc-800/60 bg-zinc-950/40 px-4 py-3">
-      <dt className="flex items-center gap-2 text-xs font-medium tracking-wide text-zinc-500 uppercase">
+    <div className="rounded-xl border border-border bg-background px-4 py-3">
+      <dt className="flex items-center gap-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
         <span className="text-red-500">{icone}</span>
         {rotulo}
       </dt>
-      <dd className="mt-1 text-sm text-zinc-200">{children}</dd>
+      <dd className="mt-1 text-sm text-foreground">{children}</dd>
     </div>
   );
 }

@@ -20,15 +20,18 @@ export function IdentificacaoForm() {
   return (
     <div>
       <div className="mb-5">
-        <h3 className="text-xl font-semibold text-zinc-100">Identificação</h3>
-        <p className="mt-1 text-sm text-zinc-500">
+        <h3 className="text-xl font-semibold text-foreground">Identificação</h3>
+        <p className="mt-1 text-sm text-muted-foreground">
           Dados pessoais do titular. O CPF/CNPJ é único por cliente.
         </p>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <Label htmlFor="cpf" className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">
+          <Label
+            htmlFor="cpf"
+            className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground"
+          >
             CPF / CNPJ
           </Label>
           <Controller
@@ -50,12 +53,12 @@ export function IdentificacaoForm() {
                     placeholder="000.000.000-00"
                     aria-invalid={!!cpfError}
                     aria-describedby={cpfError ? 'cpf-error' : undefined}
-                    className={`h-10 rounded-xl text-sm text-zinc-200 placeholder:text-zinc-600 focus-visible:ring-0 ${
+                    className={`h-10 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-0 ${
                       cpfError
                         ? 'border-red-500/60 bg-red-950/20 focus-visible:border-red-500'
                         : isValid
                           ? 'border-green-500/60 bg-green-950/20 focus-visible:border-green-500'
-                          : 'border-zinc-700/60 bg-zinc-900/50 focus-visible:border-zinc-600'
+                          : 'border-border bg-card focus-visible:border-ring'
                     }`}
                   />
                   {cpfError && (
@@ -75,7 +78,10 @@ export function IdentificacaoForm() {
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="birth" className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">
+          <Label
+            htmlFor="birth"
+            className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground"
+          >
             DATA DE NASCIMENTO
           </Label>
           <Controller
@@ -92,10 +98,10 @@ export function IdentificacaoForm() {
                   placeholder="DD/MM/AAAA"
                   aria-invalid={!!dateError}
                   aria-describedby={dateError ? 'birth-error' : undefined}
-                  className={`h-10 rounded-xl text-sm text-zinc-200 placeholder:text-zinc-600 focus-visible:ring-0 ${
+                  className={`h-10 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-0 ${
                     dateError
                       ? 'border-red-500/60 bg-red-950/20 focus-visible:border-red-500'
-                      : 'border-zinc-700/60 bg-zinc-900/50 focus-visible:border-zinc-600'
+                      : 'border-border bg-card focus-visible:border-ring'
                   }`}
                 />
                 {dateError && (
@@ -114,7 +120,10 @@ export function IdentificacaoForm() {
         </div>
 
         <div className="col-span-2 space-y-1.5">
-          <Label htmlFor="name" className="text-[10px] font-bold tracking-[0.2em] text-zinc-500">
+          <Label
+            htmlFor="name"
+            className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground"
+          >
             NOME COMPLETO / RAZÃO SOCIAL
           </Label>
           <Controller
@@ -137,10 +146,10 @@ export function IdentificacaoForm() {
                   placeholder="Ex: Helena Quintanilha Freitas"
                   aria-invalid={!!nomeError}
                   aria-describedby={nomeError ? 'name-error' : undefined}
-                  className={`h-10 rounded-xl text-sm text-zinc-200 placeholder:text-zinc-600 focus-visible:ring-0 ${
+                  className={`h-10 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-0 ${
                     nomeError
                       ? 'border-red-500/60 bg-red-950/20 focus-visible:border-red-500'
-                      : 'border-zinc-700/60 bg-zinc-900/50 focus-visible:border-zinc-600'
+                      : 'border-border bg-card focus-visible:border-ring'
                   }`}
                 />
                 {nomeError && (

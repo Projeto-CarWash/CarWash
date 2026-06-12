@@ -185,7 +185,7 @@ export function ServicoFormPage() {
 
   if (carregandoDados) {
     return (
-      <div className="flex h-full items-center justify-center text-zinc-500">
+      <div className="flex h-full items-center justify-center text-muted-foreground">
         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
         Carregando serviço...
       </div>
@@ -198,7 +198,7 @@ export function ServicoFormPage() {
         <div
           role="status"
           aria-live="polite"
-          className="fixed right-5 top-5 z-[600] flex items-center gap-3 rounded-lg border border-green-500/30 bg-zinc-950 px-4 py-3 text-sm text-green-400 shadow-xl shadow-black/60 animate-in fade-in slide-in-from-top-5 duration-300"
+          className="fixed right-5 top-5 z-[600] flex items-center gap-3 rounded-lg border border-green-500/30 bg-background px-4 py-3 text-sm text-green-400 shadow-xl shadow-black/60 animate-in fade-in slide-in-from-top-5 duration-300"
         >
           <span className="flex h-5 w-5 items-center justify-center rounded-full bg-green-500/20 text-green-500">
             <Check className="h-3 w-3" />
@@ -216,10 +216,10 @@ export function ServicoFormPage() {
             <Wrench className="h-5 w-5" />
           </span>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-zinc-50">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">
               {isEdicao ? 'Editar serviço' : 'Novo serviço'}
             </h1>
-            <p className="mt-1 text-sm text-zinc-400">
+            <p className="mt-1 text-sm text-muted-foreground">
               {isEdicao
                 ? 'Atualize os dados e o valor deste serviço no catálogo.'
                 : 'Cadastre um novo serviço para o catálogo do CarWash.'}
@@ -231,17 +231,17 @@ export function ServicoFormPage() {
           variant="outline"
           onClick={() => void navigate('/servicos')}
           disabled={isSubmitting}
-          className="h-9 rounded-full border-zinc-700/60 bg-transparent px-4 text-sm text-zinc-300 hover:bg-zinc-800/50 hover:text-zinc-100"
+          className="h-9 rounded-full border-border bg-transparent px-4 text-sm text-foreground hover:bg-accent hover:text-foreground"
         >
           <ArrowLeft className="mr-1 h-4 w-4" aria-hidden="true" />
           Voltar
         </Button>
       </div>
 
-      <Card className="border border-zinc-800/60 bg-zinc-900/30 max-w-3xl">
+      <Card className="border border-border bg-card max-w-3xl">
         <CardHeader>
-          <CardTitle className="text-lg text-zinc-100">Dados do serviço</CardTitle>
-          <CardDescription className="text-zinc-400">
+          <CardTitle className="text-lg text-foreground">Dados do serviço</CardTitle>
+          <CardDescription className="text-muted-foreground">
             Preencha corretamente os valores que serão exibidos aos clientes e agenda.
           </CardDescription>
         </CardHeader>
@@ -271,7 +271,7 @@ export function ServicoFormPage() {
             aria-busy={isSubmitting}
           >
             <div className="flex flex-col gap-2 md:col-span-2">
-              <Label htmlFor="servico-nome" className="text-zinc-300">
+              <Label htmlFor="servico-nome" className="text-foreground">
                 Nome do serviço
               </Label>
               <Controller
@@ -289,10 +289,10 @@ export function ServicoFormPage() {
                       ref={field.ref}
                       aria-invalid={!!fieldState.error}
                       aria-describedby={fieldState.error ? 'servico-nome-error' : undefined}
-                      className={`h-10 rounded-lg border px-3 text-sm text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-0 ${
+                      className={`h-10 rounded-lg border px-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-0 ${
                         fieldState.error
                           ? 'border-red-500/60 bg-red-950/20 focus-visible:border-red-500'
-                          : 'border-zinc-700/60 bg-zinc-950/40 focus-visible:border-zinc-600'
+                          : 'border-border bg-background focus-visible:border-ring'
                       }`}
                     />
                     {fieldState.error && (
@@ -306,7 +306,7 @@ export function ServicoFormPage() {
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label htmlFor="servico-preco" className="text-zinc-300">
+              <Label htmlFor="servico-preco" className="text-foreground">
                 Preço (R$)
               </Label>
               <Controller
@@ -328,10 +328,10 @@ export function ServicoFormPage() {
                       ref={field.ref}
                       aria-invalid={!!fieldState.error}
                       aria-describedby={fieldState.error ? 'servico-preco-error' : undefined}
-                      className={`h-10 rounded-lg border px-3 text-sm text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-0 ${
+                      className={`h-10 rounded-lg border px-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-0 ${
                         fieldState.error
                           ? 'border-red-500/60 bg-red-950/20 focus-visible:border-red-500'
-                          : 'border-zinc-700/60 bg-zinc-950/40 focus-visible:border-zinc-600'
+                          : 'border-border bg-background focus-visible:border-ring'
                       }`}
                     />
                     {fieldState.error ? (
@@ -339,7 +339,9 @@ export function ServicoFormPage() {
                         {fieldState.error.message}
                       </p>
                     ) : (
-                      <p className="text-xs text-zinc-500">Utilize vírgula para centavos.</p>
+                      <p className="text-xs text-muted-foreground">
+                        Utilize vírgula para centavos.
+                      </p>
                     )}
                   </>
                 )}
@@ -347,7 +349,7 @@ export function ServicoFormPage() {
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label htmlFor="servico-duracao" className="text-zinc-300">
+              <Label htmlFor="servico-duracao" className="text-foreground">
                 Duração (Minutos)
               </Label>
               <Controller
@@ -368,10 +370,10 @@ export function ServicoFormPage() {
                       max={1440}
                       aria-invalid={!!fieldState.error}
                       aria-describedby={fieldState.error ? 'servico-duracao-error' : undefined}
-                      className={`h-10 rounded-lg border px-3 text-sm text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-0 ${
+                      className={`h-10 rounded-lg border px-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-0 ${
                         fieldState.error
                           ? 'border-red-500/60 bg-red-950/20 focus-visible:border-red-500'
-                          : 'border-zinc-700/60 bg-zinc-950/40 focus-visible:border-zinc-600'
+                          : 'border-border bg-background focus-visible:border-ring'
                       }`}
                     />
                     {fieldState.error && (
@@ -390,7 +392,7 @@ export function ServicoFormPage() {
                 variant="outline"
                 onClick={() => void navigate('/servicos')}
                 disabled={isSubmitting}
-                className="h-10 rounded-full border-zinc-700/60 bg-transparent px-5 text-sm text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200"
+                className="h-10 rounded-full border-border bg-transparent px-5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
               >
                 Cancelar
               </Button>

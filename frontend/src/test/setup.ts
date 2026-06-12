@@ -12,13 +12,3 @@ import { server } from './mswServer';
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
-
-const originalConsoleError = console.error;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-console.error = (...args: any[]) => {
-  if (typeof args[0] === 'string' && args[0].includes('was not wrapped in act(...)')) {
-    return;
-  }
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-  originalConsoleError(...args);
-};

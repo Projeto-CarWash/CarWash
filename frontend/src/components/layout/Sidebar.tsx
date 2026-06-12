@@ -1,6 +1,5 @@
 import {
   BarChart3,
-  History,
   Building2,
   CalendarDays,
   CarFront,
@@ -33,10 +32,9 @@ const operacaoLinks: NavLinkItem[] = [
 ];
 
 const gestaoLinks: NavLinkItem[] = [
-  { icon: CalendarDays, label: 'Agendamentos', to: '/agenda' },
-  { icon: History, label: 'Histórico', to: '/historico' },
-  { icon: DollarSign, label: 'Financeiro' },
-  { icon: BarChart3, label: 'Relatórios' },
+  { icon: CalendarDays, label: 'Agendamentos', to: '/agendamentos' },
+  { icon: DollarSign, label: 'Financeiro', to: '/financeiro' },
+  { icon: BarChart3, label: 'Relatórios', to: '/relatorios' },
   { icon: UserCog, label: 'Equipe', to: '/usuarios' },
 ];
 
@@ -57,10 +55,8 @@ export function Sidebar() {
     const baseClasses =
       'group relative flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all';
     const ativo = isActive(link.to);
-    const ativoClasses =
-      'bg-gradient-to-r from-red-600/10 dark:from-red-600/20 to-transparent text-red-600 dark:text-white';
-    const inativoClasses =
-      'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/40 hover:text-zinc-900 dark:hover:text-zinc-200';
+    const ativoClasses = 'bg-gradient-to-r from-red-600/20 to-transparent text-foreground';
+    const inativoClasses = 'text-muted-foreground hover:bg-accent hover:text-foreground';
 
     if (link.to) {
       return (
@@ -71,9 +67,7 @@ export function Sidebar() {
               aria-hidden="true"
             />
           )}
-          <link.icon
-            className={`h-4 w-4 ${ativo ? 'text-red-600 dark:text-white' : 'text-zinc-500'}`}
-          />
+          <link.icon className={`h-4 w-4 ${ativo ? 'text-foreground' : 'text-muted-foreground'}`} />
           <span>{link.label}</span>
         </NavLink>
       );
@@ -85,36 +79,34 @@ export function Sidebar() {
         disabled
         className={`${baseClasses} ${inativoClasses} cursor-not-allowed opacity-60`}
       >
-        <link.icon className="h-4 w-4 text-zinc-500" />
+        <link.icon className="h-4 w-4 text-muted-foreground" />
         <span>{link.label}</span>
-        <span className="ml-auto text-[9px] tracking-widest text-zinc-400 dark:text-zinc-600">
-          EM BREVE
-        </span>
+        <span className="ml-auto text-[9px] tracking-widest text-muted-foreground">EM BREVE</span>
       </button>
     );
   }
 
   return (
-    <aside className="fixed bottom-0 left-0 top-0 z-40 flex w-64 flex-col border-r border-zinc-200 dark:border-zinc-800/60 bg-white dark:bg-zinc-950">
+    <aside className="fixed bottom-0 left-0 top-0 z-40 flex w-64 flex-col border-r border-border bg-background">
       <div className="flex items-center gap-3 px-5 py-5">
-        <div className="flex h-12 w-12 items-center justify-center">
-          <img src="/logo.png" alt="Logo CarWash" className="h-full w-full object-contain" />
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-black ring-1 ring-border">
+          <img src="/logo.png" alt="CarWash" className="h-full w-full object-contain" />
         </div>
         <div>
           <h1 className="text-lg font-black tracking-wider">
-            <span className="text-zinc-900 dark:text-zinc-50">CAR</span>
+            <span className="text-foreground">CAR</span>
             <span className="text-red-600">WASH</span>
           </h1>
-          <p className="mt-0.5 text-[10.5px] font-bold tracking-[0.2em] text-zinc-400 dark:text-zinc-500">
-            ADMIN <span className="px-0.5 text-zinc-300 dark:text-zinc-600">•</span> v2.4
+          <p className="mt-0.5 text-[10.5px] font-bold tracking-[0.2em] text-muted-foreground">
+            ADMIN <span className="px-0.5 text-muted-foreground">•</span> v2.4
           </p>
         </div>
       </div>
 
-      <Separator className="bg-zinc-200 dark:bg-zinc-800/60" />
+      <Separator className="bg-border" />
 
       <nav className="flex-1 overflow-y-auto px-3 py-4">
-        <p className="mb-2 px-3 text-[10px] font-bold tracking-[0.2em] text-zinc-400 dark:text-zinc-600">
+        <p className="mb-2 px-3 text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
           OPERAÇÃO
         </p>
         <ul className="mb-4 space-y-0.5">
@@ -123,7 +115,7 @@ export function Sidebar() {
           ))}
         </ul>
 
-        <p className="mb-2 px-3 text-[10px] font-bold tracking-[0.2em] text-zinc-400 dark:text-zinc-600">
+        <p className="mb-2 px-3 text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
           GESTÃO
         </p>
         <ul className="mb-4 space-y-0.5">
@@ -132,7 +124,7 @@ export function Sidebar() {
           ))}
         </ul>
 
-        <p className="mb-2 px-3 text-[10px] font-bold tracking-[0.2em] text-zinc-400 dark:text-zinc-600">
+        <p className="mb-2 px-3 text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
           SISTEMA
         </p>
         <ul className="space-y-0.5">
@@ -142,19 +134,17 @@ export function Sidebar() {
         </ul>
       </nav>
 
-      <Separator className="bg-zinc-200 dark:bg-zinc-800/60" />
+      <Separator className="bg-border" />
 
       <div className="flex items-center gap-3 px-5 py-4">
         <Avatar>
-          <AvatarFallback className="bg-zinc-100 dark:bg-zinc-800 text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+          <AvatarFallback className="bg-muted text-xs font-semibold text-foreground">
             {inicial}
           </AvatarFallback>
         </Avatar>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium text-zinc-700 dark:text-zinc-200">
-            {user?.nome ?? '—'}
-          </p>
-          <p className="text-[10px] font-semibold tracking-widest text-zinc-400 dark:text-zinc-500">
+          <p className="truncate text-sm font-medium text-foreground">{user?.nome ?? '—'}</p>
+          <p className="text-[10px] font-semibold tracking-widest text-muted-foreground">
             {user?.perfil?.toUpperCase() ?? ''}
           </p>
         </div>

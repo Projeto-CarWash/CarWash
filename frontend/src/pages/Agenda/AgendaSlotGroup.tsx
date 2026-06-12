@@ -36,12 +36,12 @@ export function AgendaSlotGroup({
     <section
       role="group"
       aria-label={descricao}
-      className="rounded-2xl border border-zinc-200/70 bg-white/60 dark:border-zinc-800/60 dark:bg-zinc-900/30"
+      className="rounded-2xl border border-border bg-white/60 dark:border-zinc-800/60 dark:bg-zinc-900/30"
     >
       {/* Header do slot */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-zinc-200/50 px-4 py-3 dark:border-zinc-800/40">
+      <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3 dark:border-zinc-800/40">
         <CalendarClock className="h-4 w-4 shrink-0 text-red-500" aria-hidden="true" />
-        <span className="text-sm font-semibold tabular-nums text-zinc-800 dark:text-zinc-100">
+        <span className="text-sm font-semibold tabular-nums text-foreground dark:text-zinc-100">
           {formatarFaixaHorario(inicio, fim)}
         </span>
 

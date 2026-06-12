@@ -97,39 +97,47 @@ export function ResumoConfirmacaoStep({
   return (
     <div>
       <div className="mb-5">
-        <h3 className="text-xl font-semibold text-zinc-100">Resumo do Agendamento</h3>
-        <p className="mt-1 text-sm text-zinc-500">
+        <h3 className="text-xl font-semibold text-foreground">Resumo do Agendamento</h3>
+        <p className="mt-1 text-sm text-muted-foreground">
           Confirme os dados abaixo para concluir o agendamento.
         </p>
       </div>
 
       <div className="space-y-4">
-        <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-4">
-          <p className="mb-3 text-[10px] font-bold tracking-[0.2em] text-zinc-500">FILIAL</p>
+        <div className="rounded-xl border border-border bg-card p-4">
+          <p className="mb-3 text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
+            FILIAL
+          </p>
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-600/10">
               <Building2 className="h-4.5 w-4.5 text-red-500" />
             </div>
             <div>
-              <p className="text-sm font-medium text-zinc-100">{filialNome || 'Não selecionada'}</p>
+              <p className="text-sm font-medium text-foreground">
+                {filialNome || 'Não selecionada'}
+              </p>
             </div>
           </div>
         </div>
-        <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-4">
-          <p className="mb-3 text-[10px] font-bold tracking-[0.2em] text-zinc-500">CLIENTE</p>
+        <div className="rounded-xl border border-border bg-card p-4">
+          <p className="mb-3 text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
+            CLIENTE
+          </p>
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-600/10">
               <User className="h-4.5 w-4.5 text-red-500" />
             </div>
             <div>
-              <p className="text-sm font-medium text-zinc-100">{cliente?.nome}</p>
-              <p className="text-xs text-zinc-500">{formatarDoc(cliente?.cpf, cliente?.cnpj)}</p>
+              <p className="text-sm font-medium text-foreground">{cliente?.nome}</p>
+              <p className="text-xs text-muted-foreground">
+                {formatarDoc(cliente?.cpf, cliente?.cnpj)}
+              </p>
             </div>
           </div>
         </div>
 
         <div
-          className={`rounded-xl border ${conflitoVeiculo ? 'border-red-500 bg-red-950/20' : 'border-zinc-800/60 bg-zinc-900/40'} p-4 outline-none`}
+          className={`rounded-xl border ${conflitoVeiculo ? 'border-red-500 bg-red-950/20' : 'border-border bg-card'} p-4 outline-none`}
           ref={errorContainerRef}
           tabIndex={-1}
           aria-invalid={conflitoVeiculo ? 'true' : undefined}
@@ -152,14 +160,16 @@ export function ResumoConfirmacaoStep({
             </div>
           )}
 
-          <p className="mb-3 text-[10px] font-bold tracking-[0.2em] text-zinc-500">VEÍCULO</p>
+          <p className="mb-3 text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
+            VEÍCULO
+          </p>
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-600/10">
               <Car className="h-4.5 w-4.5 text-red-500" />
             </div>
             <div>
-              <p className="text-sm font-medium text-zinc-100">{veiculo?.modelo}</p>
-              <p className="text-xs text-zinc-500">
+              <p className="text-sm font-medium text-foreground">{veiculo?.modelo}</p>
+              <p className="text-xs text-muted-foreground">
                 {veiculo?.placa} · {veiculo?.cor}
                 {veiculo?.ano ? ` · ${veiculo.ano}` : ''}
               </p>
@@ -168,17 +178,19 @@ export function ResumoConfirmacaoStep({
         </div>
 
         {wizardState.responsavel && (
-          <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-4">
-            <p className="mb-3 text-[10px] font-bold tracking-[0.2em] text-zinc-500">RESPONSÁVEL</p>
+          <div className="rounded-xl border border-border bg-card p-4">
+            <p className="mb-3 text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
+              RESPONSÁVEL
+            </p>
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-600/10">
                 <User className="h-4.5 w-4.5 text-red-500" />
               </div>
               <div>
-                <p className="text-sm font-medium text-zinc-100">
+                <p className="text-sm font-medium text-foreground">
                   {wizardState.responsavel.nome}
                   {wizardState.responsavel.documento && (
-                    <span className="ml-1.5 text-xs font-normal text-zinc-400">
+                    <span className="ml-1.5 text-xs font-normal text-muted-foreground">
                       (
                       {formatarDoc(
                         wizardState.responsavel.documento.replace(/\D/g, '').length === 11
@@ -192,69 +204,69 @@ export function ResumoConfirmacaoStep({
                     </span>
                   )}
                 </p>
-                <p className="text-xs text-zinc-500">Responsável pelo agendamento</p>
+                <p className="text-xs text-muted-foreground">Responsável pelo agendamento</p>
               </div>
             </div>
           </div>
         )}
 
         <div
-          className={`rounded-xl border ${conflitoVeiculo ? 'border-red-500 bg-red-950/20' : 'border-zinc-800/60 bg-zinc-900/40'} p-4`}
+          className={`rounded-xl border ${conflitoVeiculo ? 'border-red-500 bg-red-950/20' : 'border-border bg-card'} p-4`}
           aria-invalid={conflitoVeiculo ? 'true' : undefined}
         >
-          <p className="mb-3 text-[10px] font-bold tracking-[0.2em] text-zinc-500">
+          <p className="mb-3 text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
             DATA E HORÁRIO
           </p>
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <p className="text-xs text-zinc-500">Data</p>
-              <p className="text-sm font-medium text-zinc-100">{formatarData(dataAgendamento)}</p>
+              <p className="text-xs text-muted-foreground">Data</p>
+              <p className="text-sm font-medium text-foreground">{formatarData(dataAgendamento)}</p>
             </div>
             <div>
-              <p className="text-xs text-zinc-500">Início</p>
-              <p className="text-sm font-medium text-zinc-100">{horaInicio}</p>
+              <p className="text-xs text-muted-foreground">Início</p>
+              <p className="text-sm font-medium text-foreground">{horaInicio}</p>
             </div>
             <div>
-              <p className="text-xs text-zinc-500">Término previsto</p>
-              <p className="text-sm font-medium text-zinc-100">{horaFim}</p>
+              <p className="text-xs text-muted-foreground">Término previsto</p>
+              <p className="text-sm font-medium text-foreground">{horaFim}</p>
             </div>
           </div>
         </div>
 
-        <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-4">
-          <p className="mb-3 text-[10px] font-bold tracking-[0.2em] text-zinc-500">
+        <div className="rounded-xl border border-border bg-card p-4">
+          <p className="mb-3 text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
             SERVIÇOS ({servicos.length})
           </p>
           <div className="space-y-2">
             {servicos.map((s) => (
               <div
                 key={s.id}
-                className="flex items-center justify-between rounded-lg bg-zinc-800/30 px-3 py-2"
+                className="flex items-center justify-between rounded-lg bg-muted px-3 py-2"
               >
                 <div className="flex items-center gap-2">
-                  <Wrench className="h-3.5 w-3.5 text-zinc-500" />
-                  <span className="text-sm text-zinc-200">{s.nome}</span>
+                  <Wrench className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-sm text-foreground">{s.nome}</span>
                 </div>
-                <div className="flex items-center gap-3 text-xs text-zinc-400">
+                <div className="flex items-center gap-3 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <Clock className="h-3 w-3" />
                     {formatarDuracao(s.duracao)}
                   </span>
-                  <span className="font-medium text-zinc-300">{formatarPreco(s.preco)}</span>
+                  <span className="font-medium text-foreground">{formatarPreco(s.preco)}</span>
                 </div>
               </div>
             ))}
           </div>
 
-          <div className="mt-3 flex items-center justify-between border-t border-zinc-700/40 pt-3">
+          <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
             <div className="flex items-center gap-3 text-sm">
-              <span className="flex items-center gap-1 text-zinc-400">
+              <span className="flex items-center gap-1 text-muted-foreground">
                 <Clock className="h-3.5 w-3.5" />
                 Duração total:{' '}
-                <span className="font-medium text-zinc-200">{formatarDuracao(duracaoTotal)}</span>
+                <span className="font-medium text-foreground">{formatarDuracao(duracaoTotal)}</span>
               </span>
             </div>
-            <div className="flex items-center gap-1 text-sm font-semibold text-zinc-100">
+            <div className="flex items-center gap-1 text-sm font-semibold text-foreground">
               <DollarSign className="h-4 w-4 text-red-500" />
               {formatarPreco(valorTotal)}
             </div>
@@ -272,7 +284,7 @@ export function ResumoConfirmacaoStep({
 
         <label
           htmlFor="confirmacao"
-          className="flex cursor-pointer items-start gap-3 rounded-xl border border-zinc-700/40 bg-zinc-900/30 px-4 py-3 transition-colors hover:bg-zinc-800/30"
+          className="flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-card px-4 py-3 transition-colors hover:bg-accent"
         >
           <input
             id="confirmacao"
@@ -280,9 +292,9 @@ export function ResumoConfirmacaoStep({
             checked={confirmado}
             onChange={(e) => onConfirmadoChange(e.target.checked)}
             disabled={isSubmitting}
-            className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-zinc-600 bg-zinc-800 text-red-600 focus:ring-red-600/30 focus:ring-offset-0"
+            className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-border bg-muted text-red-600 focus:ring-red-600/30 focus:ring-offset-0"
           />
-          <span className="text-sm text-zinc-300">
+          <span className="text-sm text-foreground">
             Li e confirmo os dados do agendamento. Desejo prosseguir com a criação.
           </span>
         </label>
@@ -294,7 +306,7 @@ export function ResumoConfirmacaoStep({
           variant="outline"
           onClick={onBack}
           disabled={isSubmitting}
-          className="h-10 rounded-full border-zinc-700/60 bg-transparent px-5 text-sm text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200"
+          className="h-10 rounded-full border-border bg-transparent px-5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
         >
           <ChevronLeft className="mr-1 h-4 w-4" />
           Voltar

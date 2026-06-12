@@ -5,9 +5,9 @@ import { NovoClientePage } from '@/components/clientes/NovoClientePage';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import PrivateRoute from '@/components/PrivateRoute';
 import { AuthProvider } from '@/contexts/AuthProvider';
-import { AgendaPage } from '@/pages/Agenda/AgendaPage';
 import { AgendamentosCalendarioPage } from '@/pages/Agendamentos/AgendamentosCalendarioPage';
 import { AgendamentosDashboardPage } from '@/pages/Agendamentos/AgendamentosDashboardPage';
+import { EditarAgendamentoPage } from '@/pages/Agendamentos/EditarAgendamentoPage';
 import { ClienteDetalhePage } from '@/pages/Clientes/ClienteDetalhePage';
 import { ClientesListaPage } from '@/pages/Clientes/ClientesListaPage';
 import { EditarClientePage } from '@/pages/Clientes/EditarClientePage';
@@ -16,8 +16,9 @@ import Dashboard from '@/pages/Dashboard/Dashboard';
 import { FiliaisListaPage } from '@/pages/Filiais/FiliaisListaPage';
 import { FilialEditarPage } from '@/pages/Filiais/FilialEditarPage';
 import { FilialFormPage } from '@/pages/Filiais/FilialFormPage';
-import { HistoricoPage } from '@/pages/Historico/HistoricoPage';
+import { FinanceiroPage } from '@/pages/Financeiro/FinanceiroPage';
 import Login from '@/pages/Login/Login';
+import { RelatoriosPage } from '@/pages/Relatorios/RelatoriosPage';
 import { ServicoFormPage } from '@/pages/Servicos/ServicoFormPage';
 import { ServicosListaPage } from '@/pages/Servicos/ServicosListaPage';
 import { NovoUsuarioPage } from '@/pages/Usuarios/NovoUsuarioPage';
@@ -250,22 +251,33 @@ function App() {
         />
 
         <Route
-          path="/agenda"
+          path="/agendamentos/:id/editar"
           element={
             <PrivateRoute>
               <DashboardLayout>
-                <AgendaPage />
+                <EditarAgendamentoPage />
               </DashboardLayout>
             </PrivateRoute>
           }
         />
 
         <Route
-          path="/historico"
+          path="/relatorios"
           element={
             <PrivateRoute>
               <DashboardLayout>
-                <HistoricoPage />
+                <RelatoriosPage />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/financeiro"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <FinanceiroPage />
               </DashboardLayout>
             </PrivateRoute>
           }

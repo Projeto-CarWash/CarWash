@@ -4,10 +4,12 @@ import { clienteService } from './clienteService';
 import { filialService } from './filialService';
 import { servicoService } from './servicoService';
 
-import type { AgendaItemSimples } from '@/types/agenda';
+import type { AgendaItemDetalhado, AgendaItemSimples } from '@/types/agenda';
 import type {
+  AgendamentoDetalhe,
   AgendamentoResponse,
   AgendamentoSemana,
+  EditarAgendamentoPayload,
   ClienteResumido,
   ConfirmarAgendamentoRequest,
   CriarAgendamentoPayload,
@@ -19,7 +21,21 @@ import type {
   ServicoAtivo,
   VeiculoResumido,
   CancelarAgendamentoResponse,
+  TransicaoAgendamentoResponse,
 } from '@/types/agendamento';
+
+/**
+ * Resolve a filial padrão (primeira ativa retornada pelo backend) quando a tela
+ * não informa explicitamente uma filial. Retorna '' se não houver/erro.
+ */
+async function resolverFilialPadrao(): Promise<string> {
+  try {
+    const filiais = await filialService.listar();
+    return filiais.itens?.[0]?.id ?? '';
+  } catch {
+    return '';
+  }
+}
 
 export const agendamentoService = {
   async buscarClientes(busca: string): Promise<ClienteResumido[]> {
@@ -82,7 +98,7 @@ export const agendamentoService = {
     return data;
   },
 
-  async obterEstatisticasAno(ano: number): Promise<EstatisticasMes[]> {
+  async obterEstatisticasAno(ano: number, filialId?: string): Promise<EstatisticasMes[]> {
     const nomesMeses = [
       'JANEIRO',
       'FEVEREIRO',
@@ -98,22 +114,17 @@ export const agendamentoService = {
       'DEZEMBRO',
     ];
 
-    // Busca a primeira filial ativa para usar como filtro obrigatório da agenda.
-    let filialId = '';
-    try {
-      const filiais = await filialService.listar();
-      filialId = filiais.itens?.[0]?.id ?? '';
-    } catch {
-      // Falha ao buscar filiais - continuará com filialId vazio retornando valores padrão
-    }
+    // Usa a filial informada pela tela; sem ela, cai na filial padrão.
+    const filialEfetiva = filialId ?? (await resolverFilialPadrao());
 
-    if (!filialId) {
+    if (!filialEfetiva) {
       return nomesMeses.map((nome, index) => ({
         mes: index + 1,
         nome,
-        confirmados: 0,
-        pendentes: 0,
-        cancelados: 0,
+        agendado: 0,
+        emAndamento: 0,
+        concluido: 0,
+        cancelado: 0,
         total: 0,
       }));
     }
@@ -124,39 +135,43 @@ export const agendamentoService = {
       const inicio = new Date(ano, m, 1);
       const fim = new Date(ano, m + 1, 0, 23, 59, 59);
 
-      let confirmados = 0;
-      let pendentes = 0;
-      let cancelados = 0;
+      let agendado = 0;
+      let emAndamento = 0;
+      let concluido = 0;
+      let cancelado = 0;
 
       try {
         const resp = await agendaService.consultarSimples({
           formato: 'simples',
           inicio: inicio.toISOString().slice(0, 16),
           fim: fim.toISOString().slice(0, 16),
-          filialId,
+          filialId: filialEfetiva,
         });
 
         for (const item of resp.data) {
           const s = item.status.toUpperCase();
-          if (s === 'AGENDADO' || s === 'EM_ANDAMENTO' || s === 'CONCLUIDO') {
-            confirmados++;
+          if (s === 'AGENDADO') {
+            agendado++;
+          } else if (s === 'EM_ANDAMENTO') {
+            emAndamento++;
+          } else if (s === 'CONCLUIDO') {
+            concluido++;
           } else if (s === 'CANCELADO') {
-            cancelados++;
-          } else {
-            pendentes++;
+            cancelado++;
           }
         }
       } catch {
         // Erro ao consultar agenda para o mês - valores padrão (0) serão usados
       }
 
-      const total = confirmados + pendentes + cancelados;
+      const total = agendado + emAndamento + concluido + cancelado;
       resultados.push({
         mes: m + 1,
         nome: nomesMeses[m]!,
-        confirmados,
-        pendentes,
-        cancelados,
+        agendado,
+        emAndamento,
+        concluido,
+        cancelado,
         total,
       });
     }
@@ -164,23 +179,20 @@ export const agendamentoService = {
     return resultados;
   },
 
-  async listarAgendamentosSemana(dataInicio: Date, dataFim: Date): Promise<AgendamentoSemana[]> {
-    let filialId = '';
-    try {
-      const filiais = await filialService.listar();
-      filialId = filiais.itens?.[0]?.id ?? '';
-    } catch {
-      return [];
-    }
-
-    if (!filialId) return [];
+  async listarAgendamentosSemana(
+    dataInicio: Date,
+    dataFim: Date,
+    filialId?: string,
+  ): Promise<AgendamentoSemana[]> {
+    const filialEfetiva = filialId ?? (await resolverFilialPadrao());
+    if (!filialEfetiva) return [];
 
     try {
       const resp = await agendaService.consultarSimples({
         formato: 'simples',
         inicio: dataInicio.toISOString().slice(0, 16),
         fim: dataFim.toISOString().slice(0, 16),
-        filialId,
+        filialId: filialEfetiva,
       });
 
       return resp.data.map((item: AgendaItemSimples) => ({
@@ -194,6 +206,31 @@ export const agendamentoService = {
     } catch {
       return [];
     }
+  },
+
+  /**
+   * Busca o item DETALHADO de um agendamento dentro de uma janela de semana,
+   * reaproveitando o endpoint `GET /api/v1/agenda` no formato `detalhado`
+   * (mesma filial usada por {@link listarAgendamentosSemana}). Retorna `null`
+   * quando não encontrado. Usado pelo modal de detalhe do calendário.
+   */
+  async obterDetalheNaSemana(
+    agendamentoId: string,
+    dataInicio: Date,
+    dataFim: Date,
+    filialId?: string,
+  ): Promise<AgendaItemDetalhado | null> {
+    const filialEfetiva = filialId ?? (await resolverFilialPadrao());
+    if (!filialEfetiva) return null;
+
+    const resp = await agendaService.consultarDetalhada({
+      formato: 'detalhado',
+      inicio: dataInicio.toISOString().slice(0, 16),
+      fim: dataFim.toISOString().slice(0, 16),
+      filialId: filialEfetiva,
+    });
+
+    return resp.data.find((item) => item.agendamentoId === agendamentoId) ?? null;
   },
 
   async buscarResponsaveisPorCliente(clienteId: string): Promise<ResponsavelResumido[]> {
@@ -237,7 +274,50 @@ export const agendamentoService = {
     id: string,
     payload: { observacoes: string | null },
   ): Promise<AgendamentoResponse> {
-    const { data } = await api.put<AgendamentoResponse>(`/api/v1/agendamentos/${id}`, payload);
+    // O backend expõe apenas PATCH para edição parcial (RF010) — PUT retorna 405.
+    const { data } = await api.patch<AgendamentoResponse>(`/api/v1/agendamentos/${id}`, payload);
+    return data;
+  },
+
+  /**
+   * Inicia o atendimento — `PATCH /api/v1/agendamentos/{id}/iniciar`
+   * (AGENDADO → EM_ANDAMENTO). Status inválido retorna 409.
+   */
+  async iniciar(id: string): Promise<TransicaoAgendamentoResponse> {
+    const { data } = await api.patch<TransicaoAgendamentoResponse>(
+      `/api/v1/agendamentos/${id}/iniciar`,
+      {},
+    );
+    return data;
+  },
+
+  /**
+   * Finaliza o atendimento — `PATCH /api/v1/agendamentos/{id}/finalizar`
+   * (EM_ANDAMENTO → FINALIZADO). Status inválido retorna 409.
+   */
+  async finalizar(id: string): Promise<TransicaoAgendamentoResponse> {
+    const { data } = await api.patch<TransicaoAgendamentoResponse>(
+      `/api/v1/agendamentos/${id}/finalizar`,
+      {},
+    );
+    return data;
+  },
+
+  /**
+   * Consulta detalhada de um agendamento — `GET /api/v1/agendamentos/{id}`
+   * (RF010). Resposta no envelope `{ message, data, traceId }`.
+   */
+  async obterPorId(id: string): Promise<AgendamentoDetalhe> {
+    const { data } = await api.get<{ data: AgendamentoDetalhe }>(`/api/v1/agendamentos/${id}`);
+    return data.data;
+  },
+
+  /**
+   * Edição de agendamento — `PATCH /api/v1/agendamentos/{id}` (RF010). Só os
+   * campos enviados são alterados; o backend só permite quando status=AGENDADO.
+   */
+  async editar(id: string, payload: EditarAgendamentoPayload): Promise<AgendamentoResponse> {
+    const { data } = await api.patch<AgendamentoResponse>(`/api/v1/agendamentos/${id}`, payload);
     return data;
   },
 };

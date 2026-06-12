@@ -16,8 +16,15 @@ public class ConsultarAgendaHandlerTests
     private readonly IAgendaRepository _repo = Substitute.For<IAgendaRepository>();
 
     [Fact]
-    public async Task Em_andamento_retorna_lista_vazia_sem_chamar_o_repositorio()
+    public async Task Em_andamento_filtra_no_repositorio_pelo_status_persistido()
     {
+        // RF010/RF013: em_andamento passou a existir persistido (iniciar/finalizar),
+        // então o filtro EM_ANDAMENTO resolve no banco em vez de curto-circuitar.
+        _repo.ConsultarAsync(
+                Arg.Any<Guid>(), Arg.Any<DateTime>(), Arg.Any<DateTime>(),
+                Arg.Any<Guid?>(), Arg.Any<Guid?>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
+            .Returns((IReadOnlyList<AgendaProjecao>)new List<AgendaProjecao>());
+
         var handler = new ConsultarAgendaHandler(_repo);
 
         var resposta = await handler.HandleAsync(
@@ -25,10 +32,9 @@ public class ConsultarAgendaHandlerTests
             CancellationToken.None);
 
         resposta.Data.Should().BeEmpty();
-        resposta.Message.Should().Be(ConsultarAgendaHandler.MensagemListaVazia);
-        await _repo.DidNotReceiveWithAnyArgs().ConsultarAsync(
+        await _repo.Received(1).ConsultarAsync(
             Arg.Any<Guid>(), Arg.Any<DateTime>(), Arg.Any<DateTime>(),
-            Arg.Any<Guid?>(), Arg.Any<Guid?>(), Arg.Any<string?>(), Arg.Any<CancellationToken>());
+            Arg.Any<Guid?>(), Arg.Any<Guid?>(), "em_andamento", Arg.Any<CancellationToken>());
     }
 
     [Fact]

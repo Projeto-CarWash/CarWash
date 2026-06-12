@@ -11,11 +11,10 @@ public interface IAgendamentoRepository
 {
     /// <summary>
     /// Verifica se o veículo já possui um agendamento ativo (status
-    /// <c>agendado</c>) cuja janela <c>[inicio, fim)</c> se sobrepõe à informada.
-    /// Pré-check da RN011/RF020 — independente de filial. A defesa final é a
-    /// constraint EXCLUDE <c>ex_ag_veiculo_janela</c> no banco.
+    /// <c>agendado</c> ou <c>em_andamento</c>) cuja janela <c>[inicio, fim)</c>
+    /// se sobrepõe à informada. Pré-check da RN011/RF020 — independente de filial.
+    /// A defesa final é a constraint EXCLUDE <c>ex_ag_veiculo_janela</c> no banco.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task<bool> ExisteConflitoVeiculoAsync(
         Guid veiculoId,
         DateTime inicio,
@@ -39,6 +38,17 @@ public interface IAgendamentoRepository
         CancellationToken cancellationToken);
 
     /// <summary>
+    /// Conta agendamentos na janela <c>[inicio, fim)</c> por status de ocupação
+    /// (<c>agendado</c> e <c>em_andamento</c>) — RF008: capacidade considera ambos
+    /// os status para cálculo correto de vagas.
+    /// </summary>
+    Task<int> ContarOcupacaoAsync(
+        Guid filialId,
+        DateTime inicio,
+        DateTime fim,
+        CancellationToken cancellationToken);
+
+    /// <summary>
     /// Persiste o agendamento, seus itens e o evento <c>CRIADO</c> do histórico
     /// numa única transação. Em violação da EXCLUDE <c>ex_ag_veiculo_janela</c>
     /// (race condition), lança <see cref="Common.AgendamentoConflitanteException"/>.
@@ -46,7 +56,6 @@ public interface IAgendamentoRepository
     /// dentro da transação — se o vínculo foi alterado concorrentemente, lança
     /// <see cref="Common.ConflictException"/> com slug <c>responsavel-nao-vinculado</c>.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task AdicionarAsync(
         Agendamento agendamento,
         IReadOnlyCollection<AgendamentoItem> itens,
@@ -66,7 +75,6 @@ public interface IAgendamentoRepository
     /// o payload diverge. RF024/CA009: revalida o vínculo responsável→cliente sob
     /// <c>SELECT FOR UPDATE</c> dentro da transação.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task<ResultadoConfirmacaoIdempotente> AdicionarComIdempotenciaAsync(
         Agendamento agendamento,
         IReadOnlyCollection<AgendamentoItem> itens,
@@ -75,6 +83,14 @@ public interface IAgendamentoRepository
         string correlationId,
         Guid responsavelId,
         Guid clienteId,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Obtém o agendamento por <paramref name="id"/> para leitura (RF008 GET endpoint).
+    /// Retorna <c>null</c> se não existir.
+    /// </summary>
+    Task<Agendamento?> ObterPorIdAsync(
+        Guid id,
         CancellationToken cancellationToken);
 
     /// <summary>
@@ -131,11 +147,9 @@ public interface IAgendamentoRepository
 public sealed record ResultadoConfirmacaoIdempotente(bool EhReplay, string? RespostaJsonOriginal)
 {
     /// <summary>Confirmação persistida agora (sem replay).</summary>
-    /// <returns></returns>
     public static ResultadoConfirmacaoIdempotente Persistido() => new(false, null);
 
     /// <summary>Replay: a chave já existia com o mesmo payload — devolve a resposta original.</summary>
-    /// <returns></returns>
     public static ResultadoConfirmacaoIdempotente Replay(string respostaJsonOriginal) =>
         new(true, respostaJsonOriginal);
 }

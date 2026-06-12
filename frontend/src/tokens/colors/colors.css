@@ -12,6 +12,7 @@
 
 :root {
   /* Tema claro (default) */
+  color-scheme: light;
   --colors--background: 0 0% 100%;
   --colors--foreground: 0 0% 4%;
   --colors--card: 0 0% 100%;
@@ -36,6 +37,7 @@
 
 .dark {
   /* Tema escuro (paleta original do Lucas — vermelho/preto) */
+  color-scheme: dark;
   --colors--background: 240 6% 4%;
   --colors--foreground: 240 5% 96%;
   --colors--card: 240 6% 6%;

@@ -128,8 +128,10 @@ export function NovoUsuarioPage() {
             <UserPlus className="h-5 w-5" />
           </span>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-zinc-50">Novo usuário interno</h1>
-            <p className="mt-1 text-sm text-zinc-400">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">
+              Novo usuário interno
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
               Cadastre administradores e funcionários do sistema (RF014).
             </p>
           </div>
@@ -139,17 +141,17 @@ export function NovoUsuarioPage() {
           variant="outline"
           onClick={() => void navigate(-1)}
           disabled={isSubmitting}
-          className="h-9 rounded-full border-zinc-700/60 bg-transparent px-4 text-sm text-zinc-300 hover:bg-zinc-800/50 hover:text-zinc-100"
+          className="h-9 rounded-full border-border bg-transparent px-4 text-sm text-foreground hover:bg-accent hover:text-foreground"
         >
           <ArrowLeft className="mr-1 h-4 w-4" aria-hidden="true" />
           Voltar
         </Button>
       </div>
 
-      <Card className="border border-zinc-800/60 bg-zinc-900/30">
+      <Card className="border border-border bg-card">
         <CardHeader>
-          <CardTitle className="text-lg text-zinc-100">Dados do usuário</CardTitle>
-          <CardDescription className="text-zinc-400">
+          <CardTitle className="text-lg text-foreground">Dados do usuário</CardTitle>
+          <CardDescription className="text-muted-foreground">
             Senha deve ter no mínimo 8 caracteres, contendo letras e números.
           </CardDescription>
         </CardHeader>
@@ -191,7 +193,7 @@ export function NovoUsuarioPage() {
             aria-busy={isSubmitting}
           >
             <div className="flex flex-col gap-2 md:col-span-2">
-              <Label htmlFor="usuario-nome" className="text-zinc-300">
+              <Label htmlFor="usuario-nome" className="text-foreground">
                 Nome completo
               </Label>
               <Input
@@ -201,7 +203,7 @@ export function NovoUsuarioPage() {
                 placeholder="Ex: Maria Souza"
                 aria-invalid={!!form.formState.errors.nome}
                 aria-describedby={form.formState.errors.nome ? 'usuario-nome-error' : undefined}
-                className="h-10 rounded-lg border-zinc-700/60 bg-zinc-950/40 px-3 text-sm text-zinc-100 placeholder:text-zinc-500"
+                className="h-10 rounded-lg border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground"
                 {...form.register('nome')}
               />
               {form.formState.errors.nome && (
@@ -212,7 +214,7 @@ export function NovoUsuarioPage() {
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label htmlFor="usuario-email" className="text-zinc-300">
+              <Label htmlFor="usuario-email" className="text-foreground">
                 E-mail
               </Label>
               <Input
@@ -222,7 +224,7 @@ export function NovoUsuarioPage() {
                 placeholder="usuario@carwash.com"
                 aria-invalid={!!form.formState.errors.email}
                 aria-describedby={form.formState.errors.email ? 'usuario-email-error' : undefined}
-                className="h-10 rounded-lg border-zinc-700/60 bg-zinc-950/40 px-3 text-sm text-zinc-100 placeholder:text-zinc-500"
+                className="h-10 rounded-lg border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground"
                 {...form.register('email')}
               />
               {form.formState.errors.email && (
@@ -233,14 +235,14 @@ export function NovoUsuarioPage() {
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label htmlFor="usuario-perfil" className="text-zinc-300">
+              <Label htmlFor="usuario-perfil" className="text-foreground">
                 Perfil de acesso
               </Label>
               <select
                 id="usuario-perfil"
                 aria-invalid={!!form.formState.errors.perfil}
                 aria-describedby={form.formState.errors.perfil ? 'usuario-perfil-error' : undefined}
-                className="h-10 rounded-lg border border-zinc-700/60 bg-zinc-950/40 px-3 text-sm text-zinc-100 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none aria-invalid:border-red-500/60 aria-invalid:ring-3 aria-invalid:ring-red-500/20"
+                className="h-10 rounded-lg border border-border bg-background px-3 text-sm text-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none aria-invalid:border-red-500/60 aria-invalid:ring-3 aria-invalid:ring-red-500/20"
                 {...form.register('perfil')}
               >
                 <option value="Funcionario">Funcionário</option>
@@ -254,7 +256,7 @@ export function NovoUsuarioPage() {
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label htmlFor="usuario-senha" className="text-zinc-300">
+              <Label htmlFor="usuario-senha" className="text-foreground">
                 Senha inicial
               </Label>
               <div className="relative">
@@ -267,13 +269,13 @@ export function NovoUsuarioPage() {
                   aria-describedby={
                     form.formState.errors.senha ? 'usuario-senha-error' : 'usuario-senha-hint'
                   }
-                  className="h-10 rounded-lg border-zinc-700/60 bg-zinc-950/40 px-3 pr-10 text-sm text-zinc-100 placeholder:text-zinc-500"
+                  className="h-10 rounded-lg border-border bg-background px-3 pr-10 text-sm text-foreground placeholder:text-muted-foreground"
                   {...form.register('senha')}
                 />
                 <button
                   type="button"
                   onClick={() => setShowSenha((prev) => !prev)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-zinc-400 transition-colors hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                   aria-label={showSenha ? 'Ocultar senha' : 'Mostrar senha'}
                   aria-pressed={showSenha}
                 >
@@ -289,14 +291,14 @@ export function NovoUsuarioPage() {
                   {form.formState.errors.senha.message}
                 </p>
               ) : (
-                <p id="usuario-senha-hint" className="text-xs text-zinc-500">
+                <p id="usuario-senha-hint" className="text-xs text-muted-foreground">
                   Use letras e números, sem espaços. Entre 8 e 128 caracteres.
                 </p>
               )}
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label htmlFor="usuario-confirmar" className="text-zinc-300">
+              <Label htmlFor="usuario-confirmar" className="text-foreground">
                 Confirmar senha
               </Label>
               <div className="relative">
@@ -309,13 +311,13 @@ export function NovoUsuarioPage() {
                   aria-describedby={
                     form.formState.errors.confirmarSenha ? 'usuario-confirmar-error' : undefined
                   }
-                  className="h-10 rounded-lg border-zinc-700/60 bg-zinc-950/40 px-3 pr-10 text-sm text-zinc-100 placeholder:text-zinc-500"
+                  className="h-10 rounded-lg border-border bg-background px-3 pr-10 text-sm text-foreground placeholder:text-muted-foreground"
                   {...form.register('confirmarSenha')}
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmar((prev) => !prev)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-zinc-400 transition-colors hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                   aria-label={showConfirmar ? 'Ocultar confirmação' : 'Mostrar confirmação'}
                   aria-pressed={showConfirmar}
                 >
@@ -339,7 +341,7 @@ export function NovoUsuarioPage() {
                 variant="outline"
                 onClick={() => void navigate(-1)}
                 disabled={isSubmitting}
-                className="h-10 rounded-full border-zinc-700/60 bg-transparent px-5 text-sm text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200"
+                className="h-10 rounded-full border-border bg-transparent px-5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
               >
                 Cancelar
               </Button>
