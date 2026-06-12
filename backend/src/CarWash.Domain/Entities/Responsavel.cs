@@ -78,9 +78,31 @@ public sealed class Responsavel : IAuditable, IAuditableSetter
         };
     }
 
-    public void Inativar() => Ativo = false;
+    public void AtualizarDados(string nome, string? telefone, string? email, GrauVinculo grauVinculo)
+    {
+        if (string.IsNullOrWhiteSpace(nome) || nome.Length < 3 || nome.Length > 100)
+        {
+            throw new DomainException("Nome do responsável deve ter entre 3 e 100 caracteres.");
+        }
 
-    public void Ativar() => Ativo = true;
+        Nome = nome;
+        Telefone = telefone;
+        Email = email;
+        GrauVinculo = grauVinculo.ToDbValue();
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
+    public void Inativar()
+    {
+        Ativo = false;
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
+    public void Ativar()
+    {
+        Ativo = true;
+        AtualizadoEm = DateTime.UtcNow;
+    }
 
     void IAuditableSetter.SetCriadoEm(DateTime valor) => CriadoEm = valor;
 

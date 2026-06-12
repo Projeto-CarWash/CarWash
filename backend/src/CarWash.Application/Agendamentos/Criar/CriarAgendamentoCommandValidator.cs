@@ -29,9 +29,9 @@ public sealed class CriarAgendamentoCommandValidator : AbstractValidator<CriarAg
         RuleFor(x => x.Inicio)
             .Cascade(CascadeMode.Stop)
             .NotNull().WithMessage("Data e hora de início são obrigatórias.")
-            .Must(inicio => inicio!.Value.ToUniversalTime() > DateTime.UtcNow)
+            .Must(inicio => inicio!.Value.ToUniversalTime() >= DateTime.UtcNow.AddMinutes(-1))
             .When(x => x.Inicio.HasValue, ApplyConditionTo.CurrentValidator)
-            .WithMessage("O início do agendamento deve ser uma data futura.");
+            .WithMessage("A data/hora de início não pode estar no passado.");
 
         RuleFor(x => x.ServicoIds)
             .Cascade(CascadeMode.Stop)

@@ -72,6 +72,44 @@ public sealed class ResponsavelRepository : IResponsavelRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<Responsavel?> ObterPorIdRastreadoAsync(Guid id, Guid clienteTitularId, CancellationToken cancellationToken)
+    {
+        return await _context.Responsaveis
+            .FirstOrDefaultAsync(r => r.Id == id && r.ClienteTitularId == clienteTitularId, cancellationToken);
+    }
+
+    public async Task SalvarAsync(string correlationId, Guid? usuarioId, CancellationToken cancellationToken)
+    {
+        var responsaveisModificados = _context.ChangeTracker.Entries<Responsavel>()
+            .Where(e => e.State == Microsoft.EntityFrameworkCore.EntityState.Modified)
+            .Select(e => e.Entity)
+            .ToList();
+
+        foreach (var responsavel in responsaveisModificados)
+        {
+            var audit = AuditLog.Registrar(
+                id: Guid.NewGuid(),
+                evento: "RESPONSAVEL_ATUALIZADO",
+                entidade: "responsaveis",
+                correlationId: correlationId,
+                entidadeId: responsavel.Id,
+                usuarioId: usuarioId,
+                dados: JsonSerializer.Serialize(new
+                {
+                    responsavel.Id,
+                    responsavel.ClienteTitularId,
+                    responsavel.Nome,
+                    Documento = MascararDocumento(responsavel.Documento),
+                    responsavel.GrauVinculo,
+                    responsavel.Ativo,
+                }));
+
+            await _context.AuditLogs.AddAsync(audit, cancellationToken);
+        }
+
+        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
     private static string? MascararDocumento(string? documento)
     {
         if (string.IsNullOrWhiteSpace(documento))

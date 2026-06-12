@@ -10,6 +10,7 @@ using CarWash.IntegrationTests.Fixtures;
 using CarWash.IntegrationTests.Infrastructure;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace CarWash.IntegrationTests.Persistence;
@@ -45,7 +46,7 @@ public class AgendamentoRepositoryTests : IAsyncLifetime
     public async Task AdicionarAsync_persiste_agendamento_itens_e_historico()
     {
         var (filialId, clienteId, veiculoId, criadoPor, servicoId, responsavelId) = await SemearAsync();
-        var repo = new AgendamentoRepository(_db);
+        var repo = new AgendamentoRepository(_db, NullLogger<AgendamentoRepository>.Instance);
 
         var inicio = DateTime.UtcNow.AddDays(1);
         var (agendamento, itens, historico) = MontarAgendamento(
@@ -66,7 +67,7 @@ public class AgendamentoRepositoryTests : IAsyncLifetime
     public async Task AdicionarAsync_em_conflito_de_janela_lanca_AgendamentoConflitanteException_RN011()
     {
         var (filialId, clienteId, veiculoId, criadoPor, servicoId, responsavelId) = await SemearAsync();
-        var repo = new AgendamentoRepository(_db);
+        var repo = new AgendamentoRepository(_db, NullLogger<AgendamentoRepository>.Instance);
 
         var inicio = DateTime.UtcNow.AddDays(2);
         var (primeiro, itens1, hist1) = MontarAgendamento(filialId, clienteId, veiculoId, criadoPor, servicoId, responsavelId, inicio);
@@ -76,7 +77,7 @@ public class AgendamentoRepositoryTests : IAsyncLifetime
         // Segundo agendamento do mesmo veículo com janela sobreposta — simula a
         // race condition que escapa do pré-check: vai direto ao banco.
         await using var db2 = CarWashDbContextFactoryForTests.Create(_fixture);
-        var repo2 = new AgendamentoRepository(db2);
+        var repo2 = new AgendamentoRepository(db2, NullLogger<AgendamentoRepository>.Instance);
         var (segundo, itens2, hist2) = MontarAgendamento(
             filialId, clienteId, veiculoId, criadoPor, servicoId, responsavelId, inicio.AddMinutes(10));
 
@@ -91,7 +92,7 @@ public class AgendamentoRepositoryTests : IAsyncLifetime
     public async Task ExisteConflitoVeiculoAsync_detecta_sobreposicao_e_ignora_janelas_adjacentes()
     {
         var (filialId, clienteId, veiculoId, criadoPor, servicoId, responsavelId) = await SemearAsync();
-        var repo = new AgendamentoRepository(_db);
+        var repo = new AgendamentoRepository(_db, NullLogger<AgendamentoRepository>.Instance);
 
         var inicio = DateTime.UtcNow.AddDays(3);
         var (existente, itens, hist) = MontarAgendamento(filialId, clienteId, veiculoId, criadoPor, servicoId, responsavelId, inicio);
@@ -151,7 +152,7 @@ public class AgendamentoRepositoryTests : IAsyncLifetime
         // SELECT FOR UPDATE dentro da transação detecta que o vínculo
         // foi alterado e lança ConflictException.
         await using var db = CarWashDbContextFactoryForTests.Create(_fixture);
-        var repo = new AgendamentoRepository(db);
+        var repo = new AgendamentoRepository(db, NullLogger<AgendamentoRepository>.Instance);
         var inicio = DateTime.UtcNow.AddDays(4);
         var (agendamento, itens, historico) = MontarAgendamento(
             filialId, clienteId, veiculoId, criadoPor, servicoId, responsavelId, inicio);
@@ -186,7 +187,7 @@ public class AgendamentoRepositoryTests : IAsyncLifetime
         }
 
         await using var db = CarWashDbContextFactoryForTests.Create(_fixture);
-        var repo = new AgendamentoRepository(db);
+        var repo = new AgendamentoRepository(db, NullLogger<AgendamentoRepository>.Instance);
         var inicio = DateTime.UtcNow.AddDays(5);
         var (agendamento, itens, historico) = MontarAgendamento(
             filialId, clienteId, veiculoId, criadoPor, servicoId, responsavelId, inicio);
