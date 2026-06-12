@@ -215,7 +215,7 @@ export async function semearSimultaneos(
  * aleatório e a hora é sorteada num intervalo amplo — cada run usa um slot
  * virgem. A hora cheia mantém a janela alinhada ao minuto.
  */
-export function slotFuturoIso(dias: number, _horaBase: number): string {
+export function slotFuturoIso(dias: number): string {
   const d = new Date();
   // Deslocamento aleatório de dias (60..420) + o offset do chamador, garantindo
   // janelas distintas entre execuções e entre os diferentes testes do lote.
