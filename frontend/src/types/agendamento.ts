@@ -186,3 +186,16 @@ export interface CancelarAgendamentoResponse {
   data: CancelarAgendamentoData;
   traceId: string;
 }
+
+/** Resposta das transições de status iniciar/finalizar (RF010/RF013). */
+export interface TransicaoAgendamentoData {
+  id: string;
+  status: string;
+  atualizadoEm: string;
+}
+
+export interface TransicaoAgendamentoResponse {
+  message: string;
+  data: TransicaoAgendamentoData;
+  traceId: string;
+}

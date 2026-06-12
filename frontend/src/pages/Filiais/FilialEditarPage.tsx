@@ -8,7 +8,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { CelulasAtivasField } from '@/components/filiais/CelulasAtivasField';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAlterarCelulasAtivas, useFilial } from '@/hooks/useFilialQueries';
+import { useAlterarCelulasAtivas, useAlterarStatusFilial, useFilial } from '@/hooks/useFilialQueries';
 import {
   editarFilialSchema,
   type EditarFilialFormData,
@@ -50,6 +50,7 @@ export function FilialEditarPage() {
 
   const { data: filial, isLoading, isError, error } = useFilial(id);
   const { mutate: salvarCelulas, isPending: salvando } = useAlterarCelulasAtivas();
+  const { mutate: alterarStatus, isPending: alterandoStatus } = useAlterarStatusFilial();
 
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -206,16 +207,52 @@ export function FilialEditarPage() {
             </div>
           )}
 
-          {/* Status operacional (somente leitura) */}
-          <div className="mb-6 rounded-xl border border-border bg-background px-4 py-3">
-            <p className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground">STATUS</p>
-            <span
-              className={`mt-1 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                filial.ativa ? 'bg-green-500/10 text-green-400' : 'bg-muted text-muted-foreground'
-              }`}
+          {/* Status operacional (RF017) — filial inativa não aceita novos agendamentos (RF019) */}
+          <div className="mb-6 flex items-center justify-between gap-4 rounded-xl border border-border bg-background px-4 py-3">
+            <div>
+              <p className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground">STATUS</p>
+              <span
+                className={`mt-1 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                  filial.ativa ? 'bg-green-500/10 text-green-400' : 'bg-muted text-muted-foreground'
+                }`}
+              >
+                {filial.ativa ? 'Ativa' : 'Inativa'}
+              </span>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={alterandoStatus}
+              onClick={() => {
+                setGlobalError(null);
+                setSuccessMsg(null);
+                alterarStatus(
+                  { id: filial.id, ativo: !filial.ativa },
+                  {
+                    onSuccess: (atualizada) => {
+                      setSuccessMsg(
+                        atualizada.ativa
+                          ? 'Filial ativada com sucesso.'
+                          : 'Filial inativada com sucesso — não receberá novos agendamentos.',
+                      );
+                    },
+                    onError: (err) => setGlobalError(mensagemErro(err)),
+                  },
+                );
+              }}
+              className="h-9 rounded-full border-border bg-transparent px-4 text-sm text-foreground hover:bg-accent hover:text-foreground"
             >
-              {filial.ativa ? 'Ativa' : 'Inativa'}
-            </span>
+              {alterandoStatus ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+                  Alterando...
+                </>
+              ) : filial.ativa ? (
+                'Inativar filial'
+              ) : (
+                'Ativar filial'
+              )}
+            </Button>
           </div>
 
           <form

@@ -21,6 +21,7 @@ import type {
   ServicoAtivo,
   VeiculoResumido,
   CancelarAgendamentoResponse,
+  TransicaoAgendamentoResponse,
 } from '@/types/agendamento';
 
 /**
@@ -273,7 +274,32 @@ export const agendamentoService = {
     id: string,
     payload: { observacoes: string | null },
   ): Promise<AgendamentoResponse> {
-    const { data } = await api.put<AgendamentoResponse>(`/api/v1/agendamentos/${id}`, payload);
+    // O backend expõe apenas PATCH para edição parcial (RF010) — PUT retorna 405.
+    const { data } = await api.patch<AgendamentoResponse>(`/api/v1/agendamentos/${id}`, payload);
+    return data;
+  },
+
+  /**
+   * Inicia o atendimento — `PATCH /api/v1/agendamentos/{id}/iniciar`
+   * (AGENDADO → EM_ANDAMENTO). Status inválido retorna 409.
+   */
+  async iniciar(id: string): Promise<TransicaoAgendamentoResponse> {
+    const { data } = await api.patch<TransicaoAgendamentoResponse>(
+      `/api/v1/agendamentos/${id}/iniciar`,
+      {},
+    );
+    return data;
+  },
+
+  /**
+   * Finaliza o atendimento — `PATCH /api/v1/agendamentos/{id}/finalizar`
+   * (EM_ANDAMENTO → FINALIZADO). Status inválido retorna 409.
+   */
+  async finalizar(id: string): Promise<TransicaoAgendamentoResponse> {
+    const { data } = await api.patch<TransicaoAgendamentoResponse>(
+      `/api/v1/agendamentos/${id}/finalizar`,
+      {},
+    );
     return data;
   },
 

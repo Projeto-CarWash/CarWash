@@ -14,7 +14,7 @@ public sealed class AgendamentoHistoricoConfiguration : IEntityTypeConfiguration
         builder.ToTable("agendamento_historico", t =>
             t.HasCheckConstraint(
                 "ck_hist_evento",
-                "evento IN ('CRIADO','EDITADO','CANCELADO','FINALIZADO')"));
+                "evento IN ('CRIADO','EDITADO','INICIADO','CANCELADO','FINALIZADO')"));
 
         builder.HasKey(x => x.Id).HasName("pk_agendamento_historico");
         builder.Property(x => x.Id).ValueGeneratedNever();

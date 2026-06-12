@@ -120,6 +120,8 @@ export function AgendaPage() {
 
   const [toast, setToast] = useState<{ tipo: 'sucesso' | 'erro'; mensagem: string } | null>(null);
 
+  const [transicaoLoading, setTransicaoLoading] = useState(false);
+
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
     if (toast) {
@@ -146,7 +148,9 @@ export function AgendaPage() {
   }
 
   function handleCancelarClick(item: AgendaItemSimples | AgendaItemDetalhado) {
-    if (item.status !== 'AGENDADO' && item.status !== 'EM_ANDAMENTO') {
+    // Política do backend (RF010): apenas AGENDADO pode ser cancelado —
+    // EM_ANDAMENTO, CONCLUIDO e CANCELADO retornam 409.
+    if (item.status !== 'AGENDADO') {
       setToast({ tipo: 'erro', mensagem: 'Este agendamento não pode ser cancelado.' });
       return;
     }
@@ -241,6 +245,74 @@ export function AgendaPage() {
       }
     } finally {
       setCancelLoading(false);
+    }
+  }
+
+  /**
+   * Transição de status do atendimento (RF010/RF013):
+   * iniciar (AGENDADO → EM_ANDAMENTO) e finalizar (EM_ANDAMENTO → CONCLUIDO).
+   */
+  async function handleTransicaoStatus(
+    item: AgendaItemSimples | AgendaItemDetalhado,
+    acao: 'iniciar' | 'finalizar',
+  ) {
+    setTransicaoLoading(true);
+    const statusNovo = acao === 'iniciar' ? 'EM_ANDAMENTO' : 'CONCLUIDO';
+
+    try {
+      if (acao === 'iniciar') {
+        await agendamentoService.iniciar(item.agendamentoId);
+      } else {
+        await agendamentoService.finalizar(item.agendamentoId);
+      }
+
+      queryClient.setQueriesData<ConsultarAgendaResponse<AgendaItemSimples | AgendaItemDetalhado>>(
+        { queryKey: ['agenda'] },
+        (oldData: ConsultarAgendaResponse<AgendaItemSimples | AgendaItemDetalhado> | undefined) => {
+          if (!oldData) return oldData;
+          return {
+            ...oldData,
+            data: oldData.data.map((i: AgendaItemSimples | AgendaItemDetalhado) =>
+              i.agendamentoId === item.agendamentoId ? { ...i, status: statusNovo } : i,
+            ),
+          };
+        },
+      );
+
+      if (itemSelecionado?.agendamentoId === item.agendamentoId) {
+        setItemSelecionado((prev) => (prev ? { ...prev, status: statusNovo } : null));
+      }
+
+      setToast({
+        tipo: 'sucesso',
+        mensagem:
+          acao === 'iniciar'
+            ? 'Atendimento iniciado com sucesso.'
+            : 'Atendimento finalizado com sucesso.',
+      });
+    } catch (err: unknown) {
+      const erro = tratarErroApi(err);
+      if (erro.status === 401) {
+        setToast({
+          tipo: 'erro',
+          mensagem: 'Autenticação obrigatória para executar esta operação.',
+        });
+        void navigate('/login');
+      } else if (erro.status === 404) {
+        setToast({ tipo: 'erro', mensagem: 'Agendamento não encontrado.' });
+      } else if (erro.status === 409) {
+        setToast({
+          tipo: 'erro',
+          mensagem: erro.mensagem ?? 'Agendamento no status atual não permite a operação.',
+        });
+      } else {
+        setToast({
+          tipo: 'erro',
+          mensagem: 'Não foi possível concluir a operação no momento. Tente novamente.',
+        });
+      }
+    } finally {
+      setTransicaoLoading(false);
     }
   }
 
@@ -831,10 +903,33 @@ export function AgendaPage() {
                   )}
 
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex gap-2">
-                    {/* Cancelar (elegível para AGENDADO e EM_ANDAMENTO; senão escondido/desabilitado) */}
-                    {itemSelecionado.status === 'AGENDADO' ||
-                    itemSelecionado.status === 'EM_ANDAMENTO' ? (
+                  <div className="flex flex-wrap gap-2">
+                    {/* Iniciar atendimento (AGENDADO → EM_ANDAMENTO) */}
+                    {itemSelecionado.status === 'AGENDADO' && (
+                      <Button
+                        type="button"
+                        className="h-10 rounded-full"
+                        disabled={transicaoLoading}
+                        onClick={() => void handleTransicaoStatus(itemSelecionado, 'iniciar')}
+                      >
+                        Iniciar atendimento
+                      </Button>
+                    )}
+
+                    {/* Finalizar atendimento (EM_ANDAMENTO → CONCLUIDO) */}
+                    {itemSelecionado.status === 'EM_ANDAMENTO' && (
+                      <Button
+                        type="button"
+                        className="h-10 rounded-full"
+                        disabled={transicaoLoading}
+                        onClick={() => void handleTransicaoStatus(itemSelecionado, 'finalizar')}
+                      >
+                        Finalizar atendimento
+                      </Button>
+                    )}
+
+                    {/* Cancelar (política RF010: apenas AGENDADO; senão escondido) */}
+                    {itemSelecionado.status === 'AGENDADO' ? (
                       <Button
                         type="button"
                         variant="outline"

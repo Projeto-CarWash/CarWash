@@ -64,3 +64,13 @@ export function useAlterarCelulasAtivas() {
     onSuccess: invalidar,
   });
 }
+
+/** Mutation de ativação/inativação — `PATCH /api/v1/filiais/{id}/status` (RF017/RF019). */
+export function useAlterarStatusFilial() {
+  const invalidar = useInvalidarFiliais();
+  return useMutation<FilialDetalhe, unknown, { id: string; ativo: boolean }>({
+    mutationFn: ({ id, ativo }) => filialService.alterarStatus(id, ativo),
+    retry: false,
+    onSuccess: invalidar,
+  });
+}

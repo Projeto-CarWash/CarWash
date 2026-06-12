@@ -69,4 +69,13 @@ export const filialService = {
     });
     return data;
   },
+
+  /**
+   * Ativa/inativa a filial — `PATCH /api/v1/filiais/{id}/status` (RF017).
+   * Filial inativa não é aceita em novos agendamentos (RF019 → 409).
+   */
+  async alterarStatus(id: string, ativo: boolean): Promise<FilialDetalhe> {
+    const { data } = await api.patch<FilialDetalhe>(`/api/v1/filiais/${id}/status`, { ativo });
+    return data;
+  },
 };

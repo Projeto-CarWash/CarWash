@@ -513,7 +513,12 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
         catch (DbUpdateConcurrencyException)
         {
             await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
-            throw;
+
+            // Concorrência otimista (Versao): o agendamento mudou entre o lookup
+            // e o commit — desfecho contratado do RF010 é 409, não 500.
+            throw new ConflictException(
+                "O agendamento foi alterado por outra operação. Recarregue os dados e tente novamente.",
+                "agendamento-conflito-concorrencia");
         }
 #pragma warning disable CA1031
         catch (Exception ex)
@@ -525,6 +530,15 @@ public sealed class AgendamentoRepository : IAgendamentoRepository
             }
 
             await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
+
+            // RN011 no caminho de EDIÇÃO (RF020): reagendar para uma janela já
+            // ocupada pelo mesmo veículo viola a EXCLUDE ex_ag_veiculo_janela.
+            // Sem esta tradução o PATCH devolvia 500 em vez do 409 contratado.
+            if (ex is DbUpdateException due && IsConflitoVeiculoViolation(due))
+            {
+                throw new AgendamentoConflitanteException(ex);
+            }
+
             throw;
         }
     }
