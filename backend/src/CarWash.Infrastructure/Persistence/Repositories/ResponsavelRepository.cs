@@ -80,13 +80,13 @@ public sealed class ResponsavelRepository : IResponsavelRepository
 
     public async Task SalvarAsync(string correlationId, Guid? usuarioId, CancellationToken cancellationToken)
     {
-        var entries = _context.ChangeTracker.Entries<Responsavel>()
+        var responsaveisModificados = _context.ChangeTracker.Entries<Responsavel>()
             .Where(e => e.State == Microsoft.EntityFrameworkCore.EntityState.Modified)
+            .Select(e => e.Entity)
             .ToList();
 
-        foreach (var entry in entries)
+        foreach (var responsavel in responsaveisModificados)
         {
-            var responsavel = entry.Entity;
             var audit = AuditLog.Registrar(
                 id: Guid.NewGuid(),
                 evento: "RESPONSAVEL_ATUALIZADO",

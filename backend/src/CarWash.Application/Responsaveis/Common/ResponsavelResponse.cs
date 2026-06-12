@@ -29,7 +29,7 @@ public class ResponsavelResponse
         ArgumentNullException.ThrowIfNull(responsavel);
         return new ResponsavelResponse
         {
-            Id = responsavel.Id,
+            ResponsavelId = responsavel.Id,
             ClienteTitularId = responsavel.ClienteTitularId,
             Nome = responsavel.Nome,
             Documento = responsavel.Documento,

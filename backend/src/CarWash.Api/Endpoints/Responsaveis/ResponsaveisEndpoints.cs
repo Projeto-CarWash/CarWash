@@ -34,11 +34,13 @@ public static class ResponsaveisEndpoints
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status409Conflict);
 
+        // RF023/RF024 — lista os responsáveis do cliente. Mantém o contrato de
+        // array simples (ResponsavelListaItem[]) consumido pelo frontend no
+        // dropdown de responsável do agendamento.
         grupo.MapGet("/", ListarAsync)
             .WithName("ListarResponsaveis")
-            .Produces<ListaResponsaveisResponse>(StatusCodes.Status200OK)
-            .ProducesProblem(StatusCodes.Status401Unauthorized)
-            .ProducesProblem(StatusCodes.Status404NotFound);
+            .Produces<IReadOnlyList<ResponsavelListaItem>>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status401Unauthorized);
 
         grupo.MapPut("/{id:guid}", AtualizarAsync)
             .WithName("AtualizarResponsavel")
@@ -119,18 +121,6 @@ public static class ResponsaveisEndpoints
         return TypedResults.Created(
             $"/api/v1/clientes/{clienteTitularId}/responsaveis/{resposta.Data.ResponsavelId}",
             resposta);
-    }
-
-    private static async Task<Ok<ListaResponsaveisResponse>> ListarAsync(
-        Guid clienteTitularId,
-        [FromServices] IQueryHandler<ListarResponsaveisQuery, ListaResponsaveisResponse> handler,
-        CancellationToken cancellationToken)
-    {
-        var resposta = await handler.HandleAsync(
-            new ListarResponsaveisQuery(clienteTitularId),
-            cancellationToken).ConfigureAwait(false);
-
-        return TypedResults.Ok(resposta);
     }
 
     private static async Task<Ok<ResponsavelResponse>> AtualizarAsync(
@@ -232,7 +222,7 @@ public static class ResponsaveisEndpoints
         return Guid.TryParse(sub, out var id) ? id : null;
     }
 
-    #pragma warning disable S2094, SA1502, CA1812 // Markers para tipar o ILogger por endpoint (categoria estável).
+#pragma warning disable S2094, SA1502, CA1812 // Markers para tipar o ILogger por endpoint (categoria estável).
     internal sealed class CriarResponsavelEndpointMarker
     {
     }
@@ -244,5 +234,5 @@ public static class ResponsaveisEndpoints
     internal sealed class AlterarStatusResponsavelEndpointMarker
     {
     }
-    #pragma warning restore S2094, SA1502, CA1812
+#pragma warning restore S2094, SA1502, CA1812
 }
