@@ -24,7 +24,10 @@ export function ContatoEnderecoForm() {
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <Label htmlFor="celular" className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
+          <Label
+            htmlFor="celular"
+            className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground"
+          >
             CELULAR <span className="text-red-500">*</span>
           </Label>
           <Controller
@@ -47,9 +50,7 @@ export function ContatoEnderecoForm() {
                     aria-describedby={errors.celular ? 'celular-error' : undefined}
                     aria-required="true"
                     className={`h-10 rounded-l-none rounded-r-xl text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-0 ${
-                      errors.celular
-                        ? 'border-red-500/60 bg-red-950/20'
-                        : 'border-border bg-card'
+                      errors.celular ? 'border-red-500/60 bg-red-950/20' : 'border-border bg-card'
                     }`}
                   />
                 </div>
@@ -69,7 +70,10 @@ export function ContatoEnderecoForm() {
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="phone" className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
+          <Label
+            htmlFor="phone"
+            className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground"
+          >
             TELEFONE FIXO{' '}
             <span className="font-normal tracking-normal text-muted-foreground">(opcional)</span>
           </Label>
@@ -92,9 +96,7 @@ export function ContatoEnderecoForm() {
                     aria-invalid={!!errors.telefone}
                     aria-describedby={errors.telefone ? 'phone-error' : undefined}
                     className={`h-10 rounded-l-none rounded-r-xl text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-0 ${
-                      errors.telefone
-                        ? 'border-red-500/60 bg-red-950/20'
-                        : 'border-border bg-card'
+                      errors.telefone ? 'border-red-500/60 bg-red-950/20' : 'border-border bg-card'
                     }`}
                   />
                 </div>
@@ -114,8 +116,12 @@ export function ContatoEnderecoForm() {
         </div>
 
         <div className="col-span-2 space-y-1.5">
-          <Label htmlFor="email" className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
-            E-MAIL <span className="font-normal tracking-normal text-muted-foreground">(opcional)</span>
+          <Label
+            htmlFor="email"
+            className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground"
+          >
+            E-MAIL{' '}
+            <span className="font-normal tracking-normal text-muted-foreground">(opcional)</span>
           </Label>
           <Controller
             name="email"
@@ -132,9 +138,7 @@ export function ContatoEnderecoForm() {
                   aria-invalid={!!errors.email}
                   aria-describedby={errors.email ? 'email-error' : undefined}
                   className={`h-10 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-0 ${
-                    errors.email
-                      ? 'border-red-500/60 bg-red-950/20'
-                      : 'border-border bg-card'
+                    errors.email ? 'border-red-500/60 bg-red-950/20' : 'border-border bg-card'
                   }`}
                 />
                 {errors.email && (
@@ -153,7 +157,10 @@ export function ContatoEnderecoForm() {
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="cep" className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
+          <Label
+            htmlFor="cep"
+            className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground"
+          >
             CEP <span className="text-red-500">*</span>
           </Label>
           <Controller
@@ -171,9 +178,7 @@ export function ContatoEnderecoForm() {
                   aria-invalid={!!errors.cep}
                   aria-describedby={errors.cep ? 'cep-error' : undefined}
                   className={`h-10 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-0 ${
-                    errors.cep
-                      ? 'border-red-500/60 bg-red-950/20'
-                      : 'border-border bg-card'
+                    errors.cep ? 'border-red-500/60 bg-red-950/20' : 'border-border bg-card'
                   }`}
                 />
                 {errors.cep && (
@@ -192,7 +197,10 @@ export function ContatoEnderecoForm() {
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="uf" className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
+          <Label
+            htmlFor="uf"
+            className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground"
+          >
             UF <span className="text-red-500">*</span>
           </Label>
           <Controller
@@ -211,9 +219,7 @@ export function ContatoEnderecoForm() {
                   aria-invalid={!!errors.uf}
                   aria-describedby={errors.uf ? 'uf-error' : undefined}
                   className={`h-10 rounded-xl text-sm uppercase text-foreground placeholder:text-muted-foreground focus-visible:ring-0 ${
-                    errors.uf
-                      ? 'border-red-500/60 bg-red-950/20'
-                      : 'border-border bg-card'
+                    errors.uf ? 'border-red-500/60 bg-red-950/20' : 'border-border bg-card'
                   }`}
                 />
                 {errors.uf && (
@@ -232,7 +238,10 @@ export function ContatoEnderecoForm() {
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="cidade" className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
+          <Label
+            htmlFor="cidade"
+            className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground"
+          >
             CIDADE <span className="text-red-500">*</span>
           </Label>
           <Controller
@@ -255,9 +264,7 @@ export function ContatoEnderecoForm() {
                   aria-invalid={!!errors.cidade}
                   aria-describedby={errors.cidade ? 'cidade-error' : undefined}
                   className={`h-10 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-0 ${
-                    errors.cidade
-                      ? 'border-red-500/60 bg-red-950/20'
-                      : 'border-border bg-card'
+                    errors.cidade ? 'border-red-500/60 bg-red-950/20' : 'border-border bg-card'
                   }`}
                 />
                 {errors.cidade && (
@@ -276,7 +283,10 @@ export function ContatoEnderecoForm() {
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="bairro" className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
+          <Label
+            htmlFor="bairro"
+            className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground"
+          >
             BAIRRO <span className="text-red-500">*</span>
           </Label>
           <Controller
@@ -292,9 +302,7 @@ export function ContatoEnderecoForm() {
                   aria-invalid={!!errors.bairro}
                   aria-describedby={errors.bairro ? 'bairro-error' : undefined}
                   className={`h-10 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-0 ${
-                    errors.bairro
-                      ? 'border-red-500/60 bg-red-950/20'
-                      : 'border-border bg-card'
+                    errors.bairro ? 'border-red-500/60 bg-red-950/20' : 'border-border bg-card'
                   }`}
                 />
                 {errors.bairro && (
@@ -332,9 +340,7 @@ export function ContatoEnderecoForm() {
                   aria-invalid={!!errors.logradouro}
                   aria-describedby={errors.logradouro ? 'logradouro-error' : undefined}
                   className={`h-10 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-0 ${
-                    errors.logradouro
-                      ? 'border-red-500/60 bg-red-950/20'
-                      : 'border-border bg-card'
+                    errors.logradouro ? 'border-red-500/60 bg-red-950/20' : 'border-border bg-card'
                   }`}
                 />
                 {errors.logradouro && (
@@ -353,7 +359,10 @@ export function ContatoEnderecoForm() {
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="numero" className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
+          <Label
+            htmlFor="numero"
+            className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground"
+          >
             NÚMERO <span className="text-red-500">*</span>
           </Label>
           <Controller
@@ -372,9 +381,7 @@ export function ContatoEnderecoForm() {
                   aria-invalid={!!errors.numero}
                   aria-describedby={errors.numero ? 'numero-error' : undefined}
                   className={`h-10 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-0 ${
-                    errors.numero
-                      ? 'border-red-500/60 bg-red-950/20'
-                      : 'border-border bg-card'
+                    errors.numero ? 'border-red-500/60 bg-red-950/20' : 'border-border bg-card'
                   }`}
                 />
                 {errors.numero && (
@@ -415,9 +422,7 @@ export function ContatoEnderecoForm() {
                   aria-invalid={!!errors.complemento}
                   aria-describedby={errors.complemento ? 'complemento-error' : undefined}
                   className={`h-10 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-0 ${
-                    errors.complemento
-                      ? 'border-red-500/60 bg-red-950/20'
-                      : 'border-border bg-card'
+                    errors.complemento ? 'border-red-500/60 bg-red-950/20' : 'border-border bg-card'
                   }`}
                 />
                 {errors.complemento && (

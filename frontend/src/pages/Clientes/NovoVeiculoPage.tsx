@@ -607,10 +607,14 @@ export function NovoVeiculoPage() {
                             style={{ backgroundColor: selectedCor.hex }}
                           />
                           <div>
-                            <p className="text-[9px] tracking-wider text-muted-foreground">SELECIONADA</p>
+                            <p className="text-[9px] tracking-wider text-muted-foreground">
+                              SELECIONADA
+                            </p>
                             <p className="text-sm font-semibold text-foreground">
                               {selectedCor.name}{' '}
-                              <span className="font-normal text-muted-foreground">· {selectedCor.hex}</span>
+                              <span className="font-normal text-muted-foreground">
+                                · {selectedCor.hex}
+                              </span>
                             </p>
                           </div>
                         </div>

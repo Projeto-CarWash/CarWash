@@ -127,7 +127,9 @@ export function PreferenciasFidelidadeForm({ isSubmitting }: PreferenciasFidelid
       {/* Canais de contato preferenciais */}
       <div className="mb-8">
         <h3 className="text-base font-semibold text-foreground">Canais de contato preferenciais</h3>
-        <p className="mt-0.5 text-sm text-muted-foreground">Como o cliente prefere receber lembretes?</p>
+        <p className="mt-0.5 text-sm text-muted-foreground">
+          Como o cliente prefere receber lembretes?
+        </p>
         <div className="mt-3 flex flex-wrap gap-2">
           {CANAIS_OPTIONS.map((opt) => {
             const isSelected = (watchedCanais ?? []).includes(opt.value);
@@ -152,7 +154,9 @@ export function PreferenciasFidelidadeForm({ isSubmitting }: PreferenciasFidelid
       {/* Observações gerais */}
       <div className="mb-8">
         <h3 className="text-base font-semibold text-foreground">Observações gerais</h3>
-        <p className="mt-0.5 text-sm text-muted-foreground">Notas importantes sobre este cliente.</p>
+        <p className="mt-0.5 text-sm text-muted-foreground">
+          Notas importantes sobre este cliente.
+        </p>
         <textarea
           value={observacoesGerais}
           onChange={(e) => setValue('observacoesGerais', e.target.value, { shouldDirty: true })}

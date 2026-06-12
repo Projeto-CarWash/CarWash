@@ -407,7 +407,9 @@ function formatarPlacaExibicao(placa: string) {
 function Campo({ label, valor }: { label: string; valor: string }) {
   return (
     <div>
-      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">{label}</p>
+      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+        {label}
+      </p>
       <p className="mt-1 text-foreground">{valor}</p>
     </div>
   );

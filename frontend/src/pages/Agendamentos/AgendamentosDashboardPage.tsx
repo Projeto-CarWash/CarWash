@@ -70,7 +70,10 @@ export function AgendamentosDashboardPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <label htmlFor="filial-dashboard" className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+          <label
+            htmlFor="filial-dashboard"
+            className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase"
+          >
             Filial
           </label>
           <select
@@ -122,7 +125,9 @@ export function AgendamentosDashboardPage() {
                 </div>
                 <div className="grid w-full flex-1 grid-cols-2 rounded-lg border border-border bg-muted overflow-hidden transition-colors group-hover:border-border">
                   <div className="flex flex-col justify-center border-b border-r border-border p-6 text-left">
-                    <p className="text-[9px] font-bold tracking-[0.15em] text-muted-foreground">AGENDADO</p>
+                    <p className="text-[9px] font-bold tracking-[0.15em] text-muted-foreground">
+                      AGENDADO
+                    </p>
                     <p className="mt-3 text-sm font-bold text-emerald-500">{mes.agendado}</p>
                   </div>
                   <div className="flex flex-col justify-center border-b border-border p-6 text-left">
@@ -132,11 +137,15 @@ export function AgendamentosDashboardPage() {
                     <p className="mt-3 text-sm font-bold text-amber-500">{mes.emAndamento}</p>
                   </div>
                   <div className="flex flex-col justify-center border-r border-border p-6 text-left">
-                    <p className="text-[9px] font-bold tracking-[0.15em] text-muted-foreground">CONCLUÍDO</p>
+                    <p className="text-[9px] font-bold tracking-[0.15em] text-muted-foreground">
+                      CONCLUÍDO
+                    </p>
                     <p className="mt-3 text-sm font-bold text-blue-500">{mes.concluido}</p>
                   </div>
                   <div className="flex flex-col justify-center p-6 text-left">
-                    <p className="text-[9px] font-bold tracking-[0.15em] text-muted-foreground">CANCELADO</p>
+                    <p className="text-[9px] font-bold tracking-[0.15em] text-muted-foreground">
+                      CANCELADO
+                    </p>
                     <p className="mt-3 text-sm font-bold text-red-600">{mes.cancelado}</p>
                   </div>
                 </div>

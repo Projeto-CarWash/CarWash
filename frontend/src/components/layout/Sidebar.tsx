@@ -106,21 +106,27 @@ export function Sidebar() {
       <Separator className="bg-border" />
 
       <nav className="flex-1 overflow-y-auto px-3 py-4">
-        <p className="mb-2 px-3 text-[10px] font-bold tracking-[0.2em] text-muted-foreground">OPERAÇÃO</p>
+        <p className="mb-2 px-3 text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
+          OPERAÇÃO
+        </p>
         <ul className="mb-4 space-y-0.5">
           {operacaoLinks.map((link) => (
             <li key={link.label}>{renderItem(link)}</li>
           ))}
         </ul>
 
-        <p className="mb-2 px-3 text-[10px] font-bold tracking-[0.2em] text-muted-foreground">GESTÃO</p>
+        <p className="mb-2 px-3 text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
+          GESTÃO
+        </p>
         <ul className="mb-4 space-y-0.5">
           {gestaoLinks.map((link) => (
             <li key={link.label}>{renderItem(link)}</li>
           ))}
         </ul>
 
-        <p className="mb-2 px-3 text-[10px] font-bold tracking-[0.2em] text-muted-foreground">SISTEMA</p>
+        <p className="mb-2 px-3 text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
+          SISTEMA
+        </p>
         <ul className="space-y-0.5">
           {sistemaLinks.map((link) => (
             <li key={link.label}>{renderItem(link)}</li>

@@ -18,7 +18,6 @@ import { VINCULO_LABELS } from '@/types/responsavel';
 
 import { ResponsavelModal } from './ResponsavelModal';
 
-
 import type { Responsavel } from '@/types/responsavel';
 
 interface ResponsaveisSectionProps {
@@ -112,7 +111,9 @@ export function ResponsaveisSection({ clienteId }: ResponsaveisSectionProps) {
             </div>
           ) : !responsaveis || responsaveis.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 px-4 text-center gap-2">
-              <p className="text-sm text-muted-foreground">Nenhum responsável vinculado a este cliente.</p>
+              <p className="text-sm text-muted-foreground">
+                Nenhum responsável vinculado a este cliente.
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -154,7 +155,9 @@ export function ResponsaveisSection({ clienteId }: ResponsaveisSectionProps) {
                       <TableCell className="text-sm text-muted-foreground">
                         {resp.telefone ? maskCelular(resp.telefone) : '—'}
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{resp.email ?? '—'}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {resp.email ?? '—'}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

@@ -322,7 +322,9 @@ export function ClienteVeiculoStep({
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-foreground">{cliente.nome}</p>
-                <p className="text-xs text-muted-foreground">{formatarDoc(cliente.cpf, cliente.cnpj)}</p>
+                <p className="text-xs text-muted-foreground">
+                  {formatarDoc(cliente.cpf, cliente.cnpj)}
+                </p>
               </div>
               <button
                 type="button"
@@ -370,7 +372,9 @@ export function ClienteVeiculoStep({
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium text-foreground">{c.nome}</p>
-                        <p className="text-xs text-muted-foreground">{formatarDoc(c.cpf, c.cnpj)}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatarDoc(c.cpf, c.cnpj)}
+                        </p>
                       </div>
                     </button>
                   ))}
@@ -471,7 +475,9 @@ export function ClienteVeiculoStep({
                         selected ? 'bg-red-600/20' : 'bg-muted'
                       }`}
                     >
-                      <Car className={`h-4 w-4 ${selected ? 'text-red-500' : 'text-muted-foreground'}`} />
+                      <Car
+                        className={`h-4 w-4 ${selected ? 'text-red-500' : 'text-muted-foreground'}`}
+                      />
                     </div>
                     <div className="min-w-0 flex-1">
                       <p

@@ -64,7 +64,10 @@ export function SeletorFilial({
 
   return (
     <div className="space-y-1.5">
-      <Label htmlFor="ag-filial" className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
+      <Label
+        htmlFor="ag-filial"
+        className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground"
+      >
         FILIAL <span className="text-red-500">*</span>
       </Label>
 

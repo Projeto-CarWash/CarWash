@@ -85,9 +85,7 @@ export function ResponsavelModal({
       const payload = {
         nome: parseResult.data.nome,
         documento: parseResult.data.documento.replace(/\D/g, ''),
-        telefone: parseResult.data.telefone
-          ? parseResult.data.telefone.replace(/\D/g, '')
-          : null,
+        telefone: parseResult.data.telefone ? parseResult.data.telefone.replace(/\D/g, '') : null,
         email: parseResult.data.email ?? null,
         grauVinculo: parseResult.data.grauVinculo,
       };

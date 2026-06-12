@@ -79,7 +79,9 @@ export function ServicosListaPage() {
       <div className="flex items-center justify-between border-b border-border bg-background px-8 py-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Serviços</h1>
-          <p className="text-sm text-muted-foreground">Catálogo de serviços oferecidos pelo CarWash.</p>
+          <p className="text-sm text-muted-foreground">
+            Catálogo de serviços oferecidos pelo CarWash.
+          </p>
         </div>
         <Button
           type="button"

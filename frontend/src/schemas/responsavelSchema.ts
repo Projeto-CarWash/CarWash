@@ -63,7 +63,14 @@ export const responsavelSchema = z.object({
     ),
 
   grauVinculo: z.enum(
-    ['RESPONSAVEL_FINANCEIRO', 'RESPONSAVEL_LEGAL', 'PROCURADOR', 'CONJUGE', 'PAI_MAE', 'OUTRO'] as const,
+    [
+      'RESPONSAVEL_FINANCEIRO',
+      'RESPONSAVEL_LEGAL',
+      'PROCURADOR',
+      'CONJUGE',
+      'PAI_MAE',
+      'OUTRO',
+    ] as const,
     {
       message: 'Grau de vínculo inválido.',
     },

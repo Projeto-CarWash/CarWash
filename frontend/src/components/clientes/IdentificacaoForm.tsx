@@ -28,7 +28,10 @@ export function IdentificacaoForm() {
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <Label htmlFor="cpf" className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
+          <Label
+            htmlFor="cpf"
+            className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground"
+          >
             CPF / CNPJ
           </Label>
           <Controller
@@ -75,7 +78,10 @@ export function IdentificacaoForm() {
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="birth" className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
+          <Label
+            htmlFor="birth"
+            className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground"
+          >
             DATA DE NASCIMENTO
           </Label>
           <Controller
@@ -114,7 +120,10 @@ export function IdentificacaoForm() {
         </div>
 
         <div className="col-span-2 space-y-1.5">
-          <Label htmlFor="name" className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
+          <Label
+            htmlFor="name"
+            className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground"
+          >
             NOME COMPLETO / RAZÃO SOCIAL
           </Label>
           <Controller

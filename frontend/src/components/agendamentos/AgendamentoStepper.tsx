@@ -27,7 +27,9 @@ function getStatus(stepId: number, currentStep: number): StepStatus {
 export function AgendamentoStepper({ currentStep = 1 }: AgendamentoStepperProps) {
   return (
     <aside className="rounded-xl border border-border bg-card p-6">
-      <p className="mb-1 text-[10px] font-bold tracking-[0.2em] text-muted-foreground">NOVO AGENDAMENTO</p>
+      <p className="mb-1 text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
+        NOVO AGENDAMENTO
+      </p>
       <h2 className="mb-1 text-xl font-semibold text-foreground">Agende um serviço</h2>
       <p className="mb-6 text-sm text-muted-foreground">
         Preencha todas as etapas para concluir o agendamento.

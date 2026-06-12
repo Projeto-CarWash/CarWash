@@ -117,7 +117,9 @@ export function FiliadoModal({ open, onOpenChange, existingCpfs, onSave }: Filia
 
           {/* CPF */}
           <div className="mt-5 space-y-1.5">
-            <Label className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground">CPF/CNPJ</Label>
+            <Label className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
+              CPF/CNPJ
+            </Label>
             <Input
               value={cpf}
               onChange={(e) => setCpf(maskCpfCnpj(e.target.value))}
@@ -161,9 +163,7 @@ export function FiliadoModal({ open, onOpenChange, existingCpfs, onSave }: Filia
               }}
               placeholder="Helena Quintanilha Freitas"
               className={`h-10 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-0 ${
-                errors.nome
-                  ? 'border-red-500/60 bg-red-950/20'
-                  : 'border-border bg-card'
+                errors.nome ? 'border-red-500/60 bg-red-950/20' : 'border-border bg-card'
               }`}
             />
             {errors.nome && (
@@ -201,15 +201,15 @@ export function FiliadoModal({ open, onOpenChange, existingCpfs, onSave }: Filia
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground">E-MAIL</Label>
+              <Label className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
+                E-MAIL
+              </Label>
               <Input
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="email@exemplo.com"
                 className={`h-10 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-0 ${
-                  errors.email
-                    ? 'border-red-500/60 bg-red-950/20'
-                    : 'border-border bg-card'
+                  errors.email ? 'border-red-500/60 bg-red-950/20' : 'border-border bg-card'
                 }`}
               />
               {errors.email && (

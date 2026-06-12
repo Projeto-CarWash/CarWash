@@ -339,7 +339,9 @@ export function ServicoFormPage() {
                         {fieldState.error.message}
                       </p>
                     ) : (
-                      <p className="text-xs text-muted-foreground">Utilize vírgula para centavos.</p>
+                      <p className="text-xs text-muted-foreground">
+                        Utilize vírgula para centavos.
+                      </p>
                     )}
                   </>
                 )}

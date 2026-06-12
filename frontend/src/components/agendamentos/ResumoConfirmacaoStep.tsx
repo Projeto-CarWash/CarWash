@@ -105,25 +105,33 @@ export function ResumoConfirmacaoStep({
 
       <div className="space-y-4">
         <div className="rounded-xl border border-border bg-card p-4">
-          <p className="mb-3 text-[10px] font-bold tracking-[0.2em] text-muted-foreground">FILIAL</p>
+          <p className="mb-3 text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
+            FILIAL
+          </p>
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-600/10">
               <Building2 className="h-4.5 w-4.5 text-red-500" />
             </div>
             <div>
-              <p className="text-sm font-medium text-foreground">{filialNome || 'Não selecionada'}</p>
+              <p className="text-sm font-medium text-foreground">
+                {filialNome || 'Não selecionada'}
+              </p>
             </div>
           </div>
         </div>
         <div className="rounded-xl border border-border bg-card p-4">
-          <p className="mb-3 text-[10px] font-bold tracking-[0.2em] text-muted-foreground">CLIENTE</p>
+          <p className="mb-3 text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
+            CLIENTE
+          </p>
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-600/10">
               <User className="h-4.5 w-4.5 text-red-500" />
             </div>
             <div>
               <p className="text-sm font-medium text-foreground">{cliente?.nome}</p>
-              <p className="text-xs text-muted-foreground">{formatarDoc(cliente?.cpf, cliente?.cnpj)}</p>
+              <p className="text-xs text-muted-foreground">
+                {formatarDoc(cliente?.cpf, cliente?.cnpj)}
+              </p>
             </div>
           </div>
         </div>
@@ -152,7 +160,9 @@ export function ResumoConfirmacaoStep({
             </div>
           )}
 
-          <p className="mb-3 text-[10px] font-bold tracking-[0.2em] text-muted-foreground">VEÍCULO</p>
+          <p className="mb-3 text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
+            VEÍCULO
+          </p>
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-600/10">
               <Car className="h-4.5 w-4.5 text-red-500" />
@@ -169,7 +179,9 @@ export function ResumoConfirmacaoStep({
 
         {wizardState.responsavel && (
           <div className="rounded-xl border border-border bg-card p-4">
-            <p className="mb-3 text-[10px] font-bold tracking-[0.2em] text-muted-foreground">RESPONSÁVEL</p>
+            <p className="mb-3 text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
+              RESPONSÁVEL
+            </p>
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-600/10">
                 <User className="h-4.5 w-4.5 text-red-500" />

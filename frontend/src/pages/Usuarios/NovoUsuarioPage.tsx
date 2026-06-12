@@ -128,7 +128,9 @@ export function NovoUsuarioPage() {
             <UserPlus className="h-5 w-5" />
           </span>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">Novo usuário interno</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">
+              Novo usuário interno
+            </h1>
             <p className="mt-1 text-sm text-muted-foreground">
               Cadastre administradores e funcionários do sistema (RF014).
             </p>

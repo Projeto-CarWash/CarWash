@@ -119,7 +119,9 @@ export function RevisaoAgendamento({
             rotulo="Início e fim"
           >
             <span className="block">{formatarDataHora(resumo.inicio)}</span>
-            <span className="block text-xs text-muted-foreground">até {formatarDataHora(resumo.fim)}</span>
+            <span className="block text-xs text-muted-foreground">
+              até {formatarDataHora(resumo.fim)}
+            </span>
           </CampoRevisao>
         </dl>
 
@@ -175,7 +177,10 @@ export function RevisaoAgendamento({
               <Clock className="h-4 w-4" aria-hidden="true" />
               Duração total
             </span>
-            <span data-testid="revisao-duracao" className="font-medium tabular-nums text-foreground">
+            <span
+              data-testid="revisao-duracao"
+              className="font-medium tabular-nums text-foreground"
+            >
               {formatarDuracao(resumo.duracaoTotalMin)}
             </span>
           </div>

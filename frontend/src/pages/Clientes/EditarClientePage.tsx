@@ -488,9 +488,14 @@ function Field({
   const errorId = `${name}-error`;
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={name} className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
+      <Label
+        htmlFor={name}
+        className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground"
+      >
         {label} {required && <span className="text-red-500">*</span>}
-        {optional && <span className="font-normal tracking-normal text-muted-foreground">(opcional)</span>}
+        {optional && (
+          <span className="font-normal tracking-normal text-muted-foreground">(opcional)</span>
+        )}
       </Label>
       <Controller
         control={control}

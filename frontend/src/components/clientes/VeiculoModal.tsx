@@ -178,7 +178,9 @@ export function VeiculoModal({
               {placa.length > 0 ? (
                 <div className="flex items-center gap-1.5 rounded-lg border-2 border-border bg-muted px-3 py-1.5">
                   <div className="flex h-5 items-center rounded bg-blue-700 px-1.5">
-                    <span className="text-[8px] font-bold leading-none text-foreground">BR · RJ</span>
+                    <span className="text-[8px] font-bold leading-none text-foreground">
+                      BR · RJ
+                    </span>
                   </div>
                   <span className="font-mono text-lg font-bold tracking-wider text-foreground">
                     {placaDisplay || '---'}
@@ -215,7 +217,9 @@ export function VeiculoModal({
 
           <div className="mt-4 grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground">PLACA</Label>
+              <Label className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
+                PLACA
+              </Label>
               <Input
                 value={placa}
                 onChange={(e) =>
@@ -247,7 +251,10 @@ export function VeiculoModal({
 
             <div className="space-y-1.5">
               <Label className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
-                ANO <span className="font-normal tracking-normal text-muted-foreground">(opcional)</span>
+                ANO{' '}
+                <span className="font-normal tracking-normal text-muted-foreground">
+                  (opcional)
+                </span>
               </Label>
               <Input
                 value={ano}
@@ -258,9 +265,7 @@ export function VeiculoModal({
                 placeholder="2024"
                 maxLength={4}
                 className={`h-10 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-0 ${
-                  errors.ano
-                    ? 'border-red-500/60 bg-red-950/20'
-                    : 'border-border bg-card'
+                  errors.ano ? 'border-red-500/60 bg-red-950/20' : 'border-border bg-card'
                 }`}
               />
               {errors.ano && (
@@ -280,9 +285,7 @@ export function VeiculoModal({
                 placeholder="Porsche"
                 maxLength={80}
                 className={`h-10 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-0 ${
-                  errors.fabricante
-                    ? 'border-red-500/60 bg-red-950/20'
-                    : 'border-border bg-card'
+                  errors.fabricante ? 'border-red-500/60 bg-red-950/20' : 'border-border bg-card'
                 }`}
               />
               {errors.fabricante && (
@@ -293,16 +296,16 @@ export function VeiculoModal({
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground">MODELO</Label>
+              <Label className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
+                MODELO
+              </Label>
               <Input
                 value={modelo}
                 onChange={(e) => setModelo(e.target.value.slice(0, 80))}
                 placeholder="911 Carrera S"
                 maxLength={80}
                 className={`h-10 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-0 ${
-                  errors.modelo
-                    ? 'border-red-500/60 bg-red-950/20'
-                    : 'border-border bg-card'
+                  errors.modelo ? 'border-red-500/60 bg-red-950/20' : 'border-border bg-card'
                 }`}
               />
               {errors.modelo && (
@@ -359,7 +362,8 @@ export function VeiculoModal({
                 <div>
                   <p className="text-[9px] tracking-wider text-muted-foreground">SELECIONADA</p>
                   <p className="text-sm font-semibold text-foreground">
-                    {corNomeDisplay} <span className="font-normal text-muted-foreground">· {corHex}</span>
+                    {corNomeDisplay}{' '}
+                    <span className="font-normal text-muted-foreground">· {corHex}</span>
                   </p>
                 </div>
               </div>

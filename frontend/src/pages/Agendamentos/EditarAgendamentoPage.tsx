@@ -168,8 +168,8 @@ export function EditarAgendamentoPage() {
         <div className="mt-4 flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-500">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>
-            Este agendamento está com status <strong>{detalhe.status.toUpperCase()}</strong> e não pode ser
-            editado. A edição só é permitida quando o status é AGENDADO.
+            Este agendamento está com status <strong>{detalhe.status.toUpperCase()}</strong> e não
+            pode ser editado. A edição só é permitida quando o status é AGENDADO.
           </span>
         </div>
       )}
@@ -181,7 +181,9 @@ export function EditarAgendamentoPage() {
             <h2 className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground dark:text-zinc-300">
               <User className="h-3.5 w-3.5 text-red-500" /> Cliente <Lock className="h-3 w-3" />
             </h2>
-            <p className="text-sm text-muted-foreground dark:text-zinc-200">{itemNav.cliente.nome}</p>
+            <p className="text-sm text-muted-foreground dark:text-zinc-200">
+              {itemNav.cliente.nome}
+            </p>
           </div>
           <div className="rounded-xl border border-border dark:border-zinc-800/60 bg-muted dark:bg-zinc-900/40 p-4">
             <h2 className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground dark:text-zinc-300">
@@ -198,7 +200,10 @@ export function EditarAgendamentoPage() {
       <div className="mt-6 space-y-5">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <Label htmlFor="edit-inicio" className="text-xs font-bold tracking-wider text-muted-foreground">
+            <Label
+              htmlFor="edit-inicio"
+              className="text-xs font-bold tracking-wider text-muted-foreground"
+            >
               INÍCIO
             </Label>
             <Input
@@ -210,7 +215,10 @@ export function EditarAgendamentoPage() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="edit-fim" className="text-xs font-bold tracking-wider text-muted-foreground">
+            <Label
+              htmlFor="edit-fim"
+              className="text-xs font-bold tracking-wider text-muted-foreground"
+            >
               FIM
             </Label>
             <Input
@@ -224,7 +232,10 @@ export function EditarAgendamentoPage() {
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="edit-responsavel" className="text-xs font-bold tracking-wider text-muted-foreground">
+          <Label
+            htmlFor="edit-responsavel"
+            className="text-xs font-bold tracking-wider text-muted-foreground"
+          >
             RESPONSÁVEL
           </Label>
           <select
@@ -249,7 +260,10 @@ export function EditarAgendamentoPage() {
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="edit-obs" className="text-xs font-bold tracking-wider text-muted-foreground">
+          <Label
+            htmlFor="edit-obs"
+            className="text-xs font-bold tracking-wider text-muted-foreground"
+          >
             OBSERVAÇÕES
           </Label>
           <textarea
@@ -272,12 +286,7 @@ export function EditarAgendamentoPage() {
         )}
 
         <div className="flex items-center justify-end gap-3 pt-2">
-          <Button
-            type="button"
-            variant="outline"
-            disabled={salvando}
-            onClick={() => navigate(-1)}
-          >
+          <Button type="button" variant="outline" disabled={salvando} onClick={() => navigate(-1)}>
             Cancelar
           </Button>
           <Button

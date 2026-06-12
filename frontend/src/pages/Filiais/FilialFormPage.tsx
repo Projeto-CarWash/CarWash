@@ -301,7 +301,9 @@ export function FilialFormPage() {
             />
 
             <div className="mt-2 md:col-span-2">
-              <p className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground">ENDEREÇO</p>
+              <p className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
+                ENDEREÇO
+              </p>
             </div>
 
             <CampoFilial

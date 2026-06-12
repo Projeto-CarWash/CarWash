@@ -201,7 +201,10 @@ export function AgendamentosCalendarioPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <label htmlFor="filial-calendario" className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+          <label
+            htmlFor="filial-calendario"
+            className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase"
+          >
             Filial
           </label>
           <select
@@ -344,7 +347,9 @@ export function AgendamentosCalendarioPage() {
                             {format(new Date(ag.inicio), 'HH:mm')} -{' '}
                             {format(new Date(ag.fim), 'HH:mm')}
                           </div>
-                          <div className="text-[10px] text-muted-foreground truncate">{ag.cliente}</div>
+                          <div className="text-[10px] text-muted-foreground truncate">
+                            {ag.cliente}
+                          </div>
                           <div className="mt-1">{getStatusIcon(ag.status)}</div>
                         </div>
                       </div>

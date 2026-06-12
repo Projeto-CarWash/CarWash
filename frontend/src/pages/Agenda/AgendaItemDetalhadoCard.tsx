@@ -150,7 +150,9 @@ export function AgendaItemDetalhadoCard({
 
         {/* Serviços */}
         <section aria-label="Serviços do agendamento">
-          <h3 className="mb-2 text-xs font-semibold text-muted-foreground dark:text-zinc-300">Serviços</h3>
+          <h3 className="mb-2 text-xs font-semibold text-muted-foreground dark:text-zinc-300">
+            Serviços
+          </h3>
           <ul className="divide-y divide-border rounded-lg border border-border dark:divide-zinc-800/40 dark:border-zinc-800/40">
             {item.servicos.map((servico) => (
               <li
@@ -177,7 +179,10 @@ export function AgendaItemDetalhadoCard({
         {/* Observações */}
         {item.observacoes && (
           <section aria-label="Observações" className="flex items-start gap-2">
-            <FileText className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+            <FileText
+              className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground"
+              aria-hidden="true"
+            />
             <p className="text-sm text-muted-foreground dark:text-zinc-300">{item.observacoes}</p>
           </section>
         )}

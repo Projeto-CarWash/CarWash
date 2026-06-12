@@ -157,7 +157,9 @@ export function ServicosStep({
                   )}
                 </div>
                 {servico.descricao && (
-                  <p className="text-xs leading-relaxed text-muted-foreground">{servico.descricao}</p>
+                  <p className="text-xs leading-relaxed text-muted-foreground">
+                    {servico.descricao}
+                  </p>
                 )}
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1">

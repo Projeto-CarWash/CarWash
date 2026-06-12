@@ -34,7 +34,9 @@ export function BottomBar() {
             )}
             {item.type === 'car' && <span className="text-muted-foreground">{item.text}</span>}
             {item.type === 'time' && <span className="text-muted-foreground/70">{item.text}</span>}
-            {item.type === 'telemetry' && <span className="text-muted-foreground">{item.text}</span>}
+            {item.type === 'telemetry' && (
+              <span className="text-muted-foreground">{item.text}</span>
+            )}
           </div>
         ))}
       </div>

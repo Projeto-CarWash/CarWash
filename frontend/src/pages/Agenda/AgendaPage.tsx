@@ -1031,7 +1031,10 @@ export function AgendaPage() {
                     className="w-full min-h-[100px] rounded-lg border border-border bg-white px-3 py-2 text-sm text-foreground focus-visible:border-red-500 focus-visible:ring-3 focus-visible:ring-red-500/20 focus-visible:outline-none disabled:opacity-50 dark:border-zinc-700/60 dark:bg-zinc-950/40 dark:text-zinc-100 resize-none"
                   />
                   <div className="flex justify-between items-center text-xs">
-                    <span id="cancel-description" className="text-muted-foreground dark:text-zinc-500">
+                    <span
+                      id="cancel-description"
+                      className="text-muted-foreground dark:text-zinc-500"
+                    >
                       Mínimo de 5 caracteres.
                     </span>
                     <span
